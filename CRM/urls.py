@@ -16,10 +16,12 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 from users import urls as salesman_url
+from customers import urls as customer_url
 from rest_framework.documentation import include_docs_urls
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('salesman/', include(salesman_url)),
+    path('accounts/', include(salesman_url)),
     path('docs/', include_docs_urls(title="CRM API")),
+    path('salesman/customers/', include(customer_url))
 ]

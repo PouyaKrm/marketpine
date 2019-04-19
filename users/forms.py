@@ -1,14 +1,33 @@
 from django.contrib.auth.forms import UserCreationForm, UserChangeForm
-from .models import Salesman
+from .models import Salesman, Customer
+from django import forms
 
 class SalesCreationFrom(UserCreationForm):
 
     class Meta(UserCreationForm):
         model = Salesman
-        fields = ['username', 'phone', 'address']
+        fields = '__all__'
 
 class SalesmanChangeForm(UserChangeForm):
 
     class Meta:
         model = Salesman
-        fields = ['username', 'phone', 'email']
+        exclude = 'password'
+
+
+class CustomerCreationForm(UserCreationForm):
+
+    class Meta:
+
+        model = Customer
+
+        fields = ['phone', 'email', 'first_name', 'last_name']
+
+
+class CustomerChangeForm(UserChangeForm):
+
+    class Meta:
+        model = Customer
+        fields = ['phone', 'email', 'first_name', 'last_name']
+
+
