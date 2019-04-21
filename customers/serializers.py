@@ -22,7 +22,7 @@ class SalesmenCustomerSerializer(serializers.ModelSerializer):
 
     class Meta:
 
-        model =SalesmenCustomer
+        model = SalesmenCustomer
         fields = [
             'id',
             'customer',
@@ -56,7 +56,5 @@ class SalesmenCustomerSerializer(serializers.ModelSerializer):
 
             customer = Customer.objects.get(phone=phone)
 
-        sc = SalesmenCustomer.objects.create(salesman=self.context['request'].user, customer=customer)
-
-        return sc
+        return SalesmenCustomer.objects.create(salesman=self.context['request'].user, customer=customer)
 

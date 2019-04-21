@@ -23,6 +23,10 @@ class RegisterSalesmanView(generics.CreateAPIView):
 @api_view(['POST'])
 def create_user(request):
 
+    """
+    Registers new users or salesman. It Needs to be activated by the admin to be able to login
+    """
+
     serializer = SalespersonRegisterSerializer(data=request.data)
 
     if serializer.is_valid():
@@ -39,6 +43,10 @@ def create_user(request):
 @permission_classes([permissions.IsAuthenticated])
 def salesman_reset_password(request):
 
+    """
+    Resets the password of the user. Needs JWT token
+    """
+
     serializer = SalesmanPasswordResetSerializer(data=request.data)
 
     if not serializer.is_valid():
@@ -54,6 +62,15 @@ def salesman_reset_password(request):
 
 
 class SalesmanAPIView(APIView):
+
+    """
+    put:
+    Updates the profile of the user. Needs JWT token
+
+    get:
+    Retrieves the profile data Including phone, business_name, first_name, last_name, email.
+     but phone number and business name are required. Needs JWT toeken
+    """
 
     permission_classes = [permissions.IsAuthenticated]
 

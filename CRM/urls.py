@@ -15,13 +15,22 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
-from users import urls as salesman_url
+from faker import Faker
+
+from users import urls as salesman_url, models
 from customers import urls as customer_url
+
 from rest_framework.documentation import include_docs_urls
+from rest_framework_swagger.views import get_swagger_view
+
+schema_view = get_swagger_view(title="CRM API")
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('accounts/', include(salesman_url)),
-    path('docs/', include_docs_urls(title="CRM API")),
-    path('salesman/customers/', include(customer_url))
+    path('api/accounts/', include(salesman_url)),
+    path('api/docs/', schema_view),
+    # path('docs2/', schema_view),
+    path('api/salesman/customers/', include(customer_url))
 ]
+
+

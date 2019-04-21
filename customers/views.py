@@ -12,6 +12,14 @@ from users.models import Customer, Salesman, SalesmenCustomer
 
 class SalesmanCustomerListAPIView(generics.ListAPIView, mixins.CreateModelMixin):
 
+    """
+    get:
+    Generates a list of all customers that belongs to specific user. Needs JWT Token
+
+    post:
+    Registers a new customer for specific user. Needs JWT token
+    """
+
     serializer_class = SalesmenCustomerSerializer
     permission_classes = [permissions.IsAuthenticated]
 
@@ -28,6 +36,14 @@ class SalesmanCustomerListAPIView(generics.ListAPIView, mixins.CreateModelMixin)
 
 
 class SalesmanCustomerRetrieveAPIView(mixins.DestroyModelMixin, RetrieveAPIView):
+
+    """
+    get:
+    Retrieves a specific user by it's id. Needs JWT token.
+
+    delete:
+    Deletes specific customer. Needs JWT token.
+    """
 
     serializer_class = SalesmenCustomerSerializer
     permission_classes = [permissions.IsAuthenticated]
