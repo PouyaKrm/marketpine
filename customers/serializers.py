@@ -13,7 +13,11 @@ class CustomerSerializer(serializers.ModelSerializer):
         fields = [
             'id',
             'phone',
+            'telegram_id',
+            'instagram_id'
         ]
+
+        extra_kwargs = {'telegram_id': {'read_only': True}, 'instagram_id': {'read_only': True}}
 
 
 class SalesmenCustomerSerializer(serializers.ModelSerializer):

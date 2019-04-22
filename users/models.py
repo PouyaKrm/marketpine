@@ -56,6 +56,8 @@ class Customer(AbstractBaseUser):
     register_date = models.DateTimeField(auto_now_add=True)
     first_name = models.CharField(max_length=40, blank=True, null=True)
     last_name = models.CharField(max_length=40, blank=True, null=True)
+    telegram_id = models.CharField(max_length=40, null=True, blank=True)
+    instagram_id = models.CharField(max_length=40, null=True, blank=True)
     salesmen = models.ManyToManyField(Salesman, through='SalesmenCustomer', related_name="customers",
                                       related_query_name='salesman'
                                       )
