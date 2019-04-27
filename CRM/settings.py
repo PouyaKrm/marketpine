@@ -172,3 +172,9 @@ JWT_AUTH = {
     'JWT_AUTH_COOKIE': None,
 
 }
+
+try:
+    from local_settings import *
+except ImportError:
+    pass
+
