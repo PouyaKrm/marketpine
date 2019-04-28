@@ -35,6 +35,7 @@ class SalesmanCustomerListAPIView(generics.ListAPIView, mixins.CreateModelMixin)
         return {'request': self.request}
 
 
+
 class SalesmanCustomerRetrieveAPIView(mixins.DestroyModelMixin, RetrieveAPIView):
 
     """

@@ -13,6 +13,7 @@ class Salesman(AbstractUser):
     bot_access_expire = models.DateTimeField(blank=True, null=True)
     instagram_access = models.BooleanField(default=False)
     instagram_access_expire = models.DateTimeField(blank=True, null=True)
+    is_verified = models.BooleanField(default=False)
 
     class Meta:
 
@@ -24,6 +25,15 @@ class Salesman(AbstractUser):
     # def get_customers(self):
     #     return "\n".join(list(self.customer_set.all()))
 
+
+class VerificationCodes(models.Model):
+    businessman = models.OneToOneField(Salesman, on_delete=models.CASCADE)
+    expiration_time = models.DateTimeField()
+    num_requested = models.IntegerField(default=1)
+    code = models.CharField(max_length=8)
+
+    def __str__(self):
+        return self.code
 
 class CustomerManager(BaseUserManager):
 
