@@ -1,7 +1,9 @@
 from django.core.validators import RegexValidator
 from rest_framework import serializers, validators
-from .models import Salesman
-import re
+
+from users.message import SMSMessage
+from .models import Salesman, VerificationCodes
+import re, secrets, datetime
 
 PhonenumberValidator = RegexValidator(regex=r'^\+?1?\d{11, 12}$',
                                       message="Phone number must be entered in the format: '+999999999'."
@@ -58,7 +60,26 @@ class SalespersonRegisterSerializer(serializers.ModelSerializer):
         user.is_active = True
         user.save()
 
+        code = secrets.randbelow(10000)
+
+        if code < 10000:
+            code += 10000
+
+        while VerificationCodes.objects.filter(code=code).count() > 0:
+
+            code = secrets.randbelow(10000)
+
+            if code < 10000:
+                code += 10000
+
+        expire_time = datetime.datetime.now() + datetime.timedelta(seconds=30)
+
+        VerificationCodes.objects.create(businessman=user, code=code, expiration_time=expire_time)
+
+        SMSMessage().send_verification_code(receptor=user.phone, code=code)
+
         return user
+
 
 class SalesmanPasswordResetSerializer(serializers.ModelSerializer):
 

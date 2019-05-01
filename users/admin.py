@@ -1,9 +1,10 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
-from .models import Salesman, Customer, SalesmenCustomer
+from .models import Salesman, Customer, SalesmenCustomer, VerificationCodes
 
 
 admin.site.register(Salesman, UserAdmin)
+admin.site.register(VerificationCodes)
 
 class CustomerAdmin(admin.ModelAdmin):
     exclude = ['last_login']
