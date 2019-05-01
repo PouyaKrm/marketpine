@@ -2,7 +2,7 @@
 from kavenegar import KavenegarAPI, APIException, HTTPException
 
 
-class Message:
+class SMSMessage:
 
     key = '4D4C324E43416D726C65446D7258566A4F59697153444355734E4F4D6B382B57'
     api = KavenegarAPI(key)

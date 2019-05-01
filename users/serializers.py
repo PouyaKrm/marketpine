@@ -1,6 +1,7 @@
 from django.core.validators import RegexValidator
 from rest_framework import serializers, validators
 
+from users.message import SMSMessage
 from .models import Salesman, VerificationCodes
 import re, secrets, datetime
 
@@ -59,8 +60,6 @@ class SalespersonRegisterSerializer(serializers.ModelSerializer):
         user.is_active = True
         user.save()
 
-
-
         code = secrets.randbelow(10000)
 
         if code < 10000:
@@ -77,7 +76,7 @@ class SalespersonRegisterSerializer(serializers.ModelSerializer):
 
         VerificationCodes.objects.create(businessman=user, code=code, expiration_time=expire_time)
 
-        # Message().send_verification_code(receptor=user.phone, code=code)
+        SMSMessage().send_verification_code(receptor=user.phone, code=code)
 
         return user
 

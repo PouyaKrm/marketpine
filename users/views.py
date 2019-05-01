@@ -1,3 +1,4 @@
+from django.core.exceptions import ObjectDoesNotExist
 from rest_framework import generics, status
 from rest_framework.views import APIView
 from rest_framework import permissions
@@ -5,9 +6,9 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from django.contrib.auth import authenticate
 
-from .message import Message
+from .message import SMSMessage
 from .serializers import SalespersonRegisterSerializer, SalesmanSerializer, SalesmanPasswordResetSerializer
-from .models import Salesman
+from .models import Salesman, VerificationCodes
 # Create your views here.
 
 
@@ -39,7 +40,7 @@ def create_user(request):
 
 
 @api_view(['GET'])
-def get_verification_code(request, user_id):
+def resend_verification_code(request, user_id):
 
     try:
 
@@ -47,7 +48,7 @@ def get_verification_code(request, user_id):
 
         verify_code = user.verificationcodes
 
-    except:
+    except ObjectDoesNotExist:
         return Response(status=status.HTTP_404_NOT_FOUND)
 
     if verify_code.num_requested == 3:
@@ -60,15 +61,32 @@ def get_verification_code(request, user_id):
 
     # code = verify_code.code
 
-    Message().send_verification_code(user.phone, verify_code.code)
+    SMSMessage().send_verification_code(user.phone, verify_code.code)
 
     return Response(status=status.HTTP_200_OK)
 
 
+@api_view(['PUT'])
+def verify_user(request, code):
+
+    try:
+        verify_code = VerificationCodes.objects.get(code=code)
+
+    except ObjectDoesNotExist:
+        return Response(status=status.HTTP_404_NOT_FOUND)
+
+    verify_code.businessman.is_verified = True
+
+    verify_code.businessman.save()
+
+    verify_code.delete()
+
+    return Response(status=status.HTTP_204_NO_CONTENT)
+
 
 @api_view(['PUT'])
 @permission_classes([permissions.IsAuthenticated])
-def salesman_reset_password(request):
+def reset_user_password(request):
 
     """
     Resets the password of the user. Needs JWT token

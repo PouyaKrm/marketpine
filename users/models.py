@@ -30,7 +30,7 @@ class VerificationCodes(models.Model):
     businessman = models.OneToOneField(Salesman, on_delete=models.CASCADE)
     expiration_time = models.DateTimeField()
     num_requested = models.IntegerField(default=1)
-    code = models.CharField(max_length=8)
+    code = models.CharField(max_length=8, unique=True)
 
     def __str__(self):
         return self.code
