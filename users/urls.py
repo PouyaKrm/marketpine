@@ -7,8 +7,9 @@ urlpatterns = [
     path('salesman/verify/resend/<int:user_id>/', views.resend_verification_code),
     re_path(r'^salesman/verify/(?P<code>\d{5})/$', views.verify_user),
     path('salesman/login/', obtain_jwt_token),
-    path('salesman/profile/', views.SalesmanAPIView.as_view()),
+    path('salesman/profile/', views.SalesmanRetrieveUpdateAPIView.as_view()),
     path('salesman/resetpassword/', views.reset_user_password),
+    path('salesman/forgetpassword/', views.user_forget_password),
 
 
 ]

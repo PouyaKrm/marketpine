@@ -5,9 +5,8 @@ from rest_framework import permissions
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from django.contrib.auth import authenticate
-
 from .message import SMSMessage
-from .serializers import SalespersonRegisterSerializer, SalesmanSerializer, SalesmanPasswordResetSerializer
+from .serializers import SalespersonRegisterSerializer, SalesmanRetrieveSerializer, SalesmanPasswordResetSerializer, SalesmanForgetPasswordSerializer
 from .models import Salesman, VerificationCodes
 # Create your views here.
 
@@ -35,8 +34,9 @@ def create_user(request):
 
     user = serializer.save()
 
-
     return Response(data={'id': user.id}, status=status.HTTP_201_CREATED)
+
+
 
 
 @api_view(['GET'])
@@ -66,6 +66,9 @@ def resend_verification_code(request, user_id):
     return Response(status=status.HTTP_200_OK)
 
 
+
+
+
 @api_view(['PUT'])
 def verify_user(request, code):
 
@@ -82,6 +85,9 @@ def verify_user(request, code):
     verify_code.delete()
 
     return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+
 
 
 @api_view(['PUT'])
@@ -106,7 +112,36 @@ def reset_user_password(request):
     return Response(status=status.HTTP_204_NO_CONTENT)
 
 
-class SalesmanAPIView(APIView):
+
+
+
+
+@api_view(['PUT'])
+def user_forget_password(request):
+
+    serializer = SalesmanForgetPasswordSerializer(data=request.data)
+
+    if not serializer.is_valid():
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+
+        user = Salesman.objects.get(username=request.data['username'], phone=request.data['phone'])
+
+    except ObjectDoesNotExist:
+
+        return Response(status=status.HTTP_404_NOT_FOUND)
+
+    serializer.update(user, serializer.validated_data)
+
+    return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+
+
+
+class SalesmanRetrieveUpdateAPIView(APIView):
 
     """
     put:
@@ -123,7 +158,7 @@ class SalesmanAPIView(APIView):
 
     def put(self, request, *args, **kwargs):
 
-        serializer = SalesmanSerializer(data=request.data)
+        serializer = SalesmanRetrieveSerializer(data=request.data)
 
         serializer._context = {'request': self.request}
 
@@ -141,7 +176,7 @@ class SalesmanAPIView(APIView):
 
     def get(self, request, *args, **kwargs):
 
-        serializer = SalesmanSerializer(self.request.user)
+        serializer = SalesmanRetrieveSerializer(self.request.user)
 
         return Response(serializer.data, status=status.HTTP_200_OK)
 

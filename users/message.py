@@ -40,3 +40,7 @@ class SMSMessage:
     def send_verification_code(self, receptor, code, sender=''):
 
         return self.send_message(receptor, message=f'your verification code is: {code}')
+
+    def send_new_password(self, receptor, new_password):
+
+        return self.send_message(receptor, f'your new password is:\n{new_password}')
