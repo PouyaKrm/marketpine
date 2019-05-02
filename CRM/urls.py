@@ -17,7 +17,7 @@ from django.contrib import admin
 from django.urls import path, include
 from faker import Faker
 
-from users import urls as salesman_url, models, tasks
+from users import urls as salesman_url, models
 from customers import urls as customer_url
 
 from rest_framework.documentation import include_docs_urls
@@ -32,5 +32,3 @@ urlpatterns = [
     # path('docs2/', schema_view),
     path('api/salesman/customers/', include(customer_url))
 ]
-
-tasks.delete_expired_codes(repeat_until=None)
