@@ -2,8 +2,7 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="022ad4a2-6aaf-42aa-8629-ef925124f999" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/users/views.py" beforeDir="false" afterPath="$PROJECT_DIR$/users/views.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/CRM/settings.py" beforeDir="false" afterPath="$PROJECT_DIR$/CRM/settings.py" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -33,11 +32,11 @@
   </component>
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
-      <file pinned="false" current-in-tab="false">
+      <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/CRM/settings.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="663">
-              <caret line="43" column="29" selection-start-line="43" selection-start-column="29" selection-end-line="43" selection-end-column="29" />
+            <state relative-caret-position="358">
+              <caret line="47" lean-forward="true" selection-start-line="47" selection-end-line="47" />
               <folding>
                 <element signature="e#301#316#0" expanded="true" />
               </folding>
@@ -63,11 +62,11 @@
           </provider>
         </entry>
       </file>
-      <file pinned="false" current-in-tab="true">
+      <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/users/views.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="-153">
-              <caret line="120" lean-forward="true" selection-start-line="120" selection-end-line="120" />
+            <state relative-caret-position="2040">
+              <caret line="120" selection-start-line="120" selection-end-line="120" />
               <folding>
                 <element signature="e#0#53#0" expanded="true" />
               </folding>
@@ -178,7 +177,6 @@
         <option value="$PROJECT_DIR$/users/admin.py" />
         <option value="$PROJECT_DIR$/CRM/urls.py" />
         <option value="$PROJECT_DIR$/customers/views.py" />
-        <option value="$PROJECT_DIR$/CRM/settings.py" />
         <option value="$PROJECT_DIR$/sms/message.py" />
         <option value="$PROJECT_DIR$/users/tasks.py" />
         <option value="$PROJECT_DIR$/users/message.py" />
@@ -187,6 +185,7 @@
         <option value="$APPLICATION_CONFIG_DIR$/consoles/db/9a5d792d-140a-4277-a276-4c2387c7b57f/console.sql" />
         <option value="$PROJECT_DIR$/users/serializers.py" />
         <option value="$PROJECT_DIR$/users/views.py" />
+        <option value="$PROJECT_DIR$/CRM/settings.py" />
       </list>
     </option>
   </component>
@@ -202,7 +201,6 @@
       <foldersAlwaysOnTop value="true" />
     </navigator>
     <panes>
-      <pane id="Scope" />
       <pane id="ProjectPane">
         <subPane>
           <expand>
@@ -234,6 +232,7 @@
           <select />
         </subPane>
       </pane>
+      <pane id="Scope" />
     </panes>
   </component>
   <component name="PropertiesComponent">
@@ -338,6 +337,7 @@
       <workItem from="1556389711227" duration="10173000" />
       <workItem from="1556480372870" duration="5544000" />
       <workItem from="1556772720208" duration="29000" />
+      <workItem from="1556777645458" duration="268000" />
     </task>
     <task id="LOCAL-00001" summary="documentation added to the project">
       <created>1555836260780</created>
@@ -357,7 +357,7 @@
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="99650000" />
+    <option name="totallyTimeSpent" value="99918000" />
   </component>
   <component name="TodoView">
     <todo-panel id="selected-file">
@@ -370,8 +370,9 @@
   </component>
   <component name="ToolWindowManager">
     <frame x="-7" y="-7" width="1550" height="838" extended-state="6" />
+    <editor active="true" />
     <layout>
-      <window_info content_ui="combo" id="Project" order="0" visible="true" weight="0.29932886" />
+      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.3033557" />
       <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
       <window_info id="Favorites" order="2" side_tool="true" />
       <window_info anchor="bottom" id="Database Console" order="0" weight="0.3286119" />
@@ -386,7 +387,7 @@
       <window_info anchor="bottom" id="Version Control" order="9" weight="0.3286119" />
       <window_info anchor="bottom" id="Database Changes" order="10" weight="0.3286119" />
       <window_info anchor="bottom" id="Event Log" order="11" side_tool="true" />
-      <window_info anchor="bottom" id="Terminal" order="12" weight="0.3286119" />
+      <window_info anchor="bottom" id="Terminal" order="12" visible="true" weight="0.3286119" />
       <window_info anchor="bottom" id="Python Console" order="13" weight="0.3286119" />
       <window_info anchor="bottom" id="manage.py@CRM" order="14" weight="0.3286119" />
       <window_info anchor="right" id="Commander" internal_type="SLIDING" order="0" type="SLIDING" weight="0.4" />
@@ -607,16 +608,6 @@
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/sms/views.py" />
-    <entry file="file://$PROJECT_DIR$/CRM/settings.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="663">
-          <caret line="43" column="29" selection-start-line="43" selection-start-column="29" selection-end-line="43" selection-end-column="29" />
-          <folding>
-            <element signature="e#301#316#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/CRM/urls.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="323">
@@ -690,10 +681,20 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/users/views.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-153">
-          <caret line="120" lean-forward="true" selection-start-line="120" selection-end-line="120" />
+        <state relative-caret-position="2040">
+          <caret line="120" selection-start-line="120" selection-end-line="120" />
           <folding>
             <element signature="e#0#53#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/CRM/settings.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="358">
+          <caret line="47" lean-forward="true" selection-start-line="47" selection-end-line="47" />
+          <folding>
+            <element signature="e#301#316#0" expanded="true" />
           </folding>
         </state>
       </provider>

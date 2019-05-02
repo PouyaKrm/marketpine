@@ -35,6 +35,9 @@ ALLOWED_HOSTS = []
 INSTALLED_APPS = [
     'rest_framework',
     'users',
+    'corsheaders',
+    'background_task',
+    'rest_framework_swagger',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -42,8 +45,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework_swagger',
-    'corsheaders',
-    'background_task',
+
 ]
 
 MIDDLEWARE = [
