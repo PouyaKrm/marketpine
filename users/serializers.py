@@ -1,6 +1,6 @@
 from django.core.validators import RegexValidator
 from rest_framework import serializers, validators
-
+from django.contrib.auth.base_user import BaseUserManager
 from users.message import SMSMessage
 from .models import Salesman, VerificationCodes
 import re, secrets, datetime
@@ -121,7 +121,7 @@ class SalesmanPasswordResetSerializer(serializers.ModelSerializer):
 
 
 
-class SalesmanSerializer(serializers.ModelSerializer):
+class SalesmanRetrieveSerializer(serializers.ModelSerializer):
 
     phone = serializers.CharField(max_length=15, validators=[phone_validator])
 
@@ -181,3 +181,31 @@ class SalesmanSerializer(serializers.ModelSerializer):
 
 
 
+
+class SalesmanForgetPasswordSerializer(serializers.ModelSerializer):
+
+    phone = serializers.CharField(max_length=15, validators=[phone_validator])
+
+    username = serializers.CharField(max_length=150)
+
+    class Meta:
+
+        model = Salesman
+        fields = [
+            'username',
+            'phone'
+        ]
+
+
+
+    def update(self, instance, validated_data):
+
+        new_password = BaseUserManager().make_random_password(length=8)
+
+        SMSMessage().send_new_password(instance.phone, new_password)
+
+        instance.set_password(new_password)
+
+        instance.save()
+
+        return instance
