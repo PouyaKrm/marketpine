@@ -1,10 +1,8 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser, AbstractBaseUser, BaseUserManager
 
-# Create your models here.
 
-
-class Salesman(AbstractUser):
+class Businessman(AbstractUser):
 
     phone = models.CharField(max_length=15)
     address = models.TextField(max_length=500, blank=True, null=True)
@@ -14,6 +12,7 @@ class Salesman(AbstractUser):
     instagram_access = models.BooleanField(default=False)
     instagram_access_expire = models.DateTimeField(blank=True, null=True)
     is_verified = models.BooleanField(default=False)
+
 
     class Meta:
 
@@ -27,7 +26,7 @@ class Salesman(AbstractUser):
 
 
 class VerificationCodes(models.Model):
-    businessman = models.OneToOneField(Salesman, on_delete=models.CASCADE)
+    businessman = models.OneToOneField(Businessman, on_delete=models.CASCADE)
     expiration_time = models.DateTimeField()
     num_requested = models.IntegerField(default=1)
     code = models.CharField(max_length=8, unique=True)
@@ -62,15 +61,14 @@ class CustomerManager(BaseUserManager):
 class Customer(AbstractBaseUser):
 
     password = None
-    phone = models.CharField(max_length=15, unique=True)
+    phone = models.CharField(max_length=15)
     register_date = models.DateTimeField(auto_now_add=True)
     first_name = models.CharField(max_length=40, blank=True, null=True)
     last_name = models.CharField(max_length=40, blank=True, null=True)
     telegram_id = models.CharField(max_length=40, null=True, blank=True)
     instagram_id = models.CharField(max_length=40, null=True, blank=True)
-    salesmen = models.ManyToManyField(Salesman, through='SalesmenCustomer', related_name="customers",
-                                      related_query_name='salesman'
-                                      )
+    businessman = models.ForeignKey(Businessman,  related_name="customers",
+                                    on_delete=models.CASCADE, related_query_name='businessman')
     email = models.EmailField(blank=True, null=True, unique=True)
     is_active = models.BooleanField(default=False)
     is_staff = models.BooleanField(default=False)
@@ -87,26 +85,28 @@ class Customer(AbstractBaseUser):
 
     class Meta:
 
-        db_table = 'customer'
+        db_table = 'customers'
+
+        unique_together = ('businessman', 'phone')
 
     def __str__(self):
 
         return self.phone
 
 
-class SalesmenCustomer(models.Model):
-
-    customer = models.ForeignKey(Customer, on_delete=models.CASCADE
-                                   )
-    salesman = models.ForeignKey(Salesman, on_delete=models.CASCADE)
-    register_date = models.DateTimeField(auto_now_add=True)
-    is_active = models.BooleanField(default=False)
-
-    class Meta:
-
-        db_table = 'salesman_customer'
-        unique_together = ('customer', 'salesman')
-
-    def __str__(self):
-
-        return f"{self.salesman.username}-{self.customer.phone}"
+# class SalesmenCustomer(models.Model):
+#
+#     customer = models.ForeignKey(Customer, on_delete=models.CASCADE
+#                                    )
+#     salesman = models.ForeignKey(Businessman, on_delete=models.CASCADE)
+#     register_date = models.DateTimeField(auto_now_add=True)
+#     is_active = models.BooleanField(default=False)
+#
+#     class Meta:
+#
+#         db_table = 'salesman_customer'
+#         unique_together = ('customer', 'salesman')
+#
+#     def __str__(self):
+#
+#         return f"{self.salesman.username}-{self.customer.phone}"

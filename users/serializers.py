@@ -1,8 +1,10 @@
 from django.core.validators import RegexValidator
 from rest_framework import serializers, validators
 from django.contrib.auth.base_user import BaseUserManager
+
+from common.util.custom_validators import phone_validator
 from users.message import SMSMessage
-from .models import Salesman, VerificationCodes
+from .models import Businessman, VerificationCodes
 import re, secrets, datetime
 
 PhonenumberValidator = RegexValidator(regex=r'^\+?1?\d{11, 12}$',
@@ -10,24 +12,17 @@ PhonenumberValidator = RegexValidator(regex=r'^\+?1?\d{11, 12}$',
                                               " Up to 15 digits allowed.")
 
 
-def phone_validator(value):
 
-    result = re.match("^(\\+98|0)9\\d{9}$", value)
-
-    if result is None:
-        raise serializers.ValidationError("phone number is invalid")
-
-
-class SalespersonRegisterSerializer(serializers.ModelSerializer):
+class BusinessmanRegisterSerializer(serializers.ModelSerializer):
 
     password2 = serializers.CharField(min_length=8, max_length=16, style={'input_type': 'password', 'write_only': True})
     password = serializers.CharField(min_length=8, max_length=16, style={'input_type': 'password', 'write_only': True})
     email = serializers.EmailField(validators=[
-        validators.UniqueValidator(queryset=Salesman.objects.all(), message="this email address is already taken")])
-    phone = serializers.CharField(max_length=15, validators=[phone_validator, validators.UniqueValidator(queryset=Salesman.objects.all(), message="phone number must be unique")])
+        validators.UniqueValidator(queryset=Businessman.objects.all(), message="this email address is already taken")])
+    phone = serializers.CharField(max_length=15, validators=[validators.UniqueValidator(queryset=Businessman.objects.all(), message="phone number must be unique")])
 
     class Meta:
-        model = Salesman
+        model = Businessman
         fields = [
 
             'username',
@@ -55,7 +50,7 @@ class SalespersonRegisterSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
 
-        user = Salesman(**validated_data)
+        user = Businessman(**validated_data)
         user.set_password(validated_data['password'])
         user.is_active = True
         user.save()
@@ -81,7 +76,7 @@ class SalespersonRegisterSerializer(serializers.ModelSerializer):
         return user
 
 
-class SalesmanPasswordResetSerializer(serializers.ModelSerializer):
+class BusinessmanPasswordResetSerializer(serializers.ModelSerializer):
 
     old_password = serializers.CharField(min_length=8, max_length=16,
                                          style={'input_type': 'password', 'write_only': True})
@@ -94,7 +89,7 @@ class SalesmanPasswordResetSerializer(serializers.ModelSerializer):
 
     class Meta:
 
-        model = Salesman
+        model = Businessman
         fields = [
             'old_password',
             'new_password',
@@ -121,13 +116,17 @@ class SalesmanPasswordResetSerializer(serializers.ModelSerializer):
 
 
 
-class SalesmanRetrieveSerializer(serializers.ModelSerializer):
+class BusinessmanRetrieveSerializer(serializers.ModelSerializer):
 
-    phone = serializers.CharField(max_length=15, validators=[phone_validator])
+    # phone = serializers.CharField(max_length=15, validators=[phone_validator])
+
+    email = serializers.EmailField(validators=[
+        validators.UniqueValidator(queryset=Businessman.objects.all(), message="this email address is already taken")])
+
 
     class Meta:
 
-        model = Salesman
+        model = Businessman
         fields = [
             'username',
             'first_name',
@@ -141,18 +140,18 @@ class SalesmanRetrieveSerializer(serializers.ModelSerializer):
         ]
 
         extra_kwargs = {'username': {'read_only': True}, 'bot_access': {'read_only': True},
-                        'instagram_access': {'read_only': True}}
+                        'instagram_access': {'read_only': True}, 'phone': {'read_only': True}}
 
-    def validate_phone(self, value):
-
-        logged_in_user = self.context['request'].user
-
-        users_num = Salesman.objects.all().filter(phone=value).exclude(id=logged_in_user.id).count()
-
-        if users_num is not 0:
-            raise serializers.ValidationError('this phone number is already taken')
-
-        return value
+    # def validate_phone(self, value):
+    #
+    #     logged_in_user = self.context['request'].user
+    #
+    #     users_num = Businessman.objects.all().filter(phone=value).exclude(id=logged_in_user.id).count()
+    #
+    #     if users_num is not 0:
+    #         raise serializers.ValidationError('this phone number is already taken')
+    #
+    #     return value
 
     # def validate_email(self, value):
 
@@ -160,7 +159,7 @@ class SalesmanRetrieveSerializer(serializers.ModelSerializer):
 
         logged_in_user = self.context['request'].user
 
-        users_num = Salesman.objects.all().filter(email=value).exclude(id=logged_in_user.id).count()
+        users_num = Businessman.objects.all().filter(email=value).exclude(id=logged_in_user.id).count()
 
         if users_num is not 0:
             raise serializers.ValidationError('this email address is already taken')
@@ -168,8 +167,6 @@ class SalesmanRetrieveSerializer(serializers.ModelSerializer):
         return value
 
     def update(self, instance, validated_data):
-
-        phone = validated_data.pop('phone')
 
         for key, value in validated_data.items():
 
@@ -182,15 +179,15 @@ class SalesmanRetrieveSerializer(serializers.ModelSerializer):
 
 
 
-class SalesmanForgetPasswordSerializer(serializers.ModelSerializer):
+class BusinessmanForgetPasswordSerializer(serializers.ModelSerializer):
 
-    phone = serializers.CharField(max_length=15, validators=[phone_validator])
+    # phone = serializers.CharField(max_length=15, validators=[phone_validator])
 
     username = serializers.CharField(max_length=150)
 
     class Meta:
 
-        model = Salesman
+        model = Businessman
         fields = [
             'username',
             'phone'
@@ -209,3 +206,23 @@ class SalesmanForgetPasswordSerializer(serializers.ModelSerializer):
         instance.save()
 
         return instance
+
+
+
+class BusinessmanLoginSerializer(serializers.ModelSerializer):
+
+    username = serializers.CharField(max_length=40)
+
+    class Meta:
+
+        model = Businessman
+
+        fields = [
+            'username',
+            'password'
+        ]
+
+        extra_kwargs = {'password': {'write_only': True}}
+
+
+
