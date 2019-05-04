@@ -3,6 +3,7 @@ from telegram.bot import Update
 from telegram.ext import CommandHandler
 import logging
 
+# TODO: put logs in some logs file
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                     level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -20,7 +21,9 @@ def error(bot, update, error):
 def main():
     """Start the bot."""
     # Create the EventHandler and pass it your bot's token.
-    updater = Updater("616701770:AAELU_nMtn8xDAo-8e8OORrp7vJF3P1PQEo") # @armor_test_bot
+    TOKEN_ARMOR = "616701770:AAELU_nMtn8xDAo-8e8OORrp7vJF3P1PQEo" # @armor_test_bot
+
+    updater = Updater(TOKEN_ARMOR)
 
     # Get the dispatcher to register handlers
     dp = updater.dispatcher
