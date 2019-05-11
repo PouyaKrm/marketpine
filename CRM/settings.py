@@ -36,6 +36,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'users',
     'corsheaders',
+    'groups',
     'background_task',
     'rest_framework_swagger',
     'django.contrib.admin',
