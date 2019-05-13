@@ -32,5 +32,3 @@ urlpatterns = [
     # path('docs2/', schema_view),
     path('api/salesman/customers/', include(customer_url))
 ]
-
-

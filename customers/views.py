@@ -1,16 +1,14 @@
 from django.shortcuts import render
 
-from rest_framework import generics, mixins, permissions, status
-from rest_framework.decorators import api_view, permission_classes
-from rest_framework.generics import RetrieveDestroyAPIView, RetrieveAPIView
-from rest_framework.response import Response
-from rest_framework.views import APIView
-
-from .serializers import CustomerSerializer, SalesmenCustomerSerializer
-from users.models import Customer, Salesman, SalesmenCustomer
+from rest_framework import generics, mixins, permissions
+from rest_framework.generics import  RetrieveAPIView
 
 
-class SalesmanCustomerListAPIView(generics.ListAPIView, mixins.CreateModelMixin):
+from .serializers import CustomerSerializer
+
+
+
+class BusinessmanCustomerListAPIView(generics.ListAPIView, mixins.CreateModelMixin):
 
     """
     get:
@@ -20,7 +18,7 @@ class SalesmanCustomerListAPIView(generics.ListAPIView, mixins.CreateModelMixin)
     Registers a new customer for specific user. Needs JWT token
     """
 
-    serializer_class = SalesmenCustomerSerializer
+    serializer_class = CustomerSerializer
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request, *args, **kwargs):
@@ -28,14 +26,15 @@ class SalesmanCustomerListAPIView(generics.ListAPIView, mixins.CreateModelMixin)
 
     def get_queryset(self):
 
-        return SalesmenCustomer.objects.filter(salesman=self.request.user)
+        return self.request.user.customers.all()
 
     def get_serializer_context(self):
 
-        return {'request': self.request}
+        return {'user': self.request.user}
 
 
-class SalesmanCustomerRetrieveAPIView(mixins.DestroyModelMixin, RetrieveAPIView):
+
+class BusinessmanCustomerRetrieveAPIView(mixins.DestroyModelMixin, RetrieveAPIView):
 
     """
     get:
@@ -45,12 +44,12 @@ class SalesmanCustomerRetrieveAPIView(mixins.DestroyModelMixin, RetrieveAPIView)
     Deletes specific customer. Needs JWT token.
     """
 
-    serializer_class = SalesmenCustomerSerializer
+    serializer_class = CustomerSerializer
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
 
-        return SalesmenCustomer.objects.filter(salesman=self.request.user)
+        return self.request.user.customers.all()
 
     def delete(self, request, *args, **kwargs):
         return self.destroy(request, *args, **kwargs)

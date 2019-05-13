@@ -1,17 +1,17 @@
 from django.contrib.auth.forms import UserCreationForm, UserChangeForm
-from .models import Salesman, Customer
+from .models import Businessman, Customer
 from django import forms
 
 class SalesCreationFrom(UserCreationForm):
 
     class Meta(UserCreationForm):
-        model = Salesman
+        model = Businessman
         fields = '__all__'
 
 class SalesmanChangeForm(UserChangeForm):
 
     class Meta:
-        model = Salesman
+        model = Businessman
         exclude = 'password'
 
 
