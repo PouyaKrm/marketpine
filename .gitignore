@@ -1,3 +1,4 @@
+*.session
 .idea
 local_settings.py
 staticfiles
@@ -34,7 +35,7 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
+# lib/
 lib64/
 parts/
 sdist/
