@@ -1,3 +1,0 @@
-[submodule "common\\lib\\tgintegration"]
-	path = common\\lib\\tgintegration
-	url = git@github.com:AriaMoradi/tgintegration.git

@@ -39,7 +39,7 @@ six==1.12.0
 sqlparse==0.3.0
 text-unidecode==1.2
 TgCrypto==1.1.1
--e git+git@github.com:AriaMoradi/tgintegration.git@master#egg=tgintegration&subdirectory=common\lib\tgintegration
+-e "git+git@github.com:AriaMoradi/tgintegration.git#egg=tgintegration"
 typed-ast==1.3.5
 typing-extensions==3.7.2
 uritemplate==3.0.0
