@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     'corsheaders',
     'groups',
     'background_task',
+    'smspanel',
     'rest_framework_swagger',
     'django.contrib.admin',
     'django.contrib.auth',
