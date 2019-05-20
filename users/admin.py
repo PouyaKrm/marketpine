@@ -4,7 +4,14 @@ from .models import Businessman, Customer, VerificationCodes
 
 
 admin.site.register(Businessman, UserAdmin)
-admin.site.register(VerificationCodes)
+
+
+class VerificationCodeAdminModel(admin.ModelAdmin):
+
+    list_display = ['code', 'businessman', 'expiration_time']
+
+
+admin.site.register(VerificationCodes, VerificationCodeAdminModel)
 
 class CustomerAdmin(admin.ModelAdmin):
     exclude = ['last_login']

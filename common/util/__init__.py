@@ -4,6 +4,8 @@ from rest_framework_jwt.settings import api_settings
 jwt_payload_handler = api_settings.JWT_PAYLOAD_HANDLER
 jwt_encode_handler = api_settings.JWT_ENCODE_HANDLER
 
+AVAILABLE_TEMPLATE_CONTEXT = {'phone': '09582562418', 'telegram_id': '@mohammad12', 'businessman': ''}
+
 
 def render_template(template: str, context: dict):
     """

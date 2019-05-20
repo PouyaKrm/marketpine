@@ -11,13 +11,13 @@ class SMSMessage:
 
         try:
 
-            self.api.sms_send(params)
+            return self.api.sms_send(params)
         except APIException as e:
             return e
         except HTTPException as e:
             return e
 
-        return None
+
 
     def send_message(self, receptor, message, sender=''):
 
@@ -27,15 +27,14 @@ class SMSMessage:
             'message': f'{message}'
         }
 
-        try:
+        # try:
 
-            self.api.sms_send(params)
-        except APIException as e:
-            return e
-        except HTTPException as e:
-            return e
+        return self.api.sms_send(params)
+        # except APIException as e:
+        #     return e
+        # except HTTPException as e:
+        #     return e
 
-        return None
 
     def send_verification_code(self, receptor, code, sender=''):
 
