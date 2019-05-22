@@ -2,10 +2,9 @@ from django.core.validators import RegexValidator
 from rest_framework import serializers, validators
 from django.contrib.auth.base_user import BaseUserManager
 
-from common.util.custom_validators import phone_validator
-from users.message import SMSMessage
+from common.util.message import SMSMessage
 from .models import Businessman, VerificationCodes
-import re, secrets, datetime
+import secrets, datetime
 
 PhonenumberValidator = RegexValidator(regex=r'^\+?1?\d{11, 12}$',
                                       message="Phone number must be entered in the format: '+999999999'."
