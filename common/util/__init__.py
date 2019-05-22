@@ -43,3 +43,4 @@ def custom_login_payload(user, **kwargs):
     kwargs['token'] = token
 
     return kwargs
+
