@@ -20,6 +20,7 @@ from faker import Faker
 from users import urls as salesman_url, models
 from customers import urls as customer_url
 from groups import urls as group_url
+from smspanel import urls as smspanel_url
 
 from rest_framework.documentation import include_docs_urls
 from rest_framework_swagger.views import get_swagger_view
@@ -33,4 +34,5 @@ urlpatterns = [
     # path('docs2/', schema_view),
     path('api/salesman/customers/', include(customer_url)),
     path('api/salesman/customers/groups/', include(group_url)),
+    path('api/salesman/smspanel/', include(smspanel_url)),
 ]
