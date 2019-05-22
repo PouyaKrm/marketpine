@@ -34,6 +34,30 @@ class SMSTemplateSerializer(serializers.ModelSerializer):
 
 class SentSMSSerializer(serializers.ModelSerializer):
 
+    def send_plain(self, customers, content):
+
+        receptors = ''
+
+        for c in customers:
+            receptors += c.phone + ", "
+
+        sms = SMSMessage()
+
+        return sms.send_message(receptor=receptors, message=content)
+
+    def send_by_template(self, template, customers):
+        context = AVAILABLE_TEMPLATE_CONTEXT
+        context.update(business_name=self.context['user'].business_name)
+
+        sms = SMSMessage()
+
+        for c in customers:
+            context.update(phone=c.phone, telegram_id=c.telegram_id, instagram_id=c.instagram_id)
+            message = render_template(template, context)
+            sms.send_message(receptor=c.phone, message=message)
+
+        print(AVAILABLE_TEMPLATE_CONTEXT)
+
     class Meta:
 
         model = SentSMS
@@ -56,19 +80,17 @@ class SentSMSSerializer(serializers.ModelSerializer):
     def create(self, validated_data: dict):
 
         user = self.context['user']
+        is_plain = self.context['is_plain']
 
         customers = validated_data.pop('customers')
 
-        receptors = ""
+        if is_plain is True:
+            self.send_plain(customers, validated_data.get('content'))
 
-        for c in customers:
-            receptors += c.phone + ", "
+        else:
+            self.send_by_template(validated_data.get('content'), customers)
 
-        sms = SMSMessage()
-
-        sms.send_message(receptor=receptors, message=validated_data.get('content'))
-
-        obj = SentSMS.objects.create(businessman=user, **validated_data)
+        obj = SentSMS.objects.create(businessman=user, is_plain_sms=is_plain, **validated_data)
 
         for c in customers:
             obj.customers.add(c)
@@ -76,6 +98,10 @@ class SentSMSSerializer(serializers.ModelSerializer):
         obj.save()
 
         return obj
+
+
+
+
 
 
 

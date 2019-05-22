@@ -17,10 +17,11 @@ class SMSTemplate(models.Model):
 
 
 class SentSMS(models.Model):
-    content = models.CharField(max_length=150)
+    content = models.CharField(max_length=300)
     businessman = models.ForeignKey(Businessman, on_delete=models.CASCADE)
     sent_date = models.DateTimeField(auto_now_add=True)
     customers = models.ManyToManyField(Customer)
+    is_plain_sms = models.BooleanField(default=False)
 
 
 # class CustomerSentSMS(models.Model):
