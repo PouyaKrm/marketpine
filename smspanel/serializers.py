@@ -2,7 +2,7 @@ from django.db.models.base import Model
 from django.template import TemplateSyntaxError
 from rest_framework import serializers
 from .models import SMSTemplate, SentSMS
-from common.util import render_template, AVAILABLE_TEMPLATE_CONTEXT
+from common.util import render_template, get_fake_context, render_template_with_customer_data
 from common.util.message import SMSMessage
 
 
@@ -20,7 +20,7 @@ class SMSTemplateSerializer(serializers.ModelSerializer):
     def validate_content(self, value):
 
         try:
-            render_template(value, AVAILABLE_TEMPLATE_CONTEXT)
+            render_template(value, get_fake_context(self.context['user']))
 
         except TemplateSyntaxError:
             raise serializers.ValidationError('invalid template')
@@ -46,17 +46,14 @@ class SentSMSSerializer(serializers.ModelSerializer):
         return sms.send_message(receptor=receptors, message=content)
 
     def send_by_template(self, template, customers):
-        context = AVAILABLE_TEMPLATE_CONTEXT
-        context.update(business_name=self.context['user'].business_name)
 
         sms = SMSMessage()
 
         for c in customers:
-            context.update(phone=c.phone, telegram_id=c.telegram_id, instagram_id=c.instagram_id)
-            message = render_template(template, context)
+            message = render_template_with_customer_data(template, c)
             sms.send_message(receptor=c.phone, message=message)
 
-        print(AVAILABLE_TEMPLATE_CONTEXT)
+
 
     class Meta:
 
