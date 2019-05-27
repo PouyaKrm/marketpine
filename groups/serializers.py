@@ -1,7 +1,7 @@
 from django.db.models import Model
 from rest_framework import serializers
 
-from users.models import Customer, Businessman
+from users.models import Customer
 from .models import BusinessmanGroups
 
 
@@ -37,6 +37,7 @@ class CustomerSerializer(serializers.ModelSerializer):
     class Meta:
         model = Customer
         fields = [
+            'id',
             'phone',
             'telegram_id',
             'instagram_id'

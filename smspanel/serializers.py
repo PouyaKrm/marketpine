@@ -53,8 +53,6 @@ class SentSMSSerializer(serializers.ModelSerializer):
             message = render_template_with_customer_data(template, c)
             sms.send_message(receptor=c.phone, message=message)
 
-
-
     class Meta:
 
         model = SentSMS
@@ -95,6 +93,32 @@ class SentSMSSerializer(serializers.ModelSerializer):
         obj.save()
 
         return obj
+
+
+class SentSMSRetrieveForCustomer(serializers.ModelSerializer):
+
+    rendered_content = serializers.SerializerMethodField(read_only=True)
+
+    def get_rendered_content(self, obj: SentSMS):
+
+        if not obj.is_plain_sms:
+
+            return render_template_with_customer_data(obj.content, self.context['customer'])
+
+        return None
+
+    class Meta:
+
+        model = SentSMS
+        fields = [
+            'id',
+            'content',
+            'is_plain_sms',
+            'rendered_content',
+        ]
+
+
+
 
 
 
