@@ -5,10 +5,10 @@ from django.shortcuts import render
 from rest_framework import generics, mixins, permissions, status, schemas
 from rest_framework.decorators import api_view, schema, permission_classes
 from rest_framework.response import Response
-from rest_framework.schemas import ManualSchema
 
-from .serializers import SMSTemplateSerializer, SentSMSSerializer
-from .models import SMSTemplate, SentSMS
+from users.models import Customer
+from .serializers import SMSTemplateSerializer, SentSMSSerializer, SentSMSRetrieveForCustomer
+from .models import SMSTemplate
 
 
 # Create your views here.
@@ -44,6 +44,9 @@ class SMSTemplateRetrieveAPIView(generics.RetrieveAPIView, mixins.UpdateModelMix
     def delete(self, request, *args, **kwargs):
         return self.destroy(request, *args, **kwargs)
 
+    def get_serializer_context(self):
+        return {'user': self.request.user}
+
 
 @api_view(['POST'])
 @permission_classes([permissions.IsAuthenticated])
@@ -72,8 +75,6 @@ def send_sms_by_template(request, template_id):
         return Response(status=status.HTTP_404_NOT_FOUND)
 
     request.data['content'] = template.content
-    # obj = SentSMS(data=)
-
 
     serializer = SentSMSSerializer(data=request.data)
 
@@ -87,7 +88,22 @@ def send_sms_by_template(request, template_id):
     return Response(status=status.HTTP_204_NO_CONTENT)
 
 
+@api_view(['GET'])
+@permission_classes([permissions.IsAuthenticated])
+def get_customer_sent_sms(request, customer_id):
 
+    try:
+        customer = Customer.objects.get(businessman=request.user, id=customer_id)
 
+    except ObjectDoesNotExist:
+        return Response({'details': ['customer does not exist']}, status=status.HTTP_404_NOT_FOUND)
+
+    sms = customer.sentsms_set.all()
+
+    serializer = SentSMSRetrieveForCustomer(sms.all(), many=True)
+
+    serializer._context = {'customer': customer}
+
+    return Response(serializer.data, status=status.HTTP_200_OK)
 
 
