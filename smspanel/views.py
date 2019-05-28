@@ -44,6 +44,9 @@ class SMSTemplateRetrieveAPIView(generics.RetrieveAPIView, mixins.UpdateModelMix
     def delete(self, request, *args, **kwargs):
         return self.destroy(request, *args, **kwargs)
 
+    def get_serializer_context(self):
+        return {'user': self.request.user}
+
 
 @api_view(['POST'])
 @permission_classes([permissions.IsAuthenticated])
