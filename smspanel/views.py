@@ -8,7 +8,7 @@ from rest_framework.response import Response
 
 from users.models import Customer
 from .serializers import SMSTemplateSerializer, SentSMSSerializer, SentSMSRetrieveForCustomer
-from .models import SMSTemplate
+from .models import SMSTemplate, SentSMS
 
 
 # Create your views here.
@@ -86,6 +86,14 @@ def send_sms_by_template(request, template_id):
     serializer.create(serializer.validated_data)
 
     return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+@api_view(['GET'])
+@permission_classes([permissions.IsAuthenticated])
+def get_businessman_sent_sms(request):
+
+    serializer = SentSMSSerializer(SentSMS.objects.filter(businessman=request.user).all(), many=True)
+    return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 @api_view(['GET'])
