@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     'corsheaders',
     'groups',
     'smspanel',
+    'festivals',
     'rest_framework_swagger',
     'django.contrib.admin',
     'django.contrib.auth',
