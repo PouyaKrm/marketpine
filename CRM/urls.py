@@ -21,6 +21,7 @@ from users import urls as salesman_url, models
 from customers import urls as customer_url
 from groups import urls as group_url
 from smspanel import urls as smspanel_url
+from festivals import urls as festival_url
 
 import schedule
 
@@ -39,6 +40,7 @@ urlpatterns = [
     path('api/salesman/customers/', include(customer_url)),
     path('api/salesman/customers/groups/', include(group_url)),
     path('api/salesman/smspanel/', include(smspanel_url)),
+    path('api/salesman/festivals/', include(festival_url)),
 ]
 
 

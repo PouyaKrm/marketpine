@@ -1,7 +1,10 @@
+from random import Random
+
 from django.template import Context, Template
 from rest_framework_jwt.settings import api_settings
 
 from users.models import Businessman, Customer
+import string
 
 jwt_payload_handler = api_settings.JWT_PAYLOAD_HANDLER
 jwt_encode_handler = api_settings.JWT_ENCODE_HANDLER
@@ -43,4 +46,18 @@ def custom_login_payload(user, **kwargs):
     kwargs['token'] = token
 
     return kwargs
+
+
+alphabets = list(string.ascii_uppercase)
+alphabets_length = len(alphabets)
+
+
+def generate_discount_code():
+
+    rand = Random()
+    code = ''
+    for i in range(2):
+        code += alphabets[rand.randrange(0, alphabets_length)] + alphabets[rand.randrange(0, alphabets_length)] + str(rand.randrange(10, 100))
+
+    return code[:4] + '-' + code[4:]
 

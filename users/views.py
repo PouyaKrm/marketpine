@@ -19,6 +19,7 @@ class RegisterSalesmanView(generics.CreateAPIView):
 
 
 @api_view(['POST'])
+@permission_classes([])
 def create_user(request):
 
     """
@@ -38,6 +39,7 @@ def create_user(request):
 
 
 @api_view(['GET'])
+@permission_classes([])
 def resend_verification_code(request, user_id):
 
     try:
@@ -66,6 +68,7 @@ def resend_verification_code(request, user_id):
 
 
 @api_view(['POST'])
+@permission_classes([])
 def login_api_view(request):
 
     serializer = BusinessmanLoginSerializer(data=request.data)
@@ -90,6 +93,7 @@ def login_api_view(request):
 
 
 @api_view(['PUT'])
+@permission_classes([])
 def verify_user(request, code):
 
     try:
@@ -111,7 +115,6 @@ def verify_user(request, code):
 
 
 @api_view(['PUT'])
-@permission_classes([permissions.IsAuthenticated])
 def reset_user_password(request):
 
     """
@@ -137,6 +140,7 @@ def reset_user_password(request):
 
 
 @api_view(['PUT'])
+@permission_classes([])
 def user_forget_password(request):
 
     serializer = BusinessmanForgetPasswordSerializer(data=request.data)
@@ -175,8 +179,6 @@ class SalesmanRetrieveUpdateAPIView(APIView):
     """
 
 
-
-    permission_classes = [permissions.IsAuthenticated]
 
     def put(self, request, *args, **kwargs):
 
