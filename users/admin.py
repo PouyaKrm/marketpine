@@ -1,9 +1,27 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from .models import Businessman, Customer, VerificationCodes
+from . import forms
 
 
-admin.site.register(Businessman, UserAdmin)
+class BusinessmanAdminModel(UserAdmin):
+    add_form = forms.BusinessmanCreationFrom
+    form = forms.BusinessmanChangeForm
+    model = Businessman
+    list_display = ['username', 'business_name', 'phone']
+    fieldsets = (
+            (None, {'fields': ('username', 'password')}),
+            ('General Info', {'fields': ('business_name', 'phone', 'address')}),
+            ('Permissions', {'fields': ('is_verified', 'bot_access', 'instagram_access', 'bot_access_expire', 'instagram_access_expire')}),
+                 )
+    add_fieldsets = (
+        (None, {'fields': ('username', 'password1', 'password2')}),
+        ('General Info', {'fields': ('business_name', 'phone', 'address')}),
+        ('Permissions', {'fields': ('is_verified', 'bot_access', 'instagram_access', 'bot_access_expire', 'instagram_access_expire')}),
+        )
+
+
+admin.site.register(Businessman, BusinessmanAdminModel)
 
 
 class VerificationCodeAdminModel(admin.ModelAdmin):
@@ -12,6 +30,7 @@ class VerificationCodeAdminModel(admin.ModelAdmin):
 
 
 admin.site.register(VerificationCodes, VerificationCodeAdminModel)
+
 
 class CustomerAdmin(admin.ModelAdmin):
     exclude = ['last_login']

@@ -2,17 +2,24 @@ from django.contrib.auth.forms import UserCreationForm, UserChangeForm
 from .models import Businessman, Customer
 from django import forms
 
-class SalesCreationFrom(UserCreationForm):
+
+class BusinessmanCreationFrom(UserCreationForm):
 
     class Meta(UserCreationForm):
         model = Businessman
+        # fields = ['username', 'password', 'phone',
+        #           'business_name', 'address', 'is_verified',
+        #           'bot_access', 'instagram_access','bot_access_expire', 'instagram_access_expire' ]
+
         fields = '__all__'
 
-class SalesmanChangeForm(UserChangeForm):
+class BusinessmanChangeForm(UserChangeForm):
 
     class Meta:
         model = Businessman
-        exclude = 'password'
+        fields = ['username', 'phone',
+                  'business_name', 'address', 'is_verified',
+                  'bot_access', 'instagram_access', 'bot_access_expire', 'instagram_access_expire']
 
 
 class CustomerCreationForm(UserCreationForm):

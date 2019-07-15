@@ -19,7 +19,7 @@ class BusinessmanCustomerListAPIView(generics.ListAPIView, mixins.CreateModelMix
     """
 
     serializer_class = CustomerSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    # permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
