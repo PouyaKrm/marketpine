@@ -35,9 +35,10 @@ ALLOWED_HOSTS = []
 INSTALLED_APPS = [
     'rest_framework',
     'users',
+    'schedule',
+    'customers',
     'corsheaders',
     'groups',
-    'background_task',
     'smspanel',
     'rest_framework_swagger',
     'django.contrib.admin',
@@ -133,7 +134,13 @@ STATIC_URL = '/static/'
 
 AUTH_USER_MODEL = 'users.Businessman'
 
+
 REST_FRAMEWORK = {
+
+    'DEFAULT_PERMISSION_CLASSES': (
+        'rest_framework.permissions.IsAuthenticated',
+
+    ),
 
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_jwt.authentication.JSONWebTokenAuthentication',
