@@ -1,12 +1,13 @@
 from django.utils import timezone
 from rest_framework import serializers
+from users.models import Customer
 from .models import Festival
-
+from common.util.custom_validators import phone_validator
 
 
 class FestivalCreationSerializer(serializers.ModelSerializer):
 
-    discount_code = serializers.CharField(min_length=8, max_length=12)
+    discount_code = serializers.CharField(min_length=8, max_length=12, required=True)
 
     class Meta:
         model = Festival
@@ -79,7 +80,6 @@ class FestivalCreationSerializer(serializers.ModelSerializer):
 
         user = self.context['user']
 
-
         if user.festival_set.filter(end_date__gte=timezone.now(), discount_code=value).exists():
             raise serializers.ValidationError('discount code must be unique')
 
@@ -93,18 +93,26 @@ class FestivalCreationSerializer(serializers.ModelSerializer):
 
 class FestivalListSerializer(serializers.ModelSerializer):
 
+    customers_total = serializers.SerializerMethodField(read_only=True)
+
     class Meta:
         model = Festival
         fields = [
             'id',
             'name',
+            'customers_total'
         ]
+
+    def get_customers_total(self, obj: Festival):
+        return obj.customers.count()
 
 
 
 
 
 class RetrieveFestivalSerializer(serializers.ModelSerializer):
+
+    customers_total = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = Festival
@@ -117,10 +125,13 @@ class RetrieveFestivalSerializer(serializers.ModelSerializer):
             'is_general',
             'discount_code',
             'percent_off',
-            'flat_rate_off'
+            'flat_rate_off',
+            'customers_total'
 
         ]
 
+    def get_customers_total(self, obj: Festival):
+        return obj.customers.count()
 
     def validate_name(self, value):
 
@@ -138,3 +149,23 @@ class RetrieveFestivalSerializer(serializers.ModelSerializer):
         instance.save()
 
         return instance
+
+
+
+class CustomerSerializer(serializers.ModelSerializer):
+
+    phone = serializers.CharField(validators=[phone_validator])
+
+    class Meta:
+        model = Customer
+        fields = [
+            'id',
+            'phone'
+        ]
+
+# class FestivalCustomerSerializer(serializers.ModelSerializer):
+#
+#     customers = CustomerSerializer(many=True)
+#
+#     class Meta:
+#         model = Festival
