@@ -1,18 +1,6 @@
 from django.utils import timezone
 from rest_framework import serializers
-from rest_framework.validators import UniqueValidator
-
-from users.models import Businessman
 from .models import Festival
-
-
-def validate_festival_name(value: str, user: Businessman):
-
-    if user.festival_set.filter(name=value).exists():
-        raise serializers.ValidationError('name of the festival must be unique')
-
-    return value
-
 
 
 
@@ -36,7 +24,10 @@ class FestivalCreationSerializer(serializers.ModelSerializer):
 
     def validate_name(self, value):
 
-        return validate_festival_name(value, self.context['user'])
+        if self.context['user'].festival_set.filter(name=value).exists():
+            raise serializers.ValidationError('name of the festival must be unique')
+
+        return value
 
 
 
@@ -71,12 +62,18 @@ class FestivalCreationSerializer(serializers.ModelSerializer):
 
     def validate_percent_off(self, value):
 
-        if not ((value > 0) and (value <= 100)):
+        if not ((value >= 0) and (value <= 100)):
             raise serializers.ValidationError('invalid value')
 
         return value
 
 
+    def validate_flat_rate_off(self, value):
+
+        if value < 0:
+            raise serializers.ValidationError('invalid value')
+
+        return value
 
     def validate_discount_code(self, value):
 
@@ -127,7 +124,10 @@ class RetrieveFestivalSerializer(serializers.ModelSerializer):
 
     def validate_name(self, value):
 
-        return validate_festival_name(value, self.context['user'])
+        if self.context['user'].festival_set.exclude(id=self.context['festival_id']).filter(name=value).exists():
+            raise serializers.ValidationError('name of the festival must be unique')
+
+        return value
 
 
 

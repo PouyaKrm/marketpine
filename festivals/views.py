@@ -1,4 +1,4 @@
-from django.shortcuts import render
+from django.shortcuts import render, get_object_or_404
 from rest_framework import generics, mixins, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -32,7 +32,6 @@ class FestivalAPIView(APIView):
 
     def post(self, request):
 
-
         serializer = FestivalCreationSerializer(data=request.data)
         serializer._context = {'user': request.user}
         if not serializer.is_valid():
@@ -43,10 +42,24 @@ class FestivalAPIView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
-# class FestivalRetrieveAPIView(generics.RetrieveAPIView, mixins.UpdateModelMixin):
-#
-#     serializer_class = RetrieveFestivalSerializer
-#
-#     def get_queryset(self):
-#
-#         return self.request.user.festival_set.get(self.kwargs['id'])
+class FestivalRetrieveAPIView(generics.RetrieveAPIView, mixins.UpdateModelMixin):
+
+    serializer_class = RetrieveFestivalSerializer
+
+    lookup_field = 'id'
+
+    def get_object(self):
+
+        fest = get_object_or_404(self.request.user.festival_set, id=self.kwargs['id'])
+        self.check_object_permissions(self.request, fest)
+
+        return fest
+
+
+    def get_serializer_context(self):
+        return {'user': self.request.user, 'festival_id': self.kwargs['id']}
+
+    def put(self, request, *args, **kwargs):
+
+        return self.update(request, *args, **kwargs)
+
