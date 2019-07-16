@@ -35,7 +35,6 @@ ALLOWED_HOSTS = []
 INSTALLED_APPS = [
     'rest_framework',
     'users',
-    'schedule',
     'customers',
     'corsheaders',
     'groups',

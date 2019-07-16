@@ -71,7 +71,7 @@ class FestivalRetrieveAPIView(generics.RetrieveAPIView, mixins.UpdateModelMixin,
         return fest
 
     def get_serializer_context(self):
-        return {'user': self.request.user, 'festival_id': self.kwargs['id']}
+        return {'user': self.request.user, 'festival_id': self.lookup_field}
 
     def put(self, request, *args, **kwargs):
 
