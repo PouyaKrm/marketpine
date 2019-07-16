@@ -3,6 +3,7 @@ from django.shortcuts import render, get_object_or_404
 from django.utils import timezone
 from rest_framework import generics, mixins, status
 from rest_framework.decorators import api_view
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -10,8 +11,8 @@ from rest_framework.views import APIView
 from users.models import Customer
 from .models import Festival
 from .serializers import FestivalCreationSerializer, FestivalListSerializer, RetrieveFestivalSerializer, \
-    CustomerSerializer
-from common.util import generate_discount_code
+    CustomerSerializer, FestivalCustomerSerializer
+from common.util import generate_discount_code, paginators
 # Create your views here.
 
 
@@ -41,13 +42,13 @@ class FestivalAPIView(APIView):
     def post(self, request: Request):
 
         auto = request.query_params.get('auto')
-        if auto == 'true':
+        if auto.lower() == 'true':
 
             request.data['discount_code'] = generate_discount_code()
 
         serializer = FestivalCreationSerializer(data=request.data)
 
-        serializer._context = {'user': request.user, 'auto': request.query_params.get('auto')}
+        serializer._context = {'user': request.user}
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -80,47 +81,54 @@ class FestivalRetrieveAPIView(generics.RetrieveAPIView, mixins.UpdateModelMixin,
         return self.destroy(request, *args, **kwargs)
 
 
-class FestivalCustomerAPIView(APIView):
+@api_view(['GET'])
+def list_customers_in_festival(request, festival_id):
+
+    try:
+        festival = request.user.festival_set.get(id=festival_id)
+    except ObjectDoesNotExist:
+        return Response({'details': ['این جشنواره وجود ندارد']}, status=status.HTTP_404_NOT_FOUND)
+
+    # paginator = PageNumberPagination()
+    # paginator.page_size = 2
+    # page_result = paginator.paginate_queryset(festival.customers.all(), request)
+    #
+    # serializer = CustomerSerializer(page_result, many=True)
+
+    # return paginator.get_paginated_response(serializer.data)
+
+    paginator = paginators.NumberedPaginator(10, request, festival.customers.all(), CustomerSerializer)
+
+    return paginator.next_page()
 
 
-    def get(self, request, festival_id):
 
 
-        try:
-            festival = request.user.festival_set.get(id=festival_id)
-        except ObjectDoesNotExist:
-            return Response({'details': ['این جشنواره وجود ندارد']}, status=status.HTTP_404_NOT_FOUND)
+@api_view(['POST'])
+def add_customer_to_festival(request):
 
-        serializer = CustomerSerializer(festival.customers.all(), many=True)
+    serializer = FestivalCustomerSerializer(data=request.data)
+    if not serializer.is_valid():
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        return Response(serializer.data, status=status.HTTP_200_OK)
+    try:
+        customer = request.user.customers.get(phone=request.data['customer_phone'])
+    except ObjectDoesNotExist:
+        return Response({'details': ['این مشتری در لیست مشتریان شما نیست']}, status=status.HTTP_404_NOT_FOUND)
 
+    try:
+        festival = request.user.festival_set.get(discount_code=serializer.data['discount_code'])
+    except ObjectDoesNotExist:
+        return Response({'details': ['جشنواره با این کد تخفیف وجود ندارد']}, status=status.HTTP_404_NOT_FOUND)
 
+    if festival.customers.filter(phone=customer.phone).exists():
+        return Response({'details': ['این جشنواره توسط این مشتری استفاده شده است']}, status=status.HTTP_403_FORBIDDEN)
+    elif festival.end_date <= timezone.now().date():
+        return Response({'details': ['تاریخ جشنواره به اتمام رسیده']}, status=status.HTTP_403_FORBIDDEN)
 
-    def post(self, request, festival_id: int):
-
-        serializer = CustomerSerializer(data=request.data)
-        if not serializer.is_valid():
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-        try:
-            customer = Customer.objects.get(phone=request.data['phone'])
-        except ObjectDoesNotExist:
-            return Response({'details': ['این مشتری در لیست مشتریان شما نیست']}, status=status.HTTP_404_NOT_FOUND)
-
-        try:
-            festival = request.user.festival_set.get(id=festival_id)
-        except ObjectDoesNotExist:
-            return Response({'details': ['این جشنواره وجود ندارد']}, status=status.HTTP_404_NOT_FOUND)
-
-        if festival.customers.filter(phone=customer.phone).exists():
-            return Response({'details': ['این جشنواره توسط این مشتری استفاده شده است']}, status=status.HTTP_403_FORBIDDEN)
-        elif festival.end_date <= timezone.now().date():
-            return Response({'details': ['تاریخ جشنواره به اتمام رسیده']}, status=status.HTTP_404_NOT_FOUND)
-
-        festival.customers.add(customer)
-        festival.save()
-        return Response({'details': ['customers added to festival']}, status=status.HTTP_200_OK)
+    festival.customers.add(customer)
+    festival.save()
+    return Response({'details': ['customers added to festival']}, status=status.HTTP_200_OK)
 
 
 @api_view(['DELETE'])

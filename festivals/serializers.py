@@ -163,9 +163,33 @@ class CustomerSerializer(serializers.ModelSerializer):
             'phone'
         ]
 
-# class FestivalCustomerSerializer(serializers.ModelSerializer):
-#
-#     customers = CustomerSerializer(many=True)
-#
-#     class Meta:
-#         model = Festival
+class FestivalCustomerSerializer(serializers.Serializer):
+
+    customer_phone = serializers.CharField(validators=[phone_validator])
+    discount_code = serializers.CharField(min_length=8, max_length=12)
+
+    class Meta:
+
+        fields = [
+            'customer_phone',
+            'discount_code'
+        ]
+
+    # def validate_discount_code(self, value):
+    #
+    #     user = self.context['user']
+    #
+    #     if not user.festival_set.filter(discount_code=value).exists():
+    #         raise serializers.ValidationError('discount_code does not exists')
+    #
+    #     return value
+    #
+    # def validate_phone(self, value):
+    #
+    #     user = self.context['user']
+    #
+    #     if not user.customers.filter(phone=value).exists():
+    #         raise serializers.ValidationError('customer does not exists')
+    #
+    #     return value
+    #
