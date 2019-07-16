@@ -22,12 +22,6 @@ from customers import urls as customer_url
 from groups import urls as group_url
 from smspanel import urls as smspanel_url
 from festivals import urls as festival_url
-
-import schedule
-
-from users import tasks
-
-from rest_framework.documentation import include_docs_urls
 from rest_framework_swagger.views import get_swagger_view
 
 schema_view = get_swagger_view(title="CRM API")
@@ -44,6 +38,3 @@ urlpatterns = [
 ]
 
 
-# print('tasks run')
-# tasks.generate_fake_businessman()
-# schedule.every(20).seconds.do(tasks.delete_unverified_businessmans)
