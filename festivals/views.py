@@ -3,11 +3,9 @@ from django.shortcuts import render, get_object_or_404
 from django.utils import timezone
 from rest_framework import generics, mixins, status
 from rest_framework.decorators import api_view
-from rest_framework.pagination import PageNumberPagination
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
-
 from users.models import Customer
 from .models import Festival
 from .serializers import FestivalCreationSerializer, FestivalListSerializer, RetrieveFestivalSerializer, \
@@ -160,7 +158,7 @@ def check_festival_name_or_discount_code_exists(request: Request):
     if (code is not None) and (request.user.festival_set.filter(discount_code=code).exists()):
         payload['discount_code'] = ['این کد تخفیف قبلا ثبت شده']
 
-    if len(payload)==0:
+    if len(payload) == 0:
         return Response(status=status.HTTP_404_NOT_FOUND)
     else:
         return Response(payload, status=status.HTTP_200_OK)

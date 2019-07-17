@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     'groups',
     'smspanel',
     'festivals',
+    'invitation',
     'rest_framework_swagger',
     'django.contrib.admin',
     'django.contrib.auth',
