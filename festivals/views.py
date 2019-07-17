@@ -36,7 +36,14 @@ class FestivalAPIView(APIView):
 
     def get(self, request):
 
-        serializer = FestivalListSerializer(request.user.festival_set.all(), many=True)
+        q = request.query_params.get('q')
+
+        if q is not None:
+            result_set = request.user.festival_set.filter(discount_code__contains=q).all()
+        else:
+            result_set = request.user.festival_set.all()
+
+        serializer = FestivalListSerializer(result_set, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def post(self, request: Request):
@@ -89,13 +96,6 @@ def list_customers_in_festival(request, festival_id):
     except ObjectDoesNotExist:
         return Response({'details': ['این جشنواره وجود ندارد']}, status=status.HTTP_404_NOT_FOUND)
 
-    # paginator = PageNumberPagination()
-    # paginator.page_size = 2
-    # page_result = paginator.paginate_queryset(festival.customers.all(), request)
-    #
-    # serializer = CustomerSerializer(page_result, many=True)
-
-    # return paginator.get_paginated_response(serializer.data)
 
     paginator = paginators.NumberedPaginator(10, request, festival.customers.all(), CustomerSerializer)
 
@@ -145,3 +145,22 @@ def delete_customer_from_festival(request, festival_id, customer_id):
     festival.customers.remove(customer)
     festival.save()
     return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+@api_view(['GET'])
+def check_festival_name_or_discount_code_exists(request: Request):
+
+    code = request.query_params.get('code')
+    name = request.query_params.get('name')
+    payload = {}
+
+    if (name is not None) and (request.user.festival_set.filter(name=name).exists()):
+        payload['name'] = ['این نام قبلا ثبت شده']
+
+    if (code is not None) and (request.user.festival_set.filter(discount_code=code).exists()):
+        payload['discount_code'] = ['این کد تخفیف قبلا ثبت شده']
+
+    if len(payload)==0:
+        return Response(status=status.HTTP_404_NOT_FOUND)
+    else:
+        return Response(payload, status=status.HTTP_200_OK)
