@@ -94,8 +94,7 @@ def list_customers_in_festival(request, festival_id):
     except ObjectDoesNotExist:
         return Response({'details': ['این جشنواره وجود ندارد']}, status=status.HTTP_404_NOT_FOUND)
 
-
-    paginator = paginators.NumberedPaginator(10, request, festival.customers.all(), CustomerSerializer)
+    paginator = paginators.NumberedPaginator(request, festival.customers.all(), CustomerSerializer)
 
     return paginator.next_page()
 
