@@ -12,6 +12,7 @@ class Businessman(AbstractUser):
     instagram_access = models.BooleanField(default=False)
     instagram_access_expire = models.DateTimeField(blank=True, null=True)
     is_verified = models.BooleanField(default=False)
+    friend_invitation_access = models.BooleanField(default=False)
 
 
     class Meta:
