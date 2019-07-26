@@ -43,3 +43,14 @@ class SMSMessage:
     def send_new_password(self, receptor, new_password):
 
         return self.send_message(receptor, f'your new password is:\n{new_password}')
+
+    def send_friend_invitation_welcome_message(self, business_name: str, invited_phone: str, discount_code: str,
+                                               bot_link: str = None):
+
+        if bot_link is None:
+            message = f'مشتری عزیز شما به {business_name} دعوت شدید. با استفاده از کد تخفیف {discount_code} در اولین خرید از تخفیف بهرمند شوید'
+
+        else:
+            message = f'مشتری عزیز شما به {business_name} دعوت شدید. با استفاده از کد تخفیف {discount_code} در اولین خرید از تخفیف بهرمند شوید. با استفاده از لینک زیر در بات تلگرام ما عضو شوید. {bot_link}'
+
+        return self.send_message(invited_phone, message)

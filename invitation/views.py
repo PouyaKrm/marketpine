@@ -4,12 +4,13 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from invitation.models import FriendInvitation
-from .serializers import FriendInvitationCreationSerializer, FriendInvitationListSerializer, InvitationBusinessmanListSerializer, InvitationBusinessmanRetrieveSerializer
+from invitation.models import FriendInvitation, InvitedFriendDiscount, FriendInviterDiscount
+from .serializers import FriendInvitationCreationSerializer, FriendInvitationListSerializer, InvitationBusinessmanListSerializer, InvitationRetrieveSerializer
 from users.models import Businessman
 from common.util.custom_validators import phone_validator
-from common.util import paginators
+from common.util import paginators, generate_discount_code
 from .permissions import HasInvitationAccess
+from common.util.sms_message import SMSMessage
 # Create your views here.
 
 
@@ -48,11 +49,12 @@ class FriendInvitationListAPIView(APIView):
 
         serializer = FriendInvitationCreationSerializer(data=request.data)
 
-
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        friend_phone = serializer.data['friend_phone']
+
+        invited = serializer.data['invited']
+        inviter = serializer.data['inviter']
 
         try:
             businessman = Businessman.objects.get(username=serializer.data['username'])
@@ -60,21 +62,34 @@ class FriendInvitationListAPIView(APIView):
             return Response({'username': ['این نام کاربری وجود ندارد']}, status=status.HTTP_404_NOT_FOUND)
 
         try:
-            customer = businessman.customers.get(phone=serializer.data['invited_by'])
+            customer = businessman.customers.get(phone=inviter)
         except ObjectDoesNotExist:
             return Response({'invited_by': ['مشتری با این شماره تلفن وجود ندارد']}, status=status.HTTP_404_NOT_FOUND)
 
-        if businessman.friendinvitation_set.filter(friend_phone=friend_phone).exists():
-            return Response({'friend_phone': ['این مشتری قبلا معرفی شده']}, status=status.HTTP_403_FORBIDDEN)
+        if businessman.customers.filter(phone=invited).exists():
+            return Response({'invited': ['این مشتری قبلا معرفی شده']}, status=status.HTTP_403_FORBIDDEN)
 
-        if customer.phone == friend_phone:
+        if inviter == invited:
             return Response(status=status.HTTP_403_FORBIDDEN)
 
-        obj = FriendInvitation.objects.create(businessman=businessman, invited_by=customer,
-                                              friend_phone=friend_phone)
+        invited_discount = generate_discount_code()
 
-        payload = {'id': obj.id, 'username': businessman.username, 'invited_by': customer.phone,
-                              'friend_phone': obj.friend_phone, 'invitation_date': obj.invitation_date}
+        sms = SMSMessage()
+
+        sms.send_friend_invitation_welcome_message(businessman.business_name, invited, invited_discount)
+
+        invited_customer = businessman.customers.create(phone=invited)
+
+        obj = FriendInvitation.objects.create(businessman=businessman, invited=invited_customer,
+                                              inviter=customer)
+
+        inviter_discount = FriendInviterDiscount.objects.create(friend_invitation=obj, inviter=customer,
+                                                                discount_code=generate_discount_code())
+
+        InvitedFriendDiscount.objects.create(friend_invitation=obj, invited=invited_customer, discount_code=invited_discount)
+
+        payload = {'id': obj.id, 'businessman': businessman.username, 'inviter': inviter, 'invited': invited,
+                   'invitation_date': obj.invitation_date, 'inviter_discount_code': inviter_discount.discount_code}
 
         return Response(payload, status=status.HTTP_200_OK)
 
@@ -103,5 +118,5 @@ def friend_invitation_retrieve(request: Request, invitation_id):
 
     invitation.save()
 
-    serializer = InvitationBusinessmanRetrieveSerializer(invitation)
+    serializer = InvitationRetrieveSerializer(invitation)
     return Response(serializer.data, status=status.HTTP_200_OK)

@@ -13,13 +13,13 @@ class BusinessmanAdminModel(UserAdmin):
             (None, {'fields': ('username', 'password')}),
             ('General Info', {'fields': ('business_name', 'phone', 'address')}),
             ('Permissions', {'fields': ('is_verified', 'bot_access', 'instagram_access', 'bot_access_expire',
-                                        'instagram_access_expire', 'friend_invitation_access')}),
+                                        'instagram_access_expire', 'friend_invitation_access_expire')}),
                  )
     add_fieldsets = (
         (None, {'fields': ('username', 'password1', 'password2')}),
         ('General Info', {'fields': ('business_name', 'phone', 'address')}),
         ('Permissions', {'fields': ('is_verified', 'bot_access', 'instagram_access', 'bot_access_expire',
-                                    'instagram_access_expire', 'friend_invitation_access')}),
+                                    'instagram_access_expire', 'friend_invitation_access_expire')}),
         )
 
 

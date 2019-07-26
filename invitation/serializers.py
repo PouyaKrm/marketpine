@@ -1,21 +1,47 @@
 from rest_framework import serializers
 from common.util.custom_validators import phone_validator
 from invitation.models import FriendInvitation
-from users.models import Customer
+from common.util import common_serializers
 
 
 class FriendInvitationCreationSerializer(serializers.Serializer):
 
     username = serializers.CharField(max_length=15)
-    invited_by = serializers.CharField(validators=[phone_validator])
-    friend_phone = serializers.CharField(validators=[phone_validator])
+    inviter = serializers.CharField(validators=[phone_validator])
+    invited = serializers.CharField(validators=[phone_validator])
 
     class Meta:
         fields = [
             'username'
-            'invited_by',
-            'friend_phone'
+            'inviter',
+            'invited'
         ]
+
+
+    # def validate_invited(self, value):
+    #
+    #     user = self.context['user']
+    #
+    #     if user.customers.filter(phone=value).exists():
+    #         raise serializers.ValidationError('این فرد قبلا معرفی شده است')
+    #
+    #     return value
+    #
+    # def validate_inviter(self, value):
+    #
+    #     user = self.context['user']
+    #
+    #     if not user.customers.filter(phone=value).exists():
+    #         raise serializers.ValidationError('شماره مورد نظر در لیست مشتریان وجود ندارد')
+    #
+    #     return value
+    #
+    # def validate(self, data):
+    #
+    #     if data.get('invited')==data.get('inviter'):
+    #         raise serializers.ValidationError({'details': ['امکان دعوت این مشتری وجود ندارد']})
+    #
+    #     return data
 
 
 class FriendInvitationListSerializer(serializers.ModelSerializer):
@@ -26,35 +52,39 @@ class FriendInvitationListSerializer(serializers.ModelSerializer):
             'id',
             'friend_phone',
             'invitation_date',
-            'confirmed'
         ]
 
 
 class InvitationBusinessmanListSerializer(serializers.ModelSerializer):
+    invited = common_serializers.CustomerSerializer(read_only=True)
+
+    inviter = common_serializers.CustomerSerializer(read_only=True)
 
     class Meta:
         model = FriendInvitation
         fields = [
             'id',
-            'friend_phone',
-            'confirmed',
             'invitation_date',
+            'invited',
+            'inviter',
             'new',
         ]
 
 
-class InvitationBusinessmanRetrieveSerializer(serializers.ModelSerializer):
+class InvitationRetrieveSerializer(serializers.ModelSerializer):
 
-    invited_by = serializers.CharField(max_length=15)
+    invited = common_serializers.CustomerSerializer(read_only=True)
+
+    inviter = common_serializers.CustomerSerializer(read_only=True)
 
     class Meta:
 
         model = FriendInvitation
         fields = [
             'id',
-            'friend_phone',
-            'confirmed',
-            'discount_used',
             'invitation_date',
-            'invited_by'
+            'invited',
+            'inviter'
         ]
+
+
