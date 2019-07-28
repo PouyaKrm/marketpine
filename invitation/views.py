@@ -4,11 +4,11 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from invitation.models import FriendInvitation, InvitedFriendDiscount, FriendInviterDiscount
+from invitation.models import FriendInvitation, FriendInvitationDiscount
 from .serializers import FriendInvitationCreationSerializer, FriendInvitationListSerializer, InvitationBusinessmanListSerializer, InvitationRetrieveSerializer
 from users.models import Businessman
 from common.util.custom_validators import phone_validator
-from common.util import paginators, generate_discount_code
+from common.util import paginators, generate_discount_code, DiscountType
 from .permissions import HasInvitationAccess
 from common.util.sms_message import SMSMessage
 # Create your views here.
@@ -72,24 +72,26 @@ class FriendInvitationListAPIView(APIView):
         if inviter == invited:
             return Response(status=status.HTTP_403_FORBIDDEN)
 
-        invited_discount = generate_discount_code()
+        invited_discount = generate_discount_code(DiscountType.INVITATION)
 
-        sms = SMSMessage()
-
-        sms.send_friend_invitation_welcome_message(businessman.business_name, invited, invited_discount)
 
         invited_customer = businessman.customers.create(phone=invited)
 
         obj = FriendInvitation.objects.create(businessman=businessman, invited=invited_customer,
                                               inviter=customer)
 
-        inviter_discount = FriendInviterDiscount.objects.create(friend_invitation=obj, inviter=customer,
-                                                                discount_code=generate_discount_code())
+        inviter_discount = FriendInvitationDiscount.objects.create(friend_invitation=obj, customer=customer, role='IR',
+                                                        discount_code=generate_discount_code(DiscountType.INVITATION))
 
-        InvitedFriendDiscount.objects.create(friend_invitation=obj, invited=invited_customer, discount_code=invited_discount)
+        FriendInvitationDiscount.objects.create(friend_invitation=obj, customer=invited_customer, role='ID',
+                                                discount_code=invited_discount)
 
         payload = {'id': obj.id, 'businessman': businessman.username, 'inviter': inviter, 'invited': invited,
                    'invitation_date': obj.invitation_date, 'inviter_discount_code': inviter_discount.discount_code}
+
+        sms = SMSMessage()
+
+        sms.send_friend_invitation_welcome_message(businessman.business_name, invited, invited_discount)
 
         return Response(payload, status=status.HTTP_200_OK)
 

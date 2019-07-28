@@ -21,23 +21,17 @@ class FriendInvitation(models.Model):
         return f'{self.id} - {self.businessman.username}'
 
 
-class FriendInviterDiscount(models.Model):
+class FriendInvitationDiscount(models.Model):
 
-    friend_invitation = models.OneToOneField(FriendInvitation, on_delete=models.CASCADE)
-    inviter = models.ForeignKey(Customer, on_delete=models.CASCADE)
+    friend_invitation = models.ForeignKey(FriendInvitation, on_delete=models.CASCADE)
+    customer = models.ForeignKey(Customer, on_delete=models.CASCADE)
     discount_code = models.CharField(max_length=9)
+    INVITATION_ROLE_CHOICES = [
+        ('IR', 'Inviter'),
+        ('ID', 'Invited')
+    ]
+    role = models.CharField(max_length=2, choices=INVITATION_ROLE_CHOICES)
 
     class Meta:
-        db_table = 'friend_inviter_discount'
-        unique_together = ['inviter', 'friend_invitation']
-
-
-class InvitedFriendDiscount(models.Model):
-
-    friend_invitation = models.OneToOneField(FriendInvitation, on_delete=models.CASCADE)
-    invited = models.ForeignKey(Customer, on_delete=models.CASCADE)
-    discount_code = models.CharField(max_length=9)
-
-    class Meta:
-        db_table = 'friend_invited_discount'
-        unique_together = ['invited', 'friend_invitation']
+        db_table = 'friend_invitation_discount'
+        unique_together = ['friend_invitation', 'customer']

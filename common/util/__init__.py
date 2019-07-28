@@ -1,7 +1,9 @@
+from enum import Enum
 from random import Random
 
 from django.template import Context, Template
 from rest_framework_jwt.settings import api_settings
+from strgen import StringGenerator
 
 from users.models import Businessman, Customer
 import string
@@ -52,12 +54,25 @@ alphabets = list(string.ascii_uppercase)
 alphabets_length = len(alphabets)
 
 
-def generate_discount_code():
+class DiscountType(Enum):
+    FESTIVAL = 1
+    INVITATION = 2
+    INSTAGRAM = 3
 
-    rand = Random()
-    code = ''
-    for i in range(2):
-        code += alphabets[rand.randrange(0, alphabets_length)] + alphabets[rand.randrange(0, alphabets_length)] + str(rand.randrange(10, 100))
+def generate_discount_code(discount_type: DiscountType):
 
-    return code[:4] + '-' + code[4:]
+    code = StringGenerator("[A-Za-z0-9]{8}").render()
 
+    if discount_type == DiscountType.FESTIVAL:
+        code = 'f' + code
+
+    elif discount_type == DiscountType.INVITATION:
+        code = 'i' + code
+
+    elif discount_type == DiscountType.INSTAGRAM:
+        code = 'n' + code
+
+    else:
+        raise Exception('Value of discount_type is invalid')
+
+    return code

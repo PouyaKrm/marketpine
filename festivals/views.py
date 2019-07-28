@@ -10,7 +10,9 @@ from users.models import Customer
 from .models import Festival
 from .serializers import FestivalCreationSerializer, FestivalListSerializer, RetrieveFestivalSerializer, \
     CustomerSerializer, FestivalCustomerSerializer
-from common.util import generate_discount_code, paginators
+from common.util import generate_discount_code, paginators, DiscountType
+
+
 # Create your views here.
 
 
@@ -49,7 +51,7 @@ class FestivalAPIView(APIView):
         auto = request.query_params.get('auto')
         if (auto is not None) and auto.lower() == 'true':
 
-            request.data['discount_code'] = generate_discount_code()
+            request.data['discount_code'] = generate_discount_code(DiscountType.FESTIVAL)
 
         serializer = FestivalCreationSerializer(data=request.data)
 
