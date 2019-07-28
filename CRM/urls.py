@@ -25,6 +25,7 @@ from festivals import urls as festival_url
 from rest_framework_swagger.views import get_swagger_view
 from invitation import urls as invitation_url
 from dashboard import urls as dashboard_url
+from customerpurchase import urls as purchase_url
 
 schema_view = get_swagger_view(title="CRM API")
 
@@ -39,6 +40,7 @@ urlpatterns = [
     path('api/salesman/festivals/', include(festival_url)),
     path('api/salesman/invitations/', include(invitation_url)),
     path('api/salesman/dashboard/', include(dashboard_url)),
+    path('api/salesman/customer-purchase/', include(purchase_url)),
 ]
 
 
