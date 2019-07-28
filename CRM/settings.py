@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     'festivals',
     'invitation',
     'dashboard',
+    'customerpurchase',
     'rest_framework_swagger',
     'django.contrib.admin',
     'django.contrib.auth',

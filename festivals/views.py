@@ -153,6 +153,9 @@ def check_festival_name_or_discount_code_exists(request: Request):
     name = request.query_params.get('name')
     payload = {}
 
+    if name is None or code is None:
+        return Response({'details': ['name and code parameters are required']}, status=status.HTTP_400_BAD_REQUEST)
+
     if (name is not None) and (request.user.festival_set.filter(name=name).exists()):
         payload['name'] = ['این نام قبلا ثبت شده']
 
