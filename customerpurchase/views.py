@@ -1,9 +1,11 @@
 from django.core.exceptions import ObjectDoesNotExist
 from rest_framework import status
+from rest_framework.decorators import api_view
+from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from customerpurchase.models import CustomerPurchase
-from .serializers import PurchaseCreationUpdateSerializer, PurchaseListSerializer
+from .serializers import PurchaseCreationUpdateSerializer, PurchaseListSerializer, CustomerPurchaseListSerializer
 from common.util import paginators
 # Create your views here.
 
@@ -70,3 +72,16 @@ class CustomerPurchaseUpdateDeleteAPIView(APIView):
             return Response(status=status.HTTP_404_NOT_FOUND)
 
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+@api_view(['GET'])
+def get_customer_purchases(request: Request, customer_id):
+
+    try:
+        customer_purchases = request.user.customers.get(id=customer_id).customerpurchase_set.all()
+    except ObjectDoesNotExist:
+        return Response(status=status.HTTP_404_NOT_FOUND)
+
+    paginate = paginators.NumberedPaginator(request, customer_purchases, CustomerPurchaseListSerializer)
+
+    return paginate.next_page()

@@ -45,6 +45,7 @@ class PurchaseCreationUpdateSerializer(serializers.ModelSerializer):
 
         return instance
 
+
 class PurchaseListSerializer(serializers.ModelSerializer):
 
     customer = CustomerSerializer()
@@ -55,6 +56,18 @@ class PurchaseListSerializer(serializers.ModelSerializer):
         fields = [
             'id',
             'customer',
+            'amount',
+            'date'
+        ]
+
+
+class CustomerPurchaseListSerializer(serializers.ModelSerializer):
+
+    class Meta:
+
+        model = CustomerPurchase
+        fields = [
+            'id',
             'amount',
             'date'
         ]
