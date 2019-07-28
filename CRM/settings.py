@@ -148,7 +148,6 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_jwt.authentication.JSONWebTokenAuthentication',
         'rest_framework.authentication.SessionAuthentication',
-        'rest_framework.authentication.BasicAuthentication',
     ),
 
 }
@@ -196,7 +195,7 @@ CORS_EXPOSE_HEADERS = [
 ]
 
 try:
-    from local_settings import *
+    from .local_settings import *
 except ImportError:
     pass
 
