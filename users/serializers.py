@@ -134,8 +134,8 @@ class BusinessmanRetrieveSerializer(serializers.ModelSerializer):
             'phone',
             'email',
             'business_name',
-            'bot_access',
-            'instagram_access'
+            'bot_access_expire',
+            'instagram_access_expire'
         ]
 
         extra_kwargs = {'username': {'read_only': True}, 'bot_access': {'read_only': True},
