@@ -1,10 +1,9 @@
 from rest_framework import serializers
 from customerpurchase.models import CustomerPurchase
 from common.util.common_serializers import CustomerSerializer
-from users.models import Customer
 
 
-class PurchaseCreationSerializer(serializers.ModelSerializer):
+class PurchaseCreationUpdateSerializer(serializers.ModelSerializer):
 
     customer_id = serializers.IntegerField(min_value=1)
 

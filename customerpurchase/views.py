@@ -3,7 +3,7 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from customerpurchase.models import CustomerPurchase
-from .serializers import PurchaseCreationSerializer, PurchaseListSerializer
+from .serializers import PurchaseCreationUpdateSerializer, PurchaseListSerializer
 from common.util import paginators
 # Create your views here.
 
@@ -22,7 +22,7 @@ class PurchaseListCreateAPIView(APIView):
         return paginate.next_page()
 
     def post(self, request):
-        serializer = PurchaseCreationSerializer(data=request.data)
+        serializer = PurchaseCreationUpdateSerializer(data=request.data)
 
         serializer._context = {'user': request.user}
 
@@ -48,7 +48,7 @@ class CustomerPurchaseUpdateDeleteAPIView(APIView):
         except ObjectDoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND)
 
-        serializer = PurchaseCreationSerializer(data=request.data)
+        serializer = PurchaseCreationUpdateSerializer(data=request.data)
 
         serializer._context = {'user': request.user}
 
