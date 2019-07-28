@@ -16,7 +16,6 @@ class FestivalCreationSerializer(serializers.ModelSerializer):
             'name',
             'start_date',
             'end_date',
-            'is_general',
             'discount_code',
             'percent_off',
             'flat_rate_off'
@@ -122,7 +121,6 @@ class RetrieveFestivalSerializer(serializers.ModelSerializer):
             'name',
             'start_date',
             'end_date',
-            'is_general',
             'discount_code',
             'percent_off',
             'flat_rate_off',
