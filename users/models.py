@@ -13,9 +13,6 @@ class Businessman(AbstractUser):
     is_verified = models.BooleanField(default=False)
     friend_invitation_access_expire = models.DateTimeField(default=timezone.now)
 
-    class Meta:
-
-        db_table="user"
 
     def __str__(self):
         return self.username
