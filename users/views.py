@@ -86,6 +86,7 @@ def login_api_view(request):
     payload = custom_login_payload(user)
 
     payload['username'] = user.get_username()
+    payload['business_name'] = user.business_name
 
     return Response(payload, status=status.HTTP_200_OK)
 

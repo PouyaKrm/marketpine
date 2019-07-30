@@ -3,6 +3,8 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework.request import Request
 from rest_framework.serializers import Serializer
 
+class PageNumberPaginationSize10(PageNumberPagination):
+    page_size = 10
 
 class NumberedPaginator(PageNumberPagination):
 

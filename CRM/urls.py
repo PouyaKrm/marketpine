@@ -16,6 +16,7 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 from faker import Faker
+from rest_framework_swagger.views import get_swagger_view
 
 from users import urls as salesman_url, models
 from customers import urls as customer_url
@@ -27,10 +28,12 @@ from dashboard import urls as dashboard_url
 from customerpurchase import urls as purchase_url
 
 
+schema_view = get_swagger_view(title='Pastebin API')
+
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/accounts/', include(salesman_url)),
-    # path('docs2/', schema_view),
+    path('api/docs/', schema_view),
     path('api/salesman/customers/', include(customer_url)),
     path('api/salesman/customers/groups/', include(group_url)),
     path('api/salesman/smspanel/', include(smspanel_url)),

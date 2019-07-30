@@ -76,3 +76,24 @@ def generate_discount_code(discount_type: DiscountType):
         raise Exception('Value of discount_type is invalid')
 
     return code
+
+
+
+
+class DaysOfWeek(Enum):
+    SUNDAY = 1
+    MONDAY = 2
+    TUESDAY = 3
+    WEDNESDAY = 4
+    THURSDAY = 5
+    FRIDAY = 6
+    SATURDAY = 7
+
+    def to_django_weekday(self, value):
+
+        return value + 1
+
+
+
+
+

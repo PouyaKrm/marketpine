@@ -36,9 +36,7 @@ admin.site.register(VerificationCodes, VerificationCodeAdminModel)
 
 class CustomerAdmin(admin.ModelAdmin):
     exclude = ['last_login']
-    list_display = ['phone', 'telegram_id', 'instagram_id', 'register_date', 'businessman']
-    ordering = ['first_name', 'last_name']
-
+    list_display = ['phone', 'full_name', 'register_date', 'businessman']
 
 admin.site.register(Customer, CustomerAdmin)
 
