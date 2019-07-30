@@ -22,17 +22,14 @@ from customers import urls as customer_url
 from groups import urls as group_url
 from smspanel import urls as smspanel_url
 from festivals import urls as festival_url
-from rest_framework_swagger.views import get_swagger_view
 from invitation import urls as invitation_url
 from dashboard import urls as dashboard_url
 from customerpurchase import urls as purchase_url
 
-schema_view = get_swagger_view(title="CRM API")
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/accounts/', include(salesman_url)),
-    path('api/docs/', schema_view),
     # path('docs2/', schema_view),
     path('api/salesman/customers/', include(customer_url)),
     path('api/salesman/customers/groups/', include(group_url)),
