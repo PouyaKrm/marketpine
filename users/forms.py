@@ -28,13 +28,13 @@ class CustomerCreationForm(UserCreationForm):
 
         model = Customer
 
-        fields = ['phone', 'email', 'first_name', 'last_name']
+        fields = ['phone', 'email', 'full_name']
 
 
 class CustomerChangeForm(UserChangeForm):
 
     class Meta:
         model = Customer
-        fields = ['phone', 'email', 'first_name', 'last_name']
+        fields = ['phone', 'email', 'full_name']
 
 

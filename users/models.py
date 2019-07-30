@@ -59,8 +59,7 @@ class Customer(AbstractBaseUser):
     password = None
     phone = models.CharField(max_length=15)
     register_date = models.DateTimeField(auto_now_add=True)
-    first_name = models.CharField(max_length=40, blank=True, null=True)
-    last_name = models.CharField(max_length=40, blank=True, null=True)
+    full_name = models.CharField(max_length=40, null=True, blank=True)
     telegram_id = models.CharField(max_length=40, null=True, blank=True)
     instagram_id = models.CharField(max_length=40, null=True, blank=True)
     businessman = models.ForeignKey(Businessman,  related_name="customers",
@@ -75,9 +74,6 @@ class Customer(AbstractBaseUser):
 
     objects = CustomerManager()
 
-    def get_full_name(self):
-
-        return self.first_name + " " + self.last_name
 
     class Meta:
 

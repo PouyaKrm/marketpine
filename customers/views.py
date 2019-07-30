@@ -1,10 +1,10 @@
 from django.shortcuts import render
 
 from rest_framework import generics, mixins, permissions
-from rest_framework.generics import  RetrieveAPIView
-
+from rest_framework.generics import RetrieveAPIView
 
 from .serializers import CustomerSerializer
+
 
 
 
@@ -12,14 +12,13 @@ class BusinessmanCustomerListAPIView(generics.ListAPIView, mixins.CreateModelMix
 
     """
     get:
-    Generates a list of all customers that belongs to specific user. Needs JWT Token
+    NEW (pagination added) -  Generates a list of all customers that belongs to specific user. Needs JWT Token
 
     post:
-    Registers a new customer for specific user. Needs JWT token
+    NEW (full name) is added- Registers a new customer for specific user. Needs JWT token
     """
 
     serializer_class = CustomerSerializer
-    # permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)

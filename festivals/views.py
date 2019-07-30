@@ -13,6 +13,7 @@ from .serializers import FestivalCreationSerializer, FestivalListSerializer, Ret
 from common.util import generate_discount_code, paginators, DiscountType
 
 
+
 # Create your views here.
 
 
@@ -33,6 +34,7 @@ class FestivalsListAPIView(generics.ListAPIView, mixins.CreateModelMixin):
 
 
 class FestivalAPIView(APIView):
+
 
     def get(self, request):
 
