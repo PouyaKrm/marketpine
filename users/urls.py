@@ -10,6 +10,6 @@ urlpatterns = [
     path('salesman/profile/', views.SalesmanRetrieveUpdateAPIView.as_view()),
     path('salesman/resetpassword/', views.reset_user_password),
     path('salesman/forgetpassword/', views.user_forget_password),
-
+    path('salesman/profile/logo/', views.UploadRetrieveProfileImage.as_view()),
 
 ]

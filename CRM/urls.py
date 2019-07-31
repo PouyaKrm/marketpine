@@ -26,6 +26,8 @@ from festivals import urls as festival_url
 from invitation import urls as invitation_url
 from dashboard import urls as dashboard_url
 from customerpurchase import urls as purchase_url
+from django.conf import settings
+from django.conf.urls.static import static
 
 
 schema_view = get_swagger_view(title='Pastebin API')

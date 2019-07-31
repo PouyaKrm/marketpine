@@ -135,6 +135,10 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 
+MEDIA_ROOT = os.path.join(BASE_DIR, '..', 'uploaded_media')
+
+MAX_LOGO_SIZE = 800000
+
 AUTH_USER_MODEL = 'users.Businessman'
 
 
