@@ -5,13 +5,18 @@ from django.utils import timezone
 
 class Businessman(AbstractUser):
 
+    def get_upload_path(self, filename):
+        return f"{self.id}/logo/{filename}"
+
     phone = models.CharField(max_length=15)
     address = models.TextField(max_length=500, blank=True, null=True)
     business_name = models.CharField(max_length=1000)
+    logo = models.ImageField(upload_to=get_upload_path, null=True, blank=True, max_length=254)
     bot_access_expire = models.DateTimeField(default=timezone.now)
     instagram_access_expire = models.DateTimeField(default=timezone.now)
     is_verified = models.BooleanField(default=False)
     friend_invitation_access_expire = models.DateTimeField(default=timezone.now)
+
 
 
     def __str__(self):

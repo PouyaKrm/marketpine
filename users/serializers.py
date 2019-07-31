@@ -4,7 +4,10 @@ from django.contrib.auth.base_user import BaseUserManager
 
 from common.util.sms_message import SMSMessage
 from .models import Businessman, VerificationCodes
-import secrets, datetime
+import secrets,datetime
+from django.conf import settings
+import os
+from common.util.custom_validators import validate_logo_size
 
 PhonenumberValidator = RegexValidator(regex=r'^\+?1?\d{11, 12}$',
                                       message="Phone number must be entered in the format: '+999999999'."
@@ -223,4 +226,29 @@ class BusinessmanLoginSerializer(serializers.ModelSerializer):
         extra_kwargs = {'password': {'write_only': True}}
 
 
+class UploadImageSerializer(serializers.ModelSerializer):
 
+    logo = serializers.ImageField(max_length=254, validators=[validate_logo_size])
+
+    class Meta:
+
+        model = Businessman
+        fields = ['logo']
+
+    def update(self, instance: Businessman, validated_data):
+
+        logo = validated_data['logo']
+
+        user = self.context['user']
+
+
+        path = os.path.join(settings.MEDIA_ROOT, user.username, 'logo')
+
+        if not os.path.exists(path):
+            os.makedirs(path)
+        else:
+            user.logo.delete()
+
+        instance.logo.save(logo.name, logo.file)
+
+        return instance

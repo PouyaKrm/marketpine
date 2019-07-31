@@ -8,10 +8,10 @@ class BusinessmanAdminModel(UserAdmin):
     add_form = forms.BusinessmanCreationFrom
     form = forms.BusinessmanChangeForm
     model = Businessman
-    list_display = ['username', 'business_name', 'phone']
+    list_display = ['id', 'username', 'business_name', 'phone']
     fieldsets = (
             (None, {'fields': ('username', 'password')}),
-            ('General Info', {'fields': ('business_name', 'phone', 'address')}),
+            ('General Info', {'fields': ('business_name', 'phone','logo', 'address')}),
             ('Permissions', {'fields': ('is_verified', 'bot_access_expire',
                                         'instagram_access_expire', 'friend_invitation_access_expire')}),
                  )
