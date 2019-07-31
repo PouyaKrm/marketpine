@@ -2,7 +2,7 @@ from django.db.models.base import Model
 from django.template import TemplateSyntaxError
 from rest_framework import serializers
 from .models import SMSTemplate, SentSMS
-from common.util import render_template, get_fake_context, render_template_with_customer_data
+from common.util.custom_templates import render_template, get_fake_context, render_template_with_customer_data
 from common.util.sms_message import SMSMessage
 
 

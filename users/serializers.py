@@ -241,7 +241,6 @@ class UploadImageSerializer(serializers.ModelSerializer):
 
         user = self.context['user']
 
-
         path = os.path.join(settings.MEDIA_ROOT, user.id, 'logo')
 
         if not os.path.exists(path):
@@ -252,3 +251,4 @@ class UploadImageSerializer(serializers.ModelSerializer):
         instance.logo.save(logo.name, logo.file)
 
         return instance
+

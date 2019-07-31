@@ -1,8 +1,10 @@
+from django.template import TemplateSyntaxError
 from django.utils import timezone
 from rest_framework import serializers
 from users.models import Customer
 from .models import Festival
 from common.util.custom_validators import phone_validator
+from common.util.custom_templates import FestivalTemplate
 
 
 class FestivalCreationSerializer(serializers.ModelSerializer):
@@ -17,10 +19,12 @@ class FestivalCreationSerializer(serializers.ModelSerializer):
             'start_date',
             'end_date',
             'discount_code',
+            'message',
             'percent_off',
             'flat_rate_off'
         ]
 
+        extra_kwargs = {'message': {'required': True}}
 
     def validate_name(self, value):
 
@@ -28,9 +32,6 @@ class FestivalCreationSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError('name of the festival must be unique')
 
         return value
-
-
-
 
     def validate_start_date(self, value):
 
@@ -48,6 +49,14 @@ class FestivalCreationSerializer(serializers.ModelSerializer):
 
         return value
 
+    def validate_message(self, value):
+
+        try:
+            FestivalTemplate.validate_template(value)
+        except TemplateSyntaxError:
+            raise serializers.ValidationError('قالب غیر مجاز')
+
+        return value
 
 
 

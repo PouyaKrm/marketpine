@@ -237,17 +237,6 @@ class UploadRetrieveProfileImage(APIView):
         :param request: Contain data of Http request
         :return: If sends data is npt valid Response object with 400 status code else, Response Object with 200 status code
 
-        body:{
-
-            content : {
-
-                logo : {
-
-                    description: logo image file
-                }
-
-            }
-        }
         """
 
         serializer = UploadImageSerializer(data=request.data)
@@ -257,8 +246,7 @@ class UploadRetrieveProfileImage(APIView):
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        obj = serializer.update(request.user, serializer.validated_data)
-        serializer.instance = obj
+        serializer.update(request.user, serializer.validated_data)
 
         return Response(status=status.HTTP_204_NO_CONTENT)
 
