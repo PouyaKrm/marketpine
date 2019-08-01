@@ -1,16 +1,9 @@
-import coreapi
-from django.db.models.aggregates import Sum
 from django.db.models.expressions import F
 from rest_framework import status
-from rest_framework.decorators import api_view, schema
+from rest_framework.decorators import api_view
 from rest_framework.request import Request
 from rest_framework.response import Response
-import datetime
 from django.db.models import Sum
-from common.util import DaysOfWeek
-from customerpurchase.models import CustomerPurchase
-
-from users.models import Businessman
 
 
 @api_view(['GET'])

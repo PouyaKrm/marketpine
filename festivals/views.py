@@ -11,7 +11,8 @@ from .models import Festival
 from .serializers import FestivalCreationSerializer, FestivalListSerializer, RetrieveFestivalSerializer, \
     CustomerSerializer, FestivalCustomerSerializer
 from common.util import generate_discount_code, paginators, DiscountType
-
+from common.util.custom_templates import FestivalTemplate
+from common.util.sms_message import FestivalMessageBulk
 
 
 # Create your views here.
@@ -38,6 +39,13 @@ class FestivalAPIView(APIView):
 
     def get(self, request):
 
+        """
+        NEW(start_date, end_date, discount_code fields are added)
+        List all registered festivals.
+        parameter : q: if provided all festivals that their discount code is like represented value will be list to output
+        :param request:
+        :return: Response with list of festivals and as body and status 200
+        """
         q = request.query_params.get('q')
 
         if q is not None:
@@ -50,8 +58,16 @@ class FestivalAPIView(APIView):
 
     def post(self, request: Request):
 
+        """
+        NEW(message field is added)
+        Creates new Festival
+        parameter : auto: if True generates a discount code automatically. else, the client must enter discount code
+        :param request:
+        :return:
+        """
+
         auto = request.query_params.get('auto')
-        if (auto is not None) and auto.lower() == 'true':
+        if (auto is None) or auto.lower() == 'true':
 
             request.data['discount_code'] = generate_discount_code(DiscountType.FESTIVAL)
 
@@ -63,6 +79,17 @@ class FestivalAPIView(APIView):
 
         obj = serializer.create(serializer.validated_data)
         serializer.instance = obj
+
+        template = FestivalTemplate(request.user, obj)
+
+        rendered_messages = template.get_message_phone_lists()
+
+        sms = FestivalMessageBulk(rendered_messages['phones'], rendered_messages['messages'])
+
+        sms.send_bulk()
+
+        serializer.instance = obj
+
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
