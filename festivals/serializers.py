@@ -108,6 +108,9 @@ class FestivalListSerializer(serializers.ModelSerializer):
         fields = [
             'id',
             'name',
+            'start_date',
+            'end_date',
+            'discount_code',
             'customers_total'
         ]
 

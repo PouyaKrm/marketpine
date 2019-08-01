@@ -39,6 +39,13 @@ class FestivalAPIView(APIView):
 
     def get(self, request):
 
+        """
+        NEW(start_date, end_date, discount_code fields are added)
+        List all registered festivals.
+        parameter : q: if provided all festivals that their discount code is like represented value will be list to output
+        :param request:
+        :return: Response with list of festivals and as body and status 200
+        """
         q = request.query_params.get('q')
 
         if q is not None:
@@ -52,6 +59,7 @@ class FestivalAPIView(APIView):
     def post(self, request: Request):
 
         """
+        NEW(message field is added)
         Creates new Festival
         parameter : auto: if True generates a discount code automatically. else, the client must enter discount code
         :param request:

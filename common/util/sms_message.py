@@ -63,33 +63,36 @@ class FestivalMessageBulk(SMSMessage):
 
     def __init__(self, receptors: list, messages: list, senders=None):
 
+        """
+        Note: length of message list and receptors list and senders must be equal
+        :raises ValueError: If length of receptors list and messages list are not equal, this exception will be raised
+        :param receptors: list of string phone numbers
+        :param messages: list of string messages
+        :param senders:  list of senders phone number. if this value is nit provided default phone numbers will be used
+        """
+
+        if len(receptors) != len(messages):
+            raise ValueError('messages length and receptors length must be same in bulk messages')
+
         self.receptors = receptors
         self.messages = messages
         self.senders = senders
-        self.start=0
-        self.end=0
-
-    def validate_bulk_input(self):
-
-        """
-        :raise if length of receptors and messages are not equal ValueError exception will be raised
-        :return:
-        """
-
-        if len(self.receptors) != len(self.messages):
-            raise ValueError('messages length and receptors length must be same in bulk messages')
-
+        self.start = 0
+        self.end = 0
 
 
     def give_message_params(self):
+
+        """
+        Provides SMS message parameters in order that is specified by kavehnegar api.
+        :return: Dictionary that contains 'sender', 'receptor' and 'message' keys and values
+        """
 
         if self.start == len(self.receptors):
             return None
 
         recep_len = len(self.receptors[self.start:])
         sender_len = len(self.senders)
-
-
 
         if sender_len > recep_len:
             params = {"sender": f"{self.senders[:recep_len]}", "receptor": f"{self.receptors[self.start:]}",
@@ -111,25 +114,16 @@ class FestivalMessageBulk(SMSMessage):
         """
         sends bulk messages means that many messages to many receptors.
         this function is specific for sending multiple messages
-        Note: length of message list and receptors list and senders must be equal
-        :param receptors: list of phone numbers
-        :param messages: list of messages
-        :param sender: if messages are going to be sent by multiple sender's, phone number
         of those senders must be represented as a list other wise it will be sent by default phone number
-        :return: status of the sent messages
+        :return:
         """
-
-        self.validate_bulk_input()
 
         if self.senders is None:
             self.senders = ['0013658000175', '10004346', '30004681', '2000004346']
         params = self.give_message_params()
-        length = len(self.senders)
 
-        for i in range(0, len(self.receptors)):
+        while params is not None:
 
             self.api.sms_sendarray(params)
             params = self.give_message_params()
-            if params is None:
-                break
 
