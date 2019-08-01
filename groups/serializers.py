@@ -39,6 +39,7 @@ class CustomerSerializer(serializers.ModelSerializer):
         fields = [
             'id',
             'phone',
+            'full_name',
             'telegram_id',
             'instagram_id'
         ]
