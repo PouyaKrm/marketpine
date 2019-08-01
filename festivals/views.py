@@ -67,7 +67,7 @@ class FestivalAPIView(APIView):
         """
 
         auto = request.query_params.get('auto')
-        if (auto is None) or auto.lower() == 'true':
+        if (auto is not None) and auto.lower() == 'true':
 
             request.data['discount_code'] = generate_discount_code(DiscountType.FESTIVAL)
 
