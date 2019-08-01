@@ -1,3 +1,4 @@
+from datetime import timedelta, datetime
 from django.db.models.expressions import F
 from rest_framework import status
 from rest_framework.decorators import api_view
@@ -20,3 +21,24 @@ def get_top_5_customers(request: Request):
 
     return Response(data, status=status.HTTP_200_OK)
 
+
+@api_view(['GET'])
+def total_amount_days_in_week(request: Request):
+
+    """
+    NEW
+    Represent amount of purchases in each day of current week
+    :param request:
+    :return: Response with result and 200 status code
+    """
+
+    today = datetime.now().date()
+    day_of_week = today - timedelta(days=today.weekday() + 2)  # beginning of the week in IR (saturday)
+    result = []
+    for _ in range(7):
+        info = request.user.customerpurchase_set.filter(purchase_date__date=day_of_week).\
+            aggregate(purchase_sum=Sum('amount'))
+        info['date'] = day_of_week
+        result.append(info)
+        day_of_week += timedelta(days=1)
+    return Response(result, status=status.HTTP_200_OK)
