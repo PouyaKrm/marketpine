@@ -213,6 +213,7 @@ def check_festival_name_or_discount_code_exists(request: Request):
 def get_festival_by_discount_code(request: Request, discount_code):
 
     """
+    NEW
     Retrieves specific festival by it's discount code
     :param request: Contains data of the request
     :param discount_code: discount code of the festival that is provided by the user

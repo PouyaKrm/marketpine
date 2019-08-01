@@ -5,7 +5,7 @@ from .models import CustomerPurchase
 
 class CustomerPurchaseAdminModel(admin.ModelAdmin):
 
-    list_display = ['amount', 'date', 'customer_phone']
+    list_display = ['amount', 'purchase_date', 'customer_phone']
 
     def customer_phone(self, obj):
         if obj.customer is not None:
