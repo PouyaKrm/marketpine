@@ -241,7 +241,7 @@ class UploadImageSerializer(serializers.ModelSerializer):
 
         user = self.context['user']
 
-        path = os.path.join(settings.MEDIA_ROOT, user.id, 'logo')
+        path = os.path.join(settings.MEDIA_ROOT, user.id.__str__(), 'logo')
 
         if not os.path.exists(path):
             os.makedirs(path)
