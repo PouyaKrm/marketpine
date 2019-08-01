@@ -1,6 +1,7 @@
 from django.core.exceptions import ObjectDoesNotExist
 from django.shortcuts import render, get_object_or_404
 from rest_framework import generics, mixins, permissions, status
+from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from .models import BusinessmanGroups
@@ -12,7 +13,9 @@ from .serializers import BusinessmanGroupsCreateListSerializer, BusinessmanGroup
 
 class BusinessmanGroupsListAPIView(generics.ListAPIView, mixins.CreateModelMixin):
 
-    permission_classes = [permissions.IsAuthenticated]
+    """
+    Lists and create group for the user
+    """
     serializer_class = BusinessmanGroupsCreateListSerializer
 
     def get_queryset(self):
@@ -27,9 +30,13 @@ class BusinessmanGroupsListAPIView(generics.ListAPIView, mixins.CreateModelMixin
         return self.create(request, args, kwargs)
 
 
-class BusinessmanGroupsUpdateAPIView(generics.UpdateAPIView, mixins.DestroyModelMixin):
+class BusinessmanGroupsUpdateAPIView(generics.RetrieveAPIView, mixins.UpdateModelMixin, mixins.DestroyModelMixin):
 
-    permission_classes = [permissions.IsAuthenticated]
+    """
+    NEW
+    Retrieves info of specific group y it's id. Updates info of the group like group title. Also deletes a group by it's id
+    """
+
     serializer_class = BusinessmanGroupsCreateListSerializer
     lookup_field = 'id'
 
@@ -38,16 +45,26 @@ class BusinessmanGroupsUpdateAPIView(generics.UpdateAPIView, mixins.DestroyModel
         self.check_object_permissions(self.request, obj)
         return obj
 
+    def put(self, request: Request, *args, **kwargs):
+        return self.update(request, *args, **kwargs)
+
     def delete(self, request, *args, **kwargs):
         return self.destroy(request, *args, **kwargs)
 
 
 class CustomerGroupRetrieveAPIView(APIView):
 
-    permission_classes = [permissions.IsAuthenticated]
-
+    """
+    List customers that are the members of the group, Also adds and removes members from group.
+    """
     def get(self, request, *args, **kwargs):
-
+        """
+        Lists customers that are members of the group
+        :param request:
+        :param args:
+        :param kwargs:
+        :return: Response with list of the customers and 200 status code. Else Response with status code 404
+        """
         try:
             group = BusinessmanGroups.objects.get(businessman=request.user, id=kwargs['group_id'])
         except ObjectDoesNotExist:
@@ -58,6 +75,17 @@ class CustomerGroupRetrieveAPIView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def put(self, request, *args, **kwargs):
+
+        """
+        Adds member to the group by the list of ids of the customers that is sent as the body of the request.
+        If a member already exists it will be ignored by add method.
+        :param request: Contains data of the request
+        :param args:
+        :param kwargs:
+        :return: Response with status code 204 if operation is successful.
+        Response with 400 satus code and error messages if sent data is invalid.
+        Response with status code 404 if group does not exist
+        """
 
         serializer = BusinessmanGroupsRetrieveSerializer(data=request.data)
 
@@ -74,6 +102,17 @@ class CustomerGroupRetrieveAPIView(APIView):
 
     def delete(self, request, *args, **kwargs):
 
+        """
+        Removes customers from the group by the list of customer ids that is sent as the body of the request.
+        If a customer is already removed, it will be ignored y remove function
+        :param request:
+        :param args:
+        :param kwargs:
+        :return: Response with status code 204 if operation was successful.
+        Response with 400 and error messages if sent data is invalid.
+        Response with 404 if group does not exist.
+        """
+
         serializer = BusinessmanGroupsRetrieveSerializer(data=request.data)
 
         serializer._context = {'user': request.user}
@@ -89,3 +128,4 @@ class CustomerGroupRetrieveAPIView(APIView):
         group.save()
 
         return Response(status=status.HTTP_204_NO_CONTENT)
+
