@@ -228,3 +228,14 @@ def get_festival_by_discount_code(request: Request, discount_code):
     serializer = RetrieveFestivalSerializer(festival)
 
     return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+@api_view(['GET'])
+def get_number_of_festivals(request: Request):
+    """
+    NEW
+    Represents number of festivals that is registered by the user
+    :param request:
+    :return: Response with total festivals number as body and 200 status code
+    """
+    return Response({'festivals_total': request.user.festival_set.count()}, status=status.HTTP_200_OK)
