@@ -1,0 +1,46 @@
+from base64 import b64decode
+from datetime import datetime
+
+from django.core.exceptions import ObjectDoesNotExist
+from django.views.generic.base import View
+import jwt.exceptions as jwtEx
+from rest_framework import permissions
+from rest_framework.request import Request
+import jwt
+from django.conf import settings
+from common.util import get_client_ip
+from .models import BusinessmanRefreshTokens, Businessman
+
+
+class HasValidRefreshToken(permissions.BasePermission):
+
+
+    """
+    Check if refresh token is presented in header and is valid.
+    """
+
+    message = "Refresh token is changed or is expired"
+
+    def has_permission(self, request: Request, view: View):
+
+        refresh_token = request.META.get('HTTP_X_API_KEY')
+
+        if refresh_token is None:
+            return False
+
+        try:
+            payload = jwt.decode(refresh_token, settings.REFRESH_KEY_PU, algorithms='RS256')
+        except jwtEx.PyJWTError:
+            return False
+
+        ip = get_client_ip(request)
+
+        try:
+            BusinessmanRefreshTokens.objects.get(pk=payload['id'], username=payload['iss'],  ip=ip)
+        except ObjectDoesNotExist:
+            return False
+
+        request.data['username'] = payload['iss']
+
+        return True
+

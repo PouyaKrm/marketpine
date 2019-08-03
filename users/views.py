@@ -1,13 +1,14 @@
+import jwt
 from django.core.exceptions import ObjectDoesNotExist
 from rest_framework import generics, status
 from rest_framework.views import APIView
-from rest_framework import permissions
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.request import Request
 from django.contrib.auth import authenticate
 
-from common.util import custom_login_payload
+from common.util import  get_client_ip, custom_login_payload
+from users.models import BusinessmanRefreshTokens
 from .serializers import *
 # Create your views here.
 from rest_framework import generics
@@ -15,6 +16,7 @@ import os
 from django.conf import settings
 from django.http.response import HttpResponse
 from wsgiref.util import FileWrapper
+from .permissions import HasValidRefreshToken
 
 class RegisterSalesmanView(generics.CreateAPIView):
 
@@ -77,25 +79,64 @@ def resend_verification_code(request, user_id):
 @permission_classes([])
 def login_api_view(request):
 
+    """
+    Creates a refresh token for a user.
+    :param request:
+    :return: If request data is invalid sends HTTP Response with 400 status code. Else if user does not exist or is not
+    verified returns Response with error message and 401 status code. Else Response with token and additional data and
+    200 status code.
+    """
+
     serializer = BusinessmanLoginSerializer(data=request.data)
 
     if not serializer.is_valid():
-
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     user = authenticate(username=request.data.get('username'), password=request.data.get('password'))
 
     if user is None or user.is_verified is False:
-
         return Response({'details': ['username or password is wrong']}, status=status.HTTP_401_UNAUTHORIZED)
 
+    expire_time = datetime.datetime.now() + datetime.timedelta(days=1)
+
+    obj = BusinessmanRefreshTokens.objects.create(username=user.get_username(), expire_at=expire_time,
+                                            ip=get_client_ip(request))
+
+    payload = {'exp': expire_time, "iss": user.get_username(), "iat": datetime.datetime.now(), 'id': obj.id}
+
+    token = jwt.encode(payload, settings.REFRESH_KEY_PR, algorithm='RS256')
+
+    response = {'refresh_token': token}
+    response['username'] = user.get_username()
+    response['business_name'] = user.business_name
+
+    return Response(response, status=status.HTTP_200_OK)
+
+
+@api_view(['POST'])
+@permission_classes([HasValidRefreshToken])
+def get_access_token(request):
+
+    """
+    NEW
+    Generates access token for the user that has refresh token. Every time an access token is needed like when token is
+    expired, Should make request to this endpoint
+    headers: x-api-key header that contains refresh token is needed
+    :param request:
+    :return:
+    """
+
+    username = request.data['username']
+
+    try:
+        user = Businessman.objects.get(username=username, is_verified=True)
+    except ObjectDoesNotExist:
+        return Response({'details': ['provided data is invalid']}, status=status.HTTP_401_UNAUTHORIZED)
     payload = custom_login_payload(user)
 
-    payload['username'] = user.get_username()
-    payload['business_name'] = user.business_name
+
 
     return Response(payload, status=status.HTTP_200_OK)
-
 
 
 
