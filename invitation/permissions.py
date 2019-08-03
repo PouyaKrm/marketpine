@@ -10,5 +10,6 @@ class HasInvitationAccess(permissions.BasePermission):
 
     def has_permission(self, request: Request, view: View):
 
-        expired = request.user.friend_invitation_access_expire <= timezone.now()
-        return not expired
+        # expired = request.user.friend_invitation_access_expire <= timezone.now()
+        # return not expired
+        return True
