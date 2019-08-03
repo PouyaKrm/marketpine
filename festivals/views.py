@@ -82,17 +82,45 @@ class FestivalAPIView(APIView):
         obj = serializer.create(serializer.validated_data)
         serializer.instance = obj
 
-        template = FestivalTemplate(request.user, obj)
-
-        rendered_messages = template.get_message_phone_lists()
-
-        sms = FestivalMessageBulk(rendered_messages['phones'], rendered_messages['messages'])
-
-        sms.send_bulk()
-
         serializer.instance = obj
 
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+@api_view(['PATCH'])
+def send_festival_message(request: Request, festival_id):
+
+    """
+    NEW
+    Sends messages to all customer of the user to inform them about festival if messages are not sent before
+    :param request:
+    :param festival_id: id of the festival that message belongs to
+    :return: Response with 204 status code if operation was successful else if festival messages already sent
+    or festival is expired Response with a message and 403 status code will be returned
+    """
+
+    try:
+        festival = request.user.festival_set.get(id=festival_id)
+    except ObjectDoesNotExist:
+        return Response(status=status.HTTP_404_NOT_FOUND)
+
+    if festival.messages_sent or festival.end_date <= timezone.now().date():
+
+        return Response({'details': ['پیام های مربوط به این جشنواره قبلا فرستاده شده یا تاریخ جشنواره به اتمام رسیده']},
+                        status=status.HTTP_403_FORBIDDEN)
+
+    template = FestivalTemplate(request.user, festival)
+
+    rendered_messages = template.get_message_phone_lists()
+
+    sms = FestivalMessageBulk(rendered_messages['phones'], rendered_messages['messages'])
+
+    sms.send_bulk()
+
+    festival.messages_sent = True
+    festival.save()
+
+    return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class FestivalRetrieveAPIView(generics.RetrieveAPIView, mixins.UpdateModelMixin, mixins.DestroyModelMixin):
@@ -159,6 +187,8 @@ def add_customer_to_festival(request):
     festival.customers.add(customer)
     festival.save()
     return Response({'details': ['customers added to festival']}, status=status.HTTP_200_OK)
+
+
 
 
 @api_view(['DELETE'])

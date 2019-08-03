@@ -12,18 +12,12 @@ class Businessman(AbstractUser):
     address = models.TextField(max_length=500, blank=True, null=True)
     business_name = models.CharField(max_length=1000)
     logo = models.ImageField(upload_to=get_upload_path, null=True, blank=True, max_length=254)
-    bot_access_expire = models.DateTimeField(default=timezone.now)
-    instagram_access_expire = models.DateTimeField(default=timezone.now)
+    telegram_id = models.CharField(max_length=20, blank=True, null=True)
+    instagram_id = models.CharField(max_length=20, blank=True, null=True)
     is_verified = models.BooleanField(default=False)
-    friend_invitation_access_expire = models.DateTimeField(default=timezone.now)
-
-
 
     def __str__(self):
         return self.username
-
-    # def get_customers(self):
-    #     return "\n".join(list(self.customer_set.all()))
 
 
 class VerificationCodes(models.Model):
@@ -90,6 +84,13 @@ class Customer(AbstractBaseUser):
 
         return self.phone
 
+
+class BusinessmanRefreshTokens(models.Model):
+
+    generate_at = models.DateTimeField(auto_now_add=True)
+    expire_at = models.DateTimeField()
+    ip = models.GenericIPAddressField()
+    username = models.CharField(max_length=40)
 
 # class SalesmenCustomer(models.Model):
 #

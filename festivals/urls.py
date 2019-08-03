@@ -3,6 +3,7 @@ from . import views
 
 urlpatterns = [
     path('', views.FestivalAPIView.as_view()),
+    path('<int:festival_id>/send-message/', views.send_festival_message),
     path('count/', views.get_number_of_festivals),
     path('<int:id>/', views.FestivalRetrieveAPIView.as_view()),
     path('by-code/<str:discount_code>/', views.get_festival_by_discount_code),
