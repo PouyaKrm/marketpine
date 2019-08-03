@@ -26,6 +26,7 @@ from festivals import urls as festival_url
 from invitation import urls as invitation_url
 from dashboard import urls as dashboard_url
 from customerpurchase import urls as purchase_url
+from panelmodulus import urls as modulus_url
 from django.conf import settings
 from django.conf.urls.static import static
 
@@ -43,6 +44,7 @@ urlpatterns = [
     path('api/salesman/invitations/', include(invitation_url)),
     path('api/salesman/dashboard/', include(dashboard_url)),
     path('api/salesman/customer-purchase/', include(purchase_url)),
+    path('api/salesman/modulus/', include(modulus_url)),
 ]
 
 
