@@ -1,12 +1,10 @@
-from coreapi import Field
 from django.core.exceptions import ObjectDoesNotExist
 from django.shortcuts import render, get_object_or_404
 from django.utils import timezone
-from rest_framework import generics, mixins, status
-from rest_framework.decorators import api_view
+from rest_framework import generics, mixins, status, permissions
+from rest_framework.decorators import api_view, permission_classes
 from rest_framework.request import Request
 from rest_framework.response import Response
-from rest_framework.schemas import AutoSchema
 from rest_framework.views import APIView
 from users.models import Customer
 from .models import Festival
@@ -15,7 +13,7 @@ from .serializers import FestivalCreationSerializer, FestivalListSerializer, Ret
 from common.util import generate_discount_code, paginators, DiscountType
 from common.util.custom_templates import FestivalTemplate
 from common.util.sms_message import FestivalMessageBulk
-
+from .permissions import HASFestivalAccess
 
 # Create your views here.
 
@@ -23,6 +21,7 @@ from common.util.sms_message import FestivalMessageBulk
 class FestivalsListAPIView(generics.ListAPIView, mixins.CreateModelMixin):
 
     serializer_class = FestivalCreationSerializer
+    permission_classes = [permissions.IsAuthenticated, HASFestivalAccess]
 
     def get_queryset(self):
 
@@ -38,6 +37,7 @@ class FestivalsListAPIView(generics.ListAPIView, mixins.CreateModelMixin):
 
 class FestivalAPIView(APIView):
 
+    permission_classes = [permissions.IsAuthenticated, HASFestivalAccess]
 
     def get(self, request):
 
@@ -88,6 +88,7 @@ class FestivalAPIView(APIView):
 
 
 @api_view(['PATCH'])
+@permission_classes([permissions.IsAuthenticated, HASFestivalAccess])
 def send_festival_message(request: Request, festival_id):
 
     """
@@ -126,6 +127,7 @@ def send_festival_message(request: Request, festival_id):
 class FestivalRetrieveAPIView(generics.RetrieveAPIView, mixins.UpdateModelMixin, mixins.DestroyModelMixin):
 
     serializer_class = RetrieveFestivalSerializer
+    permission_classes = [permissions.IsAuthenticated, HASFestivalAccess]
 
     lookup_field = 'id'
 
@@ -148,6 +150,7 @@ class FestivalRetrieveAPIView(generics.RetrieveAPIView, mixins.UpdateModelMixin,
 
 
 @api_view(['GET'])
+@permission_classes([permissions.IsAuthenticated, HASFestivalAccess])
 def list_customers_in_festival(request, festival_id):
 
     try:
@@ -160,9 +163,8 @@ def list_customers_in_festival(request, festival_id):
     return paginator.next_page()
 
 
-
-
 @api_view(['POST'])
+@permission_classes([permissions.IsAuthenticated, HASFestivalAccess])
 def add_customer_to_festival(request):
 
     serializer = FestivalCustomerSerializer(data=request.data)
@@ -189,9 +191,8 @@ def add_customer_to_festival(request):
     return Response({'details': ['customers added to festival']}, status=status.HTTP_200_OK)
 
 
-
-
 @api_view(['DELETE'])
+@permission_classes([permissions.IsAuthenticated, HASFestivalAccess])
 def delete_customer_from_festival(request, festival_id, customer_id):
 
     try:
@@ -208,6 +209,7 @@ def delete_customer_from_festival(request, festival_id, customer_id):
 
 
 @api_view(['GET'])
+@permission_classes([permissions.IsAuthenticated, HASFestivalAccess])
 def check_festival_name_or_discount_code_exists(request: Request):
 
 
@@ -240,6 +242,7 @@ def check_festival_name_or_discount_code_exists(request: Request):
 
 
 @api_view(['GET'])
+@permission_classes([permissions.IsAuthenticated, HASFestivalAccess])
 def get_festival_by_discount_code(request: Request, discount_code):
 
     """
@@ -262,6 +265,7 @@ def get_festival_by_discount_code(request: Request, discount_code):
 
 
 @api_view(['GET'])
+@permission_classes([permissions.IsAuthenticated, HASFestivalAccess])
 def get_number_of_festivals(request: Request):
     """
     NEW

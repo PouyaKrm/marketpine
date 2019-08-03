@@ -18,6 +18,7 @@ from django.http.response import HttpResponse
 from wsgiref.util import FileWrapper
 from .permissions import HasValidRefreshToken
 
+
 class RegisterSalesmanView(generics.CreateAPIView):
 
     permission_classes = []
@@ -134,8 +135,6 @@ def get_access_token(request):
         return Response({'details': ['provided data is invalid']}, status=status.HTTP_401_UNAUTHORIZED)
     payload = custom_login_payload(user)
 
-
-
     return Response(payload, status=status.HTTP_200_OK)
 
 
@@ -225,8 +224,6 @@ class SalesmanRetrieveUpdateAPIView(APIView):
     Retrieves the profile data Including phone, business_name, first_name, last_name, email.
      but phone number and business name are required. Needs JWT toeken
     """
-
-
 
     def put(self, request, *args, **kwargs):
 
