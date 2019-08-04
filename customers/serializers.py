@@ -1,8 +1,11 @@
 from rest_framework import serializers
 
+from common.util.custom_templates import CustomerTemplate
 from common.util.custom_validators import phone_validator
+from common.util.sms_message import SMSMessage
 from users.models import Customer
 from django.db.models import Sum
+
 
 class CustomerSerializer(serializers.ModelSerializer):
 
@@ -33,20 +36,19 @@ class CustomerSerializer(serializers.ModelSerializer):
 
         user = self.context['user']
 
-        if user.customers.filter(phone=value).count() > 0:
+        customer_id = self.context['customer_id']
 
-            raise serializers.ValidationError('another customer with this phone number already exists')
+        if user.customers.exclude(id=customer_id).filter(phone=value).count() > 0:
+            raise serializers.ValidationError('مشتری دیگری با این شماره تلفن قبلا ثبت شده')
 
         return value
 
 
     def update(self, instance: Customer, validated_data):
 
-        phone = validated_data.get('phone')
-
-        if instance.phone != phone:
-            #send sms message
-            pass
+        old_phone = instance.phone
+        new_phone = validated_data.get('phone')
+        user = self.context['user']
 
         for k, v in validated_data.items():
 
@@ -54,9 +56,25 @@ class CustomerSerializer(serializers.ModelSerializer):
 
         instance.save()
 
+        if new_phone != old_phone:
+            message = CustomerTemplate(user, user.panelsetting.welcome_message, instance).render_template()
+
+            sms = SMSMessage()
+
+            sms.send_message(new_phone, message)
+
         return instance
 
     def create(self, validated_data):
 
-        return Customer.objects.create(businessman=self.context['user'], **validated_data)
+        user = self.context['user']
 
+        obj = Customer.objects.create(businessman=user, **validated_data)
+
+        message = CustomerTemplate(user, user.panelsetting.welcome_message, obj).render_template()
+
+        sms = SMSMessage()
+
+        sms.send_message(obj.phone, message)
+
+        return obj

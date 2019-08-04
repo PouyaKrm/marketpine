@@ -111,8 +111,11 @@ class FestivalListSerializer(serializers.ModelSerializer):
             'start_date',
             'end_date',
             'discount_code',
-            'customers_total'
+            'customers_total',
+            'messages_sent',
         ]
+
+        extra_kwargs = {'message_sent': {'read_only': True}}
 
     def get_customers_total(self, obj: Festival):
         return obj.customers.count()
@@ -185,21 +188,3 @@ class FestivalCustomerSerializer(serializers.Serializer):
             'discount_code'
         ]
 
-    # def validate_discount_code(self, value):
-    #
-    #     user = self.context['user']
-    #
-    #     if not user.festival_set.filter(discount_code=value).exists():
-    #         raise serializers.ValidationError('discount_code does not exists')
-    #
-    #     return value
-    #
-    # def validate_phone(self, value):
-    #
-    #     user = self.context['user']
-    #
-    #     if not user.customers.filter(phone=value).exists():
-    #         raise serializers.ValidationError('customer does not exists')
-    #
-    #     return value
-    #

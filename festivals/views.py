@@ -87,7 +87,7 @@ class FestivalAPIView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
-@api_view(['PATCH'])
+@api_view(['PUT'])
 @permission_classes([permissions.IsAuthenticated, HASFestivalAccess])
 def send_festival_message(request: Request, festival_id):
 
