@@ -30,6 +30,23 @@ class CustomerSerializer(serializers.ModelSerializer):
 
         return value
 
+
+    def update(self, instance: Customer, validated_data):
+
+        phone = validated_data.get('phone')
+
+        if instance.phone != phone:
+            #send sms message
+            pass
+
+        for k, v in validated_data.items():
+
+            setattr(instance, k, v)
+
+        instance.save()
+
+        return instance
+
     def create(self, validated_data):
 
         return Customer.objects.create(businessman=self.context['user'], **validated_data)
