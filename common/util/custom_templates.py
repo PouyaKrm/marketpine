@@ -48,12 +48,13 @@ class CustomerTemplate:
         Represent context that is needed to render the template for the welcome message.
         :return: Context Object
         """
-        return Context({'phone': self.customer.phone, 'register_date': self.customer.register_date,
-                        'business_name': self.businessman.business_name})
+        return Context({'phone': self.customer.phone,'full_name': self.customer.full_name,
+                        'register_date': self.customer.register_date, 'business_name': self.businessman.business_name})
 
     def validate_welcome_template(self):
 
-        self.template.render({'phone': '09185684132', 'register_date': '2018-05-06', 'business_name': 'test'})
+        self.template.render(
+            Context({'phone': '09185684132', 'register_date': '2018-05-06', 'business_name': 'test'}))
 
     def render_template(self):
 

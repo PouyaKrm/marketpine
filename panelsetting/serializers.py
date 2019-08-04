@@ -26,3 +26,4 @@ class PanelSettingSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("invalid template")
 
         return value
+
