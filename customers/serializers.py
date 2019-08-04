@@ -6,6 +6,7 @@ from common.util.sms_message import SMSMessage
 from users.models import Customer
 from django.db.models import Sum
 
+
 class CustomerSerializer(serializers.ModelSerializer):
 
     phone = serializers.CharField(max_length=15, validators=[phone_validator])
