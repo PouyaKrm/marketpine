@@ -4,7 +4,7 @@ from rest_framework import generics, mixins, permissions
 from rest_framework.generics import RetrieveAPIView
 from rest_framework.request import Request
 
-from .serializers import CustomerSerializer
+from .serializers import CustomerSerializer, CustomerListCreateSerializer
 
 
 
@@ -19,7 +19,7 @@ class BusinessmanCustomerListAPIView(generics.ListAPIView, mixins.CreateModelMix
     NEW (full name) is added- Registers a new customer for specific user. Needs JWT token
     """
 
-    serializer_class = CustomerSerializer
+    serializer_class = CustomerListCreateSerializer
 
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
@@ -45,7 +45,6 @@ class BusinessmanCustomerRetrieveAPIView(mixins.DestroyModelMixin, RetrieveAPIVi
 
     serializer_class = CustomerSerializer
     permission_classes = [permissions.IsAuthenticated]
-
 
     def get_serializer_context(self):
         return {'user': self.request.user, 'customer_id': self.kwargs.get('pk')}

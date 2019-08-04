@@ -108,6 +108,7 @@ def login_api_view(request):
     token = jwt.encode(payload, settings.REFRESH_KEY_PR, algorithm='RS256')
 
     response = {'refresh_token': token}
+    response['id'] = user.id
     response['username'] = user.get_username()
     response['business_name'] = user.business_name
 
@@ -288,17 +289,41 @@ class UploadRetrieveProfileImage(APIView):
 
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-    def get(self, request: Request):
+    # def get(self, request: Request):
+    #
+    #     """
+    #     NEW
+    #     Gives the logo image that is uploaded by put request
+    #     :param request:
+    #     :return: If an logo file is uploaded before returns Response with file and 200 status code, else 404 status code
+    #     """
+    #
+    #     logo = request.user.logo
+    #     if not logo:
+    #         return Response(status=status.HTTP_404_NOT_FOUND)
+    #
+    #     return HttpResponse(FileWrapper(logo.file), content_type="image/png")
 
-        """
-        NEW
-        Gives the logo image that is uploaded by put request
-        :param request:
-        :return: If an logo file is uploaded before returns Response with file and 200 status code, else 404 status code
-        """
 
-        logo = request.user.logo
-        if not logo:
-            return Response(status=status.HTTP_404_NOT_FOUND)
+@api_view(['GET'])
+@permission_classes([])
+def get_user_logo(request: Request, businessman_id):
 
-        return HttpResponse(FileWrapper(logo.file), content_type="image/png")
+    """
+    NEW
+    Gives the logo image that is uploaded by put request
+    :param request:
+    :param businessman_id: id of the user that logo belongs to
+    :return: If an logo file is uploaded before returns Response with file and 200 status code, else 404 status code
+    """
+
+    try:
+        user = Businessman.objects.get(id=businessman_id)
+    except ObjectDoesNotExist:
+        return Response({'details': 'کاربری یافت نشد'},status=status.HTTP_404_NOT_FOUND)
+
+    logo = user.logo
+    if not logo:
+        return Response({'details': 'این کاربر لوگو خود را ثبت نکرده'}, status=status.HTTP_404_NOT_FOUND)
+
+    return HttpResponse(FileWrapper(logo.file), content_type="image/png")
