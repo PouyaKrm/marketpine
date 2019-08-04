@@ -18,7 +18,7 @@ from django.urls import path, include
 from faker import Faker
 from rest_framework_swagger.views import get_swagger_view
 
-from users import urls as salesman_url, models
+from users import urls as salesman_url
 from customers import urls as customer_url
 from groups import urls as group_url
 from smspanel import urls as smspanel_url
@@ -27,9 +27,7 @@ from invitation import urls as invitation_url
 from dashboard import urls as dashboard_url
 from customerpurchase import urls as purchase_url
 from panelmodulus import urls as modulus_url
-from django.conf import settings
-from django.conf.urls.static import static
-
+from panelsetting import urls as setiing_ulr
 
 schema_view = get_swagger_view(title='Pastebin API')
 
@@ -45,6 +43,7 @@ urlpatterns = [
     path('api/salesman/dashboard/', include(dashboard_url)),
     path('api/salesman/customer-purchase/', include(purchase_url)),
     path('api/salesman/modulus/', include(modulus_url)),
+    path('api/salesman/settings/', include(setiing_ulr)),
 ]
 
 
