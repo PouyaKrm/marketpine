@@ -68,6 +68,7 @@ INSTALLED_APPS = [
     'invitation',
     'dashboard',
     'customerpurchase',
+    'panelsetting',
     'rest_framework_swagger',
     'django.contrib.admin',
     'django.contrib.auth',
