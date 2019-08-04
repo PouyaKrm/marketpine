@@ -2,11 +2,12 @@ from rest_framework import serializers
 
 from common.util.custom_validators import phone_validator
 from users.models import Customer
-
+from django.db.models import Sum
 
 class CustomerSerializer(serializers.ModelSerializer):
 
     phone = serializers.CharField(max_length=15, validators=[phone_validator])
+    purchase_sum = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = Customer
@@ -15,10 +16,18 @@ class CustomerSerializer(serializers.ModelSerializer):
             'phone',
             'full_name',
             'telegram_id',
-            'instagram_id'
+            'instagram_id',
+            'purchase_sum',
         ]
 
         extra_kwargs = {'telegram_id': {'read_only': True}, 'instagram_id': {'read_only': True}}
+
+
+    def get_purchase_sum(self, obj):
+
+        purchase = obj.customerpurchase_set.aggregate(purchase_sum=Sum('amount'))
+
+        return purchase['purchase_sum']
 
     def validate_phone(self, value):
 
