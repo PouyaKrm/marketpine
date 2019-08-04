@@ -57,7 +57,7 @@ class PurchaseListSerializer(serializers.ModelSerializer):
             'id',
             'customer',
             'amount',
-            'date'
+            'purchase_date'
         ]
 
 
@@ -69,5 +69,5 @@ class CustomerPurchaseListSerializer(serializers.ModelSerializer):
         fields = [
             'id',
             'amount',
-            'date'
+            'purchase_date'
         ]

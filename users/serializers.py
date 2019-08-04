@@ -125,8 +125,8 @@ class BusinessmanRetrieveSerializer(serializers.ModelSerializer):
 
     # phone = serializers.CharField(max_length=15, validators=[phone_validator])
 
-    email = serializers.EmailField(validators=[
-        validators.UniqueValidator(queryset=Businessman.objects.all(), message="this email address is already taken")])
+    # email = serializers.EmailField(validators=[
+    #     validators.UniqueValidator(queryset=Businessman.objects.all(), message="this email address is already taken")])
 
     class Meta:
 
@@ -147,9 +147,10 @@ class BusinessmanRetrieveSerializer(serializers.ModelSerializer):
 
     def validate_email(self, value):
 
+
         logged_in_user = self.context['request'].user
 
-        users_num = Businessman.objects.all().filter(email=value).exclude(id=logged_in_user.id).count()
+        users_num = Businessman.objects.all().exclude(id=logged_in_user.id).filter(email=value).count()
 
         if users_num is not 0:
             raise serializers.ValidationError('this email address is already taken')

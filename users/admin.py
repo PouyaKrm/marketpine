@@ -11,7 +11,7 @@ class BusinessmanAdminModel(UserAdmin):
     list_display = ['id', 'username', 'business_name', 'phone']
     fieldsets = (
             (None, {'fields': ('username', 'password')}),
-            ('General Info', {'fields': ('business_name', 'phone', 'logo', 'address')}),
+            ('General Info', {'fields': ('business_name', 'phone', 'logo', 'address', 'email')}),
             ('Permissions', {'fields': ('is_verified', )}),
                  )
     add_fieldsets = (
