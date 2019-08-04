@@ -29,6 +29,38 @@ def render_template_with_customer_data(template: str, customer: Customer):
     return render_template(template, get_template_context(customer))
 
 
+class CustomerTemplate:
+
+    """
+    Class for template rendering and validation specific for customer
+    Note: functions that are in this package and does not belong to any class will be added to this class in future
+    development
+    """
+
+    def __init__(self, businessman: Businessman, template: str, customer: Customer = None):
+
+        self.businessman = businessman
+        self.customer = customer
+        self.template = Template(template)
+
+    def customer_welcome_context(self):
+        """
+        Represent context that is needed to render the template for the welcome message.
+        :return: Context Object
+        """
+        return Context({'phone': self.customer.phone, 'register_date': self.customer.register_date,
+                        'business_name': self.businessman.business_name})
+
+    def validate_welcome_template(self):
+
+        self.template.render({'phone': '09185684132', 'register_date': '2018-05-06', 'business_name': 'test'})
+
+    def render_template(self):
+
+        return self.template.render(self.customer_welcome_context())
+
+
+
 class FestivalTemplate:
 
     """

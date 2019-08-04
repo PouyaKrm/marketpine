@@ -47,7 +47,7 @@ class BusinessmanCustomerRetrieveAPIView(mixins.DestroyModelMixin, RetrieveAPIVi
     permission_classes = [permissions.IsAuthenticated]
 
     def get_serializer_context(self):
-        return {'user': self.request.user}
+        return {'user': self.request.user, 'customer_id': self.kwargs['pk']}
 
     def get_queryset(self):
 
