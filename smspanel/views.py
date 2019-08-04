@@ -1,22 +1,17 @@
-import coreapi
-import coreschema
 from django.core.exceptions import ObjectDoesNotExist
-from django.shortcuts import render
-from rest_framework import generics, mixins, permissions, status, schemas
-from rest_framework.decorators import api_view, schema, permission_classes
+from rest_framework import generics, mixins, permissions, status
+from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 
 from users.models import Customer
 from .serializers import SMSTemplateSerializer, SentSMSSerializer, SentSMSRetrieveForCustomer
 from .models import SMSTemplate, SentSMS
-
-
-# Create your views here.
+from .permissions import HasSMSPanelPermission
 
 
 class SMSTemplateCreateListAPIView(generics.ListAPIView, mixins.CreateModelMixin):
 
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, HasSMSPanelPermission]
     serializer_class = SMSTemplateSerializer
 
     def get_serializer_context(self):
@@ -32,7 +27,7 @@ class SMSTemplateCreateListAPIView(generics.ListAPIView, mixins.CreateModelMixin
 class SMSTemplateRetrieveAPIView(generics.RetrieveAPIView, mixins.UpdateModelMixin,
                                  mixins.DestroyModelMixin):
 
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, HasSMSPanelPermission]
     serializer_class = SMSTemplateSerializer
 
     def get_queryset(self):
@@ -49,7 +44,7 @@ class SMSTemplateRetrieveAPIView(generics.RetrieveAPIView, mixins.UpdateModelMix
 
 
 @api_view(['POST'])
-@permission_classes([permissions.IsAuthenticated])
+@permission_classes([permissions.IsAuthenticated, HasSMSPanelPermission])
 def send_plain_sms(request):
 
     serializer = SentSMSSerializer(data=request.data)
@@ -65,7 +60,7 @@ def send_plain_sms(request):
 
 
 @api_view(['POST'])
-@permission_classes([permissions.IsAuthenticated])
+@permission_classes([permissions.IsAuthenticated, HasSMSPanelPermission])
 def send_sms_by_template(request, template_id):
 
     try:
@@ -89,7 +84,7 @@ def send_sms_by_template(request, template_id):
 
 
 @api_view(['GET'])
-@permission_classes([permissions.IsAuthenticated])
+@permission_classes([permissions.IsAuthenticated, HasSMSPanelPermission])
 def get_businessman_sent_sms(request):
 
     serializer = SentSMSSerializer(SentSMS.objects.filter(businessman=request.user).all(), many=True)
@@ -97,7 +92,7 @@ def get_businessman_sent_sms(request):
 
 
 @api_view(['GET'])
-@permission_classes([permissions.IsAuthenticated])
+@permission_classes([permissions.IsAuthenticated, HasSMSPanelPermission])
 def get_customer_sent_sms(request, customer_id):
 
     try:

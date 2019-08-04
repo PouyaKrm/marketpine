@@ -4,7 +4,7 @@ from django.contrib.auth.base_user import BaseUserManager
 
 from common.util.sms_message import SMSMessage
 from .models import Businessman, VerificationCodes
-import secrets,datetime
+import secrets, datetime
 from django.conf import settings
 import os
 from common.util.custom_validators import validate_logo_size
@@ -117,14 +117,12 @@ class BusinessmanPasswordResetSerializer(serializers.ModelSerializer):
         return instance
 
 
-
 class BusinessmanRetrieveSerializer(serializers.ModelSerializer):
 
     # phone = serializers.CharField(max_length=15, validators=[phone_validator])
 
     email = serializers.EmailField(validators=[
         validators.UniqueValidator(queryset=Businessman.objects.all(), message="this email address is already taken")])
-
 
     class Meta:
 
@@ -133,29 +131,15 @@ class BusinessmanRetrieveSerializer(serializers.ModelSerializer):
             'username',
             'first_name',
             'last_name',
+            'telegram_id',
+            'instagram_id',
             'address',
             'phone',
             'email',
             'business_name',
-            'bot_access_expire',
-            'instagram_access_expire'
         ]
 
-        extra_kwargs = {'username': {'read_only': True}, 'bot_access': {'read_only': True},
-                        'instagram_access': {'read_only': True}, 'phone': {'read_only': True}}
-
-    # def validate_phone(self, value):
-    #
-    #     logged_in_user = self.context['request'].user
-    #
-    #     users_num = Businessman.objects.all().filter(phone=value).exclude(id=logged_in_user.id).count()
-    #
-    #     if users_num is not 0:
-    #         raise serializers.ValidationError('this phone number is already taken')
-    #
-    #     return value
-
-    # def validate_email(self, value):
+        extra_kwargs = {'username': {'read_only': True}, 'phone': {'read_only': True}}
 
     def validate_email(self, value):
 
