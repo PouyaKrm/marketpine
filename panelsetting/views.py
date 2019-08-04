@@ -1,17 +1,19 @@
 from rest_framework.response import Response
-from rest_framework import status
+from rest_framework import status, permissions
 from rest_framework.request import Request
 from rest_framework.views import APIView
 
 from panelsetting.models import PanelSetting
 from .serializers import PanelSettingSerializer
-
+from .permissions import CreatePanelSettingIfDoesNotExist
 
 class RetrieveUpdatePanelSettingApiView(APIView):
 
     """
     Retrieves and updates data of the panel setting
     """
+
+    permission_classes = [permissions.IsAuthenticated, CreatePanelSettingIfDoesNotExist]
 
     def get(self, request: Request):
 
@@ -40,9 +42,6 @@ class RetrieveUpdatePanelSettingApiView(APIView):
 
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-        if not PanelSetting.objects.filter(businessman=request.user).exists():
-            PanelSetting.objects.create(businessman=request.user)
 
         obj = serializer.update(request.user.panelsetting, serializer.validated_data)
 
