@@ -103,7 +103,7 @@ class CustomerSerializer(serializers.ModelSerializer):
 
         instance.save()
 
-        if new_phone != old_phone:
+        if (new_phone != old_phone) and (user.panelsetting.welcome_message is not None):
             message = CustomerTemplate(user, user.panelsetting.welcome_message, instance).render_template()
 
             sms = SMSMessage()
