@@ -1,11 +1,8 @@
 from enum import Enum
-from random import Random
-
-from django.template import Context, Template
 from rest_framework_jwt.settings import api_settings
 from strgen import StringGenerator
+import jwt
 
-from users.models import Businessman, Customer
 import string
 
 jwt_payload_handler = api_settings.JWT_PAYLOAD_HANDLER
@@ -17,11 +14,21 @@ jwt_encode_handler = api_settings.JWT_ENCODE_HANDLER
 
 def custom_login_payload(user, **kwargs):
 
+    """
+    Creates a dictionary that will be used as the response body of the refresh token request
+    :param user: user model
+    :param kwargs:
+    :return: Dictionary for response body
+    """
+
     payload = jwt_payload_handler(user)
 
     token = jwt_encode_handler(payload)
 
+    expirationTime = jwt.decode(token, verify=False)['exp']
+
     kwargs['token'] = token
+    kwargs['exp'] = expirationTime
 
     return kwargs
 

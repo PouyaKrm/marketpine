@@ -43,13 +43,12 @@ class CustomerListCreateSerializer(serializers.ModelSerializer):
         user = self.context['user']
 
         obj = Customer.objects.create(businessman=user, **validated_data)
-
-        if user.panelsetting.welcome_message is not None:
-            message = CustomerTemplate(user, user.panelsetting.welcome_message, obj).render_template()
-
-            sms = SMSMessage()
-
-            sms.send_message(obj.phone, message)
+        # if user.panelsetting.welcome_message is not None:
+        #     message = CustomerTemplate(user, user.panelsetting.welcome_message, obj).render_template()
+        #
+        #     sms = SMSMessage()
+        #
+        #     sms.send_message(obj.phone, message)
 
         return obj
 
