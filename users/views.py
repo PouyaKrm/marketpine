@@ -112,6 +112,7 @@ def login_api_view(request):
     response['id'] = user.id
     response['username'] = user.get_username()
     response['business_name'] = user.business_name
+    response['exp_duration'] = settings.REFRESH_TOKEN_EXP_DELTA
 
 
     return Response(response, status=status.HTTP_200_OK)

@@ -29,6 +29,7 @@ def custom_login_payload(user, **kwargs):
 
     kwargs['token'] = token
     kwargs['exp'] = expirationTime
+    kwargs['exp_duration'] = api_settings.JWT_EXPIRATION_DELTA
 
     return kwargs
 
