@@ -123,11 +123,6 @@ class BusinessmanPasswordResetSerializer(serializers.ModelSerializer):
 
 class BusinessmanRetrieveSerializer(serializers.ModelSerializer):
 
-    # phone = serializers.CharField(max_length=15, validators=[phone_validator])
-
-    # email = serializers.EmailField(validators=[
-    #     validators.UniqueValidator(queryset=Businessman.objects.all(), message="this email address is already taken")])
-
     class Meta:
 
         model = Businessman
@@ -135,15 +130,13 @@ class BusinessmanRetrieveSerializer(serializers.ModelSerializer):
             'username',
             'first_name',
             'last_name',
-            'telegram_id',
-            'instagram_id',
             'address',
             'phone',
             'email',
             'business_name',
         ]
 
-        extra_kwargs = {'username': {'read_only': True}, 'phone': {'read_only': True}}
+        extra_kwargs = {'username': {'read_only': True}, 'phone': {'read_only': True}, 'email': {'read_only': True}}
 
     def validate_email(self, value):
 
