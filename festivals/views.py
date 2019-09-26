@@ -14,7 +14,7 @@ from common.util import generate_discount_code, paginators, DiscountType
 from common.util.custom_templates import FestivalTemplate
 from common.util.sms_message import FestivalMessageBulk
 from .permissions import HASFestivalAccess
-
+from common.util import paginators
 # Create your views here.
 
 
@@ -55,8 +55,11 @@ class FestivalAPIView(APIView):
         else:
             result_set = request.user.festival_set.all()
 
-        serializer = FestivalListSerializer(result_set, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        # serializer = FestivalListSerializer(result_set, many=True)
+        # return Response(serializer.data, status=status.HTTP_200_OK)
+
+        paginate = paginators.NumberedPaginator(request, result_set, FestivalListSerializer)
+        return paginate.next_page()
 
     def post(self, request: Request):
 
