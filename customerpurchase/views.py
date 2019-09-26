@@ -16,16 +16,11 @@ class PurchaseListCreateAPIView(APIView):
     def get(self, request):
 
         purchases = request.user.customerpurchase_set.all()
-        # 
-        # serializer = PurchaseListSerializer(purchases, many=True)
 
         paginate = paginators.NumberedPaginator(request, purchases, PurchaseListSerializer)
 
         return paginate.next_page()
-        #
-        # return Response(serializer.data)
-        #
-        #
+
     def post(self, request):
         serializer = PurchaseCreationUpdateSerializer(data=request.data)
 
