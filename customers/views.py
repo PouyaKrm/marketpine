@@ -5,6 +5,7 @@ from rest_framework.generics import RetrieveAPIView
 from rest_framework.request import Request
 from users.models import Customer
 from .serializers import CustomerSerializer, CustomerListCreateSerializer
+from .paginations import StandardResultsSetPagination
 
 
 
@@ -19,6 +20,8 @@ class BusinessmanCustomerListAPIView(generics.ListAPIView, mixins.CreateModelMix
     """
 
     serializer_class = CustomerListCreateSerializer
+    pagination_class = StandardResultsSetPagination
+
 
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
@@ -28,7 +31,6 @@ class BusinessmanCustomerListAPIView(generics.ListAPIView, mixins.CreateModelMix
         # customers_all   = Customer.objects.all()
         phone           = self.request.query_params.get('phone', None)
         full_name       = self.request.query_params.get('full_name', None)
-
 
         if (full_name and phone) is not None:
             Customer_list    = user.customers.filter(full_name__icontains=full_name,phone__icontains=phone)
