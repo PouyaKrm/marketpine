@@ -39,9 +39,9 @@ class FriendInvitationListAPIView(APIView):
         except ObjectDoesNotExist:
             return Response({'invited_by': ['مشتری با این شماره تلفن وجود ندارد']}, status=status.HTTP_404_NOT_FOUND)
 
-        paginator = paginators.NumberedPaginator(request, FriendInvitation.objects.
-                                                 filter(businessman=businessman, invited_by=customer).all(), FriendInvitationListSerializer)
+        friend_Invitation_list= FriendInvitation.objects.filter(businessman=businessman, invited_by=customer).all()
 
+        paginator = paginators.NumberedPaginator(request,friend_Invitation_list, FriendInvitationListSerializer)
         return paginator.next_page()
 
 

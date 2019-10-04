@@ -6,7 +6,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from .models import BusinessmanGroups
 from .serializers import BusinessmanGroupsCreateListSerializer, BusinessmanGroupsRetrieveSerializer, CustomerSerializer
-
+from common.util import paginators
 
 # Create your views here.
 
@@ -70,9 +70,11 @@ class CustomerGroupRetrieveAPIView(APIView):
         except ObjectDoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND)
 
-        serializer = CustomerSerializer(group.customers, many=True)
+        # serializer = CustomerSerializer(group.customers, many=True)
+        # return Response(serializer.data, status=status.HTTP_200_OK)
 
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        paginate = paginators.NumberedPaginator(request, group.customers, CustomerSerializer)
+        return paginate.next_page()
 
     def put(self, request, *args, **kwargs):
 
@@ -128,4 +130,3 @@ class CustomerGroupRetrieveAPIView(APIView):
         group.save()
 
         return Response(status=status.HTTP_204_NO_CONTENT)
-

@@ -8,7 +8,7 @@ class PageNumberPaginationSize10(PageNumberPagination):
 
 class NumberedPaginator(PageNumberPagination):
 
-    def __init__(self, request: Request, query_set: QuerySet, srl: Serializer.__class__, page_size_value: int = 10):
+    def __init__(self, request: Request, query_set: QuerySet, srl: Serializer.__class__, page_size_value: int = 25):
 
         self.srl = srl
         self.query_set = query_set

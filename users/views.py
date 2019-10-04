@@ -98,7 +98,7 @@ def login_api_view(request):
     if user is None or user.is_verified is False:
         return Response({'details': ['username or password is wrong']}, status=status.HTTP_401_UNAUTHORIZED)
 
-    expire_time = datetime.datetime.now() + datetime.timedelta(days=1)
+    expire_time = datetime.datetime.now() + settings.REFRESH_TOKEN_EXP_DELTA
 
     obj = BusinessmanRefreshTokens.objects.create(username=user.get_username(), expire_at=expire_time,
                                             ip=get_client_ip(request))
@@ -108,9 +108,12 @@ def login_api_view(request):
     token = jwt.encode(payload, settings.REFRESH_KEY_PR, algorithm='RS256')
 
     response = {'refresh_token': token}
+    response['exp'] = expire_time
     response['id'] = user.id
     response['username'] = user.get_username()
     response['business_name'] = user.business_name
+    response['exp_duration'] = settings.REFRESH_TOKEN_EXP_DELTA
+
 
     return Response(response, status=status.HTTP_200_OK)
 

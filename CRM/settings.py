@@ -48,6 +48,8 @@ uS+bpsFJ8c/KKLnk2fVs4iGtY/fPCRFeoVppqiFWs2gV390suMI16RoKDHoKuR1C
 hcrTQYQs+QvhU9QitwIDAQAB
 -----END PUBLIC KEY-----"""
 
+REFRESH_TOKEN_EXP_DELTA = datetime.timedelta(days=1)
+
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
