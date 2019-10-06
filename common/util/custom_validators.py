@@ -2,6 +2,7 @@ import re
 
 from django.core.exceptions import ValidationError
 from django.conf import settings
+from langdetect import detect
 
 
 def phone_validator(value):
@@ -17,3 +18,26 @@ def validate_logo_size(file):
         raise ValidationError('اندازه لگو بیش از حد مجاز است(200kb)')
 
     return file
+
+
+def validate_sms_message_length(message: str):
+
+    """
+    validate sms message length based on kavenegar documentation
+    for more information see `DOC <https://kavenegar.com/rest.html#basic-message>`
+    :param message: text of sms message
+    :raises: Validation error if message length is bigger than valid length based on language
+    :return: message
+    """
+
+    if len(message) <= settings.SMS_FA_MAX:
+        return message
+
+    elif len(message) > settings.SMS_EN_MAX:
+        raise ValidationError('طول پیامک حداکثر 612 کاراکتر است')
+
+    elif (detect(message) == 'fa' or detect(message) == 'ur') and len(message) > settings.SMS_FA_MAX:
+        raise ValidationError('طول پیامک فارسی حداکثر 268 کاراکتر است')
+
+    else:
+        return message

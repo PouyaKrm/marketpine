@@ -7,5 +7,5 @@ urlpatterns = [
     path('send-sms/plain/', views.send_plain_sms),
     path('send-sms/template/<int:template_id>/', views.send_sms_by_template),
     path('sent-sms/', views.get_businessman_sent_sms),
-    path('sent-sms/<int:customer_id>/', views.get_customer_sent_sms),
+    path('sent-sms/customer/<int:customer_id>/', views.get_customer_sent_sms),
 ]

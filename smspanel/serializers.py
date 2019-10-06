@@ -1,10 +1,12 @@
+from django.core.exceptions import ValidationError
 from django.db.models.base import Model
 from django.template import TemplateSyntaxError
 from rest_framework import serializers
+
+from common.util.custom_validators import validate_sms_message_length
 from .models import SMSTemplate, SentSMS
 from common.util.custom_templates import render_template, get_fake_context, render_template_with_customer_data
 from common.util.sms_message import SMSMessage
-
 
 class SMSTemplateSerializer(serializers.ModelSerializer):
 
@@ -25,6 +27,8 @@ class SMSTemplateSerializer(serializers.ModelSerializer):
         except TemplateSyntaxError:
             raise serializers.ValidationError('invalid template')
 
+        validate_sms_message_length(value)
+
         return value
 
     def create(self, validated_data: dict):
@@ -33,6 +37,8 @@ class SMSTemplateSerializer(serializers.ModelSerializer):
 
 
 class SentSMSSerializer(serializers.ModelSerializer):
+
+    content = serializers.CharField(validators=[validate_sms_message_length])
 
     def send_plain(self, customers, content):
 
@@ -51,7 +57,12 @@ class SentSMSSerializer(serializers.ModelSerializer):
 
         for c in customers:
             message = render_template_with_customer_data(template, c)
-            sms.send_message(receptor=c.phone, message=message)
+            try:
+                validate_sms_message_length(message)
+                sms.send_message(receptor=c.phone, message=message)
+            except ValidationError:
+                pass
+
 
     class Meta:
 
