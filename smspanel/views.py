@@ -3,8 +3,6 @@ from kavenegar import APIException, HTTPException
 from rest_framework import generics, mixins, permissions, status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
-
-from common.util.sms_message import SMSMessage
 from users.models import Customer
 from .serializers import SMSTemplateSerializer, SentSMSSerializer, SentSMSRetrieveForCustomer
 from .models import SMSTemplate, SentSMS

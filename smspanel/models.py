@@ -5,14 +5,7 @@ from users.models import Businessman, Customer
 from django.conf import settings
 
 
-class SMSPanelInfo(models.Model):
 
-    businessman = models.ForeignKey(Businessman, on_delete=models.CASCADE)
-    username = models.CharField(max_length=20)
-    api_key = models.CharField(max_length=50)
-    STATUS_CHOICES = [('1', 'ACTIVE_LOGIN'), ('0', 'INACTIVE'), ('2', 'ACTIVE')]
-    status = models.CharField(max_length=1, choices=STATUS_CHOICES, default='0')
-    plan_id = models.IntegerField
 
 
 class SMSTemplate(models.Model):

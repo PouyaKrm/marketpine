@@ -13,6 +13,15 @@ def phone_validator(value):
         raise ValidationError("phone number is invalid")
 
 
+def password_validator(value):
+
+    result = re.match("^(?=.*\\d)(?=.*[a-z])(?=.*[A-Z]).{8,16}$", value)
+
+    if result is None:
+        raise ValidationError('کلمه عبور باید شامل یک حرف بزرگ، یک حرف کوچک و عدد و طول آن بین 8 تا 16 کاراکتر باشد')
+
+    return value
+
 def validate_logo_size(file):
     if file.size > settings.MAX_LOGO_SIZE:
         raise ValidationError('اندازه لگو بیش از حد مجاز است(200kb)')

@@ -18,3 +18,4 @@ class SentSMSAdmin(admin.ModelAdmin):
 admin.site.register(SMSTemplate, SMSTemplateAdmin)
 
 admin.site.register(SentSMS, SentSMSAdmin)
+

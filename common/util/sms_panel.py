@@ -1,10 +1,10 @@
-
+import requests
 from kavenegar import KavenegarAPI, APIException, HTTPException
-
+from django.conf import settings
 
 class SMSMessage:
 
-    key = '4D4C324E43416D726C65446D7258566A4F59697153444355734E4F4D6B382B57'
+    key = settings.SMS_API_KEY
     api = KavenegarAPI(key)
 
     def send(self, **params):
@@ -54,7 +54,6 @@ class SMSMessage:
             message = f'مشتری عزیز شما به {business_name} دعوت شدید. با استفاده از کد تخفیف {discount_code} در اولین خرید از تخفیف بهرمند شوید. با استفاده از لینک زیر در بات تلگرام ما عضو شوید. {bot_link}'
 
         return self.send_message(invited_phone, message)
-
 
 
 
@@ -126,4 +125,56 @@ class FestivalMessageBulk(SMSMessage):
 
             self.api.sms_sendarray(params)
             params = self.give_message_params()
+
+
+class ClientManagement:
+
+    def __init__(self):
+        self.api_key = settings.SMS_API_KEY
+
+    def add(self, data: dict):
+
+        resp = requests.post(f'http://api.kavenegar.com/v1/{self.api_key}/client/add.json', data)
+
+        resp_data = resp.json()
+
+        if resp.status_code != 200:
+            raise APIException(resp.status_code, resp_data['return']['message'])
+
+        return resp_data['entries']
+
+
+    def update(self, businessman_api_key, data: dict):
+
+        """
+        updates client info on kavenegar
+        :param businessman_api_key: api key of client
+        :param data: data that needs to be updated
+        :raises APIException if kavenegar api  send error response
+        :return:
+        """
+        resp = requests.post(f'http://api.kavenegar.com/v1/{self.api_key}/client/update.json',
+                             {'apikey': businessman_api_key,
+                              **data})
+        resp_data = resp.json()
+        if resp.status_code != 200:
+            raise APIException(resp.status_code, resp_data['return']['message'])
+
+        return resp_data['result']['status']
+
+    def activate_sms_panel(self, businessman_api_key):
+        """
+        activates sms panel of the client om kavenegar
+        :param businessman_api_key: api key of the client
+        :return: result of update method
+        """
+        return self.update(businessman_api_key, {'status': '1'})
+
+    def deactivate_sms_panel(self, businessman_api_key):
+        """
+        deactivates sms panel of the client on kavenegar
+        :param businessman_api_key: api key of the client
+        :return: result of update method
+        """
+        return self.update(businessman_api_key, {'status': '0'})
 

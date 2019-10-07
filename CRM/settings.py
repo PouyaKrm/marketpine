@@ -53,6 +53,11 @@ REFRESH_TOKEN_EXP_DELTA = datetime.timedelta(days=1)
 
 SMS_API_KEY = '4D4C324E43416D726C65446D7258566A4F59697153444355734E4F4D6B382B57'
 
+MIN_CREDIT = 100000
+INIT_CREDIT = 10000
+
+SMS_PID = 1422
+
 SMS_EN_MAX = 612
 
 SMS_FA_MAX = 268
@@ -78,6 +83,7 @@ INSTALLED_APPS = [
     'dashboard',
     'customerpurchase',
     'panelsetting',
+    'panelprofile',
     'rest_framework_swagger',
     'django.contrib.admin',
     'django.contrib.auth',

@@ -6,7 +6,7 @@ from rest_framework import serializers
 from common.util.custom_validators import validate_sms_message_length
 from .models import SMSTemplate, SentSMS
 from common.util.custom_templates import render_template, get_fake_context, render_template_with_customer_data
-from common.util.sms_message import SMSMessage
+from common.util.sms_panel import SMSMessage
 
 class SMSTemplateSerializer(serializers.ModelSerializer):
 

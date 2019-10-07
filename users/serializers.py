@@ -2,7 +2,7 @@ from django.core.validators import RegexValidator
 from rest_framework import serializers, validators
 from django.contrib.auth.base_user import BaseUserManager
 
-from common.util.sms_message import SMSMessage
+from common.util.sms_panel import SMSMessage
 from .models import Businessman, VerificationCodes
 import secrets, datetime
 from django.conf import settings

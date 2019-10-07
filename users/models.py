@@ -3,6 +3,8 @@ from django.contrib.auth.models import AbstractUser, AbstractBaseUser, BaseUserM
 from django.utils import timezone
 
 
+
+
 class Businessman(AbstractUser):
 
     def get_upload_path(self, filename):
@@ -15,6 +17,8 @@ class Businessman(AbstractUser):
     telegram_id = models.CharField(max_length=20, blank=True, null=True)
     instagram_id = models.CharField(max_length=20, blank=True, null=True)
     is_verified = models.BooleanField(default=False)
+    AUTHORIZE_CHOICES = [('0', 'UNAUTHORIZED'), ('1', 'PENDING'), ('2', 'AUTHORIZED')]
+    authorized = models.CharField(max_length=1, choices=AUTHORIZE_CHOICES, default='0')
 
     def __str__(self):
         return self.username
