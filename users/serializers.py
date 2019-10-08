@@ -7,7 +7,7 @@ from .models import Businessman, VerificationCodes
 import secrets, datetime
 from django.conf import settings
 import os
-from common.util.custom_validators import validate_logo_size
+from common.util.custom_validators import validate_logo_size, password_validator
 from panelsetting.models import PanelSetting
 
 PhonenumberValidator = RegexValidator(regex=r'^\+?1?\d{11, 12}$',
@@ -19,7 +19,8 @@ PhonenumberValidator = RegexValidator(regex=r'^\+?1?\d{11, 12}$',
 class BusinessmanRegisterSerializer(serializers.ModelSerializer):
 
     password2 = serializers.CharField(min_length=8, max_length=16, style={'input_type': 'password', 'write_only': True})
-    password = serializers.CharField(min_length=8, max_length=16, style={'input_type': 'password', 'write_only': True})
+    password = serializers.CharField(min_length=8, max_length=16, style={'input_type': 'password', 'write_only': True},
+                                     validators=[password_validator])
     email = serializers.EmailField(validators=[
         validators.UniqueValidator(queryset=Businessman.objects.all(), message="this email address is already taken")])
     phone = serializers.CharField(max_length=15, validators=[validators.UniqueValidator(queryset=Businessman.objects.all(), message="phone number must be unique")])
@@ -70,7 +71,7 @@ class BusinessmanRegisterSerializer(serializers.ModelSerializer):
             if code < 10000:
                 code += 10000
 
-        expire_time = datetime.datetime.now() + datetime.timedelta(seconds=30)
+        expire_time = datetime.datetime.now() + datetime.timedelta(hours=24)
 
         VerificationCodes.objects.create(businessman=user, code=code, expiration_time=expire_time)
 
@@ -88,7 +89,7 @@ class BusinessmanPasswordResetSerializer(serializers.ModelSerializer):
                                          style={'input_type': 'password', 'write_only': True})
 
     new_password = serializers.CharField(min_length=8, max_length=16,
-                                         style={'input_type': 'password', 'write_only': True})
+                                         style={'input_type': 'password', 'write_only': True}, validators=[password_validator])
 
     new_password2 = serializers.CharField(min_length=8, max_length=16,
                                          style={'input_type': 'password', 'write_only': True})

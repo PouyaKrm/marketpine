@@ -177,7 +177,7 @@ USE_TZ = True
 STATIC_URL = '/static/'
 
 MEDIA_ROOT = os.path.join(BASE_DIR, '..', 'uploaded_media')
-
+MEDIA_URL = 'files/'
 MAX_LOGO_SIZE = 800000
 
 AUTH_USER_MODEL = 'users.Businessman'
@@ -235,6 +235,8 @@ JWT_AUTH = {
     'JWT_AUTH_COOKIE': None,
 
 }
+
+
 
 CORS_ORIGIN_ALLOW_ALL = True
 CORS_ALLOW_HEADERS = list(default_headers) + [

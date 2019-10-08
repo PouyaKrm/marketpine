@@ -1,3 +1,4 @@
+import os
 import re
 
 from django.core.exceptions import ValidationError
@@ -50,3 +51,9 @@ def validate_sms_message_length(message: str):
 
     else:
         return message
+
+
+def pdf_file_validator(value):
+    ext = os.path.splitext(value.name)[1]
+    if not ext.lower() in ".pdf":
+        raise ValidationError('invalid file type (pdf is supported)')
