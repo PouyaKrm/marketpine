@@ -107,6 +107,7 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = 'CRM.urls'
 
+
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
@@ -178,7 +179,13 @@ STATIC_URL = '/static/'
 
 MEDIA_ROOT = os.path.join(BASE_DIR, '..', 'uploaded_media')
 MEDIA_URL = 'files/'
-MAX_LOGO_SIZE = 800000
+MAX_LOGO_SIZE = 200000
+
+AUTH_DOC = {
+    'MAX_FORM_SIZE': 2000000,
+    'MAX_CARD_SIZE': 3000000,
+    'MAX_CERTIFICATE_SIZE': 3000000,
+}
 
 AUTH_USER_MODEL = 'users.Businessman'
 

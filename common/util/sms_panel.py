@@ -1,5 +1,7 @@
 import requests
-from kavenegar import KavenegarAPI, APIException, HTTPException
+
+from users.models import Businessman
+from .kavenegar_local import KavenegarAPI, APIException, HTTPException
 from django.conf import settings
 
 class SMSMessage:
@@ -160,7 +162,7 @@ class ClientManagement:
         if resp.status_code != 200:
             raise APIException(resp.status_code, resp_data['return']['message'])
 
-        return resp_data['result']['status']
+        return resp.status_code
 
     def activate_sms_panel(self, businessman_api_key):
         """
@@ -177,4 +179,3 @@ class ClientManagement:
         :return: result of update method
         """
         return self.update(businessman_api_key, {'status': '0'})
-

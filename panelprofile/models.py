@@ -7,7 +7,8 @@ from django.db import models
 from common.util.custom_validators import pdf_file_validator
 
 # Create your models here.
-from users.models import Businessman
+from common.util.sms_panel import ClientManagement
+from users.models import Businessman, AuthStatus
 from django.conf import settings
 
 fs = FileSystemStorage(location=settings.MEDIA_ROOT)
@@ -45,4 +46,34 @@ class BusinessmanAuthDocs(models.Model):
     form = models.FileField(upload_to=get_upload_path, max_length=40, null=True)
     national_card = models.ImageField(upload_to=get_upload_path, max_length=40, null=True)
     birth_certificate = models.ImageField(upload_to=get_upload_path, max_length=40, null=True)
+
+    def __str__(self):
+        return self.businessman.__str__()
+
+    def businessman_username(self):
+        return self.businessman.__str__()
+
+    def delete(self, using = ..., keep_parents: bool = ...):
+
+        """
+        sets businessman auth status to unauthorized in database and kavenegar(if user was authorized before).
+        :param using:
+        :param keep_parents:
+        :return:
+        """
+
+        if self.businessman.authorized != AuthStatus.AUTHORIZED.value:
+            self.businessman.authorized = AuthStatus.UNAUTHORIZED.value
+            self.businessman.save()
+            BusinessmanAuthDocs.objects.filter(id=self.id).delete()
+            return
+
+        ClientManagement().deactivate_sms_panel(self.businessman.smspanelinfo.api_key)
+        self.businessman.authorized = AuthStatus.UNAUTHORIZED.value
+        self.businessman.save()
+        BusinessmanAuthDocs.objects.filter(id=self.id).delete()
+
+
+
+
 

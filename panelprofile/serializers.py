@@ -1,11 +1,14 @@
+from django.core.exceptions import ValidationError
 from rest_framework import serializers
+
+from users.models import AuthStatus
 from .models import SMSPanelInfo, BusinessmanAuthDocs
 from django.conf import settings
 from common.util.custom_validators import pdf_file_validator
 from common.util.sms_panel import ClientManagement
 
 
-class SMSPanelCreateSerializer(serializers.Serializer):
+class AuthAuthenticateUserSerializer(serializers.Serializer):
 
     password = serializers.CharField(min_length=8, max_length=16)
 
@@ -14,6 +17,13 @@ class SMSPanelCreateSerializer(serializers.Serializer):
         self.context['user'] = user
 
     def create(self, validated_data):
+
+        """
+        finishes user authentication and authorization and create a client on kavenegar and
+        sets authorized to pending
+        :param validated_data:
+        :return: password
+        """
 
         user = self.context['user']
 
@@ -37,17 +47,45 @@ class SMSPanelCreateSerializer(serializers.Serializer):
 
         info.save()
 
+        user.authorized = AuthStatus.PENDING.value
+
+        user.save()
+
         return validated_data.get('password')
 
+def validate_form(file):
+
+    if file.size > settings.AUTH_DOC['MAX_FORM_SIZE']:
+        raise ValidationError('اندازه فایل بیش از حد مجاز است')
+
+    return file
+
+
+
+def validate_card(file):
+
+    if file.size > settings.AUTH_DOC['MAX_CARD_SIZE']:
+        raise ValidationError('اندازه فایل بش از حد مجاز است')
+
+    return file
+
+def validate_certificate(file):
+
+    if file.size > settings.AUTH_DOC['MAX_CERTIFICATE_SIZE']:
+
+        raise ValidationError('ندازه فایل بیش از حد مجاز است')
+
+    return file
 
 class AuthFormSerializer(serializers.ModelSerializer):
 
-    form = serializers.FileField(max_length=40, validators=[pdf_file_validator])
+    form = serializers.FileField(max_length=40, validators=[pdf_file_validator, validate_form])
     class Meta:
         model = BusinessmanAuthDocs
         fields = [
             'form'
         ]
+
 
     def update(self, instance: BusinessmanAuthDocs, validated_data: dict):
 
@@ -67,7 +105,7 @@ class AuthFormSerializer(serializers.ModelSerializer):
 
 class AuthNationalCardSerializer(serializers.ModelSerializer):
 
-    national_card = serializers.ImageField(max_length=40)
+    national_card = serializers.ImageField(max_length=40, validators=[validate_card])
     class Meta:
         model = BusinessmanAuthDocs
         fields = [
@@ -86,7 +124,7 @@ class AuthNationalCardSerializer(serializers.ModelSerializer):
 
 class AuthBirthCertificateSerializer(serializers.ModelSerializer):
 
-    birth_certificate = serializers.ImageField(max_length=40)
+    birth_certificate = serializers.ImageField(max_length=40, validators=[validate_certificate])
 
     class Meta:
         model = BusinessmanAuthDocs
@@ -95,10 +133,6 @@ class AuthBirthCertificateSerializer(serializers.ModelSerializer):
         ]
 
     def update(self, instance: BusinessmanAuthDocs, validated_data):
-
-        # if instance.birth_certificate.name is not None:
-        #     instance.birth_certificate.delete()
-        #
 
         if instance.birth_certificate.name is not None:
             instance.delete()

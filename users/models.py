@@ -1,8 +1,15 @@
+from enum import Enum
+
 from django.db import models
 from django.contrib.auth.models import AbstractUser, AbstractBaseUser, BaseUserManager
 from django.utils import timezone
 
 
+class AuthStatus(Enum):
+
+    AUTHORIZED = '2'
+    PENDING = '1'
+    UNAUTHORIZED = '0'
 
 
 class Businessman(AbstractUser):

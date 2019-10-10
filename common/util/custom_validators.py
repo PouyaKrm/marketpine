@@ -57,3 +57,4 @@ def pdf_file_validator(value):
     ext = os.path.splitext(value.name)[1]
     if not ext.lower() in ".pdf":
         raise ValidationError('invalid file type (pdf is supported)')
+
