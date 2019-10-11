@@ -19,39 +19,49 @@ class AuthAuthenticateUserSerializer(serializers.Serializer):
     def create(self, validated_data):
 
         """
-        finishes user authentication and authorization and create a client on kavenegar and
-        sets authorized to pending
+        if user is sending documents for the first time, creates sms panle info for the user and a client on kavenegar
+         and sets authorized to pending. If user has SMSPanelIfo record, fetches data from kavenegar and updates
+        SMSPanelInfo of the user and sets authorized property of the user to PENDING.
+        In both cases authentication is finished and user can not upload auth doc any more.
         :param validated_data:
         :return: password
         """
 
         user = self.context['user']
 
-        data = {'username': 'bpe' + user.username, 'password': validated_data.get('password'), 'localid': user.id,
-                'mininumallowedcredit': settings.MIN_CREDIT, 'credit': settings.INIT_CREDIT,
-                'fullname': user.first_name + " " + user.last_name, 'planid': settings.SMS_PID,
-                'mobile': user.phone, 'status': 0}
+        password = validated_data.get('password')
 
         client_manage = ClientManagement()
 
-        result = client_manage.add(data)
+        if hasattr(user, 'smspanelinfo'):
 
-        info = SMSPanelInfo()
-        info.api_key = result['apikey']
+            info = client_manage.fetch_user(user)
+
+            user_info = user.smspanelinfo
+
+            user_info.api_key = info.api_key
+
+            user_info.credit = info.credit
+            user_info.sms_farsi_cost = info.sms_farsi_cost
+            user_info.sms_english_cost = info.sms_english_cost
+
+            user_info.save()
+
+            user.authorized = AuthStatus.PENDING
+
+            user.save()
+
+            return password
+
+        info = client_manage.add_user(user, password)
         info.businessman = user
-        info.status = '0'
-        info.credit = result['remaincredit']
-        info.sms_farsi_cost = result['smsfarsicost']
-        info.sms_english_cost = result['smsenglishcost']
-        info.username = result['username']
-
         info.save()
 
-        user.authorized = AuthStatus.PENDING.value
+        user.authorized = AuthStatus.PENDING
 
         user.save()
 
-        return validated_data.get('password')
+        password
 
 def validate_form(file):
 

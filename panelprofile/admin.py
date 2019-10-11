@@ -2,6 +2,7 @@ from wsgiref.util import FileWrapper
 
 from django.contrib import admin
 from django.core.checks import messages
+from django.http.request import HttpRequest
 from django.http.response import HttpResponse
 from django.urls import path, reverse, re_path
 from django.utils.html import format_html
@@ -15,7 +16,11 @@ from .models import SMSPanelInfo, AuthDoc, BusinessmanAuthDocs
 class SMSPanelInfoAdmin(admin.ModelAdmin):
 
     list_display = ['username', 'status', 'credit']
-    readonly_fields = ['api_key']
+    readonly_fields = ['api_key', 'credit', 'status', 'businessman']
+
+
+    def has_add_permission(self, request: HttpRequest, obj= ...):
+        return False
 
 
 class AuthDocAdmin(admin.ModelAdmin):
@@ -82,7 +87,7 @@ class BusinessmanAuthDocsAdmin(admin.ModelAdmin):
                 obj.delete()
             except APIException as e:
                 self.message_user(e.message, request, level=messages.ERROR)
-        self.message_user(message='auth docs deleted successfuly', request=request)
+        self.message_user(message='please delete users from kavenegar too to prevent from error hapenning', request=request)
 
     delete_docs.short_description = 'Delete selected records'
 

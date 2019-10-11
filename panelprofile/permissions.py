@@ -10,7 +10,7 @@ class IsUnAuthorized(BasePermission):
 
     def has_permission(self, request: Request, view: View):
 
-        return request.user.authorized == AuthStatus.UNAUTHORIZED.value
+        return request.user.authorized == AuthStatus.UNAUTHORIZED
 
 
 class IsAuthDocsUploaded(BasePermission):

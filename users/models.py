@@ -5,7 +5,7 @@ from django.contrib.auth.models import AbstractUser, AbstractBaseUser, BaseUserM
 from django.utils import timezone
 
 
-class AuthStatus(Enum):
+class AuthStatus:
 
     AUTHORIZED = '2'
     PENDING = '1'
@@ -102,20 +102,3 @@ class BusinessmanRefreshTokens(models.Model):
     expire_at = models.DateTimeField()
     ip = models.GenericIPAddressField()
     username = models.CharField(max_length=40)
-
-# class SalesmenCustomer(models.Model):
-#
-#     customer = models.ForeignKey(Customer, on_delete=models.CASCADE
-#                                    )
-#     salesman = models.ForeignKey(Businessman, on_delete=models.CASCADE)
-#     register_date = models.DateTimeField(auto_now_add=True)
-#     is_active = models.BooleanField(default=False)
-#
-#     class Meta:
-#
-#         db_table = 'salesman_customer'
-#         unique_together = ('customer', 'salesman')
-#
-#     def __str__(self):
-#
-#         return f"{self.salesman.username}-{self.customer.phone}"
