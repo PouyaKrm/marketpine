@@ -24,16 +24,15 @@ class Payment(models.Model):
 
 
     def pay(self, request):
-        # callback
         # url = reverse('payment:verify', kwargs={'to': callback} if callback else None)
-        CallbackURL = reverse('payment:verify')
+        CallbackURL =  request.build_absolute_uri(reverse('payment:verify'))
         client=Client(settings.ZARINPAL.get('url'))
         merchant=settings.ZARINPAL.get("MERCHANT")
         result = client.service.PaymentRequest(merchant, self.amount, self.description, self.user.email, self.phone, CallbackURL)
         if result.Status == 100:
             self.authority = result.Authority
             self.save()
-            return redirect('https://www.zarinpal.com/pg/StartPay/' + str(result.Authority))
+            return redirect('https://www.zarinpal.com/pg/StartPay/' + str(result.Authority)+'/ZarinGate')
         else:
             self.status = result.Status
             self.save()
