@@ -70,7 +70,7 @@ def resend_verification_code(request, user_id):
 
     # code = verify_code.code
 
-    SMSMessage().send_verification_code(user.phone, verify_code.code)
+    SystemSMSMessage().send_verification_code(user.phone, verify_code.code)
 
     return Response(status=status.HTTP_200_OK)
 

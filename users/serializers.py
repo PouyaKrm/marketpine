@@ -2,7 +2,7 @@ from django.core.validators import RegexValidator
 from rest_framework import serializers, validators
 from django.contrib.auth.base_user import BaseUserManager
 
-from common.util.sms_panel import SMSMessage
+from common.util.sms_panel import SystemSMSMessage
 from .models import Businessman, VerificationCodes
 import secrets, datetime
 from django.conf import settings
@@ -75,7 +75,7 @@ class BusinessmanRegisterSerializer(serializers.ModelSerializer):
 
         VerificationCodes.objects.create(businessman=user, code=code, expiration_time=expire_time)
 
-        SMSMessage().send_verification_code(receptor=user.phone, code=code)
+        SystemSMSMessage().send_verification_code(receptor=user.phone, code=code)
 
 
         PanelSetting.objects.create(businessman=user)
@@ -184,7 +184,7 @@ class BusinessmanForgetPasswordSerializer(serializers.ModelSerializer):
 
         new_password = BaseUserManager().make_random_password(length=8)
 
-        SMSMessage().send_new_password(instance.phone, new_password)
+        SystemSMSMessage().send_new_password(instance.phone, new_password)
 
         instance.set_password(new_password)
 

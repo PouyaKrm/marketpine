@@ -6,7 +6,8 @@ from rest_framework import serializers
 from common.util.custom_validators import validate_sms_message_length
 from .models import SMSTemplate, SentSMS
 from common.util.custom_templates import render_template, get_fake_context, render_template_with_customer_data
-from common.util.sms_panel import SMSMessage
+from common.util.sms_panel import SystemSMSMessage, ClientSMSMessage
+
 
 class SMSTemplateSerializer(serializers.ModelSerializer):
 
@@ -42,26 +43,32 @@ class SentSMSSerializer(serializers.ModelSerializer):
 
     def send_plain(self, customers, content):
 
+        user = self.context['user']
+
         receptors = ''
 
         for c in customers:
             receptors += c.phone + ", "
 
-        sms = SMSMessage()
+        sms = ClientSMSMessage(user.smspanelinfo)
 
         return sms.send_message(receptor=receptors, message=content)
 
     def send_by_template(self, template, customers):
 
-        sms = SMSMessage()
+        message_ids = []
+        user = self.context['user']
+        sms = ClientSMSMessage(user.smspanelinfo)
 
         for c in customers:
             message = render_template_with_customer_data(template, c)
             try:
                 validate_sms_message_length(message)
-                sms.send_message(receptor=c.phone, message=message)
+                message_ids.append(sms.send_message(receptor=c.phone, message=message))
             except ValidationError:
                 pass
+
+        return message_ids
 
 
     class Meta:
@@ -96,7 +103,8 @@ class SentSMSSerializer(serializers.ModelSerializer):
         else:
             self.send_by_template(validated_data.get('content'), customers)
 
-        obj = SentSMS.objects.create(businessman=user, is_plain_sms=is_plain, **validated_data)
+        obj = SentSMS.objects.create(businessman=user **validated_data)
+
 
         for c in customers:
             obj.customers.add(c)

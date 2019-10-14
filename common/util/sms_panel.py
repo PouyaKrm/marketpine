@@ -4,38 +4,26 @@ from users.models import Businessman
 from .kavenegar_local import KavenegarAPI, APIException, HTTPException
 from django.conf import settings
 
-class SMSMessage:
 
-    key = settings.SMS_API_KEY
-    api = KavenegarAPI(key)
+class SystemSMSMessage:
+
+    def __init__(self):
+
+        self.api = KavenegarAPI(settings.SMS_API_KEY)
 
     def send(self, **params):
 
-        try:
+        return self.api.sms_send(params)
 
-            return self.api.sms_send(params)
-        except APIException as e:
-            return e
-        except HTTPException as e:
-            return e
-
-
-
-    def send_message(self, receptor, message, sender=''):
+    def send_message(self, receptor, message):
 
         params = {
-            'sender': f'{sender}',
+            'sender': settings.SMS_PANEL['SYSTEM_LINE'],
             'receptor': f'{receptor}',
             'message': f'{message}'
         }
 
-        # try:
-
         return self.api.sms_send(params)
-        # except APIException as e:
-        #     return e
-        # except HTTPException as e:
-        #     return e
 
 
     def send_verification_code(self, receptor, code, sender=''):
@@ -45,6 +33,29 @@ class SMSMessage:
     def send_new_password(self, receptor, new_password):
 
         return self.send_message(receptor, f'your new password is:\n{new_password}')
+
+
+
+class ClientSMSMessage(SystemSMSMessage):
+
+    def __init__(self, sms_panel_info):
+
+        super().__init__()
+
+        self.api = KavenegarAPI(sms_panel_info.api_key)
+
+    def send_message(self, receptor, message):
+
+        params = {
+            'sender': settings.SMS_PANEL['AVAILABLE_CUSTOMER_LINE'],
+            receptor: receptor,
+            message: message
+        }
+
+        return self.api.sms_send(params)
+
+    def send_verification_code(self, receptor, code, sender=''):
+        pass
 
     def send_friend_invitation_welcome_message(self, business_name: str, invited_phone: str, discount_code: str,
                                                bot_link: str = None):
@@ -58,9 +69,7 @@ class SMSMessage:
         return self.send_message(invited_phone, message)
 
 
-
-
-class FestivalMessageBulk(SMSMessage):
+class FestivalMessageBulkSystem(SystemSMSMessage):
 
     def __init__(self, receptors: list, messages: list, senders=None):
 
@@ -72,6 +81,7 @@ class FestivalMessageBulk(SMSMessage):
         :param senders:  list of senders phone number. if this value is nit provided default phone numbers will be used
         """
 
+        super().__init__()
         if len(receptors) != len(messages):
             raise ValueError('messages length and receptors length must be same in bulk messages')
 

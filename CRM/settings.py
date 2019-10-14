@@ -62,6 +62,11 @@ SMS_EN_MAX = 612
 
 SMS_FA_MAX = 268
 
+SMS_PANEL = {
+    'AVAILABLE_CUSTOMER_LINE': '10008445',
+    'SYSTEM_LINE': '0013658000175'
+}
+
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 

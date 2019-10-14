@@ -12,7 +12,7 @@ class SMSTemplateAdmin(admin.ModelAdmin):
 
 class SentSMSAdmin(admin.ModelAdmin):
 
-    list_display = ['businessman', 'is_plain_sms', 'sent_date']
+    list_display = ['businessman', 'message_id']
 
 
 admin.site.register(SMSTemplate, SMSTemplateAdmin)

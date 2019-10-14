@@ -12,11 +12,12 @@ from .models import Businessman, Customer, VerificationCodes, AuthStatus
 from . import forms
 
 
-def generate_button_link(disable: bool):
+def generate_button_link(disable: bool, button_color='blue'):
 
     if disable is False:
         return '<a href={} target="_blank" ' \
-               'style="background: blue; color: white; padding: 6px; border: 0; margin: 2px 0; border-radius: 6px">{}</a>'
+               'style="background:  ' + button_color + \
+               ';color: white; padding: 6px; border: 0; margin: 2px 0; border-radius: 6px">{}</a>'
 
     return 'this user is not in pending mode'
 
@@ -156,7 +157,7 @@ class BusinessmanAdminModel(UserAdmin):
         :return: HTML code of the unauthorization link
         """
 
-        return format_html(generate_button_link(False), reverse('admin:un_authorize', args=[obj.pk]), 'UnAuthorize')
+        return format_html(generate_button_link(False, 'red'), reverse('admin:un_authorize', args=[obj.pk]), 'UnAuthorize')
 
     get_un_authorize_link.short_description = 'un authorize user'
 

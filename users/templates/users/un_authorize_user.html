@@ -15,15 +15,15 @@
 
     {% if businessman.authorized == '0' %}
 
-        <p>status: unauthorized</p>
+        <p>status: Unauthorized</p>
 
     {% elif businessman.authorized == '1' %}
 
-        <p>status: pending</p>
+        <p>status: Pending</p>
 
         {% else %}
 
-        <p>status: authorized</p>
+        <p>status: Authorized</p>
 
     {% endif %}
 
@@ -31,7 +31,7 @@
 
         {% csrf_token %}
 
-        <button type="submit" class="btn btn-danger">Un authorize</button>
+        <button type="submit" class="btn btn-danger">Unauthorize</button>
         <a href="{% url 'admin:users_businessman_changelist' %}" class="btn btn-outline-primary">Cancel</a>
     </form>
 
