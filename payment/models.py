@@ -10,7 +10,7 @@ from django.urls import reverse
 class Payment(models.Model):
     creation_date = models.DateTimeField(auto_now_add=True)
     modification_date = models.DateTimeField(auto_now=True)
-    user = models.ForeignKey(Businessman, on_delete=models.PROTECT)
+    businessman = models.ForeignKey(Businessman, on_delete=models.PROTECT)
     authority = models.CharField(max_length=255, null=True,blank=True)
     refid = models.CharField(max_length=255, null=True,blank=True)
     status = models.CharField(max_length=255, default="pending")
@@ -20,7 +20,7 @@ class Payment(models.Model):
 
 
     def __str__(self):
-        return "{}:{} T,creation_date:{}".format(self.user,self.amount,self.creation_date)
+        return "{}:{} T,creation_date:{}".format(self.businessman,self.amount,self.creation_date)
 
 
     def pay(self, request):
@@ -28,7 +28,7 @@ class Payment(models.Model):
         CallbackURL =  request.build_absolute_uri(reverse('payment:verify'))
         client=Client(settings.ZARINPAL.get('url'))
         merchant=settings.ZARINPAL.get("MERCHANT")
-        result = client.service.PaymentRequest(merchant, self.amount, self.description, self.user.email, self.phone, CallbackURL)
+        result = client.service.PaymentRequest(merchant, self.amount, self.description, self.businessman.email, self.phone, CallbackURL)
         if result.Status == 100:
             self.authority = result.Authority
             self.save()
