@@ -29,6 +29,7 @@ from customerpurchase import urls as purchase_url
 from panelmodulus import urls as modulus_url
 from panelsetting import urls as setiing_ulr
 from payment import urls as payment_url
+from device import urls as device_url
 
 schema_view = get_swagger_view(title='Pastebin API')
 
@@ -46,4 +47,5 @@ urlpatterns = [
     path('api/salesman/modulus/', include(modulus_url)),
     path('api/salesman/settings/', include(setiing_ulr)),
     path('zarinpal/',include(payment_url)),
+    path('api/salesman/device/',include(device_url))
 ]
