@@ -1,10 +1,10 @@
 from django.urls import path
-from .views import register_customer #,RegisterCustomer
+from .views import RegisterCustomer #,register_customer
 
 app_name = "Device"
 
 urlpatterns = [
-    path('register_customer/<int:imei_number>/<int:phone_customer>/', register_customer , name='register_customer'),
-    # path('register/<int:imei_number>/<int:phone_customer>/', RegisterCustomer.as_view() , name='RegisterCustomer'),
+    # path('register/<int:imei_number>/', register_customer , name='register_customer'),
+    path('register/<int:imei_number>/customer/', RegisterCustomer.as_view() , name='RegisterCustomer'),
 
 ]
