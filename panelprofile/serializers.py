@@ -107,9 +107,10 @@ class AuthFormSerializer(serializers.ModelSerializer):
         """
         if instance.form.name is not None:
             instance.form.delete()
-
-        instance.form = validated_data.get('form')
-        instance.save()
+        # instance.form = validated_data.get('form')
+        new_form = validated_data.get('form')
+        instance.form.save(new_form.name, new_form.file)
+        instance.form.close()
         return instance
 
 

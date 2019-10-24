@@ -58,7 +58,6 @@ def upload_auth_docs(request: Request, doc_type):
 
     return Response(status=status.HTTP_204_NO_CONTENT)
 
-
 @api_view(['POST'])
 @permission_classes([permissions.IsAuthenticated, IsUnAuthorized, IsAuthDocsUploaded])
 def authenticate_user(request: Request):
