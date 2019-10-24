@@ -59,6 +59,8 @@ ALLOWED_HOSTS = ['localhost']
 # Application definition
 
 INSTALLED_APPS = [
+    'device',
+    'payment',
     'rest_framework',
     'users',
     'panelmodulus',
@@ -237,3 +239,9 @@ try:
 except ImportError:
     pass
 
+
+ZARINPAL={
+    'url': 'https://www.zarinpal.com/pg/services/WebGate/wsdl',
+    "MERCHANT" : "7055b6ac-e6dc-11e9-99c1-000c295eb8fc",
+
+}
