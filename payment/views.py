@@ -21,11 +21,11 @@ def verify(request):
         return HttpResponse(_('Transaction failed or canceled by user'))
 
 
-def pay(request):
-    p=Payment(amount=1000,businessman=request.user,description="for test")
-    p.save()
-    # return p.pay(request)
-    return HttpResponseRedirect('https://www.zarinpal.com/')
+# def pay(request):
+#     p=Payment(amount=1000,businessman=request.user,description="for test")
+#     p.save()
+#     # return p.pay(request)
+#     return HttpResponseRedirect('https://www.zarinpal.com/')
 
 
 @api_view(['POST'])
