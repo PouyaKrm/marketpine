@@ -59,6 +59,7 @@ ALLOWED_HOSTS = ['localhost']
 # Application definition
 
 INSTALLED_APPS = [
+    'content_marketing',
     'device',
     'payment',
     'rest_framework',
@@ -165,7 +166,10 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 
-MEDIA_ROOT = os.path.join(BASE_DIR, '..', 'uploaded_media')
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR,'..', 'media/')
+
+# MEDIA_ROOT = os.path.join(BASE_DIR, '..', 'uploaded_media')
 
 MAX_LOGO_SIZE = 800000
 
