@@ -4,7 +4,7 @@ from rest_framework.request import Request
 from users.models import AuthStatus
 
 
-class IsUnAuthorized(BasePermission):
+class AuthDocsNotUploaded(BasePermission):
 
     message = 'فقط افرادی که احراز هویت نشده اند می توانند مدارک خود را ارسال کنند'
 

@@ -5,9 +5,6 @@ from django.shortcuts import redirect, render
 from django.urls import reverse, path
 from django.utils.html import format_html
 from kavenegar import APIException
-
-from common.util.sms_panel import ClientManagement
-from panelprofile.models import SMSPanelStatus
 from .models import Businessman, Customer, VerificationCodes, AuthStatus
 from . import forms
 
@@ -15,7 +12,7 @@ from . import forms
 def generate_button_link(disable: bool, button_color='blue'):
 
     if disable is False:
-        return '<a href={} target="_blank" ' \
+        return '<a href={} ' \
                'style="background:  ' + button_color + \
                ';color: white; padding: 6px; border: 0; margin: 2px 0; border-radius: 6px">{}</a>'
 
@@ -29,7 +26,6 @@ class BusinessmanAdminModel(UserAdmin):
     model = Businessman
     list_display = ['id', 'username', 'business_name', 'phone', 'authorized', 'get_authorize_link', 'get_un_authorize_link']
     readonly_fields = ['authorized']
-    actions = ['authorize_pending_users', 'un_authorize_users']
     fieldsets = (
             (None, {'fields': ('username', 'password')}),
             ('General Info', {'fields': ('business_name', 'phone', 'logo', 'address', 'email')}),
@@ -51,57 +47,6 @@ class BusinessmanAdminModel(UserAdmin):
         ]
 
         return custom_urls + urls
-
-    def authorize_pending_users(self, request, queryset):
-        """
-        an action that sets user's sms panel status to active with login in kavenegar. this action will not be executed
-        for is_staff members
-        :param request:
-        :param queryset: users objects that is selected by admin
-        :return:
-        """
-
-        client_manage = ClientManagement()
-        for obj in queryset.all():
-            if obj.authorized == '1' and obj.is_staff is False:
-                try:
-                    resp = client_manage.activate_sms_panel(obj.smspanelinfo.api_key)
-                    obj.smspanelinfo.status = SMSPanelStatus.ACTIVE_LOGIN
-                    obj.authorized = AuthStatus.AUTHORIZED
-                    obj.save()
-                except APIException as e:
-                    self.message_user(request, f'error {e.status} in user {obj.username} authorization with message: {e.message}'
-                                      , messages.ERROR)
-
-        self.message_user(request, 'all users authorized successfully')
-    authorize_pending_users.short_description = 'authorize pending users'
-
-
-    def un_authorize_users(self, request, queryset):
-
-        """
-        un authorizes users adn deactivate their sms panel
-        :param request:
-        :param queryset: users that are selected by the admin
-        :return:
-        """
-
-        client_manage = ClientManagement()
-        for obj in queryset.all():
-            if obj.authorized != AuthStatus.UNAUTHORIZED and obj.is_staff is False:
-
-                try:
-                    client_manage.deactivate_sms_panel(obj.smspanelinfo.api_key)
-                    obj.smspanelinfo.status = SMSPanelStatus.INACTIVE
-                    obj.authorized = AuthStatus.UNAUTHORIZED
-                    obj.save()
-                except APIException as e:
-                    self.message_user(request, f'error {e.status} in user {obj.username} authorization with message: {e.message}'
-                                      , messages.ERROR)
-
-        self.message_user(request, 'all users un authorized successfully')
-
-    un_authorize_users.short_description = 'un authorize users'
 
 
     def get_authorize_link(self, obj):
@@ -132,7 +77,7 @@ class BusinessmanAdminModel(UserAdmin):
 
 
         if request.method != 'POST':
-            return
+            return redirect(reverse('admin:users_businessman_changelist'))
 
         businessman = Businessman.objects.get(pk=user_id)
 
@@ -174,8 +119,7 @@ class BusinessmanAdminModel(UserAdmin):
         businessman = Businessman.objects.get(pk=user_id)
 
         if request.method == 'GET':
-            return render(request, '../templates/users/un_authorize_user.html',
-                          {'businessman': businessman})
+            return render(request, '../templates/users/un_authorize_user.html', {'businessman': businessman})
 
         if request.method != 'POST' or businessman.authorized == AuthStatus.UNAUTHORIZED:
             return redirect(reverse('admin:users_businessman_changelist'))

@@ -186,10 +186,6 @@ def reset_user_password(request):
     return Response(status=status.HTTP_204_NO_CONTENT)
 
 
-
-
-
-
 @api_view(['PUT'])
 @permission_classes([])
 def user_forget_password(request):
@@ -208,53 +204,9 @@ def user_forget_password(request):
 
         return Response(status=status.HTTP_404_NOT_FOUND)
 
-
-
     serializer.update(user, serializer.validated_data)
 
     return Response(status=status.HTTP_204_NO_CONTENT)
-
-
-
-
-
-class SalesmanRetrieveUpdateAPIView(APIView):
-
-    """
-    put:
-    Updates the profile of the user. Needs JWT token
-
-    get:
-    Retrieves the profile data Including phone, business_name, first_name, last_name, email.
-     but phone number and business name are required. Needs JWT toeken
-    """
-
-    def put(self, request, *args, **kwargs):
-
-        serializer = BusinessmanRetrieveSerializer(data=request.data)
-
-        serializer._context = {'request': self.request}
-
-        if not serializer.is_valid():
-
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-        user = Businessman.objects.get(id=self.request.user.id)
-
-        serializer.update(user, serializer.validated_data)
-
-        serializer.instance = user
-
-        return Response(serializer.data, status=status.HTTP_200_OK)
-
-    def get(self, request, *args, **kwargs):
-
-        serializer = BusinessmanRetrieveSerializer(self.request.user)
-
-        return Response(serializer.data, status=status.HTTP_200_OK)
-
-
-
 
 
 class image_up(generics.CreateAPIView):

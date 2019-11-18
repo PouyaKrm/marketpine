@@ -122,48 +122,6 @@ class BusinessmanPasswordResetSerializer(serializers.ModelSerializer):
         return instance
 
 
-class BusinessmanRetrieveSerializer(serializers.ModelSerializer):
-
-    class Meta:
-
-        model = Businessman
-        fields = [
-            'username',
-            'first_name',
-            'last_name',
-            'address',
-            'phone',
-            'email',
-            'business_name',
-        ]
-
-        extra_kwargs = {'username': {'read_only': True}, 'phone': {'read_only': True}, 'email': {'read_only': True}}
-
-    def validate_email(self, value):
-
-
-        logged_in_user = self.context['request'].user
-
-        users_num = Businessman.objects.all().exclude(id=logged_in_user.id).filter(email=value).count()
-
-        if users_num is not 0:
-            raise serializers.ValidationError('this email address is already taken')
-
-        return value
-
-    def update(self, instance, validated_data):
-
-        for key, value in validated_data.items():
-
-            setattr(instance, key, value)
-
-        instance.save()
-
-        return instance
-
-
-
-
 class BusinessmanForgetPasswordSerializer(serializers.ModelSerializer):
 
     # phone = serializers.CharField(max_length=15, validators=[phone_validator])

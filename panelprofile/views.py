@@ -4,90 +4,64 @@ from django.shortcuts import render
 
 # Create your views here.
 from wsgiref.util import FileWrapper
-from common.util.kavenegar_local import APIException
-from rest_framework import status, permissions
-from rest_framework.decorators import api_view, parser_classes, permission_classes
-from rest_framework.request import Request
+
+from rest_framework.generics import CreateAPIView, RetrieveAPIView, GenericAPIView,  UpdateAPIView
+from rest_framework import mixins, status
+
+from rest_framework import permissions
 from rest_framework.response import Response
-from rest_framework.parsers import MultiPartParser
+from rest_framework.views import APIView
 
-from panelprofile.models import AuthDoc, BusinessmanAuthDocs
-from panelprofile.permissions import IsUnAuthorized, IsAuthDocsUploaded
-from panelprofile.serializers import AuthAuthenticateUserSerializer, AuthFormSerializer, AuthNationalCardSerializer, \
-    AuthBirthCertificateSerializer
-
-def create_businessman_auth_docs(user):
-    if not hasattr(user, 'businessmanauthdocs'):
-        return BusinessmanAuthDocs.objects.create(businessman=user)
+from panelprofile.models import AuthDoc
+from panelprofile.permissions import AuthDocsNotUploaded
+from panelprofile.serializers import AuthSerializer, BusinessmanProfileSerializer
+from users.models import Businessman
 
 
-@api_view(['POST'])
-@parser_classes([MultiPartParser])
-@permission_classes([permissions.IsAuthenticated, IsUnAuthorized])
-def upload_auth_docs(request: Request, doc_type):
+class BusinessmanRetrieveUpdateProfileAPIView(APIView):
 
     """
-    updates auth docs that needed to authorize user.
-    docs are taken based on the path variable 'doc_type':
-        form: to upload form document.
-        card: to upload national card image.
-        certificate: to upload birth certificate
-    :parameter doc_type specifies witch file must be validated abd stored
-    :param request:
-    :return: if param is not sent or file with key 'file' does not exist,
-    Returns Response with error message and 400 status code. else Response with 204 if operation was successful
-    """
-    if not request.data.keys().__contains__('file'):
-        return Response({'details': 'no file is sent'}, status=status.HTTP_400_BAD_REQUEST)
+    put:
+    Updates the profile of the user. Needs JWT token
 
-    if doc_type == 'form':
-        serializer = AuthFormSerializer(data={'form': request.data['file']})
-    elif doc_type == 'card':
-        serializer = AuthNationalCardSerializer(data={'national_card': request.data['file']})
-    elif doc_type == 'certificate':
-        serializer = AuthBirthCertificateSerializer(data={'birth_certificate': request.data['file']})
-    else:
-        return Response({'param': 'doc_type must be form, card or certificate'}, status=status.HTTP_400_BAD_REQUEST)
-
-    create_businessman_auth_docs(request.user)
-
-    if not serializer.is_valid():
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-    serializer.update(request.user.businessmanauthdocs, serializer.validated_data)
-
-    return Response(status=status.HTTP_204_NO_CONTENT)
-
-@api_view(['POST'])
-@permission_classes([permissions.IsAuthenticated, IsUnAuthorized, IsAuthDocsUploaded])
-def authenticate_user(request: Request):
-
-    """
-    authenticate user by password is sent. and finishes authentication
-    :param request:
-    :return: If data is invalid Response with status code 400, else if password was incorrect Response with 401 status code
-    else Response 204 if operation was successful. if an error occurs on kavenegar api. it will forward the error
-    to the client
+    get:
+    Retrieves the profile data Including phone, business_name, first_name, last_name, email.
+     but phone number and business name are required. Needs JWT toeken
     """
 
-    serializer = AuthAuthenticateUserSerializer(data=request.data)
+    def put(self, request, *args, **kwargs):
+        serializer = BusinessmanProfileSerializer(data=request.data)
 
-    if not serializer.is_valid():
-        return Response(serializer.errors, status = status.HTTP_400_BAD_REQUEST)
+        serializer._context = {'user': self.request.user}
 
-    serializer.businessman(request.user)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    user = authenticate(username=request.user.username, password = serializer.validated_data['password'])
+        user = Businessman.objects.get(id=self.request.user.id)
 
-    if user is None:
-        return Response({'detail': 'username or password is wrong'}, status=status.HTTP_401_UNAUTHORIZED)
+        serializer.update(user, serializer.validated_data)
 
-    try:
-        serializer.create(serializer.validated_data)
-    except APIException as e:
-        return Response({'detail': e.message}, status=e.status)
+        serializer.instance = user
 
-    return Response(status=status.HTTP_204_NO_CONTENT)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def get(self, request, *args, **kwargs):
+        serializer = BusinessmanProfileSerializer(self.request.user)
+
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class UploadBusinessmanDocs(CreateAPIView):
+
+    """
+    handles upload of authorization documents that is needed to authorize user
+    """
+
+    serializer_class = AuthSerializer
+    permission_classes = [permissions.IsAuthenticated, AuthDocsNotUploaded]
+
+    def get_serializer_context(self):
+        return {'user': self.request.user}
 
 
 # TODO move file download to separate app and add Nginx config to Nginx serve the files
