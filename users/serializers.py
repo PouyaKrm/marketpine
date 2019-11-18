@@ -165,31 +165,3 @@ class BusinessmanLoginSerializer(serializers.ModelSerializer):
         ]
 
         extra_kwargs = {'password': {'write_only': True}}
-
-
-class UploadImageSerializer(serializers.ModelSerializer):
-
-    logo = serializers.ImageField(max_length=254, validators=[validate_logo_size])
-
-    class Meta:
-
-        model = Businessman
-        fields = ['logo']
-
-    def update(self, instance: Businessman, validated_data):
-
-        logo = validated_data['logo']
-
-        user = self.context['user']
-
-        path = os.path.join(settings.MEDIA_ROOT, user.id.__str__(), 'logo')
-
-        if not os.path.exists(path):
-            os.makedirs(path)
-        else:
-            user.logo.delete()
-
-        instance.logo.save(logo.name, logo.file)
-
-        return instance
-

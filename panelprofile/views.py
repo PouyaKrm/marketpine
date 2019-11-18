@@ -5,16 +5,18 @@ from django.shortcuts import render
 # Create your views here.
 from wsgiref.util import FileWrapper
 
+from rest_framework.decorators import api_view, permission_classes
 from rest_framework.generics import CreateAPIView, RetrieveAPIView, GenericAPIView,  UpdateAPIView
 from rest_framework import mixins, status
 
 from rest_framework import permissions
+from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from panelprofile.models import AuthDoc
 from panelprofile.permissions import AuthDocsNotUploaded
-from panelprofile.serializers import AuthSerializer, BusinessmanProfileSerializer
+from panelprofile.serializers import AuthSerializer, BusinessmanProfileSerializer, UploadImageSerializer
 from users.models import Businessman
 
 
@@ -49,6 +51,75 @@ class BusinessmanRetrieveUpdateProfileAPIView(APIView):
         serializer = BusinessmanProfileSerializer(self.request.user)
 
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class UploadRetrieveProfileImage(APIView):
+
+    def put(self, request: Request):
+
+        """
+        NEW
+        content-type : multipart/form-data
+        field in body:
+        logo : image file that must be uploaded. size limit: 200 kb
+
+        Receives and saves sent logo image for logged in user.
+        :param request: Contain data of Http request
+        :return: If sends data is npt valid Response object with 400 status code else, Response Object with 200 status code
+
+        """
+
+        serializer = UploadImageSerializer(data=request.data)
+
+        serializer._context = {'user': request.user}
+
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        serializer.update(request.user, serializer.validated_data)
+
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+    # def get(self, request: Request):
+    #
+    #     """
+    #     NEW
+    #     Gives the logo image that is uploaded by put request
+    #     :param request:
+    #     :return: If an logo file is uploaded before returns Response with file and 200 status code, else 404 status code
+    #     """
+    #
+    #     logo = request.user.logo
+    #     if not logo:
+    #         return Response(status=status.HTTP_404_NOT_FOUND)
+    #
+    #     return HttpResponse(FileWrapper(logo.file), content_type="image/png")
+
+
+@api_view(['GET'])
+@permission_classes([])
+def get_user_logo(request: Request, businessman_id):
+
+    """
+    NEW
+    Gives the logo image that is uploaded by put request
+    :param request:
+    :param businessman_id: id of the user that logo belongs to
+    :return: If an logo file is uploaded before returns Response with file and 200 status code, else 404 status code
+    """
+
+    try:
+        user = Businessman.objects.get(id=businessman_id)
+    except ObjectDoesNotExist:
+        return Response({'details': 'کاربری یافت نشد'},status=status.HTTP_404_NOT_FOUND)
+
+    logo = user.logo
+    if not logo:
+        return Response({'details': 'این کاربر لوگو خود را ثبت نکرده'}, status=status.HTTP_404_NOT_FOUND)
+
+    return HttpResponse(FileWrapper(logo.file), content_type="image/png")
+
+
 
 
 class UploadBusinessmanDocs(CreateAPIView):

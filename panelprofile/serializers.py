@@ -1,3 +1,5 @@
+import os
+
 from django.contrib.auth import authenticate
 from django.core.exceptions import ValidationError
 from rest_framework import serializers
@@ -5,7 +7,7 @@ from rest_framework import serializers
 from users.models import AuthStatus, Businessman
 from .models import SMSPanelInfo, BusinessmanAuthDocs
 from django.conf import settings
-from common.util.custom_validators import pdf_file_validator
+from common.util.custom_validators import pdf_file_validator, validate_logo_size
 from common.util.sms_panel import ClientManagement
 
 
@@ -46,6 +48,33 @@ class BusinessmanProfileSerializer(serializers.ModelSerializer):
             setattr(instance, key, value)
 
         instance.save()
+
+        return instance
+
+
+class UploadImageSerializer(serializers.ModelSerializer):
+
+    logo = serializers.ImageField(max_length=254, validators=[validate_logo_size])
+
+    class Meta:
+
+        model = Businessman
+        fields = ['logo']
+
+    def update(self, instance: Businessman, validated_data):
+
+        logo = validated_data['logo']
+
+        user = self.context['user']
+
+        path = os.path.join(settings.MEDIA_ROOT, user.id.__str__(), 'logo')
+
+        if not os.path.exists(path):
+            os.makedirs(path)
+        else:
+            user.logo.delete()
+
+        instance.logo.save(logo.name, logo.file)
 
         return instance
 
