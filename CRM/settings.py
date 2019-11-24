@@ -167,9 +167,7 @@ USE_TZ = True
 STATIC_URL = '/static/'
 
 MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR,'..', 'media/')
-
-# MEDIA_ROOT = os.path.join(BASE_DIR, '..', 'uploaded_media')
+MEDIA_ROOT = os.path.join(BASE_DIR,'..', 'uploaded_media/')
 
 MAX_LOGO_SIZE = 800000
 
@@ -248,4 +246,8 @@ ZARINPAL={
     'url': 'https://www.zarinpal.com/pg/services/WebGate/wsdl',
     "MERCHANT" : "7055b6ac-e6dc-11e9-99c1-000c295eb8fc",
 
+}
+
+UPLOAD_VIDEO = {
+    'max_size_video': '50000000',
 }
