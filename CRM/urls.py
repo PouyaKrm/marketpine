@@ -29,6 +29,7 @@ from customerpurchase import urls as purchase_url
 from panelmodulus import urls as modulus_url
 from panelsetting import urls as setiing_ulr
 from panelprofile import urls as profile_url
+from download import urls as download_url
 schema_view = get_swagger_view(title='Pastebin API')
 
 urlpatterns = [
@@ -45,6 +46,7 @@ urlpatterns = [
     path('api/salesman/modulus/', include(modulus_url)),
     path('api/salesman/profile/', include(profile_url)),
     path('api/salesman/settings/', include(setiing_ulr)),
+    path('api/download/', include(download_url))
 ]
 
 

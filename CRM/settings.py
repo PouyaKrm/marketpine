@@ -67,6 +67,12 @@ SMS_PANEL = {
     'SYSTEM_LINE': '0013658000175'
 }
 
+DOWNLOAD_SETTINGS = {
+    'NGINX_LOCATION': 'downloads',
+    'NGINX_REDIRECT_HEADER': 'X-Accel-Redirect',
+    'ATTACHEMENT_HEADER': 'Content-disposition'
+}
+
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
@@ -96,6 +102,8 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'download',
+    'download.profiledownload'
 
 ]
 

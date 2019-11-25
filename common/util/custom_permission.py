@@ -8,3 +8,11 @@ class IsAuthorized(permissions.BasePermission):
     def has_permission(self, request):
 
         return request.user.authorized == AuthStatus.AUTHORIZED
+
+
+class HasUploadedAuthDocsAndAuthenticated(permissions.BasePermission):
+
+    message = "authentication documents are not uploaded yet"
+
+    def has_permission(self, request, view):
+        return request.user.authorized != AuthStatus.UNAUTHORIZED

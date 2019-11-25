@@ -1,6 +1,7 @@
 from django.contrib.auth import authenticate
 from django.http.response import HttpResponse
 from django.shortcuts import render
+from django.conf import settings
 
 # Create your views here.
 from wsgiref.util import FileWrapper
@@ -12,12 +13,15 @@ from rest_framework import mixins, status
 from rest_framework import permissions
 from rest_framework.request import Request
 from rest_framework.response import Response
+from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from panelprofile.models import AuthDoc
 from panelprofile.permissions import AuthDocsNotUploaded
 from panelprofile.serializers import AuthSerializer, BusinessmanProfileSerializer, UploadImageSerializer
 from users.models import Businessman
+
+from common.util.custom_permission import HasUploadedAuthDocsAndAuthenticated
 
 
 class BusinessmanRetrieveUpdateProfileAPIView(APIView):
