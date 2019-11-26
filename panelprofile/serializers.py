@@ -50,7 +50,6 @@ class BusinessmanProfileSerializer(serializers.ModelSerializer):
         :return: dictionary that it's values are retrieved urls of the views
         """
 
-        request = self.context['request']
         commitment_form_link = self.generate_link(reverse('commitment_form_download'))
 
         if obj.authorized == AuthStatus.UNAUTHORIZED:
