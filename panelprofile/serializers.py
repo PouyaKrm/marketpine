@@ -2,6 +2,7 @@ import os
 
 from django.contrib.auth import authenticate
 from django.core.exceptions import ValidationError
+from rest_framework.reverse import reverse
 from rest_framework import serializers
 
 from users.models import AuthStatus, Businessman
@@ -12,6 +13,8 @@ from common.util.sms_panel import ClientManagement
 
 
 class BusinessmanProfileSerializer(serializers.ModelSerializer):
+
+    auth_documents = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
 
@@ -26,10 +29,33 @@ class BusinessmanProfileSerializer(serializers.ModelSerializer):
             'business_name',
             'date_joined',
             'authorized',
+            'auth_documents',
         ]
 
         extra_kwargs = {'username': {'read_only': True}, 'phone': {'read_only': True}, 'email': {'read_only': True},
                         'authorized': {'read_only': True}, 'date_joined': {'read_only': True}}
+
+
+    def get_auth_documents(self, obj: Businessman):
+
+        """
+        gives the path of views in profiledownload app for downloading uploaded
+        documents
+        :param obj: configured Businessman
+        :return: dictionary that it's values are retrieved urls of the views
+        """
+
+        commitment_form_link = reverse('commitment_form_download')
+
+        if obj.authorized == AuthStatus.UNAUTHORIZED:
+            return {'commitment_form': commitment_form_link}
+
+        form_link = reverse('auth_docs_download', args=['form'])
+        national_card_link = reverse('auth_docs_download', args=['card'])
+        birth_certificate_link = reverse('auth_docs_download', args=['certificate'])
+
+        return {'commitment_form': commitment_form_link, 'form': form_link,
+                'national_card': national_card_link, 'birth_certificate': birth_certificate_link}
 
     def validate_email(self, value):
 
@@ -84,6 +110,9 @@ class UploadImageSerializer(serializers.ModelSerializer):
 class AuthSerializer(serializers.ModelSerializer):
 
     password = serializers.CharField(min_length=8, max_length=16, required=True, write_only=True)
+
+
+
     class Meta:
 
         model = BusinessmanAuthDocs
@@ -96,6 +125,7 @@ class AuthSerializer(serializers.ModelSerializer):
 
         extra_kwargs = {'national_card': {'required': True}, 'birth_certificate': {'required': True},
                         'form': {'required': True}}
+
 
     def validate_password(self, value):
 
