@@ -37,9 +37,9 @@ class BusinessmanRetrieveUpdateProfileAPIView(APIView):
     """
 
     def put(self, request, *args, **kwargs):
-        serializer = BusinessmanProfileSerializer(data=request.data)
+        serializer = BusinessmanProfileSerializer(data=request.data, context={'user': request.user, 'request': request})
 
-        serializer._context = {'user': self.request.user}
+        # serializer._context = {'user': self.request.user}
 
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -53,7 +53,7 @@ class BusinessmanRetrieveUpdateProfileAPIView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def get(self, request, *args, **kwargs):
-        serializer = BusinessmanProfileSerializer(self.request.user)
+        serializer = BusinessmanProfileSerializer(request.user, context={'user': request.user, 'request': request})
 
         return Response(serializer.data, status=status.HTTP_200_OK)
 

@@ -2,6 +2,7 @@ import os
 
 from django.contrib.auth import authenticate
 from django.core.exceptions import ValidationError
+from rest_framework.request import Request
 from rest_framework.reverse import reverse
 from rest_framework import serializers
 
@@ -35,6 +36,10 @@ class BusinessmanProfileSerializer(serializers.ModelSerializer):
         extra_kwargs = {'username': {'read_only': True}, 'phone': {'read_only': True}, 'email': {'read_only': True},
                         'authorized': {'read_only': True}, 'date_joined': {'read_only': True}}
 
+    def generate_link(self, path: str):
+        request = self.context['request']
+        domain = request.META['HTTP_HOST']
+        return 'http://' + domain + path
 
     def get_auth_documents(self, obj: Businessman):
 
@@ -45,14 +50,15 @@ class BusinessmanProfileSerializer(serializers.ModelSerializer):
         :return: dictionary that it's values are retrieved urls of the views
         """
 
-        commitment_form_link = reverse('commitment_form_download')
+        request = self.context['request']
+        commitment_form_link = self.generate_link(reverse('commitment_form_download'))
 
         if obj.authorized == AuthStatus.UNAUTHORIZED:
             return {'commitment_form': commitment_form_link}
 
-        form_link = reverse('auth_docs_download', args=['form'])
-        national_card_link = reverse('auth_docs_download', args=['card'])
-        birth_certificate_link = reverse('auth_docs_download', args=['certificate'])
+        form_link = self.generate_link(reverse('auth_docs_download', args=['form']))
+        national_card_link = self.generate_link(reverse('auth_docs_download', args=['card']))
+        birth_certificate_link = self.generate_link(reverse('auth_docs_download', args=['certificate']))
 
         return {'commitment_form': commitment_form_link, 'form': form_link,
                 'national_card': national_card_link, 'birth_certificate': birth_certificate_link}
