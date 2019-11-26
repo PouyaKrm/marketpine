@@ -48,5 +48,3 @@ urlpatterns = [
     path('api/salesman/settings/', include(setiing_ulr)),
     path('api/download/', include(download_url))
 ]
-
-
