@@ -2,7 +2,7 @@ from rest_framework import serializers
 
 from common.util.custom_templates import CustomerTemplate
 from common.util.custom_validators import phone_validator
-from common.util.sms_message import SMSMessage
+from common.util.sms_panel import SystemSMSMessage
 from users.models import Customer
 from django.db.models import Sum
 
@@ -105,7 +105,7 @@ class CustomerSerializer(serializers.ModelSerializer):
         if (new_phone != old_phone) and (user.panelsetting.welcome_message is not None):
             message = CustomerTemplate(user, user.panelsetting.welcome_message, instance).render_template()
 
-            sms = SMSMessage()
+            sms = SystemSMSMessage()
 
             sms.send_message(new_phone, message)
 

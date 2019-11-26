@@ -48,7 +48,30 @@ uS+bpsFJ8c/KKLnk2fVs4iGtY/fPCRFeoVppqiFWs2gV390suMI16RoKDHoKuR1C
 hcrTQYQs+QvhU9QitwIDAQAB
 -----END PUBLIC KEY-----"""
 
+
 REFRESH_TOKEN_EXP_DELTA = datetime.timedelta(days=1)
+
+SMS_API_KEY = '4D4C324E43416D726C65446D7258566A4F59697153444355734E4F4D6B382B57'
+
+MIN_CREDIT = 100000
+INIT_CREDIT = 10000
+
+SMS_PID = 1422
+
+SMS_EN_MAX = 612
+
+SMS_FA_MAX = 268
+
+SMS_PANEL = {
+    'AVAILABLE_CUSTOMER_LINE': '10008445',
+    'SYSTEM_LINE': '0013658000175'
+}
+
+DOWNLOAD_SETTINGS = {
+    'NGINX_LOCATION': 'downloads',
+    'NGINX_REDIRECT_HEADER': 'X-Accel-Redirect',
+    'ATTACHEMENT_HEADER': 'Content-disposition'
+}
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -73,6 +96,7 @@ INSTALLED_APPS = [
     'dashboard',
     'customerpurchase',
     'panelsetting',
+    'panelprofile',
     'rest_framework_swagger',
     'django.contrib.admin',
     'django.contrib.auth',
@@ -80,6 +104,8 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'download',
+    'download.profiledownload'
 
 ]
 
@@ -95,6 +121,7 @@ MIDDLEWARE = [
 ]
 
 ROOT_URLCONF = 'CRM.urls'
+
 
 TEMPLATES = [
     {
@@ -166,8 +193,14 @@ USE_TZ = True
 STATIC_URL = '/static/'
 
 MEDIA_ROOT = os.path.join(BASE_DIR, '..', 'uploaded_media')
+MEDIA_URL = 'files/'
+MAX_LOGO_SIZE = 200000
 
-MAX_LOGO_SIZE = 800000
+AUTH_DOC = {
+    'MAX_FORM_SIZE': 2000000,
+    'MAX_CARD_SIZE': 3000000,
+    'MAX_CERTIFICATE_SIZE': 3000000,
+}
 
 AUTH_USER_MODEL = 'users.Businessman'
 
@@ -224,6 +257,8 @@ JWT_AUTH = {
     'JWT_AUTH_COOKIE': None,
 
 }
+
+
 
 CORS_ORIGIN_ALLOW_ALL = True
 CORS_ALLOW_HEADERS = list(default_headers) + [

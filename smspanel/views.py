@@ -1,13 +1,14 @@
 from django.core.exceptions import ObjectDoesNotExist
+from kavenegar import APIException, HTTPException
 from rest_framework import generics, mixins, permissions, status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
-
 from users.models import Customer
 from .serializers import SMSTemplateSerializer, SentSMSSerializer, SentSMSRetrieveForCustomer
 from .models import SMSTemplate, SentSMS
 from .permissions import HasSMSPanelPermission
-from common.util import paginators
+from common.util import paginators, jalali
+
 
 class SMSTemplateCreateListAPIView(generics.ListAPIView, mixins.CreateModelMixin):
 
@@ -44,8 +45,16 @@ class SMSTemplateRetrieveAPIView(generics.RetrieveAPIView, mixins.UpdateModelMix
 
 
 @api_view(['POST'])
-@permission_classes([permissions.IsAuthenticated, HasSMSPanelPermission])
 def send_plain_sms(request):
+
+    """
+    sends sms message without using template.
+    :param request: contains message content and id of customers that are receptors of message
+    :return: If data is invalid, Response with status code 400, else if error
+    was occurred in kavenegar api, returns Response with a message from SMS API with error message
+    other that 400.  With status code 500 if other error occurred.
+     If operation was successful, Response with status code 204
+    """
 
     serializer = SentSMSSerializer(data=request.data)
 
@@ -54,7 +63,12 @@ def send_plain_sms(request):
     if not serializer.is_valid():
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    serializer.create(serializer.validated_data)
+    try:
+        serializer.create(serializer.validated_data)
+    except APIException as e:
+        return Response({'status': e.status, 'detail': e.message}, status=e.status)
+    except HTTPException:
+        return Response({'detail': 'خطا در ارسال پیام'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     return Response(status=status.HTTP_204_NO_CONTENT)
 
@@ -84,7 +98,7 @@ def send_sms_by_template(request, template_id):
 
 
 @api_view(['GET'])
-@permission_classes([permissions.IsAuthenticated, HasSMSPanelPermission])
+@permission_classes([permissions.IsAuthenticated])
 def get_businessman_sent_sms(request):
 
     # serializer = SentSMSSerializer(SentSMS.objects.filter(businessman=request.user).all(), many=True)
@@ -95,7 +109,6 @@ def get_businessman_sent_sms(request):
 
 
 @api_view(['GET'])
-@permission_classes([permissions.IsAuthenticated, HasSMSPanelPermission])
 def get_customer_sent_sms(request, customer_id):
 
     try:
@@ -111,3 +124,4 @@ def get_customer_sent_sms(request, customer_id):
     serializer._context = {'customer': customer}
 
     return Response(serializer.data, status=status.HTTP_200_OK)
+

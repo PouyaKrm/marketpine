@@ -1,6 +1,15 @@
+from enum import Enum
+
 from django.db import models
 from django.contrib.auth.models import AbstractUser, AbstractBaseUser, BaseUserManager
 from django.utils import timezone
+
+
+class AuthStatus:
+
+    AUTHORIZED = '2'
+    PENDING = '1'
+    UNAUTHORIZED = '0'
 
 
 class Businessman(AbstractUser):
@@ -15,6 +24,8 @@ class Businessman(AbstractUser):
     telegram_id = models.CharField(max_length=20, blank=True, null=True)
     instagram_id = models.CharField(max_length=20, blank=True, null=True)
     is_verified = models.BooleanField(default=False)
+    AUTHORIZE_CHOICES = [('0', 'UNAUTHORIZED'), ('1', 'PENDING'), ('2', 'AUTHORIZED')]
+    authorized = models.CharField(max_length=1, choices=AUTHORIZE_CHOICES, default='0')
 
     def __str__(self):
         return self.username
@@ -91,20 +102,3 @@ class BusinessmanRefreshTokens(models.Model):
     expire_at = models.DateTimeField()
     ip = models.GenericIPAddressField()
     username = models.CharField(max_length=40)
-
-# class SalesmenCustomer(models.Model):
-#
-#     customer = models.ForeignKey(Customer, on_delete=models.CASCADE
-#                                    )
-#     salesman = models.ForeignKey(Businessman, on_delete=models.CASCADE)
-#     register_date = models.DateTimeField(auto_now_add=True)
-#     is_active = models.BooleanField(default=False)
-#
-#     class Meta:
-#
-#         db_table = 'salesman_customer'
-#         unique_together = ('customer', 'salesman')
-#
-#     def __str__(self):
-#
-#         return f"{self.salesman.username}-{self.customer.phone}"
