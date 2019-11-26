@@ -24,11 +24,12 @@ class BusinessmanProfileSerializer(serializers.ModelSerializer):
             'phone',
             'email',
             'business_name',
+            'date_joined',
             'authorized',
         ]
 
         extra_kwargs = {'username': {'read_only': True}, 'phone': {'read_only': True}, 'email': {'read_only': True},
-                        'authorized': {'read_only': True}}
+                        'authorized': {'read_only': True}, 'date_joined': {'read_only': True}}
 
     def validate_email(self, value):
 
