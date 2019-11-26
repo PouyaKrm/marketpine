@@ -4,5 +4,6 @@ from . import views
 
 urlpatterns = [
     path('logo/', views.download_logo),
-    re_path(r'^auth-doc/(?P<file_type>\w+)/$', views.download_auth_docs)
+    re_path(r'^auth-doc/(?P<file_type>\w+)/$', views.download_auth_docs),
+    path('commitment-form/', views.download_commitment_form)
 ]

@@ -2,6 +2,7 @@ from django.contrib.auth import authenticate
 from django.http.response import HttpResponse
 from django.shortcuts import render
 from django.conf import settings
+from django.core.exceptions import ObjectDoesNotExist
 
 # Create your views here.
 from wsgiref.util import FileWrapper
@@ -137,17 +138,3 @@ class UploadBusinessmanDocs(CreateAPIView):
 
     def get_serializer_context(self):
         return {'user': self.request.user}
-
-
-# TODO move file download to separate app and add Nginx config to Nginx serve the files
-def get_auth_pdf_doc(request):
-
-    if AuthDoc.objects.exists():
-        qs = AuthDoc.objects.all()[0]
-    else:
-        qs = None
-
-    if qs is not None:
-        return HttpResponse(FileWrapper(qs.file), content_type='application/pdf')
-    return HttpResponse(status=404)
-

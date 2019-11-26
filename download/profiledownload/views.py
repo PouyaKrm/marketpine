@@ -6,6 +6,8 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework import permissions
 from rest_framework import status
 
+from panelprofile.models import AuthDoc
+
 from common.util.custom_permission import HasUploadedAuthDocsAndAuthenticated
 
 from download import attach_file
@@ -21,11 +23,19 @@ def download_logo(request: Request):
 
     logo = request.user.logo
 
+    if not logo:
+        return Response(status=status.HTTP_404_NOT_FOUND)
+
     return attach_file(logo)
 
 @api_view(['GET'])
 @permission_classes([permissions.IsAuthenticated, HasUploadedAuthDocsAndAuthenticated])
 def download_auth_docs(request: Request, file_type: str):
+
+    """
+    sets the path and the name of the authenticaion documents in
+    Http Response headers to be servedby the nginx.
+    """
 
     if file_type=='form':
         file = request.user.businessmanauthdocs.form
@@ -40,3 +50,14 @@ def download_auth_docs(request: Request, file_type: str):
 
 
 
+@api_view(['GET'])
+@permission_classes([])
+def download_commitment_form(request: Request):
+
+    record = None
+    if AuthDoc.objects.exists():
+        record = AuthDoc.objects.all()[0]
+    else:
+        return Response(status=status.HTTP_404_NOT_FOUND)
+    
+    return attach_file(record.file)
