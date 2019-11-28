@@ -17,6 +17,8 @@ from django.contrib import admin
 from django.urls import path, include
 from faker import Faker
 from rest_framework_swagger.views import get_swagger_view
+from django.conf import settings
+from django.conf.urls.static import static
 
 from users import urls as salesman_url
 from customers import urls as customer_url
@@ -28,8 +30,15 @@ from dashboard import urls as dashboard_url
 from customerpurchase import urls as purchase_url
 from panelmodulus import urls as modulus_url
 from panelsetting import urls as setiing_ulr
+<<<<<<< HEAD
 from panelprofile import urls as profile_url
 from download import urls as download_url
+=======
+from payment import urls as payment_url
+from device import urls as device_url
+from content_marketing import urls as content_url
+
+>>>>>>> a67fbf0ac6f97e43b42c8daf9c9278ecc8f0154e
 schema_view = get_swagger_view(title='Pastebin API')
 
 urlpatterns = [
@@ -46,5 +55,14 @@ urlpatterns = [
     path('api/salesman/modulus/', include(modulus_url)),
     path('api/salesman/profile/', include(profile_url)),
     path('api/salesman/settings/', include(setiing_ulr)),
+<<<<<<< HEAD
     path('api/download/', include(download_url))
+=======
+    path('zarinpal/',include(payment_url)),
+    path('api/salesman/device/',include(device_url)),
+    path('api/salesman/content/',include(content_url)),
+>>>>>>> a67fbf0ac6f97e43b42c8daf9c9278ecc8f0154e
 ]
+
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
