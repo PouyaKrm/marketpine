@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from .models import Payment
-
+from django.conf import settings
 
 class PaymentCreationSerializer(serializers.ModelSerializer):
     '''serializer for payment app with geting amount'''
@@ -10,38 +10,53 @@ class PaymentCreationSerializer(serializers.ModelSerializer):
         fields = [
             'id',
             'amount',
+            'description',
+            'businessman',
+            'authority',
         ]
         extra_kwargs = {'id': {'read_only': True},
+                        'businessman': {'read_only': True},
+                        'authority': {'read_only': True},
                         'amount': {'required': True},
+                        'description': {'required': True},
                        }
 
     def create(self, validated_data):
         "create object payment with get amounte and constant businessman,phone,description"
         request=self.context['request']
-        return Payment.objects.create(businessman=request.user,
+        p = Payment.objects.create(businessman=request.user,
                                       phone=request.user.phone,
-                                      description="creation test",
                                       **validated_data,
                                       )
+        p.pay(request)
+        return p
 
 
-
-class PaymentFixAmountCreationSerializer(serializers.ModelSerializer):
-    "serializer for payment app without amount"
+class PaymentConstantAmountCreationSerializer(serializers.ModelSerializer):
+    "serializer for payment app with constant amount"
 
     class Meta:
         model = Payment
         fields = [
             'id',
+            'amount',
+            'description',
+            'businessman',
+            'authority',
         ]
-        extra_kwargs = {'id': {'read_only': True}}
-
+        extra_kwargs = {'id': {'read_only': True},
+                        'businessman': {'read_only': True},
+                        'authority': {'read_only': True},
+                        'amount': {'read_only': True,'required':False},
+                        'description': {'required': True},
+                       }
     def create(self, validated_data):
         "create object payment with constant amount,businessman,phone,description"
         request=self.context['request']
-        return Payment.objects.create(businessman=request.user,
-                                      amount="123456",
+        p = Payment.objects.create(businessman=request.user,
+                                      amount=settings.ZARINPAL.get("CONSTANT_AMOUNT"),
                                       phone=request.user.phone,
-                                      description="tset for default amount",
                                       **validated_data,
                                       )
+        p.pay(request)
+        return p

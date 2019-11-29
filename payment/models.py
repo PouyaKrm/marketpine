@@ -8,12 +8,19 @@ from django.urls import reverse
 
 
 class Payment(models.Model):
+    PAYMENT_STATUS= [
+        ("PAID", 'paid'),
+        ("PENDING", 'pending'),
+        ("UNPAID", 'unpaid'),
+    ]
     creation_date = models.DateTimeField(auto_now_add=True)
     modification_date = models.DateTimeField(auto_now=True)
     businessman = models.ForeignKey(Businessman, on_delete=models.PROTECT)
     authority = models.CharField(max_length=255, null=True,blank=True)
     refid = models.CharField(max_length=255, null=True,blank=True)
-    status = models.CharField(max_length=255, default="pending")
+    status = models.CharField(max_length=7,
+                              choices=PAYMENT_STATUS,
+                              default="PENDING",)
     description = models.CharField(max_length=255, null=True,blank=True)
     phone=models.IntegerField(null=True,blank=True)
     amount = models.IntegerField()
@@ -34,6 +41,7 @@ class Payment(models.Model):
             self.save()
             return redirect('https://www.zarinpal.com/pg/StartPay/' + str(result.Authority)+'/ZarinGate')
         else:
+            ##TODO
             self.status = result.Status
             self.save()
             return HttpResponse('Error code: ' + str(result.Status))
