@@ -8,19 +8,24 @@ from django.urls import reverse
 
 
 class Payment(models.Model):
-    PAYMENT_STATUS= [
-        ("PAID", 'paid'),
-        ("PENDING", 'pending'),
-        ("UNPAID", 'unpaid'),
-    ]
+    PAID="PAID"
+    PENDING="PENDING"
+    UNPAID="UNPAID"
+
+    # PAYMENT_STATUS= [
+    #     (PAID, 'paid'),
+    #     (PENDING, 'pending'),
+    #     (UNPAID, 'unpaid'),
+    # ]
     creation_date = models.DateTimeField(auto_now_add=True)
     modification_date = models.DateTimeField(auto_now=True)
     businessman = models.ForeignKey(Businessman, on_delete=models.PROTECT)
     authority = models.CharField(max_length=255, null=True,blank=True)
     refid = models.CharField(max_length=255, null=True,blank=True)
     status = models.CharField(max_length=7,
-                              choices=PAYMENT_STATUS,
-                              default="PENDING",)
+                              default=PENDING,
+                              # choices=PAYMENT_STATUS,
+                              )
     description = models.CharField(max_length=255, null=True,blank=True)
     phone=models.IntegerField(null=True,blank=True)
     amount = models.IntegerField()
@@ -39,10 +44,10 @@ class Payment(models.Model):
         if result.Status == 100:
             self.authority = result.Authority
             self.save()
-            return redirect('https://www.zarinpal.com/pg/StartPay/' + str(result.Authority)+'/ZarinGate')
+            # return redirect('https://www.zarinpal.com/pg/StartPay/' + str(result.Authority)+'/ZarinGate')
         else:
-            ##TODO
-            self.status = result.Status
+            self.status = "{} : {}".format(str(result.Status),self.UNPAID)
+            # self.status = self.UNPAID
             self.save()
             return HttpResponse('Error code: ' + str(result.Status))
 
@@ -52,14 +57,17 @@ class Payment(models.Model):
         result = client.service.PaymentVerification(merchant, self.authority, self.amount)
         if result.Status == 100:
             self.refid = str(result.RefID)
-            self.status = "done"
+            self.status = self.PAID
+            # self.status = self.PAID
             self.save()
             return HttpResponse('Transaction success.\nRefID: ' + str(result.RefID))
         elif result.Status == 101:
-            self.status = str(result.Status)
+            self.status = "{} : {}".format(str(result.Status),self.PAID)
+            # self.status = self.PAID
             self.save()
             return HttpResponse('Transaction submitted : ' + str(result.Status))
         else:
-            self.status = str(result.Status)
+            self.status = "{} : {}".format(str(result.Status),self.UNPAID)
+            # self.status = self.UNPAID
             self.save()
             return HttpResponse('Transaction failed.\nStatus: ' + str(result.Status))
