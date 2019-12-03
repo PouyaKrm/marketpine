@@ -1,4 +1,5 @@
 from django.http import HttpResponse,HttpResponseRedirect
+from django.conf import settings
 from django.shortcuts import get_object_or_404
 from django.shortcuts import redirect
 from zeep import Client
@@ -23,7 +24,7 @@ def verify(request):
         p = Payment.objects.get(authority=request.GET['Authority'])
         return p.verify(request)
     else:
-        return HttpResponse(_('Transaction failed or canceled by user'))
+        return redirect(settings.ZARINPAL.get("FORWARD_URL"))
 
 @api_view(['POST'])
 def create_payment (request):
@@ -66,4 +67,3 @@ class ListPayView(generics.ListAPIView):
 class DetailPayView(generics.RetrieveAPIView):
     serializer_class = PaymentDetailSerializer
     queryset = Payment.objects.all()
-    # lookup_field = 'user_id'

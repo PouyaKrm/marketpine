@@ -244,5 +244,6 @@ ZARINPAL={
     'url': 'https://www.zarinpal.com/pg/services/WebGate/wsdl',
     "MERCHANT" : "7055b6ac-e6dc-11e9-99c1-000c295eb8fc",
     "CONSTANT_AMOUNT" : "1000",
+    'FORWARD_URL' : 'http://localhost:8000/admin/',
 
 }

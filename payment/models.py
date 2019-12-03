@@ -34,10 +34,10 @@ class Payment(models.Model):
             self.save()
             # return redirect('https://www.zarinpal.com/pg/StartPay/' + str(result.Authority)+'/ZarinGate')
         else:
-            self.status = "{} : {}".format(str(result.Status),self.UNPAID)
-            # self.status = self.UNPAID
+            self.status = str(result.Status)
             self.save()
-            return HttpResponse('Error code: ' + str(result.Status))
+            # return HttpResponse('Error code: ' + str(result.Status))
+            return redirect(settings.ZARINPAL.get("FORWARD_URL"))
 
     def verify(self, request):
         merchant=settings.ZARINPAL.get("MERCHANT")
@@ -47,12 +47,17 @@ class Payment(models.Model):
             self.refid = str(result.RefID)
             self.status = str(result.Status)
             self.save()
-            return HttpResponse('Transaction success.\nRefID: ' + str(result.RefID))
+            # return HttpResponse('Transaction success.\nRefID: ' + str(result.RefID))
+            return redirect(settings.ZARINPAL.get("FORWARD_URL"))
+
         elif result.Status == 101:
             self.status = str(result.Status)
             self.save()
-            return HttpResponse('Transaction submitted : ' + str(result.Status))
+            # return HttpResponse('Transaction submitted : ' + str(result.Status))
+            return redirect(settings.ZARINPAL.get("FORWARD_URL"))
+
         else:
             self.status = str(result.Status)
             self.save()
-            return HttpResponse('Transaction failed.\nStatus: ' + str(result.Status))
+            # return HttpResponse('Transaction failed.\nStatus: ' + str(result.Status))
+            return redirect(settings.ZARINPAL.get("FORWARD_URL"))
