@@ -2,7 +2,7 @@ from rest_framework import serializers
 
 from common.util.custom_templates import CustomerTemplate
 from common.util.custom_validators import phone_validator
-from common.util.sms_panel import SystemSMSMessage
+# from common.util.sms_panel.message import SystemSMSMessage
 from users.models import Customer
 from django.db.models import Sum
 

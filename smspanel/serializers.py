@@ -6,8 +6,12 @@ from rest_framework import serializers
 from common.util.custom_validators import validate_sms_message_length
 from .models import SMSTemplate, SentSMS
 from common.util.custom_templates import render_template, get_fake_context, render_template_with_customer_data
-from common.util.sms_panel import SystemSMSMessage, ClientSMSMessage
+from common.util.sms_panel.message import SystemSMSMessage, ClientSMSMessage, ClientToAllCustomersSMSMessage
+from common.util.sms_panel.client import ClientManagement
+from django.conf import settings
 
+persian_max_chars = settings.SMS_PANEL['PERSIAN_MAX_CHARS']
+send_plain_max_customers = settings.SMS_PANEL['SEND_PLAIN_CUSTOMERS_MAX_NUMBER']
 
 class SMSTemplateSerializer(serializers.ModelSerializer):
 
@@ -37,9 +41,11 @@ class SMSTemplateSerializer(serializers.ModelSerializer):
         return SMSTemplate.objects.create(businessman=self.context['user'], **validated_data)
 
 
-class SentSMSSerializer(serializers.ModelSerializer):
+class SendSMSSerializer(serializers.ModelSerializer):
 
-    content = serializers.CharField(validators=[validate_sms_message_length])
+    content = serializers.CharField(required=True)
+
+    customers = serializers.ListField(child=serializers.IntegerField(min_value=1), required=True, min_length=1)
 
     def send_plain(self, customers, content):
 
@@ -81,37 +87,85 @@ class SentSMSSerializer(serializers.ModelSerializer):
 
     def validate_customers(self, value):
 
-        user = self.context['user']
+        if len(value) > send_plain_max_customers:
+            raise serializers.ValidationError("تعداد دریافت کنندگان بیش از حد مجاز است")
 
-        result = all(el in user.customers.all() for el in value)
+        return value
 
-        if result:
-            return value
+    def validate_content(self, value):
+        if(len(value) > persian_max_chars):
+            raise serializers.ValidationError("طول پیام بیش از حئ مجاز است")
+        return value
 
-        raise serializers.ValidationError('invalid customers')
 
     def create(self, validated_data: dict):
 
         user = self.context['user']
-        is_plain = self.context['is_plain']
 
         customers = validated_data.pop('customers')
 
-        if is_plain is True:
-            self.send_plain(customers, validated_data.get('content'))
+        client_message = ClientSMSMessage(user.smspanelinfo)
 
-        else:
-            self.send_by_template(validated_data.get('content'), customers)
+        customers = user.customers.filter(id__in=customers).all()
 
-        obj = SentSMS.objects.create(businessman=user **validated_data)
+        sent_messages = client_message.send_plain(customers, validated_data.get('content'))
 
-
-        for c in customers:
-            obj.customers.add(c)
-
-        obj.save()
+        obj = SentSMS.objects.bulk_create([SentSMS(businessman=user, message_id=m['messageid']) for m in sent_messages])
 
         return obj
+
+
+class SendToAllSerializer(serializers.Serializer):
+
+    """
+    a serializer to send same message to all customers of a businessman and saving the recieved 
+    information from kavehnegar api
+    """
+
+    content = serializers.CharField(required=True)
+
+    class Meta:
+        fields = [
+            'content'
+        ]
+
+    def validate_content(self, value):
+
+        """
+        Validates that length of the content is valid or not.
+        :raises ValidationError if length is too big
+        :retuns contents
+        """
+
+        if len(value) > persian_max_chars:
+            raise serializers.ValidationError("طول پیام بیش از حد مجاز است")
+
+        return value
+
+    def create(self, validated_data: dict):
+
+        """
+        send message to customers and saves message_id that is retrieved from kavehnegar api
+        :raises APIException if kavehnegar api does not accept the send of the message
+        :raises HTTPException if an error occur during http request
+        :returns content
+        """
+
+        user = self.context['user']
+        content = validated_data.get('content')
+        client_sms = ClientToAllCustomersSMSMessage(user, content)
+
+        sent_messages = client_sms.send_plain_next()
+
+        while sent_messages is not None:
+
+            SentSMS.objects.bulk_create([SentSMS(businessman=user, message_id=m['messageid']) for m in sent_messages])
+
+            sent_messages = client_sms.send_plain_next()
+        
+        return content
+
+
 
 
 class SentSMSRetrieveForCustomer(serializers.ModelSerializer):
@@ -131,8 +185,6 @@ class SentSMSRetrieveForCustomer(serializers.ModelSerializer):
         model = SentSMS
         fields = [
             'id',
-            'content',
-            'is_plain_sms',
             'rendered_content',
         ]
 

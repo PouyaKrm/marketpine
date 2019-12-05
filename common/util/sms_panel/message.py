@@ -1,15 +1,25 @@
 import requests
 
 from users.models import Businessman
-from .kavenegar_local import KavenegarAPI, APIException, HTTPException
+from common.util.kavenegar_local import KavenegarAPI, APIException, HTTPException
 from django.conf import settings
+from django.db.models import QuerySet
 
+sms_settings = settings.SMS_PANEL
+api_key = sms_settings['API_KEY']
+min_credit = sms_settings['MIN_CREDIT']
+init_credit = sms_settings['INIT_CREDIT']
+pid = sms_settings['PID']
+username_prefix = sms_settings['CUSTOMER_US_PREFIX']
+customer_line = sms_settings['CUSTOMER_LINE']
+send_plain_all_page_num = sms_settings['SEND_PLAIN_ALL_CUSTOMERS_PAGE_NUMBER']
 
 class SystemSMSMessage:
 
     def __init__(self):
 
-        self.api = KavenegarAPI(settings.SMS_API_KEY)
+        self.api = KavenegarAPI(api_key)
+        self.line = sms_settings['SYSTEM_LINE']
 
     def send(self, **params):
 
@@ -18,7 +28,7 @@ class SystemSMSMessage:
     def send_message(self, receptor, message):
 
         params = {
-            'sender': settings.SMS_PANEL['SYSTEM_LINE'],
+            'sender': self.line,
             'receptor': f'{receptor}',
             'message': f'{message}'
         }
@@ -38,21 +48,50 @@ class SystemSMSMessage:
 
 class ClientSMSMessage(SystemSMSMessage):
 
+    """
+    sends one same message to specific number of customers
+    """
+
     def __init__(self, sms_panel_info):
 
         super().__init__()
 
         self.api = KavenegarAPI(sms_panel_info.api_key)
+        self.line = sms_settings['CUSTOMER_LINE']
 
     def send_message(self, receptor, message):
 
+        """
+        sends message by taking receptors as string that contains comma sperated phone numbers.
+        :returns list of details of sent message to each receptor
+        """
+
         params = {
-            'sender': settings.SMS_PANEL['AVAILABLE_CUSTOMER_LINE'],
-            receptor: receptor,
-            message: message
+            'sender': self.line,
+            'receptor': receptor,
+            'message': message
         }
 
         return self.api.sms_send(params)
+
+
+    def send_plain(self, customers: QuerySet, message: str):
+
+        """
+        A helper method to send message to customers.
+        :customers retrived customers from database
+        :returns list of details of sent message to each customer
+        """
+
+        phones = ""
+
+        for c in customers.all():
+            phones += c.phone + ","
+
+        print(phones)
+
+        return self.send_message(phones, message)
+
 
     def send_verification_code(self, receptor, code, sender=''):
         pass
@@ -67,6 +106,73 @@ class ClientSMSMessage(SystemSMSMessage):
             message = f'مشتری عزیز شما به {business_name} دعوت شدید. با استفاده از کد تخفیف {discount_code} در اولین خرید از تخفیف بهرمند شوید. با استفاده از لینک زیر در بات تلگرام ما عضو شوید. {bot_link}'
 
         return self.send_message(invited_phone, message)
+        
+
+
+class ClientToAllCustomersSMSMessage(ClientSMSMessage):
+
+    """
+    a helper class for sending one message to all custmers of a businessman
+    """
+
+    def __init__(self, businessman: Businessman, message: str):
+
+        super().__init__(businessman.smspanelinfo)
+
+        self._businessman = businessman
+        self._index = 0
+        self._receptors_count = businessman.customers.count()
+        self._remained_count = self._receptors_count
+        self._message = message
+
+
+    def _get_next_receptors(self):
+
+        """
+        prepares phone numbers of customers based on "SEND_PLAIN_ALL_CUSTOMERS_PAGE_NUMBER"
+        in sms panel settings.
+        :returns string with number of "SEND_PLAIN_ALL_CUSTOMERS_PAGE_NUMBER" phone numbers.
+        """
+        
+        if self._remained_count == 0:
+            return None
+
+        phones = ""
+        
+        if self._remained_count <= send_plain_all_page_num:
+            for c in self._businessman.customers.all()[self._index:]:
+                phones += c.phone + ","
+            
+            self._remained_count = 0
+            self._index = self._receptors_count
+            return phones
+        
+
+        for c in self._businessman.customers.all()[self._index : self._index + send_plain_all_page_num]:
+            phones += c.phone + ","
+        
+        self._index += send_plain_all_page_num
+
+        self._remained_count -= send_plain_all_page_num
+        
+        return phones
+
+
+    def send_plain_next(self):
+
+        """
+        on each invoke, sends same message to specific number of customers.
+        to send to all customers, this method must be invoke until it returns None
+        :returns: List of data of sent messages that is recieved as response from kavenegar api
+        """
+
+        phones = self._get_next_receptors()
+
+        if phones is None:
+            return None
+
+        return self.send_message(phones, self._message)
+        
 
 
 class FestivalMessageBulkSystem(SystemSMSMessage):
@@ -139,118 +245,3 @@ class FestivalMessageBulkSystem(SystemSMSMessage):
             params = self.give_message_params()
 
 
-class ClientManagement:
-
-    def __init__(self):
-        self.api_key = settings.SMS_API_KEY
-
-    def add(self, data: dict):
-
-        resp = requests.post(f'http://api.kavenegar.com/v1/{self.api_key}/client/add.json', data)
-
-        resp_data = resp.json()
-
-        if resp.status_code != 200:
-            raise APIException(resp.status_code, resp_data['return']['message'])
-
-        return resp_data['entries']
-
-    def fetch_by_local_id(self, local_id):
-
-        """
-        fetches users data by local id and return dictionary of response data
-        :param local_id: id of the businessman in local database
-        :return: dictionary of the response data
-        """
-
-        resp = requests.post(f'http://api.kavenegar.com/v1/{self.api_key}/client/fetchbylocalid.json', {'localid': local_id})
-
-        resp_data = resp.json()
-
-        if resp.status_code != 200:
-            raise APIException(resp.status_code, resp_data['return']['message'])
-
-        return resp_data['entries']
-
-
-    def update(self, businessman_api_key, data: dict):
-
-        """
-        updates client info on kavenegar
-        :param businessman_api_key: api key of client
-        :param data: data that needs to be updated
-        :raises APIException if kavenegar api  send error response
-        :return:
-        """
-        resp = requests.post(f'http://api.kavenegar.com/v1/{self.api_key}/client/update.json',
-                             {'apikey': businessman_api_key,
-                              **data})
-        resp_data = resp.json()
-        if resp.status_code != 200:
-            raise APIException(resp.status_code, resp_data['return']['message'])
-
-        return resp.status_code
-
-    def add_user(self, user: Businessman, password: str):
-
-        from panelprofile.models import SMSPanelInfo
-
-        """
-        Provides simpler method to add a user to kavenegar.
-        :param user: businessman
-        :return: SMSPanelInfo that businessman property is not set to user and is not saved to database
-        """
-
-        data = {'username': 'bpe' + user.username, 'password': password, 'localid': user.id,
-                'mininumallowedcredit': settings.MIN_CREDIT, 'credit': settings.INIT_CREDIT,
-                'fullname': user.first_name + " " + user.last_name, 'planid': settings.SMS_PID,
-                'mobile': user.phone, 'status': 0}
-
-        result = self.add(data)
-
-        info = SMSPanelInfo()
-        info.api_key = result['apikey']
-        info.status = '0'
-        info.credit = result['remaincredit']
-        info.sms_farsi_cost = result['smsfarsicost']
-        info.sms_english_cost = result['smsenglishcost']
-        info.username = result['username']
-
-        return info
-
-    def fetch_user(self, user):
-
-        """
-        providing simpler function to fetch user data from kavenegar
-        :param user: Businessman object
-        :return: SMSPanelInfo info that businessman property is not set and is not saved in database
-        """
-
-        from panelprofile.models import SMSPanelInfo
-        result = self.fetch_by_local_id(user.id)
-
-        info = SMSPanelInfo()
-        info.api_key = result['apikey']
-        info.status = '0'
-        info.credit = result['remaincredit']
-        info.sms_farsi_cost = result['smsfarsicost']
-        info.sms_english_cost = result['smsenglishcost']
-        info.username = result['username']
-
-        return info
-
-    def activate_sms_panel(self, businessman_api_key):
-        """
-        activates sms panel of the client om kavenegar
-        :param businessman_api_key: api key of the client
-        :return: result of update method
-        """
-        return self.update(businessman_api_key, {'status': '1'})
-
-    def deactivate_sms_panel(self, businessman_api_key):
-        """
-        deactivates sms panel of the client on kavenegar
-        :param businessman_api_key: api key of the client
-        :return: result of update method
-        """
-        return self.update(businessman_api_key, {'status': '0'})

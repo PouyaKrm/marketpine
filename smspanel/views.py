@@ -4,7 +4,7 @@ from rest_framework import generics, mixins, permissions, status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from users.models import Customer
-from .serializers import SMSTemplateSerializer, SentSMSSerializer, SentSMSRetrieveForCustomer
+from .serializers import SMSTemplateSerializer, SendSMSSerializer, SentSMSRetrieveForCustomer, SendToAllSerializer
 from .models import SMSTemplate, SentSMS
 from .permissions import HasSMSPanelPermission
 from common.util import paginators, jalali
@@ -56,9 +56,7 @@ def send_plain_sms(request):
      If operation was successful, Response with status code 204
     """
 
-    serializer = SentSMSSerializer(data=request.data)
-
-    serializer._context = {'user': request.user, 'is_plain': True}
+    serializer = SendSMSSerializer(data=request.data, context={'user': request.user})
 
     if not serializer.is_valid():
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -72,6 +70,31 @@ def send_plain_sms(request):
 
     return Response(status=status.HTTP_204_NO_CONTENT)
 
+@api_view(['POST'])
+def send_plain_to_all(request):
+
+    """
+    sends a same message to all customers of a businessman.
+    :return: If data is invalid, Response with status code 400, else if error
+    was occurred in kavenegar api, returns Response with a message from SMS API with error message
+    other that 400.  With status code 500 if other error occurred.
+     If operation was successful, Response with status code 204
+    """
+
+    serializer = SendToAllSerializer(data=request.data, context={'user': request.user})
+
+    if not serializer.is_valid():
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+    try:
+        serializer.create(serializer.validated_data)
+    except APIException as e:
+        return Response({'status': e.status, 'detail': e.message}, status=e.status)
+    except HTTPException:
+        return Response({'detail': 'خطا در ارسال پیام'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    return Response(status=204)
 
 @api_view(['POST'])
 @permission_classes([permissions.IsAuthenticated, HasSMSPanelPermission])
@@ -85,7 +108,7 @@ def send_sms_by_template(request, template_id):
 
     request.data['content'] = template.content
 
-    serializer = SentSMSSerializer(data=request.data)
+    serializer = SendSMSSerializer(data=request.data)
 
     serializer._context = {'user': request.user, 'is_plain': False}
 
@@ -104,7 +127,7 @@ def get_businessman_sent_sms(request):
     # serializer = SentSMSSerializer(SentSMS.objects.filter(businessman=request.user).all(), many=True)
     # return Response(serializer.data, status=status.HTTP_200_OK)
         businessman_sentsms_list=SentSMS.objects.filter(businessman=request.user).all()
-        paginate = paginators.NumberedPaginator(request, businessman_sentsms_list, SentSMSSerializer)
+        paginate = paginators.NumberedPaginator(request, businessman_sentsms_list, SendSMSSerializer)
         return paginate.next_page()
 
 

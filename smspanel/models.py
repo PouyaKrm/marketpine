@@ -23,5 +23,5 @@ class SMSTemplate(models.Model):
 class SentSMS(models.Model):
 
     businessman = models.ForeignKey(Businessman, on_delete=models.CASCADE)
-    customers = models.ManyToManyField(Customer)
     message_id = models.IntegerField()
+    is_sent_to_all = models.BooleanField(default=False)

@@ -7,7 +7,7 @@ from django.db import models
 from common.util.custom_validators import pdf_file_validator
 
 # Create your models here.
-from common.util.sms_panel import ClientManagement
+from common.util.sms_panel.client import ClientManagement
 from users.models import Businessman, AuthStatus
 from django.conf import settings
 
@@ -52,6 +52,25 @@ class SMSPanelInfo(models.Model):
         """
         ClientManagement().activate_sms_panel(self.api_key)
         self.status = SMSPanelStatus.ACTIVE_LOGIN
+        self.save()
+
+    def create_sms_panel(self, user: Businessman, password: str):
+        client = ClientManagement()
+        info = client.add_user(user, password)
+        info.businessman = user
+        info.save()
+        return info
+        
+    def update_panel_info(self):
+        client = ClientManagement()
+        client.fetch_user(self.businessman)
+
+        self.api_key = info.api_key
+            
+        self.credit = info.credit
+        self.sms_farsi_cost = info.sms_farsi_cost
+        self.sms_english_cost = info.sms_english_cost
+            
         self.save()
 
 

@@ -12,7 +12,7 @@ from .serializers import FestivalCreationSerializer, FestivalListSerializer, Ret
     CustomerSerializer, FestivalCustomerSerializer
 from common.util import generate_discount_code, paginators, DiscountType
 from common.util.custom_templates import FestivalTemplate
-from common.util.sms_panel import FestivalMessageBulkSystem
+from common.util.sms_panel.message import FestivalMessageBulkSystem
 from .permissions import HASFestivalAccess
 from common.util import paginators
 # Create your views here.

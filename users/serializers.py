@@ -1,8 +1,7 @@
 from django.core.validators import RegexValidator
 from rest_framework import serializers, validators
 from django.contrib.auth.base_user import BaseUserManager
-
-from common.util.sms_panel import SystemSMSMessage
+from common.util.sms_panel.message import SystemSMSMessage
 from .models import Businessman, VerificationCodes
 import secrets, datetime
 from django.conf import settings
@@ -81,6 +80,7 @@ class BusinessmanRegisterSerializer(serializers.ModelSerializer):
         PanelSetting.objects.create(businessman=user)
 
         return user
+        
 
 
 class BusinessmanPasswordResetSerializer(serializers.ModelSerializer):
