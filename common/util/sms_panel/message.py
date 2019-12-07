@@ -1,7 +1,10 @@
 import requests
 
 from users.models import Businessman
+
 from common.util.kavenegar_local import KavenegarAPI, APIException, HTTPException
+from common.util.sms_panel.exceptions import SendSMSException
+
 from django.conf import settings
 from django.db.models import QuerySet
 
@@ -19,7 +22,7 @@ class SystemSMSMessage:
     def __init__(self):
 
         self.api = KavenegarAPI(api_key)
-        self.line = sms_settings['SYSTEM_LINE']
+        self._line = sms_settings['SYSTEM_LINE']
 
     def send(self, **params):
 
@@ -28,7 +31,7 @@ class SystemSMSMessage:
     def send_message(self, receptor, message):
 
         params = {
-            'sender': self.line,
+            'sender': self._line,
             'receptor': f'{receptor}',
             'message': f'{message}'
         }
@@ -56,24 +59,23 @@ class ClientSMSMessage(SystemSMSMessage):
 
         super().__init__()
 
-        self.api = KavenegarAPI(sms_panel_info.api_key)
-        self.line = sms_settings['CUSTOMER_LINE']
+        self._api = KavenegarAPI(sms_panel_info.api_key)
+        self._line = customer_line
 
     def send_message(self, receptor, message):
 
         """
-        sends message by taking receptors as string that contains comma sperated phone numbers.
+        sends message by taking receptors as string that contains comma seperated phone numbers.
         :returns list of details of sent message to each receptor
         """
 
         params = {
-            'sender': self.line,
+            'sender': self._line,
             'receptor': receptor,
             'message': message
         }
 
-        return self.api.sms_send(params)
-
+        return self._api.sms_send(params)
 
     def send_plain(self, customers: QuerySet, message: str):
 
@@ -88,9 +90,11 @@ class ClientSMSMessage(SystemSMSMessage):
         for c in customers.all():
             phones += c.phone + ","
 
-        print(phones)
-
-        return self.send_message(phones, message)
+        try:
+            return self.send_message(phones, message)
+        
+        except APIException as e:
+            raise SendSMSException(e.status, e.message, customers.first(), customers.last())
 
 
     def send_verification_code(self, receptor, code, sender=''):
@@ -140,22 +144,24 @@ class ClientToAllCustomersSMSMessage(ClientSMSMessage):
         phones = ""
         
         if self._remained_count <= send_plain_all_page_num:
-            for c in self._businessman.customers.all()[self._index:]:
-                phones += c.phone + ","
-            
+            # for c in self._businessman.customers.all()[self._index:]:
+            #     phones += c.phone + ","
+            customers = self._businessman.customers.all()[self._index:]
             self._remained_count = 0
             self._index = self._receptors_count
-            return phones
+            return customers
         
 
-        for c in self._businessman.customers.all()[self._index : self._index + send_plain_all_page_num]:
-            phones += c.phone + ","
+        # for c in self._businessman.customers.all()[self._index : self._index + send_plain_all_page_num]:
+        #     phones += c.phone + ","
         
+        customers = self._businessman.customers.all()[self._index : self._index + send_plain_all_page_num]
+
         self._index += send_plain_all_page_num
 
         self._remained_count -= send_plain_all_page_num
-        
-        return phones
+      
+        return customers
 
 
     def send_plain_next(self):
@@ -166,12 +172,21 @@ class ClientToAllCustomersSMSMessage(ClientSMSMessage):
         :returns: List of data of sent messages that is recieved as response from kavenegar api
         """
 
-        phones = self._get_next_receptors()
+        customers = self._get_next_receptors()
 
-        if phones is None:
+        if customers is None:
             return None
 
-        return self.send_message(phones, self._message)
+        current_customer = customers[0]
+
+        phones = ""
+
+        for c in customers:
+            phones += c.phone + ","
+        try:
+            return self.send_message(phones, self._message)
+        except APIException as e:
+            raise SendSMSException(e.status, e.message, current_customer)
         
 
 

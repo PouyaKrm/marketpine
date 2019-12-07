@@ -6,7 +6,7 @@ from django.conf import settings
 
 
 
-
+max_english_chars = settings.SMS_PANEL['ENGLISH_MAX_CHARS']
 
 class SMSTemplate(models.Model):
 
@@ -24,4 +24,13 @@ class SentSMS(models.Model):
 
     businessman = models.ForeignKey(Businessman, on_delete=models.CASCADE)
     message_id = models.IntegerField()
-    is_sent_to_all = models.BooleanField(default=False)
+    receptor = models.CharField(max_length=15, null=True)
+
+
+class UnsentPlainSMS(models.Model):
+
+    message = models.CharField(max_length=max_english_chars)
+    resend_start = models.PositiveIntegerField()
+    resend_stop = models.PositiveIntegerField(default=0)
+    businessman = models.ForeignKey(Businessman, on_delete=models.CASCADE)
+    create_date = models.DateTimeField(auto_now_add=True)
