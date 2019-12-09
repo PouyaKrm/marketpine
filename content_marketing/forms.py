@@ -1,9 +1,9 @@
 from django import forms
-from .models import Video
+from .models import Post
 
 
-class VideoForm(forms.ModelForm):
+class PostForm(forms.ModelForm):
 
     class Meta:
-        model= Video
+        model= Post
         fields= ["title",'description', "videofile"]

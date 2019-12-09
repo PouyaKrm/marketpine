@@ -30,15 +30,12 @@ from dashboard import urls as dashboard_url
 from customerpurchase import urls as purchase_url
 from panelmodulus import urls as modulus_url
 from panelsetting import urls as setiing_ulr
-<<<<<<< HEAD
 from panelprofile import urls as profile_url
 from download import urls as download_url
-=======
 from payment import urls as payment_url
 from device import urls as device_url
 from content_marketing import urls as content_url
 
->>>>>>> a67fbf0ac6f97e43b42c8daf9c9278ecc8f0154e
 schema_view = get_swagger_view(title='Pastebin API')
 
 urlpatterns = [
@@ -55,13 +52,10 @@ urlpatterns = [
     path('api/salesman/modulus/', include(modulus_url)),
     path('api/salesman/profile/', include(profile_url)),
     path('api/salesman/settings/', include(setiing_ulr)),
-<<<<<<< HEAD
-    path('api/download/', include(download_url))
-=======
+    path('api/download/', include(download_url)),
     path('zarinpal/',include(payment_url)),
     path('api/salesman/device/',include(device_url)),
     path('api/salesman/content/',include(content_url)),
->>>>>>> a67fbf0ac6f97e43b42c8daf9c9278ecc8f0154e
 ]
 
 if settings.DEBUG:
