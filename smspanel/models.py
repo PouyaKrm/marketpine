@@ -7,12 +7,14 @@ from django.conf import settings
 
 
 max_english_chars = settings.SMS_PANEL['ENGLISH_MAX_CHARS']
+template_max_chars = settings.SMS_PANEL['TEMPLATE_MAX_CHARS']
 
 class SMSTemplate(models.Model):
 
     title = models.CharField(max_length=40)
     create_date = models.DateTimeField(auto_now_add=True)
-    content = models.CharField(max_length=200)
+    update_date = models.DateTimeField(auto_now=True)
+    content = models.CharField(max_length=160)
     businessman = models.ForeignKey(Businessman, on_delete=models.CASCADE)
 
 
@@ -30,6 +32,14 @@ class SentSMS(models.Model):
 class UnsentPlainSMS(models.Model):
 
     message = models.CharField(max_length=max_english_chars)
+    resend_start = models.PositiveIntegerField()
+    resend_stop = models.PositiveIntegerField(default=0)
+    businessman = models.ForeignKey(Businessman, on_delete=models.CASCADE)
+    create_date = models.DateTimeField(auto_now_add=True)
+
+class UnsentTemplateSMS(models.Model):
+
+    template = models.CharField(max_length=template_max_chars)
     resend_start = models.PositiveIntegerField()
     resend_stop = models.PositiveIntegerField(default=0)
     businessman = models.ForeignKey(Businessman, on_delete=models.CASCADE)

@@ -61,9 +61,11 @@ SMS_PANEL = {
     'PID': 1422,
     'ENGLISH_MAX_CHARS': 612,
     'PERSIAN_MAX_CHARS': 268,
+    'TEMPLATE_MAX_CHARS': 160, #note: Don 't change this value. If you really want, change in SMSTemplate -> content -> max_length too
     "SEND_PLAIN_CUSTOMERS_MAX_NUMBER": 2,
     "SEND_PLAIN_ALL_CUSTOMERS_PAGE_NUMBER": 2,
-    
+    'SEND_TEMPLATE_MAX_CUSTOMERS': 5,
+    'SEND_TEMPLATE_PAGE_NUM': 2,
 }
 
 DOWNLOAD_SETTINGS = {

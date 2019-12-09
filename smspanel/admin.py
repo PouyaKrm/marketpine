@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import SMSTemplate, SentSMS, UnsentPlainSMS
+from .models import SMSTemplate, SentSMS, UnsentPlainSMS, UnsentTemplateSMS
 
 
 # Register your models here.
@@ -18,8 +18,14 @@ class UnsentPLAINSMSAdmin(admin.ModelAdmin):
 
     list_display = ['businessman', 'message', 'resend_start', 'resend_stop', 'create_date']
 
+class UnsentTemplateSMSAdmin(admin.ModelAdmin):
+
+    list_display = ['businessman', 'template', 'resend_start', 'resend_stop', 'create_date']
+
 admin.site.register(SMSTemplate, SMSTemplateAdmin)
 
 admin.site.register(SentSMS, SentSMSAdmin)
 
 admin.site.register(UnsentPlainSMS, UnsentPLAINSMSAdmin)
+
+admin.site.register(UnsentTemplateSMS, UnsentTemplateSMSAdmin)

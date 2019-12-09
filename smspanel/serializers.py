@@ -4,9 +4,9 @@ from django.template import TemplateSyntaxError
 from rest_framework import serializers
 
 from common.util.custom_validators import validate_sms_message_length
-from .models import SMSTemplate, SentSMS, UnsentPlainSMS
+from .models import SMSTemplate, SentSMS, UnsentPlainSMS, UnsentTemplateSMS
 from common.util.custom_templates import render_template, get_fake_context, render_template_with_customer_data
-from common.util.sms_panel.message import SystemSMSMessage, ClientSMSMessage, ClientToAllCustomersSMSMessage
+from common.util.sms_panel.message import SystemSMSMessage, ClientSMSMessage, ClientToAllCustomersSMSMessage, ClientBulkSMSMessage
 from common.util.sms_panel.client import ClientManagement
 from common.util.sms_panel.exceptions import SendSMSException
 from common.util.kavenegar_local import APIException
@@ -17,6 +17,8 @@ from django.conf import settings
 
 persian_max_chars = settings.SMS_PANEL['PERSIAN_MAX_CHARS']
 send_plain_max_customers = settings.SMS_PANEL['SEND_PLAIN_CUSTOMERS_MAX_NUMBER']
+template_max_chars = settings.SMS_PANEL['TEMPLATE_MAX_CHARS']
+send_template_max_customers = settings.SMS_PANEL['SEND_TEMPLATE_MAX_CUSTOMERS']
 
 def create_unsent_plain_sms(ex: SendSMSException, content: str, user: Businessman):
     resend_start = ex.failed_on
@@ -41,13 +43,14 @@ class SMSTemplateSerializer(serializers.ModelSerializer):
 
     def validate_content(self, value):
 
+        if len(value) > template_max_chars:
+            raise serializers.ValidationError('طول قالب بیش از حد مجاز است')
+
         try:
             render_template(value, get_fake_context(self.context['user']))
 
         except TemplateSyntaxError:
             raise serializers.ValidationError('invalid template')
-
-        validate_sms_message_length(value)
 
         return value
 
@@ -138,7 +141,7 @@ class SendSMSSerializer(serializers.ModelSerializer):
         return obj
 
 
-class SendToAllSerializer(serializers.Serializer):
+class SendPlainSMSToAllSerializer(serializers.Serializer):
 
     """
     a serializer to send same message to all customers of a businessman and saving the recieved 
@@ -194,6 +197,72 @@ class SendToAllSerializer(serializers.Serializer):
                 raise APIException(e.status, e.message)
         
         return content
+
+
+def create_unsent_template_sms(e: SendSMSException, template: str, businessman: Businessman):
+
+    resend_stop = e.resend_last
+    resend_start = e.failed_on
+
+    if resend_stop is not None:
+        UnsentTemplateSMS.objects.create(businessman=businessman, resend_start=e.failed_on.id,
+        resend_stop=resend_stop.id, template=template)
+    else:
+        UnsentTemplateSMS.objects.create(businessman=businessman, resend_start=e.failed_on.id,
+        template=template)
+
+
+class SendByTemplateSerializer(serializers.Serializer):
+
+    """
+    sends sms message to specific number ofcustomers and creates their records in the database.
+    """
+
+    customers = serializers.ListField(child=serializers.IntegerField(min_value=1), min_length=1, required=True)
+
+    class Meta:
+        fields = [
+            'customers'
+        ]
+
+    def validate_customers(self, value):
+
+        if len(value) > send_template_max_customers:
+            raise serializers.ValidationError("طول گیرنده ها بیش از حد مجاز است")
+
+        return value
+    
+    def create(self, validated_data: dict):
+
+        """
+        sends sms message by a template and creates records of sent messages in the database.
+        :raises APIException if kavehnegar api does not accept the send of the message
+        :raises HTTPException if an error occur during http request
+        :return: customers
+        """
+
+        user = self.context['user']
+        customers = user.customers.filter(id__in=validated_data.get('customers')).all()
+        template = self.context['template']
+
+        message_by_template = ClientBulkSMSMessage(user.smspanelinfo, customers, template.content)
+
+        try:
+            sent_messages = message_by_template.send_bulk()
+        except SendSMSException as e:
+            create_unsent_template_sms(e, template.content, user)
+            raise APIException(e.status, e.message)
+
+        while sent_messages is not None:
+
+            SentSMS.objects.bulk_create([SentSMS(businessman=user, message_id=m['messageid'], receptor=m['receptor']) for m in sent_messages])
+            try:
+                sent_messages = message_by_template.send_bulk()
+            except SendSMSException as e:
+                create_unsent_template_sms(e, template.content, user)
+                raise APIException(e.status, e.message)
+        
+        return validated_data
 
 
 
