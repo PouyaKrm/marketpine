@@ -8,7 +8,7 @@ admin.site.register(Post,PostAdmin)
 
 class CommentAdmin(admin.ModelAdmin):
     list_display = ('post','customer','body')
-    list_filter = ('creation_date',)
+    list_filter = ('post','customer')
     search_fields = ('customer', 'body')
     # actions = ['approve_comments']
 
@@ -17,4 +17,9 @@ class CommentAdmin(admin.ModelAdmin):
 
 admin.site.register(Comment,CommentAdmin)
 
-admin.site.register(Like)
+class LikeAdmin(admin.ModelAdmin):
+    list_display = ('post','customer')
+    list_filter = ('post','customer')
+    # search_fields = ('customer', 'body')
+
+admin.site.register(Like,LikeAdmin)

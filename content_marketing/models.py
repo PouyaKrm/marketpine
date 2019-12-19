@@ -38,13 +38,13 @@ class Comment(models.Model):
 
 
 
-## TODO set model like
 class Like(models.Model):
     post = models.ForeignKey(Post,on_delete=models.CASCADE,related_name='likes')
     customer = models.ForeignKey(Customer,on_delete=models.CASCADE)
     creation_date = models.DateTimeField(auto_now_add=True)
 
     class Meta:
+        unique_together = ('customer', 'post',)
         ordering = ['creation_date']
 
     def __str__(self):
