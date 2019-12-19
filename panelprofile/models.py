@@ -63,7 +63,7 @@ class SMSPanelInfo(models.Model):
         
     def update_panel_info(self):
         client = ClientManagement()
-        client.fetch_user(self.businessman)
+        info = client.fetch_user(self.businessman)
 
         self.api_key = info.api_key
             
@@ -72,6 +72,11 @@ class SMSPanelInfo(models.Model):
         self.sms_english_cost = info.sms_english_cost
             
         self.save()
+    
+    def reduce_credit(self, amount: int):
+        self.credit -= amount
+        self.save()
+
 
 
 class AuthDoc(models.Model):

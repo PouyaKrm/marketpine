@@ -12,24 +12,24 @@ from django.template import Template
 
 sms_settings = settings.SMS_PANEL
 api_key = sms_settings['API_KEY']
+system_line = sms_settings['SYSTEM_LINE']
 min_credit = sms_settings['MIN_CREDIT']
 init_credit = sms_settings['INIT_CREDIT']
 pid = sms_settings['PID']
 username_prefix = sms_settings['CUSTOMER_US_PREFIX']
 customer_line = sms_settings['CUSTOMER_LINE']
-send_plain_all_page_num = sms_settings['SEND_PLAIN_ALL_CUSTOMERS_PAGE_NUMBER']
-send_template_page_num = sms_settings['SEND_TEMPLATE_PAGE_NUM']
+send_plain_page_size = sms_settings['SEND_PLAIN_CUSTOMERS_PAGE_SIZE']
+send_template_page_size = sms_settings['SEND_TEMPLATE_PAGE_SIZE']
 
-class SystemSMSMessage:
+class BaseSMSMessage():
 
-    def __init__(self):
-
-        self.api = KavenegarAPI(api_key)
-        self._line = sms_settings['SYSTEM_LINE']
+    def __init__(self, api_key: str, line: str):
+        
+        self._api = KavenegarAPI(api_key)
+        self._line = line
 
     def send(self, **params):
-
-        return self.api.sms_send(params)
+        return self._api.sms_send(params)
 
     def send_message(self, receptor, message):
 
@@ -39,8 +39,16 @@ class SystemSMSMessage:
             'message': f'{message}'
         }
 
-        return self.api.sms_send(params)
+        return self._api.sms_send(params)
 
+
+class SystemSMSMessage(BaseSMSMessage):
+
+    def __init__(self):
+        
+        super().__init__(api_key, system_line)
+
+    
 
     def send_verification_code(self, receptor, code, sender=''):
 
@@ -52,56 +60,69 @@ class SystemSMSMessage:
 
 
 
-class ClientSMSMessage(SystemSMSMessage):
+class ClientSMSMessage(BaseSMSMessage):
 
     """
     sends one same message to specific number of customers
     """
 
-    def __init__(self, sms_panel_info):
+    def __init__(self, sms_panel_info, customers: QuerySet, message: str):
 
-        super().__init__()
+        super().__init__(sms_panel_info.api_key, customer_line)
+        self._customers = customers
+        self._index = 0
+        self._receptors_count = customers.count()
+        self._remained_count = self._receptors_count
+        self._message = message
+        self._last_customer = self._customers.last()
 
-        self._api = KavenegarAPI(sms_panel_info.api_key)
-        self._line = customer_line
+    def _get_next_receptors(self):
+        if self._remained_count == 0:
+            return None
 
-    def send_message(self, receptor, message):
+        phones = ""
+        
+        if self._remained_count <= send_plain_page_size:
+            customers = self._customers.all()[self._index:]
+            self._remained_count = 0
+            self._index = self._receptors_count
+            return customers
+        
+        customers = self._customers.all()[self._index : self._index + send_plain_page_size]
 
-        """
-        sends message by taking receptors as string that contains comma seperated phone numbers.
-        :returns list of details of sent message to each receptor
-        """
+        self._index += send_plain_page_size
 
-        params = {
-            'sender': self._line,
-            'receptor': receptor,
-            'message': message
-        }
+        self._remained_count -= send_plain_page_size
+      
+        return customers
 
-        return self._api.sms_send(params)
-
-    def send_plain(self, customers: QuerySet, message: str):
+    def send_plain_next(self):
 
         """
         A helper method to send message to customers.
+        This mehtod uses a page size to send message to customers.
+        Call this method until it returns None to send message to all customers.
         :customers retrived customers from database
         :returns list of details of sent message to each customer
         """
 
+        customers = self._get_next_receptors()
+
+        if customers is None:
+            return None
+
+        current_customer = customers[0]
+
         phones = ""
 
-        for c in customers.all():
+        for c in customers:
             phones += c.phone + ","
-
         try:
-            return self.send_message(phones, message)
-        
+            return self.send_message(phones, self._message)
         except APIException as e:
-            raise SendSMSException(e.status, e.message, customers.first(), customers.last())
+            raise SendSMSException(e.status, e.message, current_customer, self._last_customer)
 
 
-    def send_verification_code(self, receptor, code, sender=''):
-        pass
 
     def send_friend_invitation_welcome_message(self, business_name: str, invited_phone: str, discount_code: str,
                                                bot_link: str = None):
@@ -124,41 +145,7 @@ class ClientToAllCustomersSMSMessage(ClientSMSMessage):
 
     def __init__(self, businessman: Businessman, message: str):
 
-        super().__init__(businessman.smspanelinfo)
-
-        self._businessman = businessman
-        self._index = 0
-        self._receptors_count = businessman.customers.count()
-        self._remained_count = self._receptors_count
-        self._message = message
-
-
-    def _get_next_receptors(self):
-
-        """
-        prepares phone numbers of customers based on "SEND_PLAIN_ALL_CUSTOMERS_PAGE_NUMBER"
-        in sms panel settings.
-        :returns string with number of "SEND_PLAIN_ALL_CUSTOMERS_PAGE_NUMBER" phone numbers.
-        """
-        
-        if self._remained_count == 0:
-            return None
-
-        phones = ""
-        
-        if self._remained_count <= send_plain_all_page_num:
-            customers = self._businessman.customers.all()[self._index:]
-            self._remained_count = 0
-            self._index = self._receptors_count
-            return customers
-        
-        customers = self._businessman.customers.all()[self._index : self._index + send_plain_all_page_num]
-
-        self._index += send_plain_all_page_num
-
-        self._remained_count -= send_plain_all_page_num
-      
-        return customers
+        super().__init__(businessman.smspanelinfo, businessman.customers.all(), message)
 
 
     def send_plain_next(self):
@@ -194,12 +181,12 @@ class ClientBulkSMSMessage(ClientSMSMessage):
     """
 
     def __init__(self, sms_panel_info, customers: QuerySet, template: str):
-        super().__init__(sms_panel_info)
+        super().__init__(sms_panel_info, customers, template)
         self._template = template
         self._receptors =customers
         self._receptors_num = self._receptors.count()
         self._remained_receptors = self._receptors_num
-        self._senders_length = send_template_page_num
+        self._senders_length = send_template_page_size
         self._last_customer = self._receptors.last()
 
         self._senders = []
@@ -221,10 +208,10 @@ class ClientBulkSMSMessage(ClientSMSMessage):
 
         """
         Generates message parameters that is needed for sms_sendarray method of
-        kavenegar api, plus first reciever in the current qeue.
-        :return: None if the no reciever is remained,
-        else, dictionary of data that is needed for sms_sendarray method and first reciever
-        in the current qeue
+        kavenegar api, plus first receiver in the current queue.
+        :return: None if the no receiver is remained,
+        else, dictionary of data that is needed for sms_sendarray method and first receiver
+        in the current queue
         """
 
         if self._remained_receptors <= 0:
@@ -312,6 +299,19 @@ class ClientBulkToAllSMSMessage(ClientBulkSMSMessage):
 
 
 
+def retrive_sent_messages(api_key: str, messageids: list):
+
+    api = KavenegarAPI(api_key)
+
+    param_value = ""
+
+    for m in messageids:
+        param_value += m + ","
+
+    return api.sms_select({'messageid': param_value})
+
+
+
 class ClientBulkTemplateSMSMessage(ClientSMSMessage):
 
     def __init__(self, sms_panel_info):
@@ -383,5 +383,6 @@ class ClientBulkTemplateSMSMessage(ClientSMSMessage):
 
             self.api.sms_sendarray(params)
             params = self.give_message_params()
+
 
 

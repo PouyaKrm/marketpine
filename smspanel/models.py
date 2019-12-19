@@ -32,15 +32,13 @@ class SentSMS(models.Model):
 class UnsentPlainSMS(models.Model):
 
     message = models.CharField(max_length=max_english_chars)
-    resend_start = models.PositiveIntegerField()
-    resend_stop = models.PositiveIntegerField(default=0)
     businessman = models.ForeignKey(Businessman, on_delete=models.CASCADE)
     create_date = models.DateTimeField(auto_now_add=True)
+    customers = models.ManyToManyField(Customer)
 
 class UnsentTemplateSMS(models.Model):
 
     template = models.CharField(max_length=template_max_chars)
-    resend_start = models.PositiveIntegerField()
-    resend_stop = models.PositiveIntegerField(default=0)
     businessman = models.ForeignKey(Businessman, on_delete=models.CASCADE)
     create_date = models.DateTimeField(auto_now_add=True)
+    customers = models.ManyToManyField(Customer)
