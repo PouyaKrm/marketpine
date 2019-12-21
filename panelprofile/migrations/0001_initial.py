@@ -19,7 +19,7 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('username', models.CharField(max_length=20)),
-                ('api_key', models.TextField(default=django.db.models.deletion.SET_NULL)),
+                ('api_key', models.TextField(default=None, null=True)),
                 ('status', models.CharField(choices=[('1', 'ACTIVE_LOGIN'), ('0', 'INACTIVE'), ('2', 'ACTIVE')], default='0', max_length=1)),
                 ('minimum_allowed_credit', models.PositiveIntegerField(default=10000)),
                 ('credit', models.PositiveIntegerField(default=1000)),

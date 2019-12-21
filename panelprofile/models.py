@@ -25,7 +25,7 @@ class SMSPanelInfo(models.Model):
 
     businessman = models.OneToOneField(Businessman, on_delete=models.CASCADE)
     username = models.CharField(max_length=20)
-    api_key = models.TextField()
+    api_key = models.TextField(default=None, null=True)
     STATUS_CHOICES = [('1', 'ACTIVE_LOGIN'), ('0', 'INACTIVE'), ('2', 'ACTIVE')]
     status = models.CharField(max_length=1, choices=STATUS_CHOICES, default='0')
     minimum_allowed_credit = models.PositiveIntegerField(default=10000)
