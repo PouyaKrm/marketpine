@@ -2,8 +2,9 @@ from django.contrib import admin
 from .models import Post,Comment,Like
 
 class PostAdmin(admin.ModelAdmin):
-    list_display = ('title','id','videofile','creation_date')
-
+    list_display = ('title','id','videofile','creation_date','businessman')
+    list_filter = ('businessman',)
+    search_fields = ('id', 'title')
 admin.site.register(Post,PostAdmin)
 
 class CommentAdmin(admin.ModelAdmin):

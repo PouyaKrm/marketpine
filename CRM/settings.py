@@ -106,7 +106,8 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'download',
-    'download.profiledownload'
+    'download.profiledownload',
+    'django_cleanup.apps.CleanupConfig',
 
 ]
 
