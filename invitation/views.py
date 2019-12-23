@@ -10,7 +10,7 @@ from users.models import Businessman
 from common.util.custom_validators import phone_validator
 from common.util import paginators, generate_discount_code, DiscountType
 from .permissions import HasInvitationAccess
-from common.util.sms_panel import SystemSMSMessage
+from common.util.sms_panel.message import SystemSMSMessage
 # Create your views here.
 
 

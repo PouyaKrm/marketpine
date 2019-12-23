@@ -6,7 +6,7 @@ from . import jalali
 
 def get_template_context(customer: Customer):
 
-    return {'phone': customer.phone, 'telegram_id': customer.telegram_id,
+    return {'phone': customer.phone, 'telegram_id': customer.telegram_id, 'full_name': customer.full_name,
                'instagram_id': customer.instagram_id, 'business_name': customer.businessman.business_name}
 
 
