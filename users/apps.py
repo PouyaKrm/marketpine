@@ -2,7 +2,7 @@
 from django.apps import AppConfig
 from django.contrib.auth import models
 
-from common.util.sms_panel import ClientManagement
+from common.util.sms_panel.client import ClientManagement
 
 
 class UsersConfig(AppConfig):

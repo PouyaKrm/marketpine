@@ -40,7 +40,7 @@ def validate_sms_message_length(message: str):
     :return: message
     """
 
-    if len(message) <= settings.SMS_FA_MAX:
+    if len(message) <= settings.SMS_PANEL['SMS_FA_MAX']:
         return message
 
     elif len(message) > settings.SMS_EN_MAX:
