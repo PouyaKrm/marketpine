@@ -12,10 +12,21 @@ from django.conf import settings
 from common.util.custom_validators import pdf_file_validator, validate_logo_size
 from common.util.sms_panel.client import ClientManagement
 
+class SMSPanelInfoSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = SMSPanelInfo
+        fields = [
+            'credit',
+            'sms_farsi_cost',
+            'status'
+        ]
+
 
 class BusinessmanProfileSerializer(serializers.ModelSerializer):
 
     auth_documents = serializers.SerializerMethodField(read_only=True)
+    sms_panel_details = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
 
@@ -31,6 +42,7 @@ class BusinessmanProfileSerializer(serializers.ModelSerializer):
             'date_joined',
             'authorized',
             'auth_documents',
+            'sms_panel_details'
         ]
 
         extra_kwargs = {'username': {'read_only': True}, 'phone': {'read_only': True}, 'email': {'read_only': True},
@@ -62,6 +74,12 @@ class BusinessmanProfileSerializer(serializers.ModelSerializer):
         return {'commitment_form': commitment_form_link, 'form': form_link,
                 'national_card': national_card_link, 'birth_certificate': birth_certificate_link}
 
+
+    def get_sms_panel_details(self, obj: Businessman):
+
+        serializer = SMSPanelInfoSerializer(obj.smspanelinfo)
+        return serializer.data
+
     def validate_email(self, value):
 
         user = self.context['user']
@@ -82,6 +100,8 @@ class BusinessmanProfileSerializer(serializers.ModelSerializer):
         instance.save()
 
         return instance
+
+
 
 
 class UploadImageSerializer(serializers.ModelSerializer):
@@ -186,3 +206,4 @@ class AuthSerializer(serializers.ModelSerializer):
         user.save()
 
         return {**validated_data, 'password': password}
+
