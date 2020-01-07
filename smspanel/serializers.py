@@ -1,28 +1,15 @@
-from django.core.exceptions import ValidationError
-from django.db.models.base import Model
-from django.db.models import QuerySet
 from django.template import TemplateSyntaxError
 from rest_framework import serializers
-
-from common.util.custom_validators import validate_sms_message_length
 from .models import SMSTemplate, SentSMS, UnsentPlainSMS, UnsentTemplateSMS
 from common.util.custom_templates import render_template, get_fake_context, render_template_with_customer_data
-from common.util.sms_panel.message import SystemSMSMessage, ClientSMSMessage, ClientToAllCustomersSMSMessage, ClientBulkSMSMessage
-from common.util.sms_panel.client import ClientManagement
-from common.util.sms_panel.exceptions import SendSMSException
-from common.util.sms_panel.helpers import calculate_total_sms_cost
-from common.util.kavenegar_local import APIException
-
 from .helpers import SendSMSMessage
-
-from users.models import Businessman
-
 from django.conf import settings
 
 persian_max_chars = settings.SMS_PANEL['PERSIAN_MAX_CHARS']
 send_plain_max_customers = settings.SMS_PANEL['SEND_PLAIN_CUSTOMERS_MAX_NUMBER']
 template_max_chars = settings.SMS_PANEL['TEMPLATE_MAX_CHARS']
 send_template_max_customers = settings.SMS_PANEL['SEND_TEMPLATE_MAX_CUSTOMERS']
+
 
 class SMSTemplateSerializer(serializers.ModelSerializer):
 

@@ -16,7 +16,7 @@ from .models import SMSPanelInfo, AuthDoc, BusinessmanAuthDocs
 class SMSPanelInfoAdmin(admin.ModelAdmin):
 
     list_display = ['username', 'status', 'credit']
-    readonly_fields = ['api_key', 'status', 'businessman']
+    # readonly_fields = ['api_key', 'status']
 
 
 class AuthDocAdmin(admin.ModelAdmin):

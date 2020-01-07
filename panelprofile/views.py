@@ -19,7 +19,8 @@ from rest_framework.views import APIView
 
 from panelprofile.models import AuthDoc
 from panelprofile.permissions import AuthDocsNotUploaded
-from panelprofile.serializers import AuthSerializer, BusinessmanProfileSerializer, UploadImageSerializer
+from panelprofile.serializers import AuthSerializer, BusinessmanProfileSerializer, UploadImageSerializer,\
+    SMSPanelInfoSerializer
 from users.models import Businessman
 
 from common.util.custom_permission import HasUploadedAuthDocsAndAuthenticated

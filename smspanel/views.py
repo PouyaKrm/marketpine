@@ -24,9 +24,12 @@ from .helpers import send_template_sms_message_to_all, SendSMSMessage
 from common.util.sms_panel.message import ClientBulkToAllSMSMessage
 
 page_size = settings.PAGINATION_PAGE_NUM
-api_key = settings.SMS_PANEL['API_KEY']
 
+def create_sms_sent_success_response(user: Businessman):
+    return Response({'credit': user.smspanelinfo.credit}, status=status.HTTP_200_OK)
 
+def send_message_failed_response(ex: APIException):
+    return Response({'status': ex.status, 'message': ex.message}, status=status.HTTP_424_FAILED_DEPENDENCY)
 
 
 class SMSTemplateCreateListAPIView(generics.ListAPIView, mixins.CreateModelMixin):
@@ -87,11 +90,11 @@ def send_plain_sms(request):
     try:
         serializer.create(serializer.validated_data)
     except APIException as e:
-        return Response({'status': e.status, 'detail': e.message}, status=status.HTTP_424_FAILED_DEPENDENCY)
+        return send_message_failed_response(e)
     except HTTPException:
         return Response({'detail': 'خطا در ارسال پیام'}, status=status.HTTP_424_FAILED_DEPENDENCY)
 
-    return Response(status=status.HTTP_204_NO_CONTENT)
+    return create_sms_sent_success_response(request.user)
 
 
 
@@ -118,11 +121,11 @@ def send_plain_to_all(request):
     try:
         serializer.create(serializer.validated_data)
     except APIException as e:
-        return Response({'status': e.status, 'detail': e.message}, status=status.HTTP_424_FAILED_DEPENDENCY)
+        return send_message_failed_response(e)
     except HTTPException:
         return Response({'detail': 'خطا در ارسال پیام'}, status=status.HTTP_424_FAILED_DEPENDENCY)
 
-    return Response(status=204)
+    return create_sms_sent_success_response(request.user)
 
 
 
@@ -151,11 +154,11 @@ def send_sms_by_template(request, template_id):
     try:
         serializer.create(serializer.validated_data)
     except APIException as e:
-        return Response({'status': e.status, 'detail': e.message}, status=status.HTTP_424_FAILED_DEPENDENCY)
+        return send_message_failed_response(e)
     except HTTPException as e:
         return Response({'detail': 'خطا درپردازش اطلاعات'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-    return Response(status=status.HTTP_204_NO_CONTENT)
+    return create_sms_sent_success_response(request.user)
 
 
 
@@ -179,9 +182,9 @@ def send_sms_by_template_to_all(request, template_id):
     try:
         messainger.send_by_template_to_all(request.user, template.content)
     except APIException as e:
-        return Response({'status': e.status, 'detail': e.message}, status=status.HTTP_424_FAILED_DEPENDENCY)
+        return send_message_failed_response(e)
 
-    return Response(status=status.HTTP_204_NO_CONTENT)
+    return create_sms_sent_success_response(request.user)
     
 
 
@@ -208,9 +211,9 @@ def send_plain_sms_to_group(request: Request, group_id):
     try:
         serializer.create(serializer.validated_data)
     except APIException as e:
-        return Response({'status': e.status, 'message': e.message}, status=status.HTTP_424_FAILED_DEPENDENCY)
+        return send_message_failed_response(e)
 
-    return Response(status=status.HTTP_204_NO_CONTENT)
+    return create_sms_sent_success_response(request.user)
 
 
 
@@ -235,8 +238,8 @@ def send_template_sms_to_group(request: Request, template_id, group_id):
     try:
         messagger.send_by_template(request.user, group.customers.all(), template.content)
     except APIException as e:
-        return Response({'status': e.status, 'message': e.message}, status=status.HTTP_424_FAILED_DEPENDENCY)
-    return Response(status=status.HTTP_204_NO_CONTENT)
+        return send_message_failed_response(e)
+    return create_sms_sent_success_response(request.user)
 
 
 
