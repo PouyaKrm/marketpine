@@ -290,9 +290,9 @@ def resend_plain_sms(request: Request, unsent_sms_id):
     try:
         messainger.resend_unsent_plain_sms(request.user, unsent_plain_sms)
     except APIException as e:
-        return Response({'status': e.status, 'message': e.message}, status=status.HTTP_424_FAILED_DEPENDENCY)
+        return send_message_failed_response(e)
 
-    return Response(status=status.HTTP_204_NO_CONTENT)
+    return create_sms_sent_success_response(request.user)
 
 
 
@@ -313,9 +313,9 @@ def resend_template_sms(request: Request, unsent_sms_id):
     try:
         messainger.resend_unsent_template_sms(request.user, unsent_template_sms)
     except APIException as e:
-        return Response({'status': e.status, 'message': e.message}, status=status.HTTP_424_FAILED_DEPENDENCY)
+        return send_message_failed_response(e)
 
-    return Response(status=status.HTTP_204_NO_CONTENT)
+    return create_sms_sent_success_response(request.user)
 
 
 
