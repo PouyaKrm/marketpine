@@ -48,7 +48,34 @@ uS+bpsFJ8c/KKLnk2fVs4iGtY/fPCRFeoVppqiFWs2gV390suMI16RoKDHoKuR1C
 hcrTQYQs+QvhU9QitwIDAQAB
 -----END PUBLIC KEY-----"""
 
+
 REFRESH_TOKEN_EXP_DELTA = datetime.timedelta(days=1)
+
+PAGINATION_PAGE_NUM = 25
+
+SMS_PANEL = {
+    'CUSTOMER_LINE': '10004000030003',
+    'SYSTEM_LINE': '10004000020002',
+    'MIN_CREDIT': 100000,
+    'INIT_CREDIT': 10000,
+    'API_KEY': '4D4C324E43416D726C65446D7258566A4F59697153444355734E4F4D6B382B57',
+    'CUSTOMER_US_PREFIX': 'bp',
+    'PID': 1422,
+    'MAX_MESSAGE_COST': 100, # this is used for credit validation before sending message
+    'ENGLISH_MAX_CHARS': 612,
+    'PERSIAN_MAX_CHARS': 268,
+    'TEMPLATE_MAX_CHARS': 160, #note: Don 't change this value. If you really want, change in SMSTemplate -> content -> max_length too
+    "SEND_PLAIN_CUSTOMERS_MAX_NUMBER": 3,
+    "SEND_PLAIN_CUSTOMERS_PAGE_SIZE": 2,
+    'SEND_TEMPLATE_MAX_CUSTOMERS': 5,
+    'SEND_TEMPLATE_PAGE_SIZE': 2,
+}
+
+DOWNLOAD_SETTINGS = {
+    'NGINX_LOCATION': 'downloads',
+    'NGINX_REDIRECT_HEADER': 'X-Accel-Redirect',
+    'ATTACHEMENT_HEADER': 'Content-disposition'
+}
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -73,6 +100,7 @@ INSTALLED_APPS = [
     'dashboard',
     'customerpurchase',
     'panelsetting',
+    'panelprofile',
     'rest_framework_swagger',
     'django.contrib.admin',
     'django.contrib.auth',
@@ -80,6 +108,8 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'download',
+    'download.profiledownload'
 
 ]
 
@@ -95,6 +125,7 @@ MIDDLEWARE = [
 ]
 
 ROOT_URLCONF = 'CRM.urls'
+
 
 TEMPLATES = [
     {
@@ -166,8 +197,14 @@ USE_TZ = True
 STATIC_URL = '/static/'
 
 MEDIA_ROOT = os.path.join(BASE_DIR, '..', 'uploaded_media')
+MEDIA_URL = 'files/'
+MAX_LOGO_SIZE = 200000
 
-MAX_LOGO_SIZE = 800000
+AUTH_DOC = {
+    'MAX_FORM_SIZE': 2000000,
+    'MAX_CARD_SIZE': 3000000,
+    'MAX_CERTIFICATE_SIZE': 3000000,
+}
 
 AUTH_USER_MODEL = 'users.Businessman'
 
@@ -224,6 +261,8 @@ JWT_AUTH = {
     'JWT_AUTH_COOKIE': None,
 
 }
+
+
 
 CORS_ORIGIN_ALLOW_ALL = True
 CORS_ALLOW_HEADERS = list(default_headers) + [

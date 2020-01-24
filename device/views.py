@@ -17,6 +17,7 @@ from rest_framework.decorators import api_view, permission_classes
 class RegisterCustomer(CreateAPIView):
     serializer_class = CustomerRegisterSerializer
     queryset = Customer.objects.all()
+    permission_classes = []
 
 
     def get_serializer_context(self):

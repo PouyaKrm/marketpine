@@ -2,13 +2,19 @@ from django.db import models
 
 # Create your models here.
 from users.models import Businessman, Customer
+from django.conf import settings
 
+
+
+max_english_chars = settings.SMS_PANEL['ENGLISH_MAX_CHARS']
+template_max_chars = settings.SMS_PANEL['TEMPLATE_MAX_CHARS']
 
 class SMSTemplate(models.Model):
 
     title = models.CharField(max_length=40)
     create_date = models.DateTimeField(auto_now_add=True)
-    content = models.CharField(max_length=200)
+    update_date = models.DateTimeField(auto_now=True)
+    content = models.CharField(max_length=160)
     businessman = models.ForeignKey(Businessman, on_delete=models.CASCADE)
 
 
@@ -17,17 +23,22 @@ class SMSTemplate(models.Model):
 
 
 class SentSMS(models.Model):
-    content = models.CharField(max_length=300)
+
     businessman = models.ForeignKey(Businessman, on_delete=models.CASCADE)
-    sent_date = models.DateTimeField(auto_now_add=True)
+    message_id = models.IntegerField()
+    receptor = models.CharField(max_length=15, null=True)
+
+
+class UnsentPlainSMS(models.Model):
+
+    message = models.CharField(max_length=max_english_chars)
+    businessman = models.ForeignKey(Businessman, on_delete=models.CASCADE)
+    create_date = models.DateTimeField(auto_now_add=True)
     customers = models.ManyToManyField(Customer)
-    is_plain_sms = models.BooleanField(default=False)
 
+class UnsentTemplateSMS(models.Model):
 
-# class CustomerSentSMS(models.Model):
-#     customer = models.ForeignKey(Customer, on_delete=models.CASCADE)
-#     sms = models.ForeignKey(SentSMS, on_delete=models.CASCADE)
-#     sent_date = models.DateTimeField(auto_now_add=True)
-#
-#
-# SentSMS.customer = models.ManyToManyField(Customer, through=CustomerSentSMS)
+    template = models.CharField(max_length=template_max_chars)
+    businessman = models.ForeignKey(Businessman, on_delete=models.CASCADE)
+    create_date = models.DateTimeField(auto_now_add=True)
+    customers = models.ManyToManyField(Customer)

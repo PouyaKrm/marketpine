@@ -70,7 +70,7 @@ def resend_verification_code(request, user_id):
 
     # code = verify_code.code
 
-    SMSMessage().send_verification_code(user.phone, verify_code.code)
+    SystemSMSMessage().send_verification_code(user.phone, verify_code.code)
 
     return Response(status=status.HTTP_200_OK)
 
@@ -186,10 +186,6 @@ def reset_user_password(request):
     return Response(status=status.HTTP_204_NO_CONTENT)
 
 
-
-
-
-
 @api_view(['PUT'])
 @permission_classes([])
 def user_forget_password(request):
@@ -208,125 +204,6 @@ def user_forget_password(request):
 
         return Response(status=status.HTTP_404_NOT_FOUND)
 
-
-
     serializer.update(user, serializer.validated_data)
 
     return Response(status=status.HTTP_204_NO_CONTENT)
-
-
-
-
-
-class SalesmanRetrieveUpdateAPIView(APIView):
-
-    """
-    put:
-    Updates the profile of the user. Needs JWT token
-
-    get:
-    Retrieves the profile data Including phone, business_name, first_name, last_name, email.
-     but phone number and business name are required. Needs JWT toeken
-    """
-
-    def put(self, request, *args, **kwargs):
-
-        serializer = BusinessmanRetrieveSerializer(data=request.data)
-
-        serializer._context = {'request': self.request}
-
-        if not serializer.is_valid():
-
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-        user = Businessman.objects.get(id=self.request.user.id)
-
-        serializer.update(user, serializer.validated_data)
-
-        serializer.instance = user
-
-        return Response(serializer.data, status=status.HTTP_200_OK)
-
-    def get(self, request, *args, **kwargs):
-
-        serializer = BusinessmanRetrieveSerializer(self.request.user)
-
-        return Response(serializer.data, status=status.HTTP_200_OK)
-
-
-
-
-
-class image_up(generics.CreateAPIView):
-
-    def get_queryset(self):
-        return self.request.user.logo
-
-    serializer_class = UploadImageSerializer
-
-
-class UploadRetrieveProfileImage(APIView):
-
-    def put(self, request: Request):
-
-        """
-        NEW
-        content-type : multipart/form-data
-        field in body:
-        logo : image file that must be uploaded. size limit: 200 kb
-
-        Receives and saves sent logo image for logged in user.
-        :param request: Contain data of Http request
-        :return: If sends data is npt valid Response object with 400 status code else, Response Object with 200 status code
-
-        """
-
-        serializer = UploadImageSerializer(data=request.data)
-
-        serializer._context = {'user': request.user}
-
-        if not serializer.is_valid():
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-        serializer.update(request.user, serializer.validated_data)
-
-        return Response(status=status.HTTP_204_NO_CONTENT)
-
-    # def get(self, request: Request):
-    #
-    #     """
-    #     NEW
-    #     Gives the logo image that is uploaded by put request
-    #     :param request:
-    #     :return: If an logo file is uploaded before returns Response with file and 200 status code, else 404 status code
-    #     """
-    #
-    #     logo = request.user.logo
-    #     if not logo:
-    #         return Response(status=status.HTTP_404_NOT_FOUND)
-    #
-    #     return HttpResponse(FileWrapper(logo.file), content_type="image/png")
-
-
-@api_view(['GET'])
-@permission_classes([])
-def get_user_logo(request: Request, businessman_id):
-
-    """
-    NEW
-    Gives the logo image that is uploaded by put request
-    :param request:
-    :param businessman_id: id of the user that logo belongs to
-    :return: If an logo file is uploaded before returns Response with file and 200 status code, else 404 status code
-    """
-
-    try:
-        user = Businessman.objects.get(id=businessman_id)
-    except ObjectDoesNotExist:
-        return Response({'details': 'کاربری یافت نشد'},status=status.HTTP_404_NOT_FOUND)
-
-    logo = user.logo
-    if not logo:
-        return Response({'details': 'این کاربر لوگو خود را ثبت نکرده'}, status=status.HTTP_404_NOT_FOUND)
-
-    return HttpResponse(FileWrapper(logo.file), content_type="image/png")

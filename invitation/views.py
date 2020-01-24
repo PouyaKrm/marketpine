@@ -10,7 +10,7 @@ from users.models import Businessman
 from common.util.custom_validators import phone_validator
 from common.util import paginators, generate_discount_code, DiscountType
 from .permissions import HasInvitationAccess
-from common.util.sms_message import SMSMessage
+from common.util.sms_panel.message import SystemSMSMessage
 # Create your views here.
 
 
@@ -89,7 +89,7 @@ class FriendInvitationListAPIView(APIView):
         payload = {'id': obj.id, 'businessman': businessman.username, 'inviter': inviter, 'invited': invited,
                    'invitation_date': obj.invitation_date, 'inviter_discount_code': inviter_discount.discount_code}
 
-        sms = SMSMessage()
+        sms = SystemSMSMessage()
 
         sms.send_friend_invitation_welcome_message(businessman.business_name, invited, invited_discount)
 

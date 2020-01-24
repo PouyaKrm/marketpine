@@ -1,9 +1,12 @@
 from enum import Enum
 from rest_framework_jwt.settings import api_settings
+from rest_framework.request import Request
 from strgen import StringGenerator
 import jwt
 
 import string
+
+from users.models import Businessman
 
 jwt_payload_handler = api_settings.JWT_PAYLOAD_HANDLER
 jwt_encode_handler = api_settings.JWT_ENCODE_HANDLER
@@ -87,3 +90,6 @@ def get_client_ip(request):
     return ip
 
 
+def create_link(path: str, request: Request):
+    domain = request.META['HTTP_HOST']
+    return 'http://' + domain + path

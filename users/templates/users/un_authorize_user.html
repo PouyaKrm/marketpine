@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Uu authorize user</title>
+     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
+          integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+</head>
+<body>
+
+<div class="container mt-5">
+    <h3>Are you sure you want to un authorize this user?</h3>
+
+    <p>username: {{ businessman.username }}</p>
+
+    {% if businessman.authorized == '0' %}
+
+        <p>status: Unauthorized</p>
+
+    {% elif businessman.authorized == '1' %}
+
+        <p>status: Pending</p>
+
+        {% else %}
+
+        <p>status: Authorized</p>
+
+    {% endif %}
+
+    <form action="." method="post">
+
+        {% csrf_token %}
+
+        <button type="submit" class="btn btn-danger">Unauthorize</button>
+        <a href="{% url 'admin:users_businessman_changelist' %}" class="btn btn-outline-primary">Cancel</a>
+    </form>
+
+</div>
+
+</body>
+</html>
