@@ -281,6 +281,14 @@ except ImportError:
 
 ZARINPAL={
     'url': 'https://www.zarinpal.com/pg/services/WebGate/wsdl',
+<<<<<<< HEAD
+    "MERCHANT": "7055b6ac-e6dc-11e9-99c1-000c295eb8fc",
+    "FORWARD_LINK": "https://www.zarinpal.com/pg/StartPay/{}/ZarinGate",  # use this string with .format method
+    "CONSTANT_AMOUNT": "100",
+=======
     "MERCHANT" : "7055b6ac-e6dc-11e9-99c1-000c295eb8fc",
+    "CONSTANT_AMOUNT" : "1000",
+    'FORWARD_URL' : 'http://localhost:8000/admin/',
+>>>>>>> 966c21bb2f3eaaf1820cec3c460ff4545f6ac077
 
 }

@@ -46,5 +46,7 @@ urlpatterns = [
     path('api/salesman/modulus/', include(modulus_url)),
     path('api/salesman/profile/', include(profile_url)),
     path('api/salesman/settings/', include(setiing_ulr)),
+    path('api/salesman/payment/',include(payment_url)),
+    path('api/salesman/device/',include(device_url)),
     path('api/download/', include(download_url))
 ]
