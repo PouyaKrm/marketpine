@@ -1,10 +1,17 @@
 from rest_framework import serializers
-from .models import Payment
+from .models import Payment, PaymentTypes
 from django.conf import settings
+
+
+zarinpal_forward_link = settings.ZARINPAL.get('FORWARD_LINK')
+constant_pay_amount = settings.ZARINPAL.get("CONSTANT_AMOUNT")
 
 class PaymentCreationSerializer(serializers.ModelSerializer):
     '''serializer for payment app with geting amount'''
     # url_zarinpal=serializers.URLField(read_only=True,)
+
+    forward_link = serializers.SerializerMethodField(read_only=True)
+
     class Meta:
         model = Payment
         fields = [
@@ -13,6 +20,7 @@ class PaymentCreationSerializer(serializers.ModelSerializer):
             'description',
             'businessman',
             'authority',
+            'forward_link'
             # 'url_zarinpal',
         ]
         extra_kwargs = {'id': {'read_only': True},
@@ -20,15 +28,17 @@ class PaymentCreationSerializer(serializers.ModelSerializer):
                         'authority': {'read_only': True},
                         'amount': {'required': True},
                         'description': {'required': True},
-                       }
+                        }
+
+    def get_forward_link(self, obj):
+        return zarinpal_forward_link.format(obj.authority)
 
     def create(self, validated_data):
         "create object payment with get amounte and constant businessman,phone,description"
-        request=self.context['request']
-        p = Payment.objects.create(businessman=request.user,
-                                      phone=request.user.phone,
-                                      **validated_data,
-                                      )
+        request = self.context['request']
+        type = self.context['type']
+        p = Payment.objects.create(businessman=request.user, phone=request.user.phone,
+                                   payment_type=type,  **validated_data)
         p.pay(request)
         return p
 
@@ -42,6 +52,8 @@ class PaymentCreationSerializer(serializers.ModelSerializer):
 class PaymentConstantAmountCreationSerializer(serializers.ModelSerializer):
     "serializer for result payment app with authority"
 
+    forward_link = serializers.SerializerMethodField(read_only=True)
+
     class Meta:
         model = Payment
         fields = [
@@ -50,21 +62,25 @@ class PaymentConstantAmountCreationSerializer(serializers.ModelSerializer):
             'description',
             'businessman',
             'authority',
+            'forward_link'
         ]
         extra_kwargs = {'id': {'read_only': True},
                         'businessman': {'read_only': True},
                         'authority': {'read_only': True},
-                        'amount': {'read_only': True,'required':False},
+                        'amount': {'read_only': True, 'required': False},
                         'description': {'required': True},
                        }
+
+
+    def get_forward_link(self, obj):
+        return zarinpal_forward_link.format(obj.authority)
+
     def create(self, validated_data):
         "create object payment with constant amount,businessman,phone,description"
         request=self.context['request']
-        p = Payment.objects.create(businessman=request.user,
-                                      amount=settings.ZARINPAL.get("CONSTANT_AMOUNT"),
-                                      phone=request.user.phone,
-                                      **validated_data,
-                                      )
+        p = Payment.objects.create(businessman=request.user, payment_type=PaymentTypes.ACTIVATION,
+                                   amount=constant_pay_amount, phone=request.user.phone,
+                                   **validated_data)
         p.pay(request)
         return p
 

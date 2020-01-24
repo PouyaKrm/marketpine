@@ -46,6 +46,6 @@ urlpatterns = [
     path('api/salesman/customer-purchase/', include(purchase_url)),
     path('api/salesman/modulus/', include(modulus_url)),
     path('api/salesman/settings/', include(setiing_ulr)),
-    path('zarinpal/',include(payment_url)),
+    path('api/salesman/payment/',include(payment_url)),
     path('api/salesman/device/',include(device_url))
 ]
