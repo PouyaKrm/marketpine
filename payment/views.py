@@ -1,21 +1,14 @@
-<<<<<<< HEAD
+
 from datetime import datetime
 
 import jdatetime
 from django.core.exceptions import ObjectDoesNotExist
-from django.http import HttpResponse
 from django.shortcuts import render
 from payment.exceptions import PaymentCreationFailedException, PaymentVerificationFailedException
-from .models import Payment, PaymentTypes
-=======
-from django.http import HttpResponse,HttpResponseRedirect
-from django.conf import settings
+from .models import PaymentTypes
+from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
-from django.shortcuts import redirect
-from zeep import Client
-from django.utils.translation import ugettext as _
 from .models import Payment
->>>>>>> 966c21bb2f3eaaf1820cec3c460ff4545f6ac077
 from .serializers import (PaymentCreationSerializer,
                          PaymentConstantAmountCreationSerializer,
                          PaymentResultSerializer,
@@ -25,12 +18,10 @@ from .serializers import (PaymentCreationSerializer,
 
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-from rest_framework import status
+from rest_framework import status, generics
 from rest_framework.views import APIView
 
 def verify(request):
-<<<<<<< HEAD
-
 
     current_time = datetime.now()
     if request.GET.get('Status') != 'OK':
@@ -58,13 +49,6 @@ def verify(request):
     except PaymentVerificationFailedException as e:
         return render(request, "payment/payment-failed.html", {'current_time': datetime.now()})
 
-=======
-    if request.GET.get('Status') == 'OK':
-        p = Payment.objects.get(authority=request.GET['Authority'])
-        return p.verify(request)
-    else:
-        return redirect(settings.ZARINPAL.get("FORWARD_URL"))
->>>>>>> 966c21bb2f3eaaf1820cec3c460ff4545f6ac077
 
 
 @api_view(['POST'])
@@ -98,20 +82,18 @@ class ResultPay(APIView):
         serializer=PaymentResultSerializer(queryset)
 
         return Response(serializer.data, status=status.HTTP_200_OK)
-
-
-class ListPayView(generics.ListAPIView):
-    serializer_class = PaymentListSerializer
-    def get_queryset(self):
-        queryset = Payment.objects.filter(businessman=self.request.user)
-        return queryset
-
-<<<<<<< HEAD
-        serializer = PaymentResultSerializer(queryset)
-        return Response(serializer.data, status=status.HTTP_200_OK)
-=======
-
-class DetailPayView(generics.RetrieveAPIView):
-    serializer_class = PaymentDetailSerializer
-    queryset = Payment.objects.all()
->>>>>>> 966c21bb2f3eaaf1820cec3c460ff4545f6ac077
+#
+#
+# class ListPayView(generics.ListAPIView):
+#     serializer_class = PaymentListSerializer
+#     def get_queryset(self):
+#         queryset = Payment.objects.filter(businessman=self.request.user)
+#         return queryset
+#
+#
+#         serializer = PaymentResultSerializer(queryset)
+#         return Response(serializer.data, status=status.HTTP_200_OK)
+#
+# class DetailPayView(generics.RetrieveAPIView):
+#     serializer_class = PaymentDetailSerializer
+#     queryset = Payment.objects.all()

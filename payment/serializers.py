@@ -8,14 +8,7 @@ constant_pay_amount = settings.ZARINPAL.get("CONSTANT_AMOUNT")
 
 class PaymentCreationSerializer(serializers.ModelSerializer):
     '''serializer for payment app with geting amount'''
-<<<<<<< HEAD
-    # url_zarinpal=serializers.URLField(read_only=True,)
-
     forward_link = serializers.SerializerMethodField(read_only=True)
-
-=======
-    forward_link = serializers.SerializerMethodField(read_only=True)
->>>>>>> 966c21bb2f3eaaf1820cec3c460ff4545f6ac077
     class Meta:
         model = Payment
         fields = [
@@ -25,10 +18,6 @@ class PaymentCreationSerializer(serializers.ModelSerializer):
             'businessman',
             'authority',
             'forward_link'
-<<<<<<< HEAD
-            # 'url_zarinpal',
-=======
->>>>>>> 966c21bb2f3eaaf1820cec3c460ff4545f6ac077
         ]
         extra_kwargs = {'id': {'read_only': True},
                         'businessman': {'read_only': True},
@@ -54,13 +43,8 @@ class PaymentCreationSerializer(serializers.ModelSerializer):
 
 class PaymentConstantAmountCreationSerializer(serializers.ModelSerializer):
     "serializer for result payment app with authority"
-<<<<<<< HEAD
 
     forward_link = serializers.SerializerMethodField(read_only=True)
-
-=======
-    forward_link = serializers.SerializerMethodField(read_only=True)
->>>>>>> 966c21bb2f3eaaf1820cec3c460ff4545f6ac077
     class Meta:
         model = Payment
         fields = [
@@ -78,14 +62,9 @@ class PaymentConstantAmountCreationSerializer(serializers.ModelSerializer):
                         'description': {'required': True},
                        }
 
-<<<<<<< HEAD
 
     def get_forward_link(self, obj):
         return zarinpal_forward_link.format(obj.authority)
-=======
-    def get_forward_link(self, obj):
-        return ('https://www.zarinpal.com/pg/StartPay/' + str(obj.authority)+'/ZarinGate')
->>>>>>> 966c21bb2f3eaaf1820cec3c460ff4545f6ac077
 
     def create(self, validated_data):
         "create object payment with constant amount,businessman,phone,description"
