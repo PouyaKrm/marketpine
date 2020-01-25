@@ -8,7 +8,5 @@ urlpatterns = [
     path('verify/', verify, name='verify'),
     path('sms-panel/', create_payment_sms_credit),
     path('panel-activate/', panel_activation_payment, name="constant_pay"),
-    path('test/', test)
-
 ]
 

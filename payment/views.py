@@ -82,10 +82,3 @@ class ListPayView(generics.ListAPIView):
         queryset = Payment.objects.filter(businessman=self.request.user).filter(refid__isnull=False)
         return queryset
 
-
-def test(request):
-
-    pay = Payment.objects.all().last()
-    pay.payment_type = PaymentTypes.ACTIVATION
-    pay.verify()
-    return HttpResponse("verify success")
