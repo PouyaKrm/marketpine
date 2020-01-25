@@ -5,10 +5,15 @@ from django.conf import settings
 
 zarinpal_forward_link = settings.ZARINPAL.get('FORWARD_LINK')
 constant_pay_amount = settings.ZARINPAL.get("CONSTANT_AMOUNT")
+min_credit_charge = settings.SMS_PANEL['MIN_CREDIT_CHARGE']
+max_credit_charge = settings.SMS_PANEL['MAX_CREDIT_CHARGE']
 
-class PaymentCreationSerializer(serializers.ModelSerializer):
-    '''serializer for payment app with geting amount'''
+
+class SMSCreditPaymentCreationSerializer(serializers.ModelSerializer):
+    """erializer for payment app with geting amount"""
     forward_link = serializers.SerializerMethodField(read_only=True)
+    amount = serializers.IntegerField(min_value=min_credit_charge, max_value=max_credit_charge)
+
     class Meta:
         model = Payment
         fields = [
@@ -26,18 +31,16 @@ class PaymentCreationSerializer(serializers.ModelSerializer):
                         'description': {'required': True},
                         }
 
+
     def get_forward_link(self, obj):
         return zarinpal_forward_link.format(obj.authority)
 
-    def get_forward_link(self, obj):
-        return ('https://www.zarinpal.com/pg/StartPay/' + str(obj.authority)+'/ZarinGate')
-
     def create(self, validated_data):
-        "create object payment with get amounte and constant businessman,phone,description"
+        """create object payment with get amounte and constant businessman,phone,description"""
         request = self.context['request']
-        type = self.context['type']
+        pay_type = self.context['type']
         p = Payment.objects.create(businessman=request.user, phone=request.user.phone,
-                                   payment_type=type,  **validated_data)
+                                   payment_type=pay_type,  **validated_data)
         p.pay(request)
         return p
 
@@ -83,18 +86,17 @@ class PaymentResultSerializer(serializers.ModelSerializer):
         fields = [
             'id',
             'amount',
-            'status',
-            'creation_date',
-            'authority',
+            'verification_status',
+            'verification_date',
+            'payment_type',
             'refid',
         ]
         extra_kwargs = {'id': {'read_only': True},
-                        'creation_date': {'read_only': True},
-                        'status': {'read_only': True},
+                        'verification_date': {'read_only': True},
+                        'verification_status': {'read_only': True},
                         'amount': {'read_only': True},
                         'refid': {'read_only': True},
-                        'authority': {'required': True},
-                       }
+                        }
 
 class PaymentListSerializer(serializers.ModelSerializer):
     "serializer for list payment app with authority"
@@ -104,18 +106,17 @@ class PaymentListSerializer(serializers.ModelSerializer):
         fields = [
             'id',
             'amount',
-            'status',
-            'authority',
+            'verification_status',
             'refid',
-            'creation_date',
+            'verification_date',
+            'payment_type'
         ]
         extra_kwargs = {'id': {'read_only': True},
-                        'status': {'read_only': True},
+                        'verification_status': {'read_only': True},
                         'amount': {'read_only': True},
                         'refid': {'read_only': True},
-                        'authority': {'read_only': True},
-                        'creation_date': {'read_only': True},
-                       }
+                        'verification_date': {'read_only': True},
+                        }
 
 class PaymentDetailSerializer(serializers.ModelSerializer):
     "serializer for list payment app with authority"
@@ -125,8 +126,7 @@ class PaymentDetailSerializer(serializers.ModelSerializer):
         fields = [
             'id',
             'amount',
-            'status',
-            'authority',
+            'verification_date',
             'refid',
             'creation_date',
         ]

@@ -21,6 +21,7 @@ class ClientManagement:
     def __init__(self):
         self.api_key = api_key
 
+
     def add(self, data: dict):
 
         resp = requests.post(f'http://api.kavenegar.com/v1/{self.api_key}/client/add.json', data)
@@ -131,3 +132,27 @@ class ClientManagement:
         :return: result of update method
         """
         return self.update(businessman_api_key, {'status': '0'})
+
+
+    def change_credit(self, amount: int, businessman_api_key: str, description: str):
+
+        """
+        This method increase or decrease amount of credit of businessman in kavenegar
+        :param amount: To increase, use a positive number. To decrease, use a negative number
+        :param businessman_api_key: api_key of the businessman we are going to change his credit
+        :param description: description of this transaction that will be shown ti businessman in kavenegar panel
+        :return: Status code of the request
+        :raises APIException if transaction failed
+        :raises ValueError if amount < 1000 or amount > -1000
+        """
+
+        if (amount > 0 and amount < 1000) or (amount < 0 and amount > -1000):
+            raise ValueError("amount must be bigger that 1000 or smaller that -1000")
+
+        data = {'Apikey': businessman_api_key, 'Credit': amount, 'Desc': description}
+        resp = requests.post(f"http://api.kavenegar.com/v1/{api_key}/client/chargecredit.json", data)
+        resp_data = resp.json()
+
+        if resp.status_code != 200:
+            raise APIException(resp_data.status_code, resp_data['return']['message'])
+        return resp.status_code

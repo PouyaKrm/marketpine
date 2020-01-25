@@ -54,7 +54,14 @@ class Payment(models.Model):
             self.save()
             raise PaymentCreationFailedException(self.create_status)
 
-    def verify(self):
+    def __verify(self):
+
+        """
+        do not user this method directly beacesuse some operations must be exceucted before payment verification
+        Use verify method instead
+        :return:
+        """
+
         merchant = setting_merchant
         client = Client(url)
         result = client.service.PaymentVerification(merchant, self.authority, self.amount)
@@ -66,3 +73,16 @@ class Payment(models.Model):
             self.save()
         elif result.Status != 100 or result.Status != 101:
             raise PaymentVerificationFailedException(result.Status)
+
+    def verify(self):
+
+        """
+        executes some operations before verifying the payment
+        :raises APIException if sms panel credit increase failed
+        :raises PaymentVerificationFailedException if payment verification fails.
+        :return:
+        """
+
+        if self.payment_type == PaymentTypes.SMS:
+            self.businessman.smspanelinfo.increase_credit_in_tomans(self.amount)
+            self.__verify()

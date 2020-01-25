@@ -4,22 +4,26 @@ from datetime import datetime
 import jdatetime
 from django.core.exceptions import ObjectDoesNotExist
 from django.shortcuts import render
+
+from common.util.kavenegar_local import APIException
 from payment.exceptions import PaymentCreationFailedException, PaymentVerificationFailedException
+from users.models import Businessman
 from .models import PaymentTypes
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from .models import Payment
-from .serializers import (PaymentCreationSerializer,
-                         PaymentConstantAmountCreationSerializer,
-                         PaymentResultSerializer,
-                         PaymentListSerializer,
-                         PaymentDetailSerializer,
-                         )
+from .serializers import (SMSCreditPaymentCreationSerializer,
+                          PaymentConstantAmountCreationSerializer,
+                          PaymentResultSerializer,
+                          PaymentListSerializer,
+                          PaymentDetailSerializer,
+                          )
 
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status, generics
 from rest_framework.views import APIView
+
 
 def verify(request):
 
@@ -46,14 +50,13 @@ def verify(request):
 
     except ObjectDoesNotExist:
         return HttpResponse('پرداختی با این شناسه وجود ندارد')
-    except PaymentVerificationFailedException as e:
-        return render(request, "payment/payment-failed.html", {'current_time': datetime.now()})
-
+    except (PaymentVerificationFailedException, APIException) as e:
+        return render(request, "payment/payment-failed.html", {'current_time': current_time})
 
 
 @api_view(['POST'])
 def create_payment_sms_credit(request):
-    serializer = PaymentCreationSerializer(data=request.data, context={'request': request, 'type': PaymentTypes.SMS})
+    serializer = SMSCreditPaymentCreationSerializer(data=request.data, context={'request': request, 'type': PaymentTypes.SMS})
     if not serializer.is_valid():
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -75,25 +78,9 @@ def create_constant_payment(request):
     return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
-class ResultPay(APIView):
-    def get(self, request):
-        authority = self.request.data['authority']
-        queryset = get_object_or_404(Payment,authority =authority)
-        serializer=PaymentResultSerializer(queryset)
+class ListPayView(generics.ListAPIView):
+    serializer_class = PaymentListSerializer
 
-        return Response(serializer.data, status=status.HTTP_200_OK)
-#
-#
-# class ListPayView(generics.ListAPIView):
-#     serializer_class = PaymentListSerializer
-#     def get_queryset(self):
-#         queryset = Payment.objects.filter(businessman=self.request.user)
-#         return queryset
-#
-#
-#         serializer = PaymentResultSerializer(queryset)
-#         return Response(serializer.data, status=status.HTTP_200_OK)
-#
-# class DetailPayView(generics.RetrieveAPIView):
-#     serializer_class = PaymentDetailSerializer
-#     queryset = Payment.objects.all()
+    def get_queryset(self):
+        queryset = Payment.objects.filter(businessman=self.request.user).filter(refid__isnull=False)
+        return queryset
