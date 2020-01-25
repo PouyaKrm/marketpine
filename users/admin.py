@@ -29,7 +29,7 @@ class BusinessmanAdminModel(UserAdmin):
     fieldsets = (
             (None, {'fields': ('username', 'password')}),
             ('General Info', {'fields': ('business_name', 'phone', 'logo', 'address', 'email')}),
-            ('Permissions', {'fields': ['is_verified', 'authorized']}),
+            ('Permissions', {'fields': ['is_verified', 'authorized', 'panel_activation_date', 'panel_expiration_date']}),
                  )
     add_fieldsets = (
         (None, {'fields': ('username', 'password1', 'password2')}),

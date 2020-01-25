@@ -7,7 +7,8 @@ urlpatterns = [
     path('', ListPayView.as_view()),
     path('verify/', verify, name='verify'),
     path('sms-panel/', create_payment_sms_credit),
-    path('panel-activate/', create_constant_payment, name="constant_pay")
+    path('panel-activate/', panel_activation_payment, name="constant_pay"),
+    path('test/', test)
 
 ]
 

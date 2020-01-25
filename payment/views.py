@@ -7,23 +7,19 @@ from django.shortcuts import render
 
 from common.util.kavenegar_local import APIException
 from payment.exceptions import PaymentCreationFailedException, PaymentVerificationFailedException
-from users.models import Businessman
 from .models import PaymentTypes
 from django.http import HttpResponse
-from django.shortcuts import get_object_or_404
 from .models import Payment
 from .serializers import (SMSCreditPaymentCreationSerializer,
-                          PaymentConstantAmountCreationSerializer,
-                          PaymentResultSerializer,
-                          PaymentListSerializer,
-                          PaymentDetailSerializer,
+                          PanelActivationPaymentCreationSerializer,
+                          PaymentListSerializer
                           )
 
-from rest_framework.decorators import api_view
-from rest_framework.response import Response
-from rest_framework import status, generics
-from rest_framework.views import APIView
+from .permissions import ActivatePanelPermission
 
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.response import Response
+from rest_framework import status, generics, permissions
 
 def verify(request):
 
@@ -56,7 +52,7 @@ def verify(request):
 
 @api_view(['POST'])
 def create_payment_sms_credit(request):
-    serializer = SMSCreditPaymentCreationSerializer(data=request.data, context={'request': request, 'type': PaymentTypes.SMS})
+    serializer = SMSCreditPaymentCreationSerializer(data=request.data, context={'request': request})
     if not serializer.is_valid():
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -68,8 +64,9 @@ def create_payment_sms_credit(request):
 
 
 @api_view(['POST'])
-def create_constant_payment(request):
-    serializer = PaymentConstantAmountCreationSerializer(data=request.data,context={'request': request})
+@permission_classes([permissions.IsAuthenticated, ActivatePanelPermission])
+def panel_activation_payment(request):
+    serializer = PanelActivationPaymentCreationSerializer(data=request.data, context={'request': request})
 
     if not serializer.is_valid():
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -84,3 +81,11 @@ class ListPayView(generics.ListAPIView):
     def get_queryset(self):
         queryset = Payment.objects.filter(businessman=self.request.user).filter(refid__isnull=False)
         return queryset
+
+
+def test(request):
+
+    pay = Payment.objects.all().last()
+    pay.payment_type = PaymentTypes.ACTIVATION
+    pay.verify()
+    return HttpResponse("verify success")

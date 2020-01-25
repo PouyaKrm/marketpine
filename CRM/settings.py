@@ -15,6 +15,7 @@ import os
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 from django.conf import settings
 from corsheaders.defaults import default_headers
+from django.utils import timezone
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -49,11 +50,13 @@ hcrTQYQs+QvhU9QitwIDAQAB
 -----END PUBLIC KEY-----"""
 
 
-REFRESH_TOKEN_EXP_DELTA = datetime.timedelta(days=1)
+REFRESH_TOKEN_EXP_DELTA = timezone.timedelta(days=1)
 
 PAGINATION_PAGE_NUM = 25
 
-ACTIVATION_ALERT_TIME_DELTA = datetime.timedelta(days=2)
+ACTIVATION_EXPIRE_DELTA = timezone.timedelta(days=30)
+ACTIVATION_ALLOW_REFRESH_DAYS_BEFORE_EXPIRE = timezone.timedelta(days=2)
+ACTIVATION_COST_IN_TOMANS = 1000
 
 SMS_PANEL = {
     'CUSTOMER_LINE': '10004000030003',
@@ -287,5 +290,4 @@ ZARINPAL={
     'url': 'https://www.zarinpal.com/pg/services/WebGate/wsdl',
     "MERCHANT": "7055b6ac-e6dc-11e9-99c1-000c295eb8fc",
     "FORWARD_LINK": "https://www.zarinpal.com/pg/StartPay/{}/ZarinGate",  # use this string with .format method
-    "CONSTANT_AMOUNT": "100",
 }

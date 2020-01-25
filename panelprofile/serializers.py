@@ -14,7 +14,7 @@ from common.util.custom_validators import pdf_file_validator, validate_logo_size
 from common.util.sms_panel.client import ClientManagement
 
 
-activation_alert_delta = settings.ACTIVATION_ALERT_TIME_DELTA
+activation_alert_delta = settings.ACTIVATION_EXPIRE_DELTA
 
 
 class SMSPanelInfoSerializer(serializers.ModelSerializer):

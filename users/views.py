@@ -1,5 +1,6 @@
 import jwt
 from django.core.exceptions import ObjectDoesNotExist
+from django.utils import timezone
 from rest_framework import generics, status
 from rest_framework.views import APIView
 from rest_framework.decorators import api_view, permission_classes
@@ -98,12 +99,12 @@ def login_api_view(request):
     if user is None or user.is_verified is False:
         return Response({'details': ['username or password is wrong']}, status=status.HTTP_401_UNAUTHORIZED)
 
-    expire_time = datetime.datetime.now() + settings.REFRESH_TOKEN_EXP_DELTA
+    expire_time = timezone.now() + settings.REFRESH_TOKEN_EXP_DELTA
 
     obj = BusinessmanRefreshTokens.objects.create(username=user.get_username(), expire_at=expire_time,
                                             ip=get_client_ip(request))
 
-    payload = {'exp': expire_time, "iss": user.get_username(), "iat": datetime.datetime.now(), 'id': obj.id}
+    payload = {'exp': expire_time, "iss": user.get_username(), "iat": timezone.now(), 'id': obj.id}
 
     token = jwt.encode(payload, settings.REFRESH_KEY_PR, algorithm='RS256')
 

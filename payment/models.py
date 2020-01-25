@@ -10,6 +10,7 @@ from django.urls import reverse
 
 url = settings.ZARINPAL.get('url')
 setting_merchant = settings.ZARINPAL.get('MERCHANT')
+activation_expire_delta = settings.ACTIVATION_EXPIRE_DELTA
 
 class PaymentTypes:
     SMS = '0'
@@ -86,3 +87,17 @@ class Payment(models.Model):
         if self.payment_type == PaymentTypes.SMS:
             self.businessman.smspanelinfo.increase_credit_in_tomans(self.amount)
             self.__verify()
+
+        elif self.payment_type == PaymentTypes.ACTIVATION:
+            active_date = timezone.now()
+            self.businessman.panel_activation_date = active_date
+
+            if self.businessman.panel_expiration_date is not None:
+                self.businessman.panel_expiration_date = self.businessman.panel_expiration_date + activation_expire_delta
+            else:
+                self.businessman.panel_expiration_date = active_date + activation_expire_delta
+
+            self.businessman.save()
+            self.__verify()
+
+
