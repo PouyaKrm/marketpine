@@ -145,13 +145,12 @@ class SendSMSMessage():
         deleted record.
         """
 
-        customers = unsent_sms.customers.all() 
+        customers = unsent_sms.customers.all()
+        UnsentPlainSMS.objects.filter(id=unsent_sms.id).delete()
 
         try:
             self.send_plain_sms(customers, user, unsent_sms.message)
-            UnsentPlainSMS.objects.filter(id=unsent_sms.id).delete()
         except APIException as e:
-            UnsentPlainSMS.objects.filter(id=unsent_sms.id).delete()
             raise e
 
 
@@ -162,12 +161,10 @@ class SendSMSMessage():
         """
 
         customers = unsent_sms.customers.all()
-        
+        UnsentTemplateSMS.objects.filter(id=unsent_sms.id).delete()
         try:
             self.send_by_template(user, customers, unsent_sms.template)
-            UnsentTemplateSMS.objects.filter(id=unsent_sms.id).delete()
         except APIException as e:
-            UnsentTemplateSMS.objects.filter(id=unsent_sms.id).delete()
             raise e
 
 

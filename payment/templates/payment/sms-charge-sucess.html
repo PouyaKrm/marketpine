@@ -1,0 +1,37 @@
+{% extends "payment/base-payement.html" %}
+
+
+{% block result-text %}
+    اعتبار پنل پیامک شما با موفقیت افزایش یافت.
+{% endblock %}
+
+{% block main-body %}
+
+<div class="row text-center">
+    <div class="col-12 col-md-6 mb-1">شناسه پرداخت:</div>
+    <div class="col-12 col-md-6 mb-3 text-primary">{{ payment.refid }}</div>
+    <div class="col-12 col-md-6 mb-1">تاریخ پرداخت:</div>
+    <div class="col-12 col-md-6 mb-3 text-primary">
+        {{ verification_date }}
+    </div>
+</div>
+
+<div class="row mt-5">
+    <div class="col-12">
+        <div class="text-right">
+            <h6>اطلاعات صاحب حساب:</h6>
+
+            <div class="row text-center">
+                <div class="col-12 col-md-6 mb-1">اعتبار پنل پیامک:</div>
+                <div class="col-12 col-md-6 mb-3 text-primary"> {{ credit }} ریال </div>
+                <div class="col-12 col-md-6 mb-1">نام کاربری:</div>
+                <div class="col-12 col-md-6 mb-3 text-primary">{{ payment.businessman.username }}</div>
+                <div class="col-12 col-md-6 mb-1">آدرس:</div>
+                <div class="col-12 col-md-6 mb-3 text-primary">{{ payment.businessman.address }}</div>
+                <div class="col-12 col-md-6 mb-1">شماره تلفن:</div>
+                <div class="col-12 col-md-6 mb-3 text-primary">{{ payment.businessman.phone }}</div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

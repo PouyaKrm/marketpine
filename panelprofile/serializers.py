@@ -6,11 +6,16 @@ from rest_framework.request import Request
 from rest_framework.reverse import reverse
 from rest_framework import serializers
 
+from payment.models import Payment
 from users.models import AuthStatus, Businessman
 from .models import SMSPanelInfo, BusinessmanAuthDocs
 from django.conf import settings
 from common.util.custom_validators import pdf_file_validator, validate_logo_size
 from common.util.sms_panel.client import ClientManagement
+
+
+activation_alert_delta = settings.ACTIVATION_EXPIRE_DELTA
+
 
 class SMSPanelInfoSerializer(serializers.ModelSerializer):
 
@@ -42,7 +47,7 @@ class BusinessmanProfileSerializer(serializers.ModelSerializer):
             'date_joined',
             'authorized',
             'auth_documents',
-            'sms_panel_details'
+            'sms_panel_details',
         ]
 
         extra_kwargs = {'username': {'read_only': True}, 'phone': {'read_only': True}, 'email': {'read_only': True},
@@ -100,6 +105,7 @@ class BusinessmanProfileSerializer(serializers.ModelSerializer):
         instance.save()
 
         return instance
+
 
 
 

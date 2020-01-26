@@ -77,6 +77,23 @@ class SMSPanelInfo(models.Model):
         self.credit -= amount
         self.save()
 
+    def increase_credit_in_tomans(self, amount: int):
+        """
+        a shortcut to increase amount of credit of businessman
+        :param amount: amount on increase of businessman
+        :raises ValueError If value is not positive or is smaller that 1000 this exception will be thrown
+        :raises APIException If Transaction failed
+        :return:
+        """
+        amount = amount * 10
+        if amount <= 0 or amount < 1000:
+            raise ValueError("amount must be positive and bigger that 1000 Rials")
+        client = ClientManagement()
+        client.change_credit(amount, self.api_key, "افزایش اعتبار پنل اسمس")
+        self.credit += amount
+        self.save()
+
+
 
 
 class AuthDoc(models.Model):
@@ -148,3 +165,4 @@ class BusinessmanAuthDocs(models.Model):
         """
 
         self.un_authorize_user()
+

@@ -1,60 +1,106 @@
-from django.http import HttpResponse,HttpResponseRedirect
-from django.shortcuts import redirect
-from zeep import Client
-from django.utils.translation import ugettext as _
-from .models import Payment
-from .serializers import PaymentCreationSerializer,PaymentFixAmountCreationSerializer
 
-from django.http import JsonResponse
+from datetime import datetime
+
+import jdatetime
+from django.core.exceptions import ObjectDoesNotExist
+from django.shortcuts import render, redirect
+
+from common.util.kavenegar_local import APIException
+from payment.exceptions import PaymentCreationFailedException, PaymentVerificationFailedException, \
+    PaymentAlreadyVerifiedException, PaymentOperationFailedException
+from .models import PaymentTypes
+from django.http import HttpResponse
+from django.conf import settings
+
+from .models import Payment
+from .serializers import (SMSCreditPaymentCreationSerializer,
+                          PanelActivationPaymentCreationSerializer,
+                          PaymentListSerializer
+                          )
+
+from .permissions import ActivatePanelPermission
+
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
-from rest_framework import status
-from rest_framework import generics
+from rest_framework import status, generics, permissions
 
+
+frontend_url = settings.FRONTEND_URL
 
 def verify(request):
 
-    if request.GET.get('Status') == 'OK':
-        p = Payment.objects.get(authority=request.GET['Authority'])
-        return p.verify(request)
-    else:
-        return HttpResponse(_('Transaction failed or canceled by user'))
 
+    current_time = datetime.now()
+    pay_status = request.GET.get('Status')
 
-def pay(request):
-    p=Payment(amount=1000,businessman=request.user,description="for test")
-    p.save()
-    # return p.pay(request)
-    return HttpResponseRedirect('https://www.zarinpal.com/')
+    authority = request.GET.get('Authority')
+
+    if pay_status is None or authority is None:
+        return redirect(frontend_url)
+    if pay_status != 'OK':
+        return render(request, "payment/payment-failed.html", {'current_time': current_time,
+                                                               'frontend_url': frontend_url})
+
+    try:
+        p = Payment.objects.get(authority=authority)
+        p.verify()
+        local_pay_date = jdatetime.date.fromgregorian(date=p.verification_date).strftime("%y/%m/%d %H:%M")
+
+        if p.payment_type == PaymentTypes.SMS:
+            credit = p.businessman.smspanelinfo.credit
+            return render(request, "payment/sms-charge-sucess.html",
+                          {'payment': p, 'credit': credit,
+                           'verification_date': local_pay_date,
+                           'current_time': current_time})
+
+        return render(request, 'payment/activation-sucess.html',
+                      {'payment': p,
+                       'verification_date': local_pay_date,
+                       'current_time': current_time,
+                       'frontend_url': frontend_url})
+
+    except ObjectDoesNotExist:
+        return HttpResponse('پرداختی با این شناسه وجود ندارد')
+    except (PaymentVerificationFailedException, APIException) as e:
+        return render(request, "payment/payment-failed.html", {'current_time': current_time,
+                                                               'frontend_url': frontend_url})
+    except PaymentAlreadyVerifiedException:
+        return redirect(frontend_url)
+    except PaymentOperationFailedException:
+        return render(request, "payment/operation-failed.html", {'current_time': current_time,
+                                                                 'frontend_url': frontend_url})
+
 
 
 @api_view(['POST'])
-def create_payment (request):
-    serializer=PaymentCreationSerializer(data=request.data,context={'request': request})
-
+def create_payment_sms_credit(request):
+    serializer = SMSCreditPaymentCreationSerializer(data=request.data, context={'request': request})
     if not serializer.is_valid():
-        # return JsonResponse({"status":"error"})
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    # serializer._context = {'user': request.user}
-    payment=serializer.save()
 
-    return Response(data={'id': payment.id}, status=status.HTTP_201_CREATED)
-
+    try:
+        serializer.save()
+    except PaymentCreationFailedException as e:
+        return Response({'status': e.returned_status}, status=status.HTTP_424_FAILED_DEPENDENCY)
+    return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
 @api_view(['POST'])
-def create_fixamount_payment (request):
-    serializer=PaymentFixAmountCreationSerializer(data=request.data,context={'request': request})
+@permission_classes([permissions.IsAuthenticated, ActivatePanelPermission])
+def panel_activation_payment(request):
+    serializer = PanelActivationPaymentCreationSerializer(data=request.data, context={'request': request})
 
     if not serializer.is_valid():
-        # return JsonResponse({"status":"error"})
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    # serializer._context = {'user': request.user}
-    payment=serializer.save()
-    payment.pay(request)
-    # return Response(data={'id': payment.id,'url':'https://www.zarinpal.com/pg/StartPay/' + str(payment.authority)+'/ZarinGate'}, status=status.HTTP_201_CREATED)
 
-    # return HttpResponseRedirect('https://www.zarinpal.com/pg/StartPay/' +
-    #                             str(payment.authority)+'/ZarinGate')
+    serializer.save()
+    return Response(serializer.data, status=status.HTTP_201_CREATED)
 
-    return Response(data={'id': payment.id}, status=status.HTTP_201_CREATED)
+
+class ListPayView(generics.ListAPIView):
+    serializer_class = PaymentListSerializer
+
+    def get_queryset(self):
+        queryset = Payment.objects.filter(businessman=self.request.user).filter(refid__isnull=False)
+        return queryset
+

@@ -15,6 +15,7 @@ import os
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 from django.conf import settings
 from corsheaders.defaults import default_headers
+from django.utils import timezone
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -49,9 +50,15 @@ hcrTQYQs+QvhU9QitwIDAQAB
 -----END PUBLIC KEY-----"""
 
 
-REFRESH_TOKEN_EXP_DELTA = datetime.timedelta(days=1)
+REFRESH_TOKEN_EXP_DELTA = timezone.timedelta(days=1)
 
 PAGINATION_PAGE_NUM = 25
+
+FRONTEND_URL = "http://businesspine.ir"
+
+ACTIVATION_EXPIRE_DELTA = timezone.timedelta(days=30)
+ACTIVATION_ALLOW_REFRESH_DAYS_BEFORE_EXPIRE = timezone.timedelta(days=2)
+ACTIVATION_COST_IN_TOMANS = 1000
 
 SMS_PANEL = {
     'CUSTOMER_LINE': '10004000030003',
@@ -61,10 +68,12 @@ SMS_PANEL = {
     'API_KEY': '4D4C324E43416D726C65446D7258566A4F59697153444355734E4F4D6B382B57',
     'CUSTOMER_US_PREFIX': 'bp',
     'PID': 1422,
-    'MAX_MESSAGE_COST': 100, # this is used for credit validation before sending message
+    "MIN_CREDIT_CHARGE": 100,  # min amount that user can increase their credit in Tomans
+    "MAX_CREDIT_CHARGE": 10000,  # max amount that user can increase their credit in Tomans
+    'MAX_MESSAGE_COST': 100,  # this is used for credit validation before sending message
     'ENGLISH_MAX_CHARS': 612,
     'PERSIAN_MAX_CHARS': 268,
-    'TEMPLATE_MAX_CHARS': 160, #note: Don 't change this value. If you really want, change in SMSTemplate -> content -> max_length too
+    'TEMPLATE_MAX_CHARS': 160,  #note: Don 't change this value. If you really want, change in SMSTemplate -> content -> max_length too
     "SEND_PLAIN_CUSTOMERS_MAX_NUMBER": 3,
     "SEND_PLAIN_CUSTOMERS_PAGE_SIZE": 2,
     'SEND_TEMPLATE_MAX_CUSTOMERS': 5,
@@ -281,6 +290,6 @@ except ImportError:
 
 ZARINPAL={
     'url': 'https://www.zarinpal.com/pg/services/WebGate/wsdl',
-    "MERCHANT" : "7055b6ac-e6dc-11e9-99c1-000c295eb8fc",
-
+    "MERCHANT": "7055b6ac-e6dc-11e9-99c1-000c295eb8fc",
+    "FORWARD_LINK": "https://www.zarinpal.com/pg/StartPay/{}/ZarinGate",  # use this string with .format method
 }
