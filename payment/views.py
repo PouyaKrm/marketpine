@@ -3,12 +3,15 @@ from datetime import datetime
 
 import jdatetime
 from django.core.exceptions import ObjectDoesNotExist
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 
 from common.util.kavenegar_local import APIException
-from payment.exceptions import PaymentCreationFailedException, PaymentVerificationFailedException
+from payment.exceptions import PaymentCreationFailedException, PaymentVerificationFailedException, \
+    PaymentAlreadyVerifiedException, PaymentOperationFailedException
 from .models import PaymentTypes
 from django.http import HttpResponse
+from django.conf import settings
+
 from .models import Payment
 from .serializers import (SMSCreditPaymentCreationSerializer,
                           PanelActivationPaymentCreationSerializer,
@@ -21,14 +24,25 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework import status, generics, permissions
 
+
+frontend_url = settings.FRONTEND_URL
+
 def verify(request):
 
+
     current_time = datetime.now()
-    if request.GET.get('Status') != 'OK':
-        return render(request, "payment/payment-failed.html", {'current_time': current_time})
+    pay_status = request.GET.get('Status')
+
+    authority = request.GET.get('Authority')
+
+    if pay_status is None or authority is None:
+        return redirect(frontend_url)
+    if pay_status != 'OK':
+        return render(request, "payment/payment-failed.html", {'current_time': current_time,
+                                                               'frontend_url': frontend_url})
 
     try:
-        p = Payment.objects.get(authority=request.GET['Authority'])
+        p = Payment.objects.get(authority=authority)
         p.verify()
         local_pay_date = jdatetime.date.fromgregorian(date=p.verification_date).strftime("%y/%m/%d %H:%M")
 
@@ -42,12 +56,20 @@ def verify(request):
         return render(request, 'payment/activation-sucess.html',
                       {'payment': p,
                        'verification_date': local_pay_date,
-                       'current_time': current_time})
+                       'current_time': current_time,
+                       'frontend_url': frontend_url})
 
     except ObjectDoesNotExist:
         return HttpResponse('پرداختی با این شناسه وجود ندارد')
     except (PaymentVerificationFailedException, APIException) as e:
-        return render(request, "payment/payment-failed.html", {'current_time': current_time})
+        return render(request, "payment/payment-failed.html", {'current_time': current_time,
+                                                               'frontend_url': frontend_url})
+    except PaymentAlreadyVerifiedException:
+        return redirect(frontend_url)
+    except PaymentOperationFailedException:
+        return render(request, "payment/operation-failed.html", {'current_time': current_time,
+                                                                 'frontend_url': frontend_url})
+
 
 
 @api_view(['POST'])

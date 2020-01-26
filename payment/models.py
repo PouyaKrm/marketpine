@@ -1,7 +1,8 @@
 from django.db import models
 from django.utils import timezone
 
-from payment.exceptions import PaymentCreationFailedException, PaymentVerificationFailedException
+from payment.exceptions import PaymentCreationFailedException, PaymentVerificationFailedException, \
+    PaymentAlreadyVerifiedException, PaymentOperationFailedException
 from users.models import Businessman
 from zeep import Client
 from django.conf import settings
@@ -63,6 +64,9 @@ class Payment(models.Model):
         :return:
         """
 
+        if self.refid is not None:
+            raise PaymentAlreadyVerifiedException()
+
         merchant = setting_merchant
         client = Client(url)
         result = client.service.PaymentVerification(merchant, self.authority, self.amount)
@@ -72,7 +76,7 @@ class Payment(models.Model):
             self.refid = str(result.RefID)
             self.verification_date = timezone.now()
             self.save()
-        elif result.Status != 100 or result.Status != 101:
+        elif result.Status != 100:
             raise PaymentVerificationFailedException(result.Status)
 
     def verify(self):
@@ -84,20 +88,34 @@ class Payment(models.Model):
         :return:
         """
 
-        if self.payment_type == PaymentTypes.SMS:
-            self.businessman.smspanelinfo.increase_credit_in_tomans(self.amount)
-            self.__verify()
+        self.__verify()
 
-        elif self.payment_type == PaymentTypes.ACTIVATION:
-            active_date = timezone.now()
-            self.businessman.panel_activation_date = active_date
+        try:
+            if self.payment_type == PaymentTypes.SMS:
+                self.businessman.smspanelinfo.increase_credit_in_tomans(self.amount)
 
-            if self.businessman.panel_expiration_date is not None:
-                self.businessman.panel_expiration_date = self.businessman.panel_expiration_date + activation_expire_delta
-            else:
-                self.businessman.panel_expiration_date = active_date + activation_expire_delta
+            elif self.payment_type == PaymentTypes.ACTIVATION:
+                active_date = timezone.now()
+                self.businessman.panel_activation_date = active_date
 
-            self.businessman.save()
-            self.__verify()
+                if self.businessman.panel_expiration_date is not None:
+                    self.businessman.panel_expiration_date = self.businessman.panel_expiration_date + activation_expire_delta
+                else:
+                    self.businessman.panel_expiration_date = active_date + activation_expire_delta
+
+                self.businessman.save()
+
+        except Exception as e:
+            FailedPaymentOperation.objects.create(businessman=self.businessman, payment=self,
+                                                  payment_amount=self.amount, operation_type=self.payment_type)
+            raise PaymentOperationFailedException(self.payment_type, e)
 
 
+class FailedPaymentOperation(models.Model):
+
+    businessman = models.ForeignKey(Businessman, on_delete=models.PROTECT)
+    payment = models.OneToOneField(Payment, on_delete=models.PROTECT)
+    payment_amount = models.IntegerField()
+    operation_type = models.CharField(max_length=2, choices=Payment.payment_choices, default='0')
+    create_date = models.DateTimeField(auto_now_add=True)
+    is_fixed = models.BooleanField(default=False)
