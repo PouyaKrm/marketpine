@@ -155,4 +155,4 @@ class ClientManagement:
 
         if resp.status_code != 200:
             raise APIException(resp_data.status_code, resp_data['return']['message'])
-        return resp.status_code
+        return resp_data['entries']['remaincredit']

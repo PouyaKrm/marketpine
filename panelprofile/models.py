@@ -89,8 +89,8 @@ class SMSPanelInfo(models.Model):
         if amount <= 0 or amount < 1000:
             raise ValueError("amount must be positive and bigger that 1000 Rials")
         client = ClientManagement()
-        client.change_credit(amount, self.api_key, "افزایش اعتبار پنل اسمس")
-        self.credit += amount
+        new_credit = client.change_credit(amount, self.api_key, "افزایش اعتبار پنل اسمس")
+        self.credit = new_credit
         self.save()
 
 
