@@ -100,7 +100,9 @@ def panel_activation_payment(request):
 class ListPayView(generics.ListAPIView):
     serializer_class = PaymentListSerializer
 
+
     def get_queryset(self):
-        queryset = Payment.objects.filter(businessman=self.request.user).filter(refid__isnull=False)
+        queryset = Payment.objects.filter(businessman=self.request.user).filter(refid__isnull=False)\
+            .order_by('-verification_date')
         return queryset
 
