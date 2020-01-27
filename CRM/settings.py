@@ -74,10 +74,12 @@ SMS_PANEL = {
     'ENGLISH_MAX_CHARS': 612,
     'PERSIAN_MAX_CHARS': 268,
     'TEMPLATE_MAX_CHARS': 160,  #note: Don 't change this value. If you really want, change in SMSTemplate -> content -> max_length too
-    "SEND_PLAIN_CUSTOMERS_MAX_NUMBER": 3,
+    "SEND_PLAIN_CUSTOMERS_MAX_NUMBER": 3,  # allowed number of customer in selecting specific customer for plain send
     "SEND_PLAIN_CUSTOMERS_PAGE_SIZE": 2,
-    'SEND_TEMPLATE_MAX_CUSTOMERS': 5,
+    'SEND_TEMPLATE_MAX_CUSTOMERS': 5,  # allowed number of customer in selecting specific customer for template send
     'SEND_TEMPLATE_PAGE_SIZE': 2,
+    'MAX_ALLOWED_DEFINED_TEMPLATES': 7,  # defines how many sms templates that user can define
+    'MAX_ALLOWED_DEFINED_GROUPS': 7  # defines how many customer groups user can have
 }
 
 DOWNLOAD_SETTINGS = {

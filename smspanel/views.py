@@ -16,7 +16,11 @@ from rest_framework.response import Response
 from users.models import Customer, Businessman
 from .serializers import SMSTemplateSerializer, SendSMSSerializer, SentSMSRetrieveForCustomer, SendPlainSMSToAllSerializer, SendByTemplateSerializer, SendPlainToGroup, UnsentPlainSMSListSerializer, UnsentTemplateSMSListSerializer
 from .models import SMSTemplate, SentSMS
-from .permissions import HasValidCreditSendSMS, HasValidCreditSendSMSToAll, HasValidCreditResendPlainSMS, HasValidCreditResendTemplateSMS, HasValidCreditSendSMSToGroup
+from .permissions import (HasValidCreditSendSMS, HasValidCreditSendSMSToAll,
+                          HasValidCreditResendPlainSMS,
+                          HasValidCreditResendTemplateSMS,
+                          HasValidCreditSendSMSToGroup,
+                          HasValidDefinedTemplates)
 from common.util import paginators, jalali
 
 from .helpers import send_template_sms_message_to_all, SendSMSMessage
@@ -35,6 +39,8 @@ def send_message_failed_response(ex: APIException):
 class SMSTemplateCreateListAPIView(generics.ListAPIView, mixins.CreateModelMixin):
 
     serializer_class = SMSTemplateSerializer
+    pagination_class = None
+    permission_classes = [permissions.IsAuthenticated, HasValidDefinedTemplates]
 
     def get_serializer_context(self):
         return {'user': self.request.user}

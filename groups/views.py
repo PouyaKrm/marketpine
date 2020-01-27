@@ -6,17 +6,20 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from .models import BusinessmanGroups
 from .serializers import BusinessmanGroupsCreateListSerializer, BusinessmanGroupsRetrieveSerializer, CustomerSerializer
+from .permissions import HasValidDefinedGroups
 from common.util import paginators
 
 # Create your views here.
 
 
-class BusinessmanGroupsListAPIView(generics.ListAPIView, mixins.CreateModelMixin):
+class BusinessmanGroupsListCreateAPIView(generics.ListAPIView, mixins.CreateModelMixin):
 
     """
     Lists and create group for the user
     """
     serializer_class = BusinessmanGroupsCreateListSerializer
+    pagination_class = None
+    permission_classes = [permissions.IsAuthenticated, HasValidDefinedGroups]
 
     def get_queryset(self):
 

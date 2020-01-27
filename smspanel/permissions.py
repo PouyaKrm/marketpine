@@ -7,8 +7,23 @@ from rest_framework.request import Request
 
 from django.conf import settings
 
+
 english_sms_cost = settings.SMS_PANEL['MAX_MESSAGE_COST']
 send_plain_max_customers = settings.SMS_PANEL['SEND_PLAIN_CUSTOMERS_MAX_NUMBER']
+max_allowed_defined_templates = settings.SMS_PANEL['MAX_ALLOWED_DEFINED_TEMPLATES']
+
+
+class HasValidDefinedTemplates(permissions.BasePermission):
+
+    """
+    Checks that maximum number of defined sms templates is not reached.
+    """
+
+    message = f"حداکثر تعددا مجاز قالب ها {max_allowed_defined_templates} است، که شما به آن رسیده اید"
+
+    def has_permission(self, request: Request, view: View):
+        return request.user.smstemplate_set.all().count() < max_allowed_defined_templates
+
 
 class HasValidCreditSendSMS(permissions.BasePermission):
 

@@ -46,12 +46,19 @@ class BusinessmanProfileSerializer(serializers.ModelSerializer):
             'business_name',
             'date_joined',
             'authorized',
+            'panel_activation_date',
+            'panel_expiration_date',
             'auth_documents',
             'sms_panel_details',
         ]
 
-        extra_kwargs = {'username': {'read_only': True}, 'phone': {'read_only': True}, 'email': {'read_only': True},
-                        'authorized': {'read_only': True}, 'date_joined': {'read_only': True}}
+        extra_kwargs = {'username': {'read_only': True}, 'phone': {'read_only': True},
+                        'email': {'read_only': True},
+                        'authorized': {'read_only': True},
+                        'date_joined': {'read_only': True},
+                        'panel_activation_date': {'read_only': True},
+                        'panel_expiration_date': {'read_only': True}
+                        }
 
     def generate_link(self, path: str):
         request = self.context['request']
