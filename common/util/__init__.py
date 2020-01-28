@@ -1,5 +1,6 @@
 from enum import Enum
 from rest_framework_jwt.settings import api_settings
+from rest_framework.request import Request
 from strgen import StringGenerator
 import jwt
 
@@ -87,3 +88,8 @@ def get_client_ip(request):
     else:
         ip = request.META.get('REMOTE_ADDR')
     return ip
+
+
+def create_link(path: str, request: Request):
+    domain = request.META['HTTP_HOST']
+    return 'http://' + domain + path

@@ -35,7 +35,6 @@ from download import urls as download_url
 from payment import urls as payment_url
 from device import urls as device_url
 from content_marketing import urls as content_url
-
 schema_view = get_swagger_view(title='Pastebin API')
 
 urlpatterns = [
@@ -53,9 +52,9 @@ urlpatterns = [
     path('api/salesman/profile/', include(profile_url)),
     path('api/salesman/settings/', include(setiing_ulr)),
     path('api/download/', include(download_url)),
-    path('zarinpal/',include(payment_url)),
     path('api/salesman/device/',include(device_url)),
     path('api/salesman/content/',include(content_url)),
+    path('api/salesman/payment/', include(payment_url)),
 ]
 
 if settings.DEBUG:

@@ -6,16 +6,32 @@ from rest_framework.request import Request
 from rest_framework.reverse import reverse
 from rest_framework import serializers
 
+from payment.models import Payment
 from users.models import AuthStatus, Businessman
 from .models import SMSPanelInfo, BusinessmanAuthDocs
 from django.conf import settings
 from common.util.custom_validators import pdf_file_validator, validate_logo_size
-from common.util.sms_panel import ClientManagement
+from common.util.sms_panel.client import ClientManagement
+
+
+activation_alert_delta = settings.ACTIVATION_EXPIRE_DELTA
+
+
+class SMSPanelInfoSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = SMSPanelInfo
+        fields = [
+            'credit',
+            'sms_farsi_cost',
+            'status'
+        ]
 
 
 class BusinessmanProfileSerializer(serializers.ModelSerializer):
 
     auth_documents = serializers.SerializerMethodField(read_only=True)
+    sms_panel_details = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
 
@@ -31,6 +47,7 @@ class BusinessmanProfileSerializer(serializers.ModelSerializer):
             'date_joined',
             'authorized',
             'auth_documents',
+            'sms_panel_details',
         ]
 
         extra_kwargs = {'username': {'read_only': True}, 'phone': {'read_only': True}, 'email': {'read_only': True},
@@ -62,6 +79,12 @@ class BusinessmanProfileSerializer(serializers.ModelSerializer):
         return {'commitment_form': commitment_form_link, 'form': form_link,
                 'national_card': national_card_link, 'birth_certificate': birth_certificate_link}
 
+
+    def get_sms_panel_details(self, obj: Businessman):
+
+        serializer = SMSPanelInfoSerializer(obj.smspanelinfo)
+        return serializer.data
+
     def validate_email(self, value):
 
         user = self.context['user']
@@ -82,6 +105,9 @@ class BusinessmanProfileSerializer(serializers.ModelSerializer):
         instance.save()
 
         return instance
+
+
+
 
 
 class UploadImageSerializer(serializers.ModelSerializer):
@@ -174,27 +200,10 @@ class AuthSerializer(serializers.ModelSerializer):
 
 
         if hasattr(user, 'smspanelinfo'):
-
-            pass
-            # info = client_manage.fetch_user(user)
-            #
-            # user_info = user.smspanelinfo
-            #
-            # user_info.api_key = info.api_key
-            #
-            # user_info.credit = info.credit
-            # user_info.sms_farsi_cost = info.sms_farsi_cost
-            # user_info.sms_english_cost = info.sms_english_cost
-            #
-            # user_info.save()
-
-
-
+            user.smspanelinfo.update_panel_info()
         else:
-            pass
-            # info = client_manage.add_user(user, password)
-            # info.businessman = user
-            # info.save()
+            sms = SMSPanelInfo()
+            sms.create_sms_panel(user, password)
 
         BusinessmanAuthDocs.objects.create(businessman=user, **validated_data)
 
@@ -203,3 +212,4 @@ class AuthSerializer(serializers.ModelSerializer):
         user.save()
 
         return {**validated_data, 'password': password}
+

@@ -4,8 +4,9 @@ from .views import *
 app_name = "payment"
 
 urlpatterns = [
-    path('verify/', verify , name='verify'),
-    path('pay/',pay,name="pay"),
-    path('default_pay/',create_payment,name="default_pay"),
-    path('constant_pay/',create_fixamount_payment,name="constant_pay"),
+    path('', ListPayView.as_view()),
+    path('verify/', verify, name='verify'),
+    path('sms-panel/', create_payment_sms_credit),
+    path('panel-activate/', panel_activation_payment, name="constant_pay"),
 ]
+

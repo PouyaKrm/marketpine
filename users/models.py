@@ -26,6 +26,8 @@ class Businessman(AbstractUser):
     is_verified = models.BooleanField(default=False)
     AUTHORIZE_CHOICES = [('0', 'UNAUTHORIZED'), ('1', 'PENDING'), ('2', 'AUTHORIZED')]
     authorized = models.CharField(max_length=1, choices=AUTHORIZE_CHOICES, default='0')
+    panel_activation_date = models.DateTimeField(null=True)
+    panel_expiration_date = models.DateTimeField(null=True)
 
     def __str__(self):
         return self.username

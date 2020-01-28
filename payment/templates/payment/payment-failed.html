@@ -1,0 +1,16 @@
+{% extends "payment/base-payement.html" %}
+
+{% block title %}
+    پرداخت ناموفق
+{% endblock %}
+
+
+
+{% block card-title %}
+    <div class="text-danger text-center"><h4>پرداخت ناموفق</h4></div>
+{% endblock %}
+
+{% block result-text %}
+      پرداخت شما لغو یا با شکست مواجه شده. طی 72 ساعت آینده، وجه به حساب شما عودت
+    داده می شود. در غیر این صورت به بانک دارنده حساب مراجعه کنید.
+{% endblock %}
