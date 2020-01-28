@@ -19,8 +19,8 @@ class CommentAdmin(admin.ModelAdmin):
 admin.site.register(Comment,CommentAdmin)
 
 class LikeAdmin(admin.ModelAdmin):
-    list_display = ('post','customer')
+    list_display = ('id', 'post', 'customer')
     list_filter = ('post','customer')
-    # search_fields = ('customer', 'body')
+
 
 admin.site.register(Like,LikeAdmin)

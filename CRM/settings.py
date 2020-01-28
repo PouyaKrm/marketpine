@@ -90,7 +90,7 @@ DOWNLOAD_SETTINGS = {
 DEBUG = True
 
 ALLOWED_HOSTS = ['localhost']
-
+DOMAIN = "localhost:8000"
 
 # Application definition
 
@@ -222,8 +222,8 @@ AUTH_USER_MODEL = 'users.Businessman'
 
 REST_FRAMEWORK = {
 
-    # 'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
-    # 'PAGE_SIZE': 10,
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': PAGINATION_PAGE_NUM,
 
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.IsAuthenticated',
@@ -298,5 +298,12 @@ ZARINPAL={
 
 UPLOAD_VIDEO = {
     'MAX_SIZE_VIDEO': '50000000',
-    'ALLOWED_TYPES_VIDEO':['.mp4'],
+    'ALLOWED_TYPES_VIDEO': ['.mp4'],
+    'BASE_PATH': os.path.join(BASE_DIR, '..', 'videos/'),
+    'VIDEO_CONFIRM_MESSAGE': 'ویدیو شما با عنوان {title} تایید شد',
+    'VIDEO_REJECT_MESSAGE': 'ویدیو شما با عنوان {title} رد شد',
+    'VIDEO_PAGINATION_PAGE_SIZE': 5,
+    'BASE_URL': "/content/video/"
 }
+
+
