@@ -95,6 +95,7 @@ ALLOWED_HOSTS = ['localhost']
 # Application definition
 
 INSTALLED_APPS = [
+    'content_marketing',
     'device',
     'payment',
     'rest_framework',
@@ -118,7 +119,8 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'download',
-    'download.profiledownload'
+    'download.profiledownload',
+    'django_cleanup.apps.CleanupConfig',
 
 ]
 
@@ -205,9 +207,9 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 
-MEDIA_ROOT = os.path.join(BASE_DIR, '..', 'uploaded_media')
-MEDIA_URL = 'files/'
 MAX_LOGO_SIZE = 200000
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR,'..', 'uploaded_media/')
 
 AUTH_DOC = {
     'MAX_FORM_SIZE': 2000000,
@@ -292,4 +294,9 @@ ZARINPAL={
     'url': 'https://www.zarinpal.com/pg/services/WebGate/wsdl',
     "MERCHANT": "7055b6ac-e6dc-11e9-99c1-000c295eb8fc",
     "FORWARD_LINK": "https://www.zarinpal.com/pg/StartPay/{}/ZarinGate",  # use this string with .format method
+}
+
+UPLOAD_VIDEO = {
+    'MAX_SIZE_VIDEO': '50000000',
+    'ALLOWED_TYPES_VIDEO':['.mp4'],
 }
