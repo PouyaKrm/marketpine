@@ -92,4 +92,4 @@ def get_client_ip(request):
 
 def create_link(path: str, request: Request):
     domain = request.META['HTTP_HOST']
-    return 'http://' + domain + path
+    return request.scheme + "://" + domain + path

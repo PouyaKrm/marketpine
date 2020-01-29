@@ -1,6 +1,7 @@
 
 from users.models import Businessman
-from common.util.sms_panel.message import ClientBulkSMSMessage, ClientBulkToAllSMSMessage, ClientSMSMessage, ClientToAllCustomersSMSMessage
+from common.util.sms_panel.message import ClientBulkToCustomerSMSMessage, ClientBulkToAllToCustomerSMSMessage, \
+    ClientSMSMessage, ClientToAllCustomersSMSMessage, BulkMessageWithAdditionalContext
 from common.util.sms_panel.exceptions import SendSMSException
 from common.util.sms_panel.helpers import calculate_total_sms_cost
 from common.util.kavenegar_local import APIException
@@ -16,7 +17,7 @@ def send_template_sms_message_to_all(user: Businessman, template: str):
     This method send sms message to all customers and saves the record of them in the database.
     """
 
-    client_sms =ClientBulkToAllSMSMessage(user, template)
+    client_sms =ClientBulkToAllToCustomerSMSMessage(user, template)
 
     try:
         sent_messages = client_sms.send_bulk()
@@ -95,7 +96,7 @@ class SendSMSMessage():
 
     def send_by_template(self, user: Businessman, receiver_customers: QuerySet, message_template: str):
 
-        message_by_template = ClientBulkSMSMessage(user.smspanelinfo, receiver_customers, message_template)
+        message_by_template = ClientBulkToCustomerSMSMessage(user.smspanelinfo, receiver_customers, message_template)
 
 
         try:
@@ -116,7 +117,7 @@ class SendSMSMessage():
 
     def send_by_template_to_all(self, user: Businessman, template: str):
 
-        client_sms =ClientBulkToAllSMSMessage(user, template)
+        client_sms =ClientBulkToAllToCustomerSMSMessage(user, template)
 
         try:
             sent_messages = client_sms.send_bulk()
@@ -168,3 +169,22 @@ class SendSMSMessage():
             raise e
 
 
+    def send_video_upload_message(self, template: str, user: Businessman, **additional_context):
+
+        client_sms = BulkMessageWithAdditionalContext(user, template, additional_context)
+
+        try:
+            sent_messages = client_sms.send_bulk()
+        except SendSMSException as e:
+            self.create_unsent_template_sms(e, template, user, user.customers.all())
+            raise APIException(e.status, e.message)
+
+        while sent_messages is not None:
+            user.smspanelinfo.reduce_credit(calculate_total_sms_cost(sent_messages))
+            SentSMS.objects.bulk_create(
+                [SentSMS(businessman=user, message_id=m['messageid'], receptor=m['receptor']) for m in sent_messages])
+            try:
+                sent_messages = client_sms.send_bulk()
+            except SendSMSException as e:
+                self.create_unsent_template_sms(e, template, user, user.customers.all())
+                raise APIException(e.status, e.message)
