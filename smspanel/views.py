@@ -21,7 +21,7 @@ from common.util import paginators, jalali
 
 from .helpers import send_template_sms_message_to_all, SendSMSMessage
 
-from common.util.sms_panel.message import ClientBulkToAllSMSMessage
+from common.util.sms_panel.message import ClientBulkToAllToCustomerSMSMessage
 
 page_size = settings.PAGINATION_PAGE_NUM
 

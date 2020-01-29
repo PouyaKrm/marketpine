@@ -19,7 +19,19 @@ video_base_url = settings.UPLOAD_VIDEO['BASE_URL']
 video_storage = FileSystemStorage(location=upload_path, base_url=video_base_url)
 
 
+class PostConfirmationStatus:
+    REJECTED = '0'
+    ACCEPTED = '1'
+    PENDING = '2'
+
+
 class Post(models.Model):
+
+    confirmation_choices = (
+        (PostConfirmationStatus.REJECTED, "Rejected"),
+        (PostConfirmationStatus.ACCEPTED, "Accepted"),
+        (PostConfirmationStatus.PENDING, "Pending")
+    )
 
     def get_upload_path(self, filename):
         now = timezone.now()
@@ -27,11 +39,12 @@ class Post(models.Model):
 
     businessman = models.ForeignKey(Businessman, on_delete=models.CASCADE)
     videofile = models.FileField(storage=video_storage, upload_to=get_upload_path, null=False, blank=False, max_length=254)
+    video_url = models.URLField(null=True)
     title = models.CharField(max_length=255, blank=False, null=False)
     description = models.TextField(blank=True, null=True)
     creation_date = models.DateTimeField(auto_now_add=True)
     modification_date = models.DateTimeField(auto_now=True)
-    is_confirmed = models.BooleanField(default=False)
+    confirmation_status = models.CharField(max_length=1, choices=confirmation_choices, default=PostConfirmationStatus.PENDING)
     # is_active = models.BooleanField(default=False)
 
     def __str__(self):
@@ -57,14 +70,18 @@ def send_message_video_is_confirmed(sender, instance: Post, *args, **kwargs):
     messenger = SystemSMSMessage()
     try:
         obj = Post.objects.get(id=instance.id)
-        if obj.is_confirmed != instance.is_confirmed and instance.is_confirmed:
-            messenger.send_message(instance.businessman.phone, video_confirm_message.format(title=instance.title))
-        elif obj.is_confirmed != instance.is_confirmed and not instance.is_confirmed:
-            messenger.send_message(instance.businessman.phone, video_reject_message.format(title=instance.title))
+
+        if obj.confirmation_status != instance.confirmation_status:
+            if instance.confirmation_status is PostConfirmationStatus.ACCEPTED:
+                messenger.send_message(instance.businessman.phone, video_confirm_message.format(title=instance.title))
+            elif instance.confirmation_status is PostConfirmationStatus.REJECTED:
+                messenger.send_message(instance.businessman.phone, video_reject_message.format(title=instance.title))
+
     except ObjectDoesNotExist:
         return
     except (APIException, HTTPException):
         return
+
 
 class Comment(models.Model):
     post = models.ForeignKey(Post,on_delete=models.CASCADE, related_name='comments')
@@ -80,7 +97,7 @@ class Comment(models.Model):
 
 
 class Like(models.Model):
-    post = models.ForeignKey(Post,on_delete=models.CASCADE, related_name='likes')
+    post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name='likes')
     customer = models.ForeignKey(Customer,on_delete=models.CASCADE)
     creation_date = models.DateTimeField(auto_now_add=True)
 
@@ -90,3 +107,12 @@ class Like(models.Model):
 
     def __str__(self):
         return 'like by {}'.format(self.customer)
+
+
+class ContentMarketingSettings(models.Model):
+
+    businessman = models.OneToOneField(Businessman, on_delete=models.PROTECT, related_name="content_marketing_settings")
+    message_template = models.CharField(max_length=260, default="")
+    send_video_upload_message = models.BooleanField(default=False)
+
+

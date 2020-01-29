@@ -24,9 +24,11 @@ def render_template(template: str, context: dict):
     return template.render(context)
 
 
-def render_template_with_customer_data(template: str, customer: Customer):
+def render_template_with_customer_data(template: str, customer: Customer, **kwargs):
 
-    return render_template(template, get_template_context(customer))
+    context = get_template_context(customer)
+    context.update(kwargs)
+    return render_template(template, context)
 
 
 class CustomerTemplate:

@@ -6,18 +6,20 @@ from rest_framework.views import APIView
 from .models import Post
 from django.conf import settings
 from rest_framework.response import Response
-from rest_framework import status
+from rest_framework import status, permissions
 from rest_framework.parsers import FileUploadParser
 from rest_framework.decorators import api_view
-from rest_framework.generics import CreateAPIView, ListAPIView
-from rest_framework.mixins import ListModelMixin
+from rest_framework.generics import CreateAPIView, ListAPIView, RetrieveAPIView
+from rest_framework.mixins import ListModelMixin, CreateModelMixin, UpdateModelMixin
 from django.shortcuts import get_object_or_404
 from users.models import Customer
 
 from .serializers import (UploadListPostSerializer, DetailPostSerializer,
                           CommentSerializer, DetailLikeSerializer,
                           SetCommentSerializer, SetLikeSerializer,
+                          ContentMarketingCreateRetrieveSerializer
                           )
+from .permissions import DoesNotHavePendingPost, HasValidCreditForVideoUploadMessage
 
 video_page_size = settings.UPLOAD_VIDEO['VIDEO_PAGINATION_PAGE_SIZE']
 
@@ -64,6 +66,7 @@ def detail_like_post(request, post_id):
 class PostCreateListAPIView(CreateAPIView, ListModelMixin):
     parser_class = (FileUploadParser,)
     serializer_class = UploadListPostSerializer
+    permission_classes = [permissions.IsAuthenticated, DoesNotHavePendingPost, HasValidCreditForVideoUploadMessage]
     pagination_class = PageNumberPagination
     pagination_class.page_size = video_page_size
 
@@ -103,4 +106,20 @@ class PostCommentListApiView(ListAPIView):
             return post.comments.all()
         except ObjectDoesNotExist:
             raise NotFound()
+
+
+class ContentMarketingSettingsCreateUpdateRetrieveAPIView(RetrieveAPIView, UpdateModelMixin):
+
+    serializer_class = ContentMarketingCreateRetrieveSerializer
+
+    def get_serializer_context(self):
+        return {'user': self.request.user}
+
+    def get_object(self):
+        if not hasattr(self.request.user, 'content_marketing_settings'):
+            return None
+        return self.request.user.content_marketing_settings
+
+    def put(self, request, *args, **kwargs):
+        return self.update(request, *args, **kwargs)
 

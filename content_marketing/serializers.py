@@ -1,12 +1,15 @@
+from django.db.models.base import Model
+from django.template import TemplateSyntaxError
 from django.urls import path
 from rest_framework import serializers
 
 from common.util import create_link
-from .models import Post , Comment , Like
+from .models import Post , Comment , Like, ContentMarketingSettings
 from common.util.file_validators import validate_upload_video_size , validate_file_extension
-from users.models import Businessman,Customer
-from common.util.custom_validators import phone_validator
+from common.util.custom_templates import get_fake_context, render_template
+from django.conf import settings
 
+template_max_chars = settings.SMS_PANEL['TEMPLATE_MAX_CHARS']
 
 class UploadListPostSerializer(serializers.ModelSerializer):
     """serializer for Post app """
@@ -27,7 +30,7 @@ class UploadListPostSerializer(serializers.ModelSerializer):
             'title',
             'description',
             'videofile',
-            'is_confirmed',
+            'confirmation_status',
             'video',
             'likes_total',
             'comments_total'
@@ -53,7 +56,10 @@ class UploadListPostSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         request = self.context['request']
 
-        return Post.objects.create(businessman=request.user, is_confirmed=False, **validated_data)
+        post = Post.objects.create(businessman=request.user, **validated_data)
+        post.video_url = create_link(post.videofile.url, request)
+        post.save()
+        return post
 
 
 class CommentSerializer(serializers.ModelSerializer):
@@ -113,10 +119,10 @@ class SetLikeSerializer(serializers.ModelSerializer):
     #     if len(post) > 0:
     #         raise serializers.ValidationError('پستی با این id وجود ندارد.')
     #     return value
-    def validate(self,value):
+    def validate(self, value):
         post = self.context['post']
         customer = self.context['customer']
-        if post.likes.filter(customer = customer).count() > 0:
+        if post.likes.filter(customer=customer).count() > 0:
             raise serializers.ValidationError('مشتری از قبل این پست را لایک کرده است.')
 
         return value
@@ -143,4 +149,50 @@ class SetCommentSerializer(serializers.ModelSerializer):
         return Comment.objects.create(post = post,
                                       customer = customer,
                                       **validated_data
-                                     )
+                                      )
+
+
+class ContentMarketingCreateRetrieveSerializer(serializers.ModelSerializer):
+
+    message_template = serializers.CharField(min_length=5, max_length=template_max_chars, required=True)
+
+    class Meta:
+        model = ContentMarketingSettings
+        fields = [
+            'message_template',
+            'send_video_upload_message'
+        ]
+
+        extra_kwargs = {'send_video_upload_message': {'required': True}}
+
+    def validate_message_template(self, value):
+
+        context = get_fake_context(self.context['user'])
+        context.update(title='test title', link="http://testlink.com")
+
+        try:
+            render_template(value, context)
+        except TemplateSyntaxError:
+            raise serializers.ValidationError('قالب غیر مجاز')
+
+        return value
+
+
+    def create(self, validated_data: dict):
+
+        user = self.context['user']
+
+        return ContentMarketingSettings.objects.create(businessman=user, **validated_data)
+
+    def update(self, instance: Model, validated_data: dict):
+
+        user = self.context['user']
+
+        if not hasattr(user, 'content_marketing_settings'):
+            return self.create(validated_data)
+
+        for k, v in validated_data.items():
+            setattr(instance, k, v)
+
+        instance.save()
+        return instance

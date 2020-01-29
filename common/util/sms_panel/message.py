@@ -174,7 +174,7 @@ class ClientToAllCustomersSMSMessage(ClientSMSMessage):
         
 
 
-class ClientBulkSMSMessage(ClientSMSMessage):
+class ClientBulkToCustomerSMSMessage(ClientSMSMessage):
 
     """
     A class to send several different messages to different recievers.
@@ -262,7 +262,7 @@ class ClientBulkSMSMessage(ClientSMSMessage):
         except APIException as e:
             raise SendSMSException(e.status, e.message, first_receiver, self._last_customer)
 
-class ClientBulkToAllSMSMessage(ClientBulkSMSMessage):
+class ClientBulkToAllToCustomerSMSMessage(ClientBulkToCustomerSMSMessage):
 
     """
     A class to send several different messages to different recievers.
@@ -385,4 +385,14 @@ class ClientBulkTemplateSMSMessage(ClientSMSMessage):
             params = self.give_message_params()
 
 
+class BulkMessageWithAdditionalContext(ClientBulkToAllToCustomerSMSMessage):
+
+    def __init__(self, businessman, template, additional_context: dict):
+
+        super().__init__(businessman, template)
+        self.__additional_context = additional_context
+
+    def _render_messages(self, customers: list):
+
+        return [render_template_with_customer_data(self._template, c, **self.__additional_context) for c in customers]
 

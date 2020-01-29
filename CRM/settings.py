@@ -303,7 +303,7 @@ UPLOAD_VIDEO = {
     'VIDEO_CONFIRM_MESSAGE': 'ویدیو شما با عنوان {title} تایید شد',
     'VIDEO_REJECT_MESSAGE': 'ویدیو شما با عنوان {title} رد شد',
     'VIDEO_PAGINATION_PAGE_SIZE': 5,
-    'BASE_URL': "/content/video/"
+    'BASE_URL': "/content/video/",
 }
 
 
