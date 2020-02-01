@@ -1,3 +1,4 @@
+import os
 from enum import Enum
 from rest_framework_jwt.settings import api_settings
 from rest_framework.request import Request
@@ -92,4 +93,13 @@ def get_client_ip(request):
 
 def create_link(path: str, request: Request):
     domain = request.META['HTTP_HOST']
-    return 'http://' + domain + path
+    return request.scheme + "://" + domain + path
+
+
+def get_file_extension(filename: str):
+    """
+    This takes file extension of the file with beginning '.' of it.
+    :param filename: name of the file
+    :return: file extension in format '.extension'
+    """
+    return os.path.splitext(filename)[1]

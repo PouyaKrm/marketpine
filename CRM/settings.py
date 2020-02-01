@@ -92,7 +92,7 @@ DOWNLOAD_SETTINGS = {
 DEBUG = True
 
 ALLOWED_HOSTS = ['localhost']
-
+DOMAIN = "localhost:8000"
 
 # Application definition
 
@@ -298,7 +298,16 @@ ZARINPAL={
     "FORWARD_LINK": "https://www.zarinpal.com/pg/StartPay/{}/ZarinGate",  # use this string with .format method
 }
 
-UPLOAD_VIDEO = {
+CONTENT_MARKETING = {
     'MAX_SIZE_VIDEO': '50000000',
-    'ALLOWED_TYPES_VIDEO':['.mp4'],
+    'ALLOWED_TYPES_VIDEO': ['.mp4'],
+    'BASE_PATH': os.path.join(BASE_DIR, '..', 'videos/'),
+    'VIDEO_CONFIRM_MESSAGE': 'ویدیو شما با عنوان {title} تایید شد',
+    'VIDEO_REJECT_MESSAGE': 'ویدیو شما با عنوان {title} رد شد',
+    'VIDEO_PAGINATION_PAGE_SIZE': 5,
+    'BASE_URL': "/content/video/",
+    'THUMBNAIL_MAX_NAME_CHARS': 200,
+    'THUMBNAIL_MAX_SIZE': 10000000
 }
+
+

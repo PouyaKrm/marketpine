@@ -6,6 +6,10 @@ from django.conf import settings
 from langdetect import detect
 
 
+def validate_file_size(file, size: int):
+    return file.size < size
+
+
 def phone_validator(value):
 
     result = re.match("^(\\+98|0)9\\d{9}$", value)
@@ -57,4 +61,5 @@ def pdf_file_validator(value):
     ext = os.path.splitext(value.name)[1]
     if not ext.lower() in ".pdf":
         raise ValidationError('invalid file type (pdf is supported)')
+
 
