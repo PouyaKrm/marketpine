@@ -21,7 +21,7 @@ from .serializers import (UploadListPostSerializer, DetailPostSerializer,
                           )
 from .permissions import DoesNotHavePendingPost, HasValidCreditForVideoUploadMessage
 
-video_page_size = settings.UPLOAD_VIDEO['VIDEO_PAGINATION_PAGE_SIZE']
+video_page_size = settings.CONTENT_MARKETING['VIDEO_PAGINATION_PAGE_SIZE']
 
 
 @api_view(['POST'])
