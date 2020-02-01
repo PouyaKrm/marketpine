@@ -1,15 +1,48 @@
+import os
+
 from django.db.models.base import Model
 from django.template import TemplateSyntaxError
-from django.urls import path
 from rest_framework import serializers
 
 from common.util import create_link
 from .models import Post , Comment , Like, ContentMarketingSettings
-from common.util.file_validators import validate_upload_video_size , validate_file_extension
 from common.util.custom_templates import get_fake_context, render_template
 from django.conf import settings
 
+from common.util.custom_validators import validate_file_size
+
 template_max_chars = settings.SMS_PANEL['TEMPLATE_MAX_CHARS']
+thumbnail_max_chars = settings.CONTENT_MARKETING['THUMBNAIL_MAX_NAME_CHARS']
+thumbnail_max_size = settings.CONTENT_MARKETING['THUMBNAIL_MAX_SIZE']
+
+
+
+
+def validate_upload_video_size (file):
+    if not validate_file_size(file, int(settings.CONTENT_MARKETING.get("MAX_SIZE_VIDEO"))):
+        raise serializers.ValidationError(
+        '({MAX_SIZE_VIDEO} byte.اندازه ویدیو بیشتر از حد مجاز است.(حداکثر مجاز می باشد'.format(
+        max_size_video =settings.CONTENT_MARKETING.get("MAX_SIZE_VIDEO")
+        ))
+
+    return file
+
+
+def validate_video_file_extension(file):
+    ext = os.path.splitext(file.name)[1]
+    valid_extensions = settings.CONTENT_MARKETING.get("ALLOWED_TYPES_VIDEO")
+    if not ext.lower() in valid_extensions:
+        raise serializers.ValidationError(u'Unsupported file extension.')
+    else:
+        return file
+
+
+def validate_thumbnail_file_size(file):
+    if not validate_file_size(file, thumbnail_max_size):
+        raise serializers.ValidationError('اندازه لوگو بیش از حد مجاز است. حداکثر اندازه bytes {}'
+                                          .format(thumbnail_max_size)
+                                          )
+
 
 class UploadListPostSerializer(serializers.ModelSerializer):
     """serializer for Post app """
@@ -17,11 +50,15 @@ class UploadListPostSerializer(serializers.ModelSerializer):
 
     videofile = serializers.FileField(max_length=254, write_only=True, validators=[
                                                         validate_upload_video_size,
-                                                        validate_file_extension,
+                                                        validate_video_file_extension,
                                                         ])
-    video = serializers.SerializerMethodField(read_only=True)
+    video_link = serializers.SerializerMethodField(read_only=True)
+    mobile_thumbnail_link = serializers.SerializerMethodField(read_only=True)
     likes_total = serializers.SerializerMethodField(read_only=True)
     comments_total = serializers.SerializerMethodField(read_only=True)
+    title = serializers.CharField(min_length=5, max_length=40)
+    mobile_thumbnail = serializers.ImageField(max_length=thumbnail_max_chars, required=True, write_only=True,
+                                              validators=[validate_thumbnail_file_size])
 
     class Meta:
         model = Post
@@ -31,7 +68,9 @@ class UploadListPostSerializer(serializers.ModelSerializer):
             'description',
             'videofile',
             'confirmation_status',
-            'video',
+            'video_link',
+            'mobile_thumbnail_link',
+            'mobile_thumbnail',
             'likes_total',
             'comments_total'
         ]
@@ -42,9 +81,12 @@ class UploadListPostSerializer(serializers.ModelSerializer):
                         }
 
 
-    def get_video(self, obj: Post):
+    def get_video_link(self, obj: Post):
 
         return create_link(obj.videofile.url, self.context['request'])
+
+    def get_mobile_thumbnail_link(self, obj: Post):
+        return create_link(obj.mobile_thumbnail.url, self.context['request'])
 
     def get_likes_total(self, obj):
         return obj.likes.count()
@@ -196,3 +238,6 @@ class ContentMarketingCreateRetrieveSerializer(serializers.ModelSerializer):
 
         instance.save()
         return instance
+
+
+
