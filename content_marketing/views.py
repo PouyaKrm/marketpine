@@ -19,7 +19,7 @@ from .serializers import (UploadListPostSerializer, DetailPostSerializer,
                           SetCommentSerializer, SetLikeSerializer,
                           ContentMarketingCreateRetrieveSerializer
                           )
-from .permissions import DoesNotHavePendingPost, HasValidCreditForVideoUploadMessage
+from .permissions import DoesNotHavePendingPostForUpload, HasValidCreditForVideoUploadMessage
 
 video_page_size = settings.CONTENT_MARKETING['VIDEO_PAGINATION_PAGE_SIZE']
 
@@ -66,7 +66,10 @@ def detail_like_post(request, post_id):
 class PostCreateListAPIView(CreateAPIView, ListModelMixin):
     parser_class = (FileUploadParser,)
     serializer_class = UploadListPostSerializer
-    permission_classes = [permissions.IsAuthenticated, DoesNotHavePendingPost, HasValidCreditForVideoUploadMessage]
+    permission_classes = [permissions.IsAuthenticated,
+                          DoesNotHavePendingPostForUpload,
+                          HasValidCreditForVideoUploadMessage
+                          ]
     pagination_class = PageNumberPagination
     pagination_class.page_size = video_page_size
 
@@ -84,7 +87,7 @@ class PostRetrieveDeleteAPIView(APIView):
 
     def get(self, request, post_id):
         post = get_object_or_404(Post, pk=post_id)
-        serializer = DetailPostSerializer(post)
+        serializer = DetailPostSerializer(post, context={'request': request})
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def delete(self, request, post_id):

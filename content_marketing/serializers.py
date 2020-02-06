@@ -5,7 +5,7 @@ from django.template import TemplateSyntaxError
 from rest_framework import serializers
 
 from common.util import create_link
-from .models import Post , Comment , Like, ContentMarketingSettings
+from .models import Post, Comment, Like, ContentMarketingSettings
 from common.util.custom_templates import get_fake_context, render_template
 from django.conf import settings
 
@@ -16,14 +16,12 @@ thumbnail_max_chars = settings.CONTENT_MARKETING['THUMBNAIL_MAX_NAME_CHARS']
 thumbnail_max_size = settings.CONTENT_MARKETING['THUMBNAIL_MAX_SIZE']
 
 
-
-
-def validate_upload_video_size (file):
+def validate_upload_video_size(file):
     if not validate_file_size(file, int(settings.CONTENT_MARKETING.get("MAX_SIZE_VIDEO"))):
         raise serializers.ValidationError(
-        '({MAX_SIZE_VIDEO} byte.اندازه ویدیو بیشتر از حد مجاز است.(حداکثر مجاز می باشد'.format(
-        max_size_video =settings.CONTENT_MARKETING.get("MAX_SIZE_VIDEO")
-        ))
+            '({MAX_SIZE_VIDEO} byte.اندازه ویدیو بیشتر از حد مجاز است.(حداکثر مجاز می باشد'.format(
+                max_size_video=settings.CONTENT_MARKETING.get("MAX_SIZE_VIDEO")
+            ))
 
     return file
 
@@ -44,45 +42,25 @@ def validate_thumbnail_file_size(file):
                                           )
 
 
-class UploadListPostSerializer(serializers.ModelSerializer):
-    """serializer for Post app """
-
-
-    videofile = serializers.FileField(max_length=254, write_only=True, validators=[
-                                                        validate_upload_video_size,
-                                                        validate_video_file_extension,
-                                                        ])
+class BasePostSerializer(serializers.ModelSerializer):
     video_link = serializers.SerializerMethodField(read_only=True)
     mobile_thumbnail_link = serializers.SerializerMethodField(read_only=True)
     likes_total = serializers.SerializerMethodField(read_only=True)
     comments_total = serializers.SerializerMethodField(read_only=True)
-    title = serializers.CharField(min_length=5, max_length=40)
-    mobile_thumbnail = serializers.ImageField(max_length=thumbnail_max_chars, required=True, write_only=True,
-                                              validators=[validate_thumbnail_file_size])
 
     class Meta:
         model = Post
         fields = [
             'id',
-            'title',
-            'description',
-            'videofile',
-            'confirmation_status',
             'video_link',
             'mobile_thumbnail_link',
-            'mobile_thumbnail',
             'likes_total',
-            'comments_total'
+            'comments_total',
         ]
-        extra_kwargs = {'id': {'read_only': True},
-                        'videofile': {'required': True},
-                        'title': {'required': True},
-                        'description': {'required': True}
-                        }
 
+        extra_kwargs = {'id': {'read_only': True}}
 
     def get_video_link(self, obj: Post):
-
         return create_link(obj.videofile.url, self.context['request'])
 
     def get_mobile_thumbnail_link(self, obj: Post):
@@ -94,6 +72,38 @@ class UploadListPostSerializer(serializers.ModelSerializer):
     def get_comments_total(self, obj):
         return obj.comments.count()
 
+    @staticmethod
+    def serializer_fields():
+        return BasePostSerializer.Meta.fields
+
+
+class UploadListPostSerializer(BasePostSerializer):
+    """serializer for Post app """
+
+    videofile = serializers.FileField(max_length=254, write_only=True, validators=[
+        validate_upload_video_size,
+        validate_video_file_extension,
+    ])
+
+    title = serializers.CharField(min_length=5, max_length=100)
+    mobile_thumbnail = serializers.ImageField(max_length=thumbnail_max_chars, required=True, write_only=True,
+                                              validators=[validate_thumbnail_file_size])
+    description = serializers.CharField(min_length=20, max_length=1000)
+
+    class Meta(BasePostSerializer.Meta):
+        fields = BasePostSerializer.serializer_fields() + [
+            'title',
+            'description',
+            'videofile',
+            'confirmation_status',
+            'mobile_thumbnail',
+        ]
+        extra_kwargs = {'id': {'read_only': True},
+                        'videofile': {'required': True},
+                        'title': {'required': True},
+                        'description': {'required': True},
+                        'confirmation_status': {'read_only': True}
+                        }
 
     def create(self, validated_data):
         request = self.context['request']
@@ -105,7 +115,6 @@ class UploadListPostSerializer(serializers.ModelSerializer):
 
 
 class CommentSerializer(serializers.ModelSerializer):
-
     customer = serializers.StringRelatedField()
 
     class Meta:
@@ -119,36 +128,27 @@ class CommentSerializer(serializers.ModelSerializer):
         extra_kwargs = {'id': {'read_only': True}}
 
 
-class DetailPostSerializer(serializers.ModelSerializer):
-
-    class Meta:
-        model = Post
-        fields = [
-            'id',
+class DetailPostSerializer(BasePostSerializer):
+    class Meta(BasePostSerializer.Meta):
+        fields = BasePostSerializer.serializer_fields() + [
             'title',
             'description',
-            'videofile',
-            'businessman'
         ]
-        extra_kwargs = {'id': {'read_only': True},
-                       }
-
 
 
 class DetailLikeSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = Like
         fields = '__all__'
         extra_kwargs = {'id': {'read_only': True},
                         }
 
-class SetLikeSerializer(serializers.ModelSerializer):
 
+class SetLikeSerializer(serializers.ModelSerializer):
     class Meta:
         model = Like
         fields = '__all__'
-        read_only_fields = ('id','post','customer',)
+        read_only_fields = ('id', 'post', 'customer',)
 
     # def validate_customer(self,value):
     #     customer = self.context['customer']
@@ -172,30 +172,29 @@ class SetLikeSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         post = self.context['post']
         customer = self.context['customer']
-        return Like.objects.create(post = post,
-                                   customer = customer,
-                                  )
+        return Like.objects.create(post=post,
+                                   customer=customer,
+                                   )
+
 
 class SetCommentSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = Comment
         fields = '__all__'
         extra_kwargs = {'body': {'required': True},
-                       }
-        read_only_fields = ('id','post','customer',)
+                        }
+        read_only_fields = ('id', 'post', 'customer',)
 
     def create(self, validated_data):
         post = self.context['post']
         customer = self.context['customer']
-        return Comment.objects.create(post = post,
-                                      customer = customer,
+        return Comment.objects.create(post=post,
+                                      customer=customer,
                                       **validated_data
                                       )
 
 
 class ContentMarketingCreateRetrieveSerializer(serializers.ModelSerializer):
-
     message_template = serializers.CharField(min_length=5, max_length=template_max_chars, required=True)
 
     class Meta:
@@ -219,7 +218,6 @@ class ContentMarketingCreateRetrieveSerializer(serializers.ModelSerializer):
 
         return value
 
-
     def create(self, validated_data: dict):
 
         user = self.context['user']
@@ -238,6 +236,3 @@ class ContentMarketingCreateRetrieveSerializer(serializers.ModelSerializer):
 
         instance.save()
         return instance
-
-
-

@@ -80,9 +80,9 @@ def send_message_video_is_confirmed(sender, instance: Post, *args, **kwargs):
 
         if obj.confirmation_status != instance.confirmation_status:
             if instance.confirmation_status is PostConfirmationStatus.ACCEPTED:
-                messenger.send_message(instance.businessman.phone, video_confirm_message.format(title=instance.title))
+                messenger.send_message(instance.businessman.phone, video_confirm_message)
             elif instance.confirmation_status is PostConfirmationStatus.REJECTED:
-                messenger.send_message(instance.businessman.phone, video_reject_message.format(title=instance.title))
+                messenger.send_message(instance.businessman.phone, video_reject_message)
 
     except ObjectDoesNotExist:
         return
