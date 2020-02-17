@@ -86,9 +86,13 @@ class PostCreateListAPIView(CreateAPIView, ListModelMixin):
 class PostRetrieveDeleteAPIView(APIView):
 
     def get(self, request, post_id):
-        post = get_object_or_404(Post, pk=post_id)
+        try:
+            post = request.user.post_set.get(id=post_id)
+        except ObjectDoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
         serializer = DetailPostSerializer(post, context={'request': request})
         return Response(serializer.data, status=status.HTTP_200_OK)
+
 
     def delete(self, request, post_id):
         try:

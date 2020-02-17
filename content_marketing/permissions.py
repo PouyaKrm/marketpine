@@ -11,8 +11,8 @@ class DoesNotHavePendingPostForUpload(permissions.BasePermission):
     message = 'شما یک محتوای منتظر تایید دارید و نمی توانید محتوای دیگری ارسال کنید'
 
     def has_permission(self, request: Request, view: View):
-        if request.method != 'POST':
-            return True
+        # if request.method != 'POST':
+        return True
         return not request.user.post_set.filter(confirmation_status=PostConfirmationStatus.PENDING).exists()
 
 

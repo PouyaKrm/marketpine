@@ -1,17 +1,18 @@
 import os
 
 from django.db.models.base import Model
+from django.core import validators
 from django.template import TemplateSyntaxError
 from rest_framework import serializers
 
-from common.util import create_link
+from common.util import create_link, create_field_error
 from .models import Post, Comment, Like, ContentMarketingSettings
-from common.util.custom_templates import get_fake_context, render_template
+from common.util.custom_templates import get_fake_context, render_template, get_template_context
 from django.conf import settings
 
 from common.util.custom_validators import validate_file_size
 
-template_max_chars = settings.SMS_PANEL['TEMPLATE_MAX_CHARS']
+template_max_chars = settings.CONTENT_MARKETING['NOTIF_TEMPLATE_MAX_CHARS']
 thumbnail_max_chars = settings.CONTENT_MARKETING['THUMBNAIL_MAX_NAME_CHARS']
 thumbnail_max_size = settings.CONTENT_MARKETING['THUMBNAIL_MAX_SIZE']
 
@@ -88,7 +89,10 @@ class UploadListPostSerializer(BasePostSerializer):
     title = serializers.CharField(min_length=5, max_length=100)
     mobile_thumbnail = serializers.ImageField(max_length=thumbnail_max_chars, required=True, write_only=True,
                                               validators=[validate_thumbnail_file_size])
-    description = serializers.CharField(min_length=20, max_length=1000)
+    description = serializers.CharField(min_length=20, max_length=5000)
+    customer_notif_message_template = serializers.CharField(max_length=template_max_chars, required=False)
+    send_notif_sms = serializers.BooleanField(required=True)
+    send_notif_pwa = serializers.BooleanField(required=True)
 
     class Meta(BasePostSerializer.Meta):
         fields = BasePostSerializer.serializer_fields() + [
@@ -97,6 +101,9 @@ class UploadListPostSerializer(BasePostSerializer):
             'videofile',
             'confirmation_status',
             'mobile_thumbnail',
+            'customer_notif_message_template',
+            'send_notif_sms',
+            'send_notif_pwa'
         ]
         extra_kwargs = {'id': {'read_only': True},
                         'videofile': {'required': True},
@@ -105,6 +112,26 @@ class UploadListPostSerializer(BasePostSerializer):
                         'confirmation_status': {'read_only': True}
                         }
 
+    def validate(self, attrs):
+        sms_notif = attrs.get('send_notif_sms')
+        pwa_notif = attrs.get('send_notif_pwa')
+        template = attrs.get('customer_notif_message_template')
+        request = self.context['request']
+        if not sms_notif and not pwa_notif:
+            return attrs
+
+        if template is None:
+            raise serializers.ValidationError(create_field_error('customer_notif_message_template', ['template is required']))
+        elif len(template) < 5:
+            raise serializers.ValidationError(create_field_error('customer_notif_message_template',
+                                                                 ['templace length must be bigger than 5 characters']))
+
+        try:
+            render_template(template, get_fake_context(request.user))
+        except TemplateSyntaxError:
+            raise serializers.ValidationError(create_field_error('customer_notif_message_template', ['فرمت غالب اشتباه است']))
+        return attrs
+
     def create(self, validated_data):
         request = self.context['request']
 
@@ -112,6 +139,15 @@ class UploadListPostSerializer(BasePostSerializer):
         post.video_url = create_link(post.videofile.url, request)
         post.save()
         return post
+
+    # def update(self, instance: Post, validated_data: dict):
+    #
+    #     request = self.context['request']
+    #
+    #     instance.save(**validated_data)
+    #     instance.video_url = create_link(instance.videofile.url, request)
+    #     instance.save()
+    #     return instance
 
 
 class CommentSerializer(serializers.ModelSerializer):

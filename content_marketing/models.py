@@ -52,7 +52,9 @@ class Post(models.Model):
     creation_date = models.DateTimeField(auto_now_add=True)
     modification_date = models.DateTimeField(auto_now=True)
     confirmation_status = models.CharField(max_length=1, choices=confirmation_choices, default=PostConfirmationStatus.PENDING)
-    # is_active = models.BooleanField(default=False)
+    customer_notif_message_template = models.CharField(max_length=260, null=True)
+    send_notif_sms = models.BooleanField(default=False)
+    send_notif_pwa = models.BooleanField(default=False)
 
     def __str__(self):
         return "id:{}, title:{} , businessman:{}".format(self.id, self.title, self.businessman)

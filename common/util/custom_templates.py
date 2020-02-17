@@ -4,15 +4,24 @@ from festivals.models import Festival
 from users.models import Businessman, Customer
 from . import jalali
 
-def get_template_context(customer: Customer):
 
-    return {'phone': customer.phone, 'telegram_id': customer.telegram_id, 'full_name': customer.full_name,
+def get_template_context(customer: Customer, additional_context: dict = None):
+
+    context = {'phone': customer.phone, 'telegram_id': customer.telegram_id, 'full_name': customer.full_name,
                'instagram_id': customer.instagram_id, 'business_name': customer.businessman.business_name}
 
+    if additional_context is not None:
+        return {**context, **additional_context}
+    return context
 
-def get_fake_context(user: Businessman):
 
-    return {'phone': '09582562418', 'telegram_id': '@mohammad12', 'business_name': user.business_name, 'instagram_id': '@insta_test'}
+def get_fake_context(user: Businessman, additional_context: dict = None):
+
+    context =  {'phone': '09582562418', 'telegram_id': '@mohammad12', 'business_name': user.business_name,
+                'instagram_id': '@insta_test'}
+    if additional_context is not None:
+        return {**context, **additional_context}
+    return context
 
 
 def render_template(template: str, context: dict):

@@ -103,3 +103,11 @@ def get_file_extension(filename: str):
     :return: file extension in format '.extension'
     """
     return os.path.splitext(filename)[1]
+
+
+def create_detail_error(error: str):
+    return {'detail': error}
+
+
+def create_field_error(name: str, errors: list):
+    return {name: errors}
