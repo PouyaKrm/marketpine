@@ -51,6 +51,7 @@ class SMSMessage(models.Model):
     CANCLE = '0'
     PENDING = '1'
     DONE = '2'
+    FAILED = '3'
 
     message_type_choices = [
         (PLAIN, 'PLAIN'),
@@ -60,13 +61,16 @@ class SMSMessage(models.Model):
     message_send_status = [
         (CANCLE, 'CANCLE'),
         (PENDING, 'PENDING'),
-        (DONE, 'DONE')
+        (DONE, 'DONE'),
+        (FAILED, 'FAILED')
     ]
 
     businessman = models.ForeignKey(Businessman, on_delete=models.PROTECT)
     receptors = models.ManyToManyField(Customer, related_name='receptors')
     message = models.CharField(max_length=800)
     message_type = models.CharField(max_length=2, choices=message_type_choices)
+    send_date = models.DateTimeField(null=True, blank=True)
+    sent_date = models.DateTimeField(null=True, blank=True)
     create_date = models.DateTimeField(auto_now_add=True)
     update_date = models.DateTimeField(auto_now=True)
     status = models.CharField(max_length=2, choices=message_send_status, default='1')

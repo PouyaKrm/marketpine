@@ -72,9 +72,9 @@ class SendSMSMessage():
         #     except SendSMSException as e:
         #         self.create_unsent_plain_sms(e, message, user, customers)
         #         raise APIException(e.status, e.message)
-
-        SMSMessage.objects.create(message=message, businessman=user,
-        message_type=SMSMessage.PLAIN, status=SMSMessage.PENDING, receptors=customers)
+        sms = SMSMessage.objects.create(message=message, businessman=user, message_type=SMSMessage.PLAIN, status=SMSMessage.PENDING)
+        sms.receptors.set(customers)
+        sms.save()
 
         
 
@@ -98,7 +98,10 @@ class SendSMSMessage():
         #         self.create_unsent_plain_sms(e, message, user, user.customers.all())
         #         raise APIException(e.status, e.message)
 
-        SMSMessage.objects.create(message=message, businessman=user, message_type=SMSMessage.PLAIN, receptors=user.customers.all())
+        sms = SMSMessage.objects.create(message=message, businessman=user, message_type=SMSMessage.PLAIN)
+        sms.receptors.set(user.customers.all())
+        sms.save()
+
 
     def send_by_template(self, user: Businessman, receiver_customers: QuerySet, message_template: str):
 

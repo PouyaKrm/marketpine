@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import SMSTemplate, SentSMS, UnsentPlainSMS, UnsentTemplateSMS
+from .models import SMSTemplate, SentSMS, UnsentPlainSMS, UnsentTemplateSMS, SMSMessage
 
 
 # Register your models here.
@@ -29,3 +29,5 @@ admin.site.register(SentSMS, SentSMSAdmin)
 admin.site.register(UnsentPlainSMS, UnsentPLAINSMSAdmin)
 
 admin.site.register(UnsentTemplateSMS, UnsentTemplateSMSAdmin)
+
+admin.site.register(SMSMessage)
