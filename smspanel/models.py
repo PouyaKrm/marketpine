@@ -42,3 +42,31 @@ class UnsentTemplateSMS(models.Model):
     businessman = models.ForeignKey(Businessman, on_delete=models.CASCADE)
     create_date = models.DateTimeField(auto_now_add=True)
     customers = models.ManyToManyField(Customer)
+
+class SMSMessage(models.Model):
+
+
+    PLAIN = '0'
+    TEMPLATE = '1'
+    CANCLE = '0'
+    PENDING = '1'
+    DONE = '2'
+
+    message_type_choices = [
+        (PLAIN, 'PLAIN'),
+        (TEMPLATE, 'TEMPLATE')
+    ]
+
+    message_send_status = [
+        (CANCLE, 'CANCLE'),
+        (PENDING, 'PENDING'),
+        (DONE, 'DONE')
+    ]
+
+    businessman = models.ForeignKey(Businessman, on_delete=models.PROTECT)
+    receptors = models.ManyToManyField(Customer, related_name='receptors')
+    message = models.CharField(max_length=800)
+    message_type = models.CharField(max_length=2, choices=message_type_choices)
+    create_date = models.DateTimeField(auto_now_add=True)
+    update_date = models.DateTimeField(auto_now=True)
+    status = models.CharField(max_length=2, choices=message_send_status, default='1')

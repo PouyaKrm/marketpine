@@ -5,7 +5,7 @@ from common.util.sms_panel.message import ClientBulkToCustomerSMSMessage, Client
 from common.util.sms_panel.exceptions import SendSMSException
 from common.util.sms_panel.helpers import calculate_total_sms_cost
 from common.util.kavenegar_local import APIException
-from .models import UnsentTemplateSMS, SentSMS, UnsentPlainSMS
+from .models import UnsentTemplateSMS, SentSMS, UnsentPlainSMS, SMSMessage
 from django.db.models import QuerySet
 
 from groups.models import BusinessmanGroups
@@ -56,43 +56,49 @@ class SendSMSMessage():
 
     def send_plain_sms(self, customers: QuerySet, user: Businessman, message: str):
 
-        client_sms = ClientSMSMessage(user.smspanelinfo, customers.all(), message)
-        try:
-            sent_messages = client_sms.send_plain_next()
-        except SendSMSException as e:
-            self.create_unsent_plain_sms(e, message, user, customers)
-            raise APIException(e.status, e.message)
+        # client_sms = ClientSMSMessage(user.smspanelinfo, customers.all(), message)
+        # try:
+        #     sent_messages = client_sms.send_plain_next()
+        # except SendSMSException as e:
+        #     self.create_unsent_plain_sms(e, message, user, customers)
+        #     raise APIException(e.status, e.message)
          
-        while sent_messages is not None:
+        # while sent_messages is not None:
          
-            user.smspanelinfo.reduce_credit(calculate_total_sms_cost(sent_messages))
-            SentSMS.objects.bulk_create([SentSMS(businessman=user, message_id=m['messageid'], receptor=m['receptor']) for m in sent_messages])
-            try:
-                sent_messages = client_sms.send_plain_next()
-            except SendSMSException as e:
-                self.create_unsent_plain_sms(e, message, user, customers)
-                raise APIException(e.status, e.message)
+        #     user.smspanelinfo.reduce_credit(calculate_total_sms_cost(sent_messages))
+        #     SentSMS.objects.bulk_create([SentSMS(businessman=user, message_id=m['messageid'], receptor=m['receptor']) for m in sent_messages])
+        #     try:
+        #         sent_messages = client_sms.send_plain_next()
+        #     except SendSMSException as e:
+        #         self.create_unsent_plain_sms(e, message, user, customers)
+        #         raise APIException(e.status, e.message)
+
+        SMSMessage.objects.create(message=message, businessman=user,
+        message_type=SMSMessage.PLAIN, status=SMSMessage.PENDING, receptors=customers)
+
         
 
     def send_plain_sms_to_all(self, user: Businessman, message: str):
 
-        client_sms = ClientToAllCustomersSMSMessage(user, message)
+        # client_sms = ClientToAllCustomersSMSMessage(user, message)
 
-        try:
-            sent_messages = client_sms.send_plain_next()
-        except SendSMSException as e:
-            self.create_unsent_plain_sms(e, message, user, user.customers.all())
-            raise APIException(e.status, e.message)
+        # try:
+        #     sent_messages = client_sms.send_plain_next()
+        # except SendSMSException as e:
+        #     self.create_unsent_plain_sms(e, message, user, user.customers.all())
+        #     raise APIException(e.status, e.message)
 
-        while sent_messages is not None:
+        # while sent_messages is not None:
             
-            user.smspanelinfo.reduce_credit(calculate_total_sms_cost(sent_messages))
-            SentSMS.objects.bulk_create([SentSMS(businessman=user, message_id=m['messageid'], receptor=m['receptor']) for m in sent_messages])
-            try:
-                sent_messages = client_sms.send_plain_next()
-            except SendSMSException as e:
-                self.create_unsent_plain_sms(e, message, user, user.customers.all())
-                raise APIException(e.status, e.message)
+        #     user.smspanelinfo.reduce_credit(calculate_total_sms_cost(sent_messages))
+        #     SentSMS.objects.bulk_create([SentSMS(businessman=user, message_id=m['messageid'], receptor=m['receptor']) for m in sent_messages])
+        #     try:
+        #         sent_messages = client_sms.send_plain_next()
+        #     except SendSMSException as e:
+        #         self.create_unsent_plain_sms(e, message, user, user.customers.all())
+        #         raise APIException(e.status, e.message)
+
+        SMSMessage.objects.create(message=message, businessman=user, message_type=SMSMessage.PLAIN, receptors=user.customers.all())
 
     def send_by_template(self, user: Businessman, receiver_customers: QuerySet, message_template: str):
 
