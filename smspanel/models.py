@@ -1,6 +1,11 @@
+from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
 
 # Create your models here.
+from django.db.models.signals import pre_save
+from django.dispatch.dispatcher import receiver
+from django.utils import timezone
+
 from users.models import Businessman, Customer
 from django.conf import settings
 
@@ -25,7 +30,7 @@ class SMSTemplate(models.Model):
 class SentSMS(models.Model):
 
     businessman = models.ForeignKey(Businessman, on_delete=models.CASCADE)
-    message_id = models.IntegerField()
+    message_id = models.CharField(max_length=100)
     receptor = models.CharField(max_length=15, null=True)
 
 
@@ -66,11 +71,47 @@ class SMSMessage(models.Model):
     ]
 
     businessman = models.ForeignKey(Businessman, on_delete=models.PROTECT)
-    receptors = models.ManyToManyField(Customer, related_name='receptors')
+    receivers = models.ManyToManyField(Customer, related_name='receivers', through='SMSMessageReceivers')
     message = models.CharField(max_length=800)
+    send_fail_attempts = models.IntegerField(default=0)
     message_type = models.CharField(max_length=2, choices=message_type_choices)
     send_date = models.DateTimeField(null=True, blank=True)
     sent_date = models.DateTimeField(null=True, blank=True)
     create_date = models.DateTimeField(auto_now_add=True)
     update_date = models.DateTimeField(auto_now=True)
     status = models.CharField(max_length=2, choices=message_send_status, default='1')
+
+    def set_done(self):
+        self.status = SMSMessage.DONE
+        self.sent_date = timezone.now()
+        self.save()
+
+    def increase_send_fail(self):
+        self.send_fail_attempts += 1
+        self.save()
+
+    def set_failed(self):
+        self.status = SMSMessage.FAILED
+        self.save()
+
+
+@receiver(pre_save, sender=SMSMessage)
+def reset_ail_attempts_on_admin_status_update(sender, instance: SMSMessage, *args, **kwargs):
+
+    try:
+        SMSMessage.objects.get(id=instance.id)
+    except ObjectDoesNotExist:
+        return
+    if instance.status == SMSMessage.PENDING:
+        instance.send_fail_attempts = 0
+
+
+class SMSMessageReceivers(models.Model):
+
+    sms_message = models.ForeignKey(SMSMessage, on_delete=models.PROTECT)
+    customer = models.ForeignKey(Customer, null=True, on_delete=models.SET_NULL)
+    sent_date = models.DateTimeField(auto_now_add=True)
+    is_sent = models.BooleanField(default=False)
+
+    class Meta:
+        unique_together = ['sms_message', 'customer']

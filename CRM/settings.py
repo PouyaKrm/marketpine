@@ -16,6 +16,7 @@ import os
 from django.conf import settings
 from corsheaders.defaults import default_headers
 from django.utils import timezone
+import multiprocessing
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -74,10 +75,12 @@ SMS_PANEL = {
     'ENGLISH_MAX_CHARS': 612,
     'PERSIAN_MAX_CHARS': 268,
     'TEMPLATE_MAX_CHARS': 160,  #note: Don 't change this value. If you really want, change in SMSTemplate -> content -> max_length too
+    'SEND_THREADS_NUMBER': multiprocessing.cpu_count(),
+    'MAX_SEND_FAIL_ATTEMPTS': 3,
     "SEND_PLAIN_CUSTOMERS_MAX_NUMBER": 3,
-    "SEND_PLAIN_CUSTOMERS_PAGE_SIZE": 2,
+    "SEND_PLAIN_CUSTOMERS_PAGE_SIZE": 1,
     'SEND_TEMPLATE_MAX_CUSTOMERS': 5,
-    'SEND_TEMPLATE_PAGE_SIZE': 2,
+    'SEND_TEMPLATE_PAGE_SIZE': 150,
 }
 
 DOWNLOAD_SETTINGS = {

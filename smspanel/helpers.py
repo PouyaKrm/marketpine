@@ -5,7 +5,7 @@ from common.util.sms_panel.message import ClientBulkToCustomerSMSMessage, Client
 from common.util.sms_panel.exceptions import SendSMSException
 from common.util.sms_panel.helpers import calculate_total_sms_cost
 from common.util.kavenegar_local import APIException
-from .models import UnsentTemplateSMS, SentSMS, UnsentPlainSMS, SMSMessage
+from .models import UnsentTemplateSMS, SentSMS, UnsentPlainSMS, SMSMessage, SMSMessageReceivers
 from django.db.models import QuerySet
 
 from groups.models import BusinessmanGroups
@@ -73,7 +73,9 @@ class SendSMSMessage():
         #         self.create_unsent_plain_sms(e, message, user, customers)
         #         raise APIException(e.status, e.message)
         sms = SMSMessage.objects.create(message=message, businessman=user, message_type=SMSMessage.PLAIN, status=SMSMessage.PENDING)
-        sms.receptors.set(customers)
+        SMSMessageReceivers.objects.bulk_create(
+            [SMSMessageReceivers(sms_message=sms, customer=c) for c in customers.all()
+             ])
         sms.save()
 
         
@@ -99,8 +101,11 @@ class SendSMSMessage():
         #         raise APIException(e.status, e.message)
 
         sms = SMSMessage.objects.create(message=message, businessman=user, message_type=SMSMessage.PLAIN)
-        sms.receptors.set(user.customers.all())
-        sms.save()
+        SMSMessageReceivers.objects.create(sms_message=sms, customer=user.customers.all())
+        SMSMessageReceivers.objects.bulk_create(
+            [SMSMessageReceivers(sms_message=sms, customer=c) for c in user.customers.all()
+             ])
+        # sms.save()
 
 
     def send_by_template(self, user: Businessman, receiver_customers: QuerySet, message_template: str):
