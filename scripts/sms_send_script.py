@@ -104,7 +104,7 @@ class SendMessageTaskQueue:
         fail_count = 0
 
         for t in self.threads:
-            if t.fialed:
+            if t.failed:
                 fail_count += 1
 
         if fail_count == len(self.threads):
@@ -137,7 +137,11 @@ class SendMessageTaskQueue:
                 SMSMessageReceivers.objects.filter(id__in=t.receiver_ids).update(is_sent=True)
 
                 self.__create_sent_messages(t.result, sms_message.businessman)
-            self.__set_message_status_and_empty_threads(sms_message)
+            try:
+                sms_message.businessman.smspanelinfo.refresh_credit()
+                self.__set_message_status_and_empty_threads(sms_message)
+            except Exception as e:
+                pass
 
 
 

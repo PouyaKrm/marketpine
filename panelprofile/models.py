@@ -93,6 +93,10 @@ class SMSPanelInfo(models.Model):
         self.credit += amount
         self.save()
 
+    def refresh_credit(self):
+        client = ClientManagement()
+        self.credit = client.fetch_credit_by_local_id(self.id)
+        self.save()
 
 
 
