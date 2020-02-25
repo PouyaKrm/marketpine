@@ -35,7 +35,7 @@ def send_template_sms_message_to_all(user: Businessman, template: str):
             raise APIException(e.status, e.message)
 
 
-class SendSMSMessage():
+class SendSMSMessage:
 
     def create_unsent_plain_sms(self, ex: SendSMSException, content: str, user: Businessman, receptors: QuerySet):
 
@@ -72,11 +72,12 @@ class SendSMSMessage():
         #     except SendSMSException as e:
         #         self.create_unsent_plain_sms(e, message, user, customers)
         #         raise APIException(e.status, e.message)
-        sms = SMSMessage.objects.create(message=message, businessman=user, message_type=SMSMessage.PLAIN, status=SMSMessage.PENDING)
+        sms = SMSMessage.objects.create(message=message, businessman=user, message_type=SMSMessage.TYPE_PLAIN, status=SMSMessage.STATUS_PENDING)
         SMSMessageReceivers.objects.bulk_create(
             [SMSMessageReceivers(sms_message=sms, customer=c) for c in customers.all()
              ])
         sms.save()
+        sms.set_reserved_credit_by_receivers()
 
         
 
@@ -100,73 +101,73 @@ class SendSMSMessage():
         #         self.create_unsent_plain_sms(e, message, user, user.customers.all())
         #         raise APIException(e.status, e.message)
 
-        sms = SMSMessage.objects.create(message=message, businessman=user, message_type=SMSMessage.PLAIN)
-        SMSMessageReceivers.objects.create(sms_message=sms, customer=user.customers.all())
+        sms = SMSMessage.objects.create(message=message, businessman=user, message_type=SMSMessage.TYPE_PLAIN)
+        # SMSMessageReceivers.objects.create(sms_message=sms, customer=user.customers.all())
         SMSMessageReceivers.objects.bulk_create(
             [SMSMessageReceivers(sms_message=sms, customer=c) for c in user.customers.all()
              ])
-        # sms.save()
-
+        sms.set_reserved_credit_by_receivers()
 
     def send_by_template(self, user: Businessman, receiver_customers: QuerySet, message_template: str):
 
-        message_by_template = ClientBulkToCustomerSMSMessage(user.smspanelinfo, receiver_customers, message_template)
+        # message_by_template = ClientBulkToCustomerSMSMessage(user.smspanelinfo, receiver_customers, message_template)
+        #
+        #
+        # try:
+        #     sent_messages = message_by_template.send_bulk()
+        # except SendSMSException as e:
+        #     self.create_unsent_template_sms(e, template, user, receiver_customers)
+        #     raise APIException(e.status, e.message)
+        #
+        # while sent_messages is not None:
+        #     user.smspanelinfo.reduce_credit(calculate_total_sms_cost(sent_messages))
+        #     SentSMS.objects.bulk_create([SentSMS(businessman=user, message_id=m['messageid'], receptor=m['receptor']) for m in sent_messages])
+        #     try:
+        #         sent_messages = message_by_template.send_bulk()
+        #     except SendSMSException as e:
+        #         self.create_unsent_template_sms(e, template, user, receiver_customers)
+        #         raise APIException(e.status, e.message)
 
-
-        try:
-            sent_messages = message_by_template.send_bulk()
-        except SendSMSException as e:
-            self.create_unsent_template_sms(e, template, user, receiver_customers)
-            raise APIException(e.status, e.message)
-
-        while sent_messages is not None:
-            user.smspanelinfo.reduce_credit(calculate_total_sms_cost(sent_messages))
-            SentSMS.objects.bulk_create([SentSMS(businessman=user, message_id=m['messageid'], receptor=m['receptor']) for m in sent_messages])
-            try:
-                sent_messages = message_by_template.send_bulk()
-            except SendSMSException as e:
-                self.create_unsent_template_sms(e, template, user, receiver_customers)
-                raise APIException(e.status, e.message)
+        sms = SMSMessage.objects.create(message=message_template, businessman=user, message_type=SMSMessage.TYPE_TEMPLATE)
+        SMSMessageReceivers.objects.bulk_create(
+            [SMSMessageReceivers(sms_message=sms, customer=c) for c in receiver_customers]
+        )
+        sms.set_reserved_credit_by_receivers()
 
 
     def send_by_template_to_all(self, user: Businessman, template: str):
 
-        client_sms =ClientBulkToAllToCustomerSMSMessage(user, template)
+        # client_sms =ClientBulkToAllToCustomerSMSMessage(user, template)
+        #
+        # try:
+        #     sent_messages = client_sms.send_bulk()
+        # except SendSMSException as e:
+        #     self.create_unsent_template_sms(e, template, user, user.customers.all())
+        #     raise APIException(e.status, e.message)
+        #
+        # while sent_messages is not None:
+        #     user.smspanelinfo.reduce_credit(calculate_total_sms_cost(sent_messages))
+        #     SentSMS.objects.bulk_create([SentSMS(businessman=user, message_id=m['messageid'], receptor=m['receptor']) for m in sent_messages])
+        #     try:
+        #         sent_messages = client_sms.send_bulk()
+        #     except SendSMSException as e:
+        #         self.create_unsent_template_sms(e, template, user, user.customers.all())
+        #         raise APIException(e.status, e.message)
 
-        try:
-            sent_messages = client_sms.send_bulk()
-        except SendSMSException as e:
-            self.create_unsent_template_sms(e, template, user, user.customers.all())
-            raise APIException(e.status, e.message)
-        
-        while sent_messages is not None:
-            user.smspanelinfo.reduce_credit(calculate_total_sms_cost(sent_messages))
-            SentSMS.objects.bulk_create([SentSMS(businessman=user, message_id=m['messageid'], receptor=m['receptor']) for m in sent_messages])
-            try:
-                sent_messages = client_sms.send_bulk()
-            except SendSMSException as e:
-                self.create_unsent_template_sms(e, template, user, user.customers.all())
-                raise APIException(e.status, e.message)
+        sms = SMSMessage.objects.create(message=template, businessman=user,
+                                        message_type=SMSMessage.TYPE_TEMPLATE)
+        SMSMessageReceivers.objects.bulk_create(
+            [SMSMessageReceivers(sms_message=sms, customer=c) for c in user.customers.all()]
+        )
+        sms.set_reserved_credit_by_receivers()
 
 
-    def resend_unsent_plain_sms(self, user: Businessman, unsent_sms: UnsentPlainSMS):
+    def set_message_to_pending(self, user: Businessman, unsent_sms: SMSMessage):
 
-        """
-        deletes the unsent_plain_sms record the sends.
-        this, prevents from multiple records for same message exist 
-        in database. if any error occur during send message,
-        new unsent_plain_sms will be created for the message again.
-        "records must be updated in the client side when this method is called to prevent request for
-        deleted record.
-        """
+        if not unsent_sms.has_any_unsent_receivers():
+            unsent_sms.set_done()
+        unsent_sms.reset_to_pending()
 
-        customers = unsent_sms.customers.all()
-        UnsentPlainSMS.objects.filter(id=unsent_sms.id).delete()
-
-        try:
-            self.send_plain_sms(customers, user, unsent_sms.message)
-        except APIException as e:
-            raise e
 
 
     def resend_unsent_template_sms(self, user: Businessman, unsent_sms: UnsentTemplateSMS):

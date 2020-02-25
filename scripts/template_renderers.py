@@ -25,7 +25,9 @@ class BaseTemplateRenderer:
         return re.sub('#([A-Za-z0-9_]+)', replace, template)
 
     def render(self, sms_message: SMSMessage, receiver: SMSMessageReceivers):
-        raise NotImplemented('render function must be implemented')
+        return self._render(sms_message.message, {**self._businessman_key_value(sms_message.businessman),
+                                                  **self._customer_key_value(receiver.customer)
+                                                  })
 
 
 class ContentMarketingTemplateRenderer(BaseTemplateRenderer):
@@ -43,4 +45,8 @@ class ContentMarketingTemplateRenderer(BaseTemplateRenderer):
 
 
 def get_renderer_object_based_on_sms_message_used(used_for: str) -> BaseTemplateRenderer:
-    return ContentMarketingTemplateRenderer()
+
+    if used_for == SMSMessage.USED_FOR_CONTENT_MARKETING:
+        return ContentMarketingTemplateRenderer()
+    else:
+        return BaseTemplateRenderer()

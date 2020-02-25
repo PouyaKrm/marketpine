@@ -69,7 +69,7 @@ class SendTemplateMessageThread(BaseSendMessageThread):
         self.phones = []
 
     def __render_messages(self):
-        renderer = get_renderer_object_based_on_sms_message_used('45')
+        renderer = get_renderer_object_based_on_sms_message_used(self.sms_message.used_for)
         for r in self.receivers:
             message = renderer.render(self.sms_message, r)
             if message is not None:
@@ -103,7 +103,7 @@ class SendMessageTaskQueue:
         self.threads = []
 
     def any_pending_message_remained(self):
-        return SMSMessage.objects.filter(status=SMSMessage.PENDING).count() > 0
+        return SMSMessage.objects.filter(status=SMSMessage.STATUS_PENDING).count() > 0
 
     def __has_remaining_receivers(self, sms_message):
         return SMSMessageReceivers.objects.filter(sms_message=sms_message, is_sent=False).count() > 0
@@ -115,7 +115,7 @@ class SendMessageTaskQueue:
 
         self.threads = []
 
-        if sms_message.message_type == SMSMessage.PLAIN:
+        if sms_message.message_type == SMSMessage.TYPE_PLAIN:
             for f in receivers:
                 self.threads.append(SendPlainMessageThread(api_key, sms_message, f, message))
 
@@ -147,7 +147,7 @@ class SendMessageTaskQueue:
     def __get_oldest_pending_message(self) -> SMSMessage:
         if not self.any_pending_message_remained():
             return None
-        return SMSMessage.objects.filter(status=SMSMessage.PENDING).order_by('create_date').first()
+        return SMSMessage.objects.filter(status=SMSMessage.STATUS_PENDING).order_by('create_date').first()
 
     def __create_sent_messages(self, result: list, businessman: Businessman):
 
@@ -170,10 +170,7 @@ class SendMessageTaskQueue:
                 fail_count += 1
 
         if fail_count == len(self.threads):
-            sms_message.increase_send_fail()
-
-            if sms_message.send_fail_attempts >= self.max_fail_attempts:
-                sms_message.set_failed()
+            sms_message.increase_send_fail_and_set_failed()
 
         elif not self.__has_remaining_receivers(sms_message):
             sms_message.set_done()
@@ -214,7 +211,7 @@ def get_customers_phone(customers):
 
 
 def any_pending_message_remained():
-    return SMSMessage.objects.filter(status=SMSMessage.PENDING).count() > 0
+    return SMSMessage.objects.filter(status=SMSMessage.STATUS_PENDING).count() > 0
 
 
 task = SendMessageTaskQueue()

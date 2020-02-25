@@ -31,5 +31,4 @@ class ClientSMSMessage(BaseSMSMessage):
             sender.append(customer_line)
 
         params = {'sender': f'{sender}', 'receptor': f'{phones}', 'message': f'{messages}'}
-        print(params)
         return self._api.sms_sendarray(params)

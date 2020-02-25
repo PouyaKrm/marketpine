@@ -2,6 +2,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.core.paginator import Paginator
 from django.conf import settings
 from django.urls import reverse
+from rest_framework.generics import ListAPIView
 
 from common.util import create_link
 from common.util.paginators import create_pagination_response
@@ -14,9 +15,11 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.request import Request
 from rest_framework.response import Response
 from users.models import Customer, Businessman
-from .serializers import SMSTemplateSerializer, SendSMSSerializer, SentSMSRetrieveForCustomer, SendPlainSMSToAllSerializer, SendByTemplateSerializer, SendPlainToGroup, UnsentPlainSMSListSerializer, UnsentTemplateSMSListSerializer
-from .models import SMSTemplate, SentSMS
-from .permissions import HasValidCreditSendSMS, HasValidCreditSendSMSToAll, HasValidCreditResendPlainSMS, HasValidCreditResendTemplateSMS, HasValidCreditSendSMSToGroup
+from .serializers import SMSTemplateSerializer, SendSMSSerializer, SentSMSRetrieveForCustomer, \
+    SendPlainSMSToAllSerializer, SendByTemplateSerializer, SendPlainToGroup, UnsentPlainSMSListSerializer, \
+    UnsentTemplateSMSListSerializer, SMSMessageListSerializer
+from .models import SMSTemplate, SentSMS, SMSMessage
+from .permissions import HasValidCreditSendSMS, HasValidCreditSendSMSToAll, HasValidCreditResendFailedSMS, HasValidCreditResendTemplateSMS, HasValidCreditSendSMSToGroup
 from common.util import paginators, jalali
 
 from .helpers import send_template_sms_message_to_all, SendSMSMessage
@@ -185,8 +188,6 @@ def send_sms_by_template_to_all(request, template_id):
         return send_message_failed_response(e)
 
     return create_sms_sent_success_response(request.user)
-    
-
 
 
 
@@ -242,23 +243,25 @@ def send_template_sms_to_group(request: Request, template_id, group_id):
     return create_sms_sent_success_response(request.user)
 
 
+class FailedSMSMessagesList(ListAPIView):
+
+    serializer_class = SMSMessageListSerializer
+
+    def get_queryset(self):
+        return self.request.user.smsmessage_set.filter(status=SMSMessage.STATUS_FAILED)
 
 
+@api_view(['POST'])
+@permission_classes([permissions.IsAuthenticated, HasValidCreditResendFailedSMS])
+def resend_failed_sms(request, sms_id):
+    try:
+        sms = request.user.smsmessage_set.get(id=sms_id, status=SMSMessage.STATUS_FAILED)
+    except ObjectDoesNotExist:
+        return Response(status=status.HTTP_404_NOT_FOUND)
 
-@api_view(['GET'])
-def list_unsent_plain_sms(request):
-
-    """
-    retrieves unsent plain sms 
-    """
-
-    unsent_sms = request.user.unsentplainsms_set.order_by('-create_date').all()
-
-    paginate = custom_paginator.NumberedPaginator(request, unsent_sms, UnsentPlainSMSListSerializer)
-
-    return paginate.next_page()
-
-
+    SendSMSMessage().set_message_to_pending(request.user, sms)
+    serializer = SMSMessageListSerializer(sms)
+    return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 
@@ -276,7 +279,7 @@ def list_unsent_template_sms(request: Request):
 
 
 @api_view(['POST'])
-@permission_classes([permissions.IsAuthenticated, HasValidCreditResendPlainSMS])
+@permission_classes([permissions.IsAuthenticated, HasValidCreditResendFailedSMS])
 def resend_plain_sms(request: Request, unsent_sms_id):
 
     try:
@@ -288,7 +291,7 @@ def resend_plain_sms(request: Request, unsent_sms_id):
     messainger = SendSMSMessage()
 
     try:
-        messainger.resend_unsent_plain_sms(request.user, unsent_plain_sms)
+        messainger.set_message_to_pending(request.user, unsent_plain_sms)
     except APIException as e:
         return send_message_failed_response(e)
 

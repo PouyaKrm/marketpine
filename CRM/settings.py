@@ -71,7 +71,7 @@ SMS_PANEL = {
     'PID': 1422,
     "MIN_CREDIT_CHARGE": 100,  # min amount that user can increase their credit in Tomans
     "MAX_CREDIT_CHARGE": 10000,  # max amount that user can increase their credit in Tomans
-    'MAX_MESSAGE_COST': 100,  # this is used for credit validation before sending message
+    'MAX_MESSAGE_COST': 400,  # this is used for credit validation before sending message
     'ENGLISH_MAX_CHARS': 612,
     'PERSIAN_MAX_CHARS': 268,
     'TEMPLATE_MAX_CHARS': 160,  #note: Don 't change this value. If you really want, change in SMSTemplate -> content -> max_length too

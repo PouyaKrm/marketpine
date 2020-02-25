@@ -1,6 +1,6 @@
 from django.template import TemplateSyntaxError
 from rest_framework import serializers
-from .models import SMSTemplate, SentSMS, UnsentPlainSMS, UnsentTemplateSMS
+from .models import SMSTemplate, SentSMS, UnsentPlainSMS, UnsentTemplateSMS, SMSMessage
 from common.util.custom_templates import render_template, get_fake_context, render_template_with_customer_data
 from .helpers import SendSMSMessage
 from django.conf import settings
@@ -228,6 +228,18 @@ class SendPlainToGroup(serializers.Serializer):
         return validate_data
 
 
+class SMSMessageListSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = SMSMessage
+        fields = [
+            'id',
+            'message',
+            'create_date',
+            'message_type',
+            'status',
+            'used_for'
+        ]
 
 
 class UnsentPlainSMSListSerializer(serializers.ModelSerializer):

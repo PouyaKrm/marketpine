@@ -2,8 +2,6 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
 
 # Create your models here.
-from django.db.models.signals import pre_save
-from django.dispatch.dispatcher import receiver
 from django.utils import timezone
 
 from users.models import Businessman, Customer
@@ -13,6 +11,8 @@ from django.conf import settings
 
 max_english_chars = settings.SMS_PANEL['ENGLISH_MAX_CHARS']
 template_max_chars = settings.SMS_PANEL['TEMPLATE_MAX_CHARS']
+send_max_fail_attempts = settings.SMS_PANEL['MAX_SEND_FAIL_ATTEMPTS']
+max_message_cost = settings.SMS_PANEL['MAX_MESSAGE_COST']
 
 class SMSTemplate(models.Model):
 
@@ -51,30 +51,29 @@ class UnsentTemplateSMS(models.Model):
 
 class SMSMessage(models.Model):
 
-
-    PLAIN = '0'
-    TEMPLATE = '1'
-    CANCLE = '0'
-    PENDING = '1'
-    DONE = '2'
-    FAILED = '3'
+    TYPE_PLAIN = '0'
+    TYPE_TEMPLATE = '1'
+    STATUS_CANCLE = '0'
+    STATUS_PENDING = '1'
+    STATUS_DONE = '2'
+    STATUS_FAILED = '3'
     USED_FOR_NONE = '0'
     USED_FOR_FESTIVAL = '1'
     USED_FOR_CONTENT_MARKETING = '2'
-    USED_FOR_INSTAGRAM_MARKETING = '3',
+    USED_FOR_INSTAGRAM_MARKETING = '3'
     USED_FOR_WELCOME_MESSAGE = '4'
     USED_FOR_FRIEND_INVITATION = '5'
 
     message_type_choices = [
-        (PLAIN, 'PLAIN'),
-        (TEMPLATE, 'TEMPLATE')
+        (TYPE_PLAIN, 'PLAIN'),
+        (TYPE_TEMPLATE, 'TEMPLATE')
     ]
 
     message_send_status = [
-        (CANCLE, 'CANCLE'),
-        (PENDING, 'PENDING'),
-        (DONE, 'DONE'),
-        (FAILED, 'FAILED')
+        (STATUS_CANCLE, 'CANCLE'),
+        (STATUS_PENDING, 'PENDING'),
+        (STATUS_DONE, 'DONE'),
+        (STATUS_FAILED, 'FAILED')
     ]
 
     message_used_for_choices = [
@@ -89,6 +88,7 @@ class SMSMessage(models.Model):
     businessman = models.ForeignKey(Businessman, on_delete=models.PROTECT)
     receivers = models.ManyToManyField(Customer, related_name='receivers', through='SMSMessageReceivers')
     message = models.CharField(max_length=800)
+    reserved_credit = models.PositiveIntegerField(default=0)
     send_fail_attempts = models.IntegerField(default=0)
     message_type = models.CharField(max_length=2, choices=message_type_choices)
     send_date = models.DateTimeField(null=True, blank=True)
@@ -99,28 +99,29 @@ class SMSMessage(models.Model):
     used_for = models.CharField(max_length=2, choices=message_used_for_choices, default='0')
 
     def set_done(self):
-        self.status = SMSMessage.DONE
+        self.status = SMSMessage.STATUS_DONE
         self.sent_date = timezone.now()
         self.save()
 
-    def increase_send_fail(self):
-        self.send_fail_attempts += 1
+    def increase_send_fail_and_set_failed(self):
+        self.send_fail_attempts = self.send_fail_attempts + 1
+        if self.send_fail_attempts >= send_max_fail_attempts:
+            self.status = SMSMessage.STATUS_FAILED
         self.save()
 
-    def set_failed(self):
-        self.status = SMSMessage.FAILED
+    def reset_to_pending(self):
+        self.send_fail_attempts = 0
+        self.status = SMSMessage.STATUS_PENDING
         self.save()
 
+    def set_reserved_credit_by_receivers(self):
+        self.reserved_credit = self.receivers.count() * max_message_cost
+        self.save()
 
-@receiver(pre_save, sender=SMSMessage)
-def reset_ail_attempts_on_admin_status_update(sender, instance: SMSMessage, *args, **kwargs):
+    def has_any_unsent_receivers(self):
+        return SMSMessageReceivers.objects.filter(sms_message=self, is_sent=False).exists()
 
-    try:
-        SMSMessage.objects.get(id=instance.id)
-    except ObjectDoesNotExist:
-        return
-    if instance.status == SMSMessage.PENDING:
-        instance.send_fail_attempts = 0
+
 
 
 class SMSMessageReceivers(models.Model):
