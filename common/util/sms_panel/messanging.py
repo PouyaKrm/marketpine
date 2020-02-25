@@ -21,3 +21,15 @@ class ClientSMSMessage(BaseSMSMessage):
             ids = ','.join(str(message_id) for message_id in local_ids)
             return self.send_message(receptors, message, ids)
         return self.send_message(receptors, message)
+
+    def send_array(self, phones: list, messages: list):
+
+        if len(messages) != len(phones):
+            raise ValueError('phones and messages lists length must be equal')
+        sender = []
+        for _ in range(len(phones)):
+            sender.append(customer_line)
+
+        params = {'sender': f'{sender}', 'receptor': f'{phones}', 'message': f'{messages}'}
+        print(params)
+        return self._api.sms_sendarray(params)

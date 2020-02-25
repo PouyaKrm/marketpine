@@ -48,6 +48,7 @@ class UnsentTemplateSMS(models.Model):
     create_date = models.DateTimeField(auto_now_add=True)
     customers = models.ManyToManyField(Customer)
 
+
 class SMSMessage(models.Model):
 
 
@@ -57,6 +58,12 @@ class SMSMessage(models.Model):
     PENDING = '1'
     DONE = '2'
     FAILED = '3'
+    USED_FOR_NONE = '0'
+    USED_FOR_FESTIVAL = '1'
+    USED_FOR_CONTENT_MARKETING = '2'
+    USED_FOR_INSTAGRAM_MARKETING = '3',
+    USED_FOR_WELCOME_MESSAGE = '4'
+    USED_FOR_FRIEND_INVITATION = '5'
 
     message_type_choices = [
         (PLAIN, 'PLAIN'),
@@ -70,6 +77,15 @@ class SMSMessage(models.Model):
         (FAILED, 'FAILED')
     ]
 
+    message_used_for_choices = [
+        (USED_FOR_NONE, 'NONE'),
+        (USED_FOR_FESTIVAL, 'FESTIVAL'),
+        (USED_FOR_CONTENT_MARKETING, 'CONTENT MARKETING'),
+        (USED_FOR_INSTAGRAM_MARKETING, 'INSTAGRAM MARKETING'),
+        (USED_FOR_WELCOME_MESSAGE, 'WELCOME MESSAGE'),
+        (USED_FOR_FRIEND_INVITATION, 'FRIEND INVITATION')
+    ]
+
     businessman = models.ForeignKey(Businessman, on_delete=models.PROTECT)
     receivers = models.ManyToManyField(Customer, related_name='receivers', through='SMSMessageReceivers')
     message = models.CharField(max_length=800)
@@ -80,6 +96,7 @@ class SMSMessage(models.Model):
     create_date = models.DateTimeField(auto_now_add=True)
     update_date = models.DateTimeField(auto_now=True)
     status = models.CharField(max_length=2, choices=message_send_status, default='1')
+    used_for = models.CharField(max_length=2, choices=message_used_for_choices, default='0')
 
     def set_done(self):
         self.status = SMSMessage.DONE
