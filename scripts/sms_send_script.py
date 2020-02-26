@@ -1,6 +1,7 @@
 import os
 import time
 import threading
+import logging
 
 from django.db.models import QuerySet
 from django.utils import timezone
@@ -40,15 +41,6 @@ class SendPlainMessageThread(BaseSendMessageThread):
 
     def __init__(self, api_key: str, sms_message: SMSMessage, receivers: list, message: str):
         super().__init__(api_key, sms_message, receivers, message)
-        # self.api_key = api_key
-        # self.receivers = receivers
-        # self.phones = [rec.customer.phone for rec in receivers]
-        # self.message = message
-        # self.success_finish = False
-        # self.failed = False
-        # self.fail_exception = None
-        # self.result = None
-        # self.receiver_ids = [r.id for r in receivers]
 
     def run(self):
         api = messanging.ClientSMSMessage(self.api_key)
@@ -190,8 +182,11 @@ class SendMessageTaskQueue:
             costs = 0
             for t in self.threads:
 
+                if t.failed:
+                    logging.error(t.fail_exception)
                 if not t.success_finish:
                     continue
+
 
                 SMSMessageReceivers.objects.filter(id__in=t.receiver_ids).update(is_sent=True)
 
@@ -201,20 +196,18 @@ class SendMessageTaskQueue:
                 sms_message.businessman.smspanelinfo.refresh_credit()
             except Exception as e:
                 sms_message.businessman.smspanelinfo.reduce_credit(costs)
+                logging.error(e)
 
 
+def configure() -> SendMessageTaskQueue:
+    logging.basicConfig(filename='errors.log', format='%(levelname)s %(asctime)s : %(message)s', level=logging.ERROR)
+    return SendMessageTaskQueue()
 
 
+task = None
 
-def get_customers_phone(customers):
-    return [c.phone for c in customers]
-
-
-def any_pending_message_remained():
-    return SMSMessage.objects.filter(status=SMSMessage.STATUS_PENDING).count() > 0
-
-
-task = SendMessageTaskQueue()
+if __name__ == '__main__':
+    task = configure()
 
 while True:
     task.run_send_threads()
