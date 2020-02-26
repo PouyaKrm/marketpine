@@ -1,12 +1,17 @@
 import os
+from os.path import dirname, abspath
 import time
 import threading
 import logging
+import distutils.sysconfig
+import sys
+from pathlib import Path
 
 from django.db.models import QuerySet
 from django.utils import timezone
 
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "CRM.settings")
+sys.path.append(dirname(dirname(abspath(__file__))))
+os.environ['DJANGO_SETTINGS_MODULE'] = 'CRM.settings'
 import django
 
 django.setup()
