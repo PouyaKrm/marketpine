@@ -12,6 +12,7 @@ from django.conf import settings
 from common.util.custom_validators import validate_file_size
 
 template_max_chars = settings.SMS_PANEL['TEMPLATE_MAX_CHARS']
+template_min_chars = settings.SMS_PANEL['TEMPLATE_MIN_CHARS']
 thumbnail_max_chars = settings.CONTENT_MARKETING['THUMBNAIL_MAX_NAME_CHARS']
 thumbnail_max_size = settings.CONTENT_MARKETING['THUMBNAIL_MAX_SIZE']
 

@@ -31,13 +31,16 @@ class BaseSMSMessage():
     def send(self, **params):
         return self._api.sms_send(params)
 
-    def send_message(self, receptor, message):
+    def send_message(self, receptor, message, local_ids=None):
 
         params = {
             'sender': self._line,
             'receptor': f'{receptor}',
             'message': f'{message}'
         }
+
+        if local_ids is not None:
+            params['localid'] = local_ids
 
         return self._api.sms_send(params)
 

@@ -10,6 +10,7 @@ from django.dispatch import receiver
 
 from common.util import get_file_extension
 from common.util.kavenegar_local import APIException, HTTPException
+from smspanel.models import SMSMessage
 from users.models import Businessman,Customer
 
 from common.util.sms_panel.message import SystemSMSMessage
@@ -52,6 +53,7 @@ class Post(models.Model):
     creation_date = models.DateTimeField(auto_now_add=True)
     modification_date = models.DateTimeField(auto_now=True)
     confirmation_status = models.CharField(max_length=1, choices=confirmation_choices, default=PostConfirmationStatus.PENDING)
+    customer_sms_message = models.OneToOneField(SMSMessage, null=True, blank=True, on_delete=models.SET_NULL)
     # is_active = models.BooleanField(default=False)
 
     def __str__(self):
