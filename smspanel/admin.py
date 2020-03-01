@@ -11,7 +11,7 @@ class SMSTemplateAdmin(admin.ModelAdmin):
 
 
 class SMSMessageAdminModel(admin.ModelAdmin):
-    list_display = ['businessman', 'create_date']
+    list_display = ['businessman', 'status', 'create_date']
     form = SMSMessageForm
 
 
@@ -19,13 +19,16 @@ class SentSMSAdmin(admin.ModelAdmin):
 
     list_display = ['businessman', 'message_id', 'receptor']
 
+
 class UnsentPLAINSMSAdmin(admin.ModelAdmin):
 
     list_display = ['businessman', 'message', 'create_date']
 
+
 class UnsentTemplateSMSAdmin(admin.ModelAdmin):
 
     list_display = ['businessman', 'template', 'create_date']
+
 
 admin.site.register(SMSTemplate, SMSTemplateAdmin)
 

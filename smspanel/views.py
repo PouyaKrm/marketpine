@@ -23,7 +23,7 @@ from .permissions import HasValidCreditSendSMS, HasValidCreditSendSMSToAll, HasV
     HasValidCreditResendTemplateSMS, HasValidCreditSendSMSToGroup, HasActiveSMSPanel
 from common.util import paginators, jalali
 
-from .helpers import send_template_sms_message_to_all, SendSMSMessage
+from .services import send_template_sms_message_to_all, SendSMSMessage
 
 from common.util.sms_panel.message import ClientBulkToAllToCustomerSMSMessage
 

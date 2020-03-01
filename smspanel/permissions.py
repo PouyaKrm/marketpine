@@ -16,7 +16,7 @@ from panelprofile.models import SMSPanelStatus
 
 class HasActiveSMSPanel(permissions.BasePermission):
 
-    message = 'شما پنل اسمس فعالی ندارید'
+    message = 'پنل پیامک شما فعال نیست'
 
     def has_permission(self, request: Request, view: View):
         if not request.user.has_sms_panel or request.user.smspanelinfo.status == SMSPanelStatus.INACTIVE:

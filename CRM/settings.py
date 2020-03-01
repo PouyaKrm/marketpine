@@ -74,6 +74,7 @@ SMS_PANEL = {
     'MAX_MESSAGE_COST': 400,  # this is used for credit validation before sending message
     'ENGLISH_MAX_CHARS': 612,
     'PERSIAN_MAX_CHARS': 268,
+    'TEMPLATE_MIN_CHARS': 10,
     'TEMPLATE_MAX_CHARS': 160,  #note: Don 't change this value. If you really want, change in SMSTemplate -> content -> max_length too
     'SEND_THREADS_NUMBER': multiprocessing.cpu_count(),
     'MAX_SEND_FAIL_ATTEMPTS': 3,

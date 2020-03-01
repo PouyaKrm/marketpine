@@ -3,12 +3,9 @@ from os.path import dirname, abspath
 import time
 import threading
 import logging
-import distutils.sysconfig
 import sys
-from pathlib import Path
 
 from django.db.models import QuerySet
-from django.utils import timezone
 
 sys.path.append(dirname(dirname(abspath(__file__))))
 os.environ['DJANGO_SETTINGS_MODULE'] = 'CRM.settings'
@@ -21,7 +18,7 @@ from smspanel.models import SMSMessage, SMSMessageReceivers, SentSMS
 from users.models import Businessman
 from common.util.sms_panel import messanging
 from common.util.sms_panel.helpers import message_id_receptor_cost_sms
-from scripts.template_renderers import get_renderer_object_based_on_sms_message_used
+from smspanel.template_renderers import get_renderer_object_based_on_sms_message_used
 
 
 class BaseSendMessageThread(threading.Thread):
