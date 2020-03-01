@@ -128,7 +128,6 @@ class SendMessageTaskQueue:
             for i in range(page_size_chunk):
                 receivers.append(self.__get_receivers_by_sms_message(sms_message).all()[i * self.page_size: self.page_size * (i + 1)])
 
-
             if remained > 0:
                 receivers.append(self.__get_receivers_by_sms_message(sms_message).all()[page_size_chunk * self.page_size: page_size_chunk * self.page_size  + remained])
 
@@ -189,8 +188,7 @@ class SendMessageTaskQueue:
                 if not t.success_finish:
                     continue
 
-
-                SMSMessageReceivers.objects.filter(id__in=t.receiver_ids).update(is_sent=True)
+                SMSMessageReceivers.objects.filter(id__in=t.receiver_ids).delete()
 
                 costs += self.__create_sent_messages(t.result, sms_message.businessman)
             self.__set_message_status_and_empty_threads(sms_message)
