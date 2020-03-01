@@ -196,10 +196,7 @@ class AuthSerializer(serializers.ModelSerializer):
 
         password = validated_data.pop('password')
 
-        client_manage = ClientManagement()
-
-
-        if hasattr(user, 'smspanelinfo'):
+        if user.has_sms_panel:
             user.smspanelinfo.update_panel_info()
         else:
             sms = SMSPanelInfo()
