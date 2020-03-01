@@ -34,7 +34,7 @@ class HasValidCreditSendSMS(permissions.BasePermission):
     message = 'اعتبار شما برای ارسال پیام کافی نیست'
 
     def has_permission(self, request: Request, view: View):
-        return request.user.smspanelinfo.credit_substract_pending_messages() > send_plain_max_customers * english_sms_cost
+        return request.user.smspanelinfo.remained_credit_for_new_message() > send_plain_max_customers * english_sms_cost
 
 
 class HasValidCreditSendSMSToAll(permissions.BasePermission):
@@ -47,7 +47,7 @@ class HasValidCreditSendSMSToAll(permissions.BasePermission):
     message = 'اعتبار شما برای ارسال پیام کافی نیست'
 
     def has_permission(self, request: Request, view: View):
-        return request.user.smspanelinfo.credit_substract_pending_messages() > request.user.customers.count() * english_sms_cost
+        return request.user.smspanelinfo.remained_credit_for_new_message_to_all()
 
 
 class HasValidCreditSendSMSToGroup(permissions.BasePermission):
@@ -66,7 +66,7 @@ class HasValidCreditSendSMSToGroup(permissions.BasePermission):
         except ObjectDoesNotExist:
             return True
         
-        return group.customers.count() * english_sms_cost < request.user.smspanelinfo.credit_substract_pending_messages()
+        return group.customers.count() * english_sms_cost < request.user.smspanelinfo.remained_credit_for_new_message()
 
 
 class HasValidCreditResendFailedSMS(permissions.BasePermission):
@@ -80,7 +80,7 @@ class HasValidCreditResendFailedSMS(permissions.BasePermission):
         except ObjectDoesNotExist:
             return True
 
-        return failed_sms.receivers.count() * english_sms_cost < request.user.smspanelinfo.credit_substract_pending_messages()
+        return failed_sms.receivers.count() * english_sms_cost < request.user.smspanelinfo.remained_credit_for_new_message()
 
 
 class HasValidCreditResendTemplateSMS(permissions.BasePermission):

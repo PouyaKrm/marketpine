@@ -52,7 +52,15 @@ class SendSMSMessage:
         obj = UnsentTemplateSMS.objects.create(businessman=businessman, template=template)
         obj.customers.add(*remained_receptors)
         obj.save()
-       
+
+    def __set_receivers_for_sms_message(self, sms: SMSMessage, customers: QuerySet):
+
+        SMSMessageReceivers.objects.bulk_create(
+            [SMSMessageReceivers(sms_message=sms, customer=c) for c in customers.all()
+             ])
+        sms.save()
+        sms.set_reserved_credit_by_receivers()
+
 
     def send_plain_sms(self, customers: QuerySet, user: Businessman, message: str):
 
@@ -78,6 +86,8 @@ class SendSMSMessage:
              ])
         sms.save()
         sms.set_reserved_credit_by_receivers()
+
+        return sms
 
         
 
@@ -108,6 +118,8 @@ class SendSMSMessage:
              ])
         sms.set_reserved_credit_by_receivers()
 
+        return sms
+
     def send_by_template(self, user: Businessman, receiver_customers: QuerySet, message_template: str):
 
         # message_by_template = ClientBulkToCustomerSMSMessage(user.smspanelinfo, receiver_customers, message_template)
@@ -134,8 +146,10 @@ class SendSMSMessage:
         )
         sms.set_reserved_credit_by_receivers()
 
+        return sms
 
-    def send_by_template_to_all(self, user: Businessman, template: str):
+
+    def send_by_template_to_all(self, user: Businessman, template: str, used_for=SMSMessage.USED_FOR_NONE):
 
         # client_sms =ClientBulkToAllToCustomerSMSMessage(user, template)
         #
@@ -153,13 +167,13 @@ class SendSMSMessage:
         #     except SendSMSException as e:
         #         self.create_unsent_template_sms(e, template, user, user.customers.all())
         #         raise APIException(e.status, e.message)
-
-        sms = SMSMessage.objects.create(message=template, businessman=user,
+        sms = SMSMessage.objects.create(message=template, businessman=user, used_for=used_for,
                                         message_type=SMSMessage.TYPE_TEMPLATE)
-        SMSMessageReceivers.objects.bulk_create(
-            [SMSMessageReceivers(sms_message=sms, customer=c) for c in user.customers.all()]
-        )
-        sms.set_reserved_credit_by_receivers()
+        self.__set_receivers_for_sms_message(sms, user.customers.all())
+
+        return sms
+
+
 
 
     def set_message_to_pending(self, user: Businessman, unsent_sms: SMSMessage):
@@ -183,28 +197,9 @@ class SendSMSMessage:
         except APIException as e:
             raise e
 
+    def content_marketing_message(self, template: str, user: Businessman) -> SMSMessage:
 
-    def send_video_upload_message(self, template: str, user: Businessman, **additional_context):
-
-        client_sms = BulkMessageWithAdditionalContext(user, template, additional_context)
-
-        try:
-            sent_messages = client_sms.send_bulk()
-        except SendSMSException as e:
-            self.create_unsent_template_sms(e, template, user, user.customers.all())
-            raise APIException(e.status, e.message)
-
-        while sent_messages is not None:
-            user.smspanelinfo.reduce_credit(calculate_total_sms_cost(sent_messages))
-            SentSMS.objects.bulk_create(
-                [SentSMS(businessman=user, message_id=m['messageid'], receptor=m['receptor']) for m in sent_messages])
-            try:
-                sent_messages = client_sms.send_bulk()
-            except SendSMSException as e:
-                self.create_unsent_template_sms(e, template, user, user.customers.all())
-                raise APIException(e.status, e.message)
-
-
-
-
+        # sms = SMSMessage.objects.create(message=template, businessman=user, used_for=SMSMessage.USED_FOR_CONTENT_MARKETING)
+        # self.__set_receivers_for_sms_message(sms)
+        return self.send_by_template_to_all(user, template, SMSMessage.USED_FOR_CONTENT_MARKETING)
 

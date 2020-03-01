@@ -4,15 +4,20 @@ from django.db.models.base import Model
 from django.core import validators
 from django.template import TemplateSyntaxError
 from rest_framework import serializers
+from rest_framework.exceptions import ValidationError
 
 from common.util import create_link, create_field_error
+from common.util.custom_validators import sms_not_contains_link
+from smspanel.models import SMSMessage, SMSMessageReceivers
+from smspanel.services import SendSMSMessage
 from .models import Post, Comment, Like, ContentMarketingSettings
 from common.util.custom_templates import get_fake_context, render_template, get_template_context
 from django.conf import settings
 
 from common.util.custom_validators import validate_file_size
 
-template_max_chars = settings.CONTENT_MARKETING['NOTIF_TEMPLATE_MAX_CHARS']
+template_min_chars = settings.SMS_PANEL['TEMPLATE_MIN_CHARS']
+template_max_chars = settings.SMS_PANEL['TEMPLATE_MAX_CHARS']
 thumbnail_max_chars = settings.CONTENT_MARKETING['THUMBNAIL_MAX_NAME_CHARS']
 thumbnail_max_size = settings.CONTENT_MARKETING['THUMBNAIL_MAX_SIZE']
 
@@ -90,9 +95,9 @@ class UploadListPostSerializer(BasePostSerializer):
     mobile_thumbnail = serializers.ImageField(max_length=thumbnail_max_chars, required=True, write_only=True,
                                               validators=[validate_thumbnail_file_size])
     description = serializers.CharField(min_length=20, max_length=5000)
-    customer_notif_message_template = serializers.CharField(max_length=template_max_chars, required=False)
-    send_notif_sms = serializers.BooleanField(required=True)
-    send_notif_pwa = serializers.BooleanField(required=True)
+    notif_sms_template = serializers.CharField(required=False)
+    send_sms = serializers.BooleanField(required=True)
+    send_pwa = serializers.BooleanField(required=True)
 
     class Meta(BasePostSerializer.Meta):
         fields = BasePostSerializer.serializer_fields() + [
@@ -101,9 +106,9 @@ class UploadListPostSerializer(BasePostSerializer):
             'videofile',
             'confirmation_status',
             'mobile_thumbnail',
-            'customer_notif_message_template',
-            'send_notif_sms',
-            'send_notif_pwa'
+            'notif_sms_template',
+            'send_sms',
+            'send_pwa'
         ]
         extra_kwargs = {'id': {'read_only': True},
                         'videofile': {'required': True},
@@ -113,32 +118,39 @@ class UploadListPostSerializer(BasePostSerializer):
                         }
 
     def validate(self, attrs):
-        sms_notif = attrs.get('send_notif_sms')
-        pwa_notif = attrs.get('send_notif_pwa')
-        template = attrs.get('customer_notif_message_template')
+        sms_notif = attrs.get('send_sms')
+        pwa_notif = attrs.get('send_pwa')
+        template = attrs.get('notif_sms_template')
         request = self.context['request']
-        if not sms_notif and not pwa_notif:
+        if not sms_notif:
             return attrs
 
+        if not request.user.smspanelinfo.has_remained_credit_for_new_message_to_all():
+            raise ValidationError('اعتبار کافی برای ارسال پیامک موجود نیست')
         if template is None:
-            raise serializers.ValidationError(create_field_error('customer_notif_message_template', ['template is required']))
-        elif len(template) < 5:
+            raise serializers.ValidationError(create_field_error('notif_sms_template is required', ['template is required']))
+        elif len(template) < template_min_chars or len(template) > template_max_chars:
             raise serializers.ValidationError(create_field_error('customer_notif_message_template',
-                                                                 ['templace length must be bigger than 5 characters']))
+                                                                 [f'templace length between {template_min_chars} and '
+                                                                  f'{template_max_chars} characters']))
 
-        try:
-            render_template(template, get_fake_context(request.user))
-        except TemplateSyntaxError:
-            raise serializers.ValidationError(create_field_error('customer_notif_message_template', ['فرمت غالب اشتباه است']))
+        sms_not_contains_link(template)
         return attrs
 
     def create(self, validated_data):
         request = self.context['request']
+        template = validated_data.pop('notif_sms_template')
+        send_sms = validated_data.get('send_sms')
 
         post = Post.objects.create(businessman=request.user, **validated_data)
+
+        if send_sms:
+            messenger = SendSMSMessage()
+            post.notif_sms = messenger.content_marketing_message(user=request.user, template=template)
         post.video_url = create_link(post.videofile.url, request)
         post.save()
         return post
+
 
     # def update(self, instance: Post, validated_data: dict):
     #

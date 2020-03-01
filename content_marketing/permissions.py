@@ -21,10 +21,13 @@ class HasValidCreditForVideoUploadMessage(permissions.BasePermission):
     message = 'اعتبار شما برای ارسال پیام مربوط به محتوای ارسال شده کافی نیست'
 
     def has_permission(self, request: Request, view: View):
-        user = request.user
-        if not hasattr(user, 'content_marketing_settings') or not user.content_marketing_settings.send_video_upload_message:
-            return True
+        # user = request.user
+        # if not hasattr(user, 'content_marketing_settings') or not user.content_marketing_settings.content_marketing_message:
+        #     return True
+        #
+        # sms_permission = HasValidCreditSendSMSToAll()
+        # return sms_permission.has_permission(request, view)
 
-        sms_permission = HasValidCreditSendSMSToAll()
-        return sms_permission.has_permission(request, view)
+        return True
+
 

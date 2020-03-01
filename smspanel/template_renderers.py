@@ -34,7 +34,7 @@ class ContentMarketingTemplateRenderer(BaseTemplateRenderer):
 
     def render(self, sms_message: SMSMessage, receiver: SMSMessageReceivers):
         try:
-            post = Post.objects.get(customer_sms_message=sms_message)
+            post = Post.objects.get(notif_sms=sms_message)
         except ObjectDoesNotExist:
             raise ValueError('no record with provided sms message found')
         return self._render(sms_message.message,

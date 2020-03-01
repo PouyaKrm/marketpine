@@ -12,6 +12,8 @@ from smspanel.models import SMSMessage
 from users.models import Businessman, AuthStatus
 from django.conf import settings
 
+max_message_cost = settings.SMS_PANEL['MAX_MESSAGE_COST']
+
 fs = FileSystemStorage(location=settings.MEDIA_ROOT)
 auth_fs = FileSystemStorage(location=settings.MEDIA_ROOT + 'auth-docs/')
 
@@ -99,12 +101,14 @@ class SMSPanelInfo(models.Model):
         self.credit = client.fetch_credit_by_local_id(self.id)
         self.save()
 
-    def credit_substract_pending_messages(self):
+    def remained_credit_for_new_message(self):
         reserved_credit = 0
         for m in self.businessman.smsmessage_set.filter(status=SMSMessage.STATUS_PENDING).all():
             reserved_credit += m.reserved_credit
         return self.credit - reserved_credit
 
+    def has_remained_credit_for_new_message_to_all(self):
+        return self.remained_credit_for_new_message() > max_message_cost * self.businessman.customers.count()
 
 class AuthDoc(models.Model):
 

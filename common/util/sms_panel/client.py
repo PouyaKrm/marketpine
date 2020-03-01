@@ -156,3 +156,6 @@ class ClientManagement:
         if resp.status_code != 200:
             raise APIException(resp_data.status_code, resp_data['return']['message'])
         return resp.status_code
+
+    def fetch_credit_by_local_id(self, id: int):
+        return self.fetch_by_local_id(id)['remain_credit']
