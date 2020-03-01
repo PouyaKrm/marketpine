@@ -208,8 +208,8 @@ class AuthSerializer(serializers.ModelSerializer):
         BusinessmanAuthDocs.objects.create(businessman=user, **validated_data)
 
         user.authorized = AuthStatus.PENDING
+        user.has_sms_panel = True
 
         user.save()
 
         return {**validated_data, 'password': password}
-
