@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/2.2/ref/settings/
 """
 import datetime
+import multiprocessing
 import os
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
@@ -70,14 +71,17 @@ SMS_PANEL = {
     'PID': 1422,
     "MIN_CREDIT_CHARGE": 100,  # min amount that user can increase their credit in Tomans
     "MAX_CREDIT_CHARGE": 10000,  # max amount that user can increase their credit in Tomans
-    'MAX_MESSAGE_COST': 100,  # this is used for credit validation before sending message
+    'MAX_MESSAGE_COST': 400,  # this is used for credit validation before sending message
     'ENGLISH_MAX_CHARS': 612,
     'PERSIAN_MAX_CHARS': 268,
+    'TEMPLATE_MIN_CHARS': 10,
     'TEMPLATE_MAX_CHARS': 160,  #note: Don 't change this value. If you really want, change in SMSTemplate -> content -> max_length too
+    'SEND_THREADS_NUMBER': multiprocessing.cpu_count(),
+    'MAX_SEND_FAIL_ATTEMPTS': 3,
+    'SEND_TEMPLATE_PAGE_SIZE': 150,
     "SEND_PLAIN_CUSTOMERS_MAX_NUMBER": 3,  # allowed number of customer in selecting specific customer for plain send
     "SEND_PLAIN_CUSTOMERS_PAGE_SIZE": 2,
     'SEND_TEMPLATE_MAX_CUSTOMERS': 5,  # allowed number of customer in selecting specific customer for template send
-    'SEND_TEMPLATE_PAGE_SIZE': 2,
     'MAX_ALLOWED_DEFINED_TEMPLATES': 7,  # defines how many sms templates that user can define
     'MAX_ALLOWED_DEFINED_GROUPS': 7  # defines how many customer groups user can have
 }

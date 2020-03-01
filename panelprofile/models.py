@@ -8,6 +8,7 @@ from common.util.custom_validators import pdf_file_validator
 
 # Create your models here.
 from common.util.sms_panel.client import ClientManagement
+from smspanel.models import SMSMessage
 from users.models import Businessman, AuthStatus
 from django.conf import settings
 
@@ -93,12 +94,23 @@ class SMSPanelInfo(models.Model):
         self.credit = new_credit
         self.save()
 
+    def refresh_credit(self):
+        client = ClientManagement()
+        self.credit = client.fetch_credit_by_local_id(self.id)
+        self.save()
 
+    def credit_substract_pending_messages(self):
+        reserved_credit = 0
+        for m in self.businessman.smsmessage_set.filter(status=SMSMessage.STATUS_PENDING).all():
+            reserved_credit += m.reserved_credit
+        return self.credit - reserved_credit
 
 
 class AuthDoc(models.Model):
 
     file = models.FileField(storage=fs, upload_to='auth-doc', validators=[pdf_file_validator])
+
+
 
 
 class BusinessmanAuthDocs(models.Model):

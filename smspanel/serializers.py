@@ -1,17 +1,22 @@
 from django.template import TemplateSyntaxError
 from rest_framework import serializers
-from .models import SMSTemplate, SentSMS, UnsentPlainSMS, UnsentTemplateSMS
+
+from common.util.custom_validators import sms_not_contains_link
+from .models import SMSTemplate, SentSMS, UnsentPlainSMS, UnsentTemplateSMS, SMSMessage
 from common.util.custom_templates import render_template, get_fake_context, render_template_with_customer_data
-from .helpers import SendSMSMessage
+from .services import SendSMSMessage
 from django.conf import settings
 
 persian_max_chars = settings.SMS_PANEL['PERSIAN_MAX_CHARS']
 send_plain_max_customers = settings.SMS_PANEL['SEND_PLAIN_CUSTOMERS_MAX_NUMBER']
 template_max_chars = settings.SMS_PANEL['TEMPLATE_MAX_CHARS']
+template_min_chars = settings.SMS_PANEL['TEMPLATE_MIN_CHARS']
 send_template_max_customers = settings.SMS_PANEL['SEND_TEMPLATE_MAX_CUSTOMERS']
 
 
 class SMSTemplateSerializer(serializers.ModelSerializer):
+
+    content = serializers.CharField(min_length=template_min_chars, max_length=template_max_chars, validators=[sms_not_contains_link])
 
     class Meta:
         model = SMSTemplate
@@ -228,6 +233,18 @@ class SendPlainToGroup(serializers.Serializer):
         return validate_data
 
 
+class SMSMessageListSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = SMSMessage
+        fields = [
+            'id',
+            'message',
+            'create_date',
+            'message_type',
+            'status',
+            'used_for'
+        ]
 
 
 class UnsentPlainSMSListSerializer(serializers.ModelSerializer):

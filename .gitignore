@@ -148,3 +148,6 @@ dmypy.json
 .vscode/*
 root/*
 # End of https://www.gitignore.io/api/django
+
+#nohup.out
+nohup.out
