@@ -19,7 +19,8 @@ from .serializers import SMSTemplateSerializer, SendSMSSerializer, SentSMSRetrie
     SendPlainSMSToAllSerializer, SendByTemplateSerializer, SendPlainToGroup, UnsentPlainSMSListSerializer, \
     UnsentTemplateSMSListSerializer, SMSMessageListSerializer
 from .models import SMSTemplate, SentSMS, SMSMessage
-from .permissions import HasValidCreditSendSMS, HasValidCreditSendSMSToAll, HasValidCreditResendFailedSMS, HasValidCreditResendTemplateSMS, HasValidCreditSendSMSToGroup
+from .permissions import HasValidCreditSendSMS, HasValidCreditSendSMSToAll, HasValidCreditResendFailedSMS, \
+    HasValidCreditResendTemplateSMS, HasValidCreditSendSMSToGroup, HasActiveSMSPanel
 from common.util import paginators, jalali
 
 from .helpers import send_template_sms_message_to_all, SendSMSMessage
@@ -38,6 +39,7 @@ def send_message_failed_response(ex: APIException):
 class SMSTemplateCreateListAPIView(generics.ListAPIView, mixins.CreateModelMixin):
 
     serializer_class = SMSTemplateSerializer
+    permission_classes = [permissions.IsAuthenticated, HasActiveSMSPanel]
 
     def get_serializer_context(self):
         return {'user': self.request.user}
@@ -49,12 +51,11 @@ class SMSTemplateCreateListAPIView(generics.ListAPIView, mixins.CreateModelMixin
         return self.create(request, *args, **kwargs)
 
 
-
-
 class SMSTemplateRetrieveAPIView(generics.RetrieveAPIView, mixins.UpdateModelMixin,
                                  mixins.DestroyModelMixin):
 
     serializer_class = SMSTemplateSerializer
+    permission_classes = [permissions.IsAuthenticated, HasActiveSMSPanel]
 
     def get_queryset(self):
         return SMSTemplate.objects.filter(businessman=self.request.user)
@@ -73,7 +74,7 @@ class SMSTemplateRetrieveAPIView(generics.RetrieveAPIView, mixins.UpdateModelMix
 
 
 @api_view(['POST'])
-@permission_classes([permissions.IsAuthenticated, HasValidCreditSendSMS])
+@permission_classes([permissions.IsAuthenticated, HasActiveSMSPanel, HasValidCreditSendSMS])
 def send_plain_sms(request):
 
     """
@@ -104,7 +105,7 @@ def send_plain_sms(request):
 
 
 @api_view(['POST'])
-@permission_classes([permissions.IsAuthenticated, HasValidCreditSendSMSToAll])
+@permission_classes([permissions.IsAuthenticated, HasActiveSMSPanel, HasValidCreditSendSMSToAll])
 def send_plain_to_all(request):
 
     """
@@ -135,7 +136,7 @@ def send_plain_to_all(request):
 
 
 @api_view(['POST'])
-@permission_classes([permissions.IsAuthenticated, HasValidCreditSendSMS])
+@permission_classes([permissions.IsAuthenticated, HasActiveSMSPanel, HasValidCreditSendSMS])
 def send_sms_by_template(request, template_id):
 
     """
@@ -168,7 +169,7 @@ def send_sms_by_template(request, template_id):
 
 
 @api_view(['POST'])
-@permission_classes([permissions.IsAuthenticated, HasValidCreditSendSMSToAll])
+@permission_classes([permissions.IsAuthenticated, HasActiveSMSPanel, HasValidCreditSendSMSToAll])
 def send_sms_by_template_to_all(request, template_id):
 
     """
@@ -192,7 +193,7 @@ def send_sms_by_template_to_all(request, template_id):
 
 
 @api_view(['POST'])
-@permission_classes([permissions.IsAuthenticated, HasValidCreditSendSMSToGroup])
+@permission_classes([permissions.IsAuthenticated, HasActiveSMSPanel, HasValidCreditSendSMSToGroup])
 def send_plain_sms_to_group(request: Request, group_id):
 
 
@@ -221,7 +222,7 @@ def send_plain_sms_to_group(request: Request, group_id):
 
 
 @api_view(['POST'])
-@permission_classes([permissions.IsAuthenticated, HasValidCreditSendSMSToGroup])
+@permission_classes([permissions.IsAuthenticated, HasActiveSMSPanel, HasValidCreditSendSMSToGroup])
 def send_template_sms_to_group(request: Request, template_id, group_id):
     
     try:
@@ -252,7 +253,7 @@ class FailedSMSMessagesList(ListAPIView):
 
 
 @api_view(['POST'])
-@permission_classes([permissions.IsAuthenticated, HasValidCreditResendFailedSMS])
+@permission_classes([permissions.IsAuthenticated, HasActiveSMSPanel, HasValidCreditResendFailedSMS])
 def resend_failed_sms(request, sms_id):
     try:
         sms = request.user.smsmessage_set.get(id=sms_id, status=SMSMessage.STATUS_FAILED)
@@ -279,14 +280,13 @@ def list_unsent_template_sms(request: Request):
 
 
 @api_view(['POST'])
-@permission_classes([permissions.IsAuthenticated, HasValidCreditResendFailedSMS])
+@permission_classes([permissions.IsAuthenticated, HasActiveSMSPanel, HasValidCreditResendFailedSMS])
 def resend_plain_sms(request: Request, unsent_sms_id):
 
     try:
         unsent_plain_sms = request.user.unsentplainsms_set.get(id=unsent_sms_id)
     except ObjectDoesNotExist:
         return Response({'detail': 'unsent sms with provided id does not exist'}, status=status.HTTP_404_NOT_FOUND)
-    
 
     messainger = SendSMSMessage()
 

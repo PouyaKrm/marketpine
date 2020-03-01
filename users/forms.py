@@ -17,8 +17,14 @@ class BusinessmanChangeForm(UserChangeForm):
 
     class Meta:
         model = Businessman
-        fields = ['username', 'phone',
-                  'business_name', 'logo', 'address', 'is_verified']
+        fields = ['username',
+                  'phone',
+                  'business_name',
+                  'logo',
+                  'address',
+                  'is_verified',
+                  'has_sms_panel'
+                  ]
 
 
 class CustomerCreationForm(UserCreationForm):

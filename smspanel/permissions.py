@@ -12,6 +12,17 @@ from users.models import Businessman
 
 english_sms_cost = settings.SMS_PANEL['MAX_MESSAGE_COST']
 send_plain_max_customers = settings.SMS_PANEL['SEND_PLAIN_CUSTOMERS_MAX_NUMBER']
+from panelprofile.models import SMSPanelStatus
+
+class HasActiveSMSPanel(permissions.BasePermission):
+
+    message = 'شما پنل اسمس فعالی ندارید'
+
+    def has_permission(self, request: Request, view: View):
+        if not request.user.has_sms_panel or request.user.smspanelinfo.status == SMSPanelStatus.INACTIVE:
+            return False
+        return True
+
 
 class HasValidCreditSendSMS(permissions.BasePermission):
 
