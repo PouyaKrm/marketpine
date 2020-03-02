@@ -47,7 +47,7 @@ class HasValidCreditSendSMSToAll(permissions.BasePermission):
     message = 'اعتبار شما برای ارسال پیام کافی نیست'
 
     def has_permission(self, request: Request, view: View):
-        return request.user.smspanelinfo.remained_credit_for_new_message_to_all()
+        return request.user.smspanelinfo.has_remained_credit_for_new_message_to_all()
 
 
 class HasValidCreditSendSMSToGroup(permissions.BasePermission):
