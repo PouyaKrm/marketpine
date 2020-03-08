@@ -148,8 +148,7 @@ class SendSMSMessage:
 
         return sms
 
-
-    def send_by_template_to_all(self, user: Businessman, template: str, used_for=SMSMessage.USED_FOR_NONE):
+    def send_by_template_to_all(self, user: Businessman, template: str, used_for=SMSMessage.USED_FOR_NONE, **kwargs):
 
         # client_sms =ClientBulkToAllToCustomerSMSMessage(user, template)
         #
@@ -168,7 +167,7 @@ class SendSMSMessage:
         #         self.create_unsent_template_sms(e, template, user, user.customers.all())
         #         raise APIException(e.status, e.message)
         sms = SMSMessage.objects.create(message=template, businessman=user, used_for=used_for,
-                                        message_type=SMSMessage.TYPE_TEMPLATE)
+                                        message_type=SMSMessage.TYPE_TEMPLATE, **kwargs)
         self.__set_receivers_for_sms_message(sms, user.customers.all())
 
         return sms
@@ -199,7 +198,12 @@ class SendSMSMessage:
 
     def content_marketing_message(self, template: str, user: Businessman) -> SMSMessage:
 
-        # sms = SMSMessage.objects.create(message=template, businessman=user, used_for=SMSMessage.USED_FOR_CONTENT_MARKETING)
-        # self.__set_receivers_for_sms_message(sms)
         return self.send_by_template_to_all(user, template, SMSMessage.USED_FOR_CONTENT_MARKETING)
 
+    def festival_message(self, template: str, user: Businessman) -> SMSMessage:
+         return self.send_by_template_to_all(user, template, SMSMessage.USED_FOR_FESTIVAL, status=SMSMessage.STATUS_CANCLE)
+
+    def set_festival_message_to_pending(self, sms_message: SMSMessage):
+        sms_message.status = SMSMessage.STATUS_PENDING
+        sms_message.save()
+        return sms_message

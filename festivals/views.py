@@ -6,6 +6,8 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
+
+from smspanel.services import SendSMSMessage
 from users.models import Customer
 from .models import Festival
 from .serializers import FestivalCreationSerializer, FestivalListSerializer, RetrieveFestivalSerializer, \
@@ -13,15 +15,16 @@ from .serializers import FestivalCreationSerializer, FestivalListSerializer, Ret
 from common.util import generate_discount_code, paginators, DiscountType
 from common.util.custom_templates import FestivalTemplate
 from common.util.sms_panel.message import ClientBulkTemplateSMSMessage
-from .permissions import HASFestivalAccess
 from common.util import paginators
+
+from smspanel.permissions import HasValidCreditSendSMSToAll, HasActiveSMSPanel
 # Create your views here.
 
 
 class FestivalsListAPIView(generics.ListAPIView, mixins.CreateModelMixin):
 
     serializer_class = FestivalCreationSerializer
-    permission_classes = [permissions.IsAuthenticated, HASFestivalAccess]
+    permission_classes = [permissions.IsAuthenticated, HasActiveSMSPanel]
 
     def get_queryset(self):
 
@@ -37,7 +40,7 @@ class FestivalsListAPIView(generics.ListAPIView, mixins.CreateModelMixin):
 
 class FestivalAPIView(APIView):
 
-    permission_classes = [permissions.IsAuthenticated, HASFestivalAccess]
+    permission_classes = [permissions.IsAuthenticated, HasActiveSMSPanel]
 
     def get(self, request):
 
@@ -91,7 +94,7 @@ class FestivalAPIView(APIView):
 
 
 @api_view(['PUT'])
-@permission_classes([permissions.IsAuthenticated, HASFestivalAccess])
+@permission_classes([permissions.IsAuthenticated, HasActiveSMSPanel, HasValidCreditSendSMSToAll])
 def send_festival_message(request: Request, festival_id):
 
     """
@@ -108,20 +111,13 @@ def send_festival_message(request: Request, festival_id):
     except ObjectDoesNotExist:
         return Response(status=status.HTTP_404_NOT_FOUND)
 
-    if festival.messages_sent or festival.end_date <= timezone.now().date():
+    if festival.message_sent or festival.end_date <= timezone.now().date():
 
         return Response({'details': ['پیام های مربوط به این جشنواره قبلا فرستاده شده یا تاریخ جشنواره به اتمام رسیده']},
                         status=status.HTTP_403_FORBIDDEN)
 
-    template = FestivalTemplate(request.user, festival)
-
-    rendered_messages = template.get_message_phone_lists()
-
-    sms = ClientBulkTemplateSMSMessage(rendered_messages['phones'], rendered_messages['messages'])
-
-    sms.send_bulk()
-
-    festival.messages_sent = True
+    SendSMSMessage().set_festival_message_to_pending(festival.sms_message)
+    festival.message_sent = True
     festival.save()
 
     return Response(status=status.HTTP_204_NO_CONTENT)
@@ -130,7 +126,7 @@ def send_festival_message(request: Request, festival_id):
 class FestivalRetrieveAPIView(generics.RetrieveAPIView, mixins.UpdateModelMixin, mixins.DestroyModelMixin):
 
     serializer_class = RetrieveFestivalSerializer
-    permission_classes = [permissions.IsAuthenticated, HASFestivalAccess]
+    permission_classes = [permissions.IsAuthenticated]
 
     lookup_field = 'id'
 
@@ -153,7 +149,6 @@ class FestivalRetrieveAPIView(generics.RetrieveAPIView, mixins.UpdateModelMixin,
 
 
 @api_view(['GET'])
-@permission_classes([permissions.IsAuthenticated, HASFestivalAccess])
 def list_customers_in_festival(request, festival_id):
 
     try:
@@ -167,7 +162,6 @@ def list_customers_in_festival(request, festival_id):
 
 
 @api_view(['POST'])
-@permission_classes([permissions.IsAuthenticated, HASFestivalAccess])
 def add_customer_to_festival(request):
 
     serializer = FestivalCustomerSerializer(data=request.data)
@@ -195,7 +189,6 @@ def add_customer_to_festival(request):
 
 
 @api_view(['DELETE'])
-@permission_classes([permissions.IsAuthenticated, HASFestivalAccess])
 def delete_customer_from_festival(request, festival_id, customer_id):
 
     try:
@@ -212,7 +205,6 @@ def delete_customer_from_festival(request, festival_id, customer_id):
 
 
 @api_view(['GET'])
-@permission_classes([permissions.IsAuthenticated, HASFestivalAccess])
 def check_festival_name_or_discount_code_exists(request: Request):
 
 
@@ -245,7 +237,6 @@ def check_festival_name_or_discount_code_exists(request: Request):
 
 
 @api_view(['GET'])
-@permission_classes([permissions.IsAuthenticated, HASFestivalAccess])
 def get_festival_by_discount_code(request: Request, discount_code):
 
     """
@@ -268,7 +259,6 @@ def get_festival_by_discount_code(request: Request, discount_code):
 
 
 @api_view(['GET'])
-@permission_classes([permissions.IsAuthenticated, HASFestivalAccess])
 def get_number_of_festivals(request: Request):
     """
     NEW

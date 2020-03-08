@@ -44,6 +44,11 @@ class ContentMarketingTemplateRenderer(BaseTemplateRenderer):
                              })
 
 
+class FestivalTemplateRenderer(BaseTemplateRenderer):
+    def render(self, sms_message: SMSMessage, receiver: SMSMessageReceivers):
+        pass
+
+
 def get_renderer_object_based_on_sms_message_used(used_for: str) -> BaseTemplateRenderer:
 
     if used_for == SMSMessage.USED_FOR_CONTENT_MARKETING:

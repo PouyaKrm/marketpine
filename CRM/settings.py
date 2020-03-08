@@ -64,14 +64,14 @@ ACTIVATION_COST_IN_TOMANS = 1000
 SMS_PANEL = {
     'CUSTOMER_LINE': '10004000030003',
     'SYSTEM_LINE': '10004000020002',
-    'MIN_CREDIT': 100000,
     'INIT_CREDIT': 10000,
     'API_KEY': '4D4C324E43416D726C65446D7258566A4F59697153444355734E4F4D6B382B57',
     'CUSTOMER_US_PREFIX': 'bp',
     'PID': 1422,
+    'MIN_CREDIT': 100000,  #minimum credit that each user must have for sending message
     "MIN_CREDIT_CHARGE": 100,  # min amount that user can increase their credit in Tomans
     "MAX_CREDIT_CHARGE": 10000,  # max amount that user can increase their credit in Tomans
-    'MAX_MESSAGE_COST': 600,  # this is used for credit validation before sending message
+    'MAX_MESSAGE_COST': 6000,  # this is used for credit validation before sending message. must be in rials
     'ENGLISH_MAX_CHARS': 612,
     'PERSIAN_MAX_CHARS': 268,
     'TEMPLATE_MIN_CHARS': 10,

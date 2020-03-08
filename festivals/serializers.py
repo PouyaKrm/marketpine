@@ -1,15 +1,25 @@
 from django.template import TemplateSyntaxError
 from django.utils import timezone
 from rest_framework import serializers
+
+from smspanel.services import SendSMSMessage
 from users.models import Customer
 from .models import Festival
-from common.util.custom_validators import phone_validator
+from common.util.custom_validators import phone_validator, sms_not_contains_link
 from common.util.custom_templates import FestivalTemplate
+
+from django.conf import settings
+
+template_min_chars = settings.SMS_PANEL['TEMPLATE_MIN_CHARS']
+template_max_chars = settings.SMS_PANEL['TEMPLATE_MAX_CHARS']
 
 
 class FestivalCreationSerializer(serializers.ModelSerializer):
 
     discount_code = serializers.CharField(min_length=8, max_length=12, required=True)
+    message = serializers.CharField(required=True, min_length=template_min_chars, max_length=template_max_chars,
+                                    validators=[sms_not_contains_link])
+    name = serializers.CharField(required=True, min_length=5, max_length=20)
 
     class Meta:
         model = Festival
@@ -24,7 +34,6 @@ class FestivalCreationSerializer(serializers.ModelSerializer):
             'flat_rate_off'
         ]
 
-        extra_kwargs = {'message': {'required': True}}
 
     def validate_name(self, value):
 
@@ -93,10 +102,14 @@ class FestivalCreationSerializer(serializers.ModelSerializer):
 
         return value
 
-
     def create(self, validated_data):
 
-        return Festival.objects.create(businessman=self.context['user'], **validated_data)
+        user = self.context['user']
+        message = validated_data.pop('message')
+        festival = Festival.objects.create(businessman=self.context['user'], **validated_data)
+        festival.sms_message = SendSMSMessage().festival_message(message, user)
+        festival.save()
+        return {'id': festival.id, **validated_data, 'message': message}
 
 
 class FestivalListSerializer(serializers.ModelSerializer):
@@ -119,9 +132,6 @@ class FestivalListSerializer(serializers.ModelSerializer):
 
     def get_customers_total(self, obj: Festival):
         return obj.customers.count()
-
-
-
 
 
 class RetrieveFestivalSerializer(serializers.ModelSerializer):
@@ -164,7 +174,6 @@ class RetrieveFestivalSerializer(serializers.ModelSerializer):
         return instance
 
 
-
 class CustomerSerializer(serializers.ModelSerializer):
 
     phone = serializers.CharField(validators=[phone_validator])
@@ -175,6 +184,7 @@ class CustomerSerializer(serializers.ModelSerializer):
             'id',
             'phone'
         ]
+
 
 class FestivalCustomerSerializer(serializers.Serializer):
 

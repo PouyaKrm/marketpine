@@ -5,6 +5,8 @@ from django.views.generic.base import View
 from rest_framework import permissions
 from rest_framework.request import Request
 
+from smspanel.permissions import HasActiveSMSPanel, HasValidCreditSendSMSToAll
+
 
 class HASFestivalAccess(permissions.BasePermission):
 
