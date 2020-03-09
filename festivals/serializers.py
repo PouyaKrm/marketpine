@@ -125,7 +125,7 @@ class FestivalListSerializer(serializers.ModelSerializer):
             'end_date',
             'discount_code',
             'customers_total',
-            'messages_sent',
+            'message_sent',
         ]
 
         extra_kwargs = {'message_sent': {'read_only': True}}

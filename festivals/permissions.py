@@ -1,11 +1,24 @@
 from datetime import datetime
 
 from django.core.exceptions import ObjectDoesNotExist
+from django.utils import timezone
 from django.views.generic.base import View
 from rest_framework import permissions
 from rest_framework.request import Request
 
-from smspanel.permissions import HasActiveSMSPanel, HasValidCreditSendSMSToAll
+from festivals.models import Festival
+
+
+class CanDeleteFestival(permissions.BasePermission):
+
+    message = 'امکان حذف این پیام وجود ندارد'
+
+    def has_object_permission(self, request: Request, view: View, obj: Festival):
+        if obj.businessman != request.user:
+            return False
+        if request.method == 'DELETE':
+            return not obj.message_sent or obj.end_date < timezone.now().date()
+        return True
 
 
 class HASFestivalAccess(permissions.BasePermission):
