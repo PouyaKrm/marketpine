@@ -158,4 +158,4 @@ class ClientManagement:
         return resp.status_code
 
     def fetch_credit_by_local_id(self, id: int):
-        return self.fetch_by_local_id(id)['remain_credit']
+        return self.fetch_by_local_id(id)['remaincredit']

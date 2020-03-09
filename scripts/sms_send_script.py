@@ -63,9 +63,9 @@ class SendTemplateMessageThread(BaseSendMessageThread):
         self.phones = []
 
     def __render_messages(self):
-        renderer = get_renderer_object_based_on_sms_message_used(self.sms_message.used_for)
+        renderer = get_renderer_object_based_on_sms_message_used(self.sms_message)
         for r in self.receivers:
-            message = renderer.render(self.sms_message, r)
+            message = renderer.render(r)
             if message is not None:
                 self.messages.append(message)
                 self.phones.append(r.customer.phone)
