@@ -6,7 +6,7 @@ from django.template import TemplateSyntaxError
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 
-from common.util import create_link, create_field_error
+from common.util import create_link, create_field_error, create_detail_error
 from common.util.custom_validators import sms_not_contains_link
 from smspanel.models import SMSMessage, SMSMessageReceivers
 from smspanel.services import SendSMSMessage
@@ -126,7 +126,7 @@ class UploadListPostSerializer(BasePostSerializer):
             return attrs
 
         if not request.user.smspanelinfo.has_remained_credit_for_new_message_to_all():
-            raise ValidationError('اعتبار کافی برای ارسال پیامک موجود نیست')
+            raise ValidationError({'notif_sms_template': 'اعتبار کافی برای ارسال پیامک موجود نیست'})
         if template is None:
             raise serializers.ValidationError(create_field_error('notif_sms_template is required', ['template is required']))
         elif len(template) < template_min_chars or len(template) > template_max_chars:
@@ -146,7 +146,7 @@ class UploadListPostSerializer(BasePostSerializer):
 
         if send_sms:
             messenger = SendSMSMessage()
-            post.notif_sms = messenger.content_marketing_message(user=request.user, template=template)
+            post.notif_sms = messenger.content_marketing_message_status_cancel(user=request.user, template=template)
         post.video_url = create_link(post.videofile.url, request)
         post.save()
         return post

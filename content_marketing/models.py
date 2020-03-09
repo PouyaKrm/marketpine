@@ -11,6 +11,7 @@ from django.dispatch import receiver
 from common.util import get_file_extension
 from common.util.kavenegar_local import APIException, HTTPException
 from smspanel.models import SMSMessage
+from smspanel.services import SendSMSMessage
 from users.models import Businessman,Customer
 
 from common.util.sms_panel.message import SystemSMSMessage
@@ -55,6 +56,7 @@ class Post(models.Model):
     confirmation_status = models.CharField(max_length=1, choices=confirmation_choices, default=PostConfirmationStatus.PENDING)
     notif_sms = models.OneToOneField(SMSMessage, null=True, blank=True, on_delete=models.SET_NULL)
     send_sms = models.BooleanField(default=False)
+    sms_sent = models.BooleanField(default=False)
     send_pwa = models.BooleanField(default=False)
     # is_active = models.BooleanField(default=False)
 
@@ -85,6 +87,10 @@ def send_message_video_is_confirmed(sender, instance: Post, *args, **kwargs):
         if obj.confirmation_status != instance.confirmation_status:
             if instance.confirmation_status is PostConfirmationStatus.ACCEPTED:
                 messenger.send_message(instance.businessman.phone, video_confirm_message.format(title=instance.title))
+                if not instance.sms_sent:
+                    SendSMSMessage().set_message_to_pending(instance.notif_sms)
+                    instance.sms_sent = True
+                    instance.save()
             elif instance.confirmation_status is PostConfirmationStatus.REJECTED:
                 messenger.send_message(instance.businessman.phone, video_reject_message.format(title=instance.title))
 

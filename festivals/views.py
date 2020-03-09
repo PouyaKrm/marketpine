@@ -116,7 +116,7 @@ def send_festival_message(request: Request, festival_id):
         return Response({'details': ['پیام های مربوط به این جشنواره قبلا فرستاده شده یا تاریخ جشنواره به اتمام رسیده']},
                         status=status.HTTP_403_FORBIDDEN)
 
-    SendSMSMessage().set_festival_message_to_pending(festival.sms_message)
+    SendSMSMessage().set_message_to_pending(festival.sms_message)
     festival.message_sent = True
     festival.save()
 

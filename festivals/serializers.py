@@ -107,7 +107,7 @@ class FestivalCreationSerializer(serializers.ModelSerializer):
         user = self.context['user']
         message = validated_data.pop('message')
         festival = Festival.objects.create(businessman=self.context['user'], **validated_data)
-        festival.sms_message = SendSMSMessage().festival_message(message, user)
+        festival.sms_message = SendSMSMessage().festival_message_status_cancel(message, user)
         festival.save()
         return {'id': festival.id, **validated_data, 'message': message}
 

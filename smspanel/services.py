@@ -175,12 +175,12 @@ class SendSMSMessage:
 
 
 
-    def set_message_to_pending(self, user: Businessman, unsent_sms: SMSMessage):
+    def set_message_to_pending(self, sms_messsage: SMSMessage):
 
-        if not unsent_sms.has_any_unsent_receivers():
-            unsent_sms.set_done()
-        unsent_sms.reset_to_pending()
-
+        if not sms_messsage.has_any_unsent_receivers():
+            sms_messsage.set_done()
+        sms_messsage.reset_to_pending()
+        return sms_messsage
 
 
     def resend_unsent_template_sms(self, user: Businessman, unsent_sms: UnsentTemplateSMS):
@@ -196,14 +196,14 @@ class SendSMSMessage:
         except APIException as e:
             raise e
 
-    def content_marketing_message(self, template: str, user: Businessman) -> SMSMessage:
+    def content_marketing_message_status_cancel(self, template: str, user: Businessman) -> SMSMessage:
 
-        return self.send_by_template_to_all(user, template, SMSMessage.USED_FOR_CONTENT_MARKETING)
+        return self.send_by_template_to_all(user, template, SMSMessage.USED_FOR_CONTENT_MARKETING,
+                                            status=SMSMessage.STATUS_CANCLE)
 
-    def festival_message(self, template: str, user: Businessman) -> SMSMessage:
-         return self.send_by_template_to_all(user, template, SMSMessage.USED_FOR_FESTIVAL, status=SMSMessage.STATUS_CANCLE)
+    def set_content_marketing_message_to_pending(self, sms_message):
+        return self.set_message_to_pending(sms_message)
 
-    def set_festival_message_to_pending(self, sms_message: SMSMessage):
-        sms_message.status = SMSMessage.STATUS_PENDING
-        sms_message.save()
-        return sms_message
+    def festival_message_status_cancel(self, template: str, user: Businessman) -> SMSMessage:
+        return self.send_by_template_to_all(user, template, SMSMessage.USED_FOR_FESTIVAL, status=SMSMessage.STATUS_CANCLE)
+
