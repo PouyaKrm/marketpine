@@ -14,5 +14,5 @@ class FestivalForm(forms.ModelForm):
         super().clean()
         businessman = self.cleaned_data.get('businessman')
         if businessman is not None and (not businessman.has_sms_panel or
-                                        businessman.smspanelinfo.status != SMSPanelStatus.ACTIVE):
+                                        businessman.smspanelinfo.status == SMSPanelStatus.INACTIVE):
             raise ValidationError('businessman does not have active sms panel')
