@@ -14,7 +14,7 @@ class Festival(models.Model):
     discount_code = models.CharField(max_length=12)
     sms_message = models.OneToOneField(SMSMessage, on_delete=models.CASCADE, null=True)  # max length of of one sms message is 70 characters
     message_sent = models.BooleanField(default=False)
-    percent_off = models.PositiveIntegerField(default=0)
+    percent_off = models.FloatField(default=0)
     flat_rate_off = models.PositiveIntegerField(default=0)
     businessman = models.ForeignKey(Businessman, on_delete=models.CASCADE)
     customers = models.ManyToManyField(Customer)

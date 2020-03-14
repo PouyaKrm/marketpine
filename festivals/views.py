@@ -7,7 +7,7 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from festivals.permissions import CanDeleteFestival
+from festivals.permissions import CanDeleteOrUpdateFestival
 from smspanel.services import SendSMSMessage
 from users.models import Customer
 from .models import Festival
@@ -127,7 +127,7 @@ def send_festival_message(request: Request, festival_id):
 class FestivalRetrieveAPIView(generics.RetrieveAPIView, mixins.UpdateModelMixin, mixins.DestroyModelMixin):
 
     serializer_class = RetrieveFestivalSerializer
-    permission_classes = [permissions.IsAuthenticated, CanDeleteFestival]
+    permission_classes = [permissions.IsAuthenticated, CanDeleteOrUpdateFestival]
 
     lookup_field = 'id'
 

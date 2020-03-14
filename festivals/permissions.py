@@ -9,7 +9,7 @@ from rest_framework.request import Request
 from festivals.models import Festival
 
 
-class CanDeleteFestival(permissions.BasePermission):
+class CanDeleteOrUpdateFestival(permissions.BasePermission):
 
     message = 'امکان حذف این پیام وجود ندارد'
 
@@ -18,6 +18,8 @@ class CanDeleteFestival(permissions.BasePermission):
             return False
         if request.method == 'DELETE':
             return not obj.message_sent or obj.end_date < timezone.now().date()
+        if request.method == 'PUT':
+            return not obj.message_sent
         return True
 
 

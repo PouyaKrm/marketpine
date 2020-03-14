@@ -6,7 +6,6 @@ from smspanel.services import SendSMSMessage
 from users.models import Customer
 from .models import Festival
 from common.util.custom_validators import phone_validator, sms_not_contains_link
-from common.util.custom_templates import FestivalTemplate
 
 from django.conf import settings
 
@@ -14,12 +13,14 @@ template_min_chars = settings.SMS_PANEL['TEMPLATE_MIN_CHARS']
 template_max_chars = settings.SMS_PANEL['TEMPLATE_MAX_CHARS']
 
 
-class FestivalCreationSerializer(serializers.ModelSerializer):
+class BaseFestivalSerializer(serializers.ModelSerializer):
 
     discount_code = serializers.CharField(min_length=8, max_length=12, required=True)
     message = serializers.CharField(required=True, min_length=template_min_chars, max_length=template_max_chars,
                                     validators=[sms_not_contains_link])
     name = serializers.CharField(required=True, min_length=5, max_length=20)
+    customers_total = serializers.SerializerMethodField(read_only=True)
+    percent_off = serializers.FloatField(min_value=0, max_value=100)
 
     class Meta:
         model = Festival
@@ -30,10 +31,13 @@ class FestivalCreationSerializer(serializers.ModelSerializer):
             'end_date',
             'discount_code',
             'message',
+            'message_sent',
             'percent_off',
-            'flat_rate_off'
+            'flat_rate_off',
+            'customers_total'
         ]
 
+        extra_kwargs = {'message_sent': {'read_only': True}}
 
     def validate_name(self, value):
 
@@ -49,42 +53,11 @@ class FestivalCreationSerializer(serializers.ModelSerializer):
 
         return value
 
-
-
-
     def validate_end_date(self, value):
         if value <= timezone.now().date():
             raise serializers.ValidationError('end date must be in future time')
 
         return value
-
-    def validate_message(self, value):
-
-        try:
-            FestivalTemplate.validate_template(value)
-        except TemplateSyntaxError:
-            raise serializers.ValidationError('قالب غیر مجاز')
-
-        return value
-
-
-
-    def validate(self, attrs):
-
-        if attrs.get('start_date') >= attrs.get('end_date'):
-            raise serializers.ValidationError({'end_date': ['end_date must be bigger than start_date']})
-
-        return attrs
-
-
-
-    def validate_percent_off(self, value):
-
-        if not ((value >= 0) and (value <= 100)):
-            raise serializers.ValidationError('invalid value')
-
-        return value
-
 
     def validate_flat_rate_off(self, value):
 
@@ -102,6 +75,22 @@ class FestivalCreationSerializer(serializers.ModelSerializer):
 
         return value
 
+    def validate(self, attrs):
+
+        if attrs.get('start_date') >= attrs.get('end_date'):
+            raise serializers.ValidationError({'end_date': ['end_date must be bigger than start_date']})
+
+        return attrs
+
+    def get_customers_total(self, obj: Festival):
+        return obj.customers.count()
+
+
+class FestivalCreationSerializer(BaseFestivalSerializer):
+
+    class Meta(BaseFestivalSerializer.Meta):
+        pass
+
     def create(self, validated_data):
 
         user = self.context['user']
@@ -112,66 +101,42 @@ class FestivalCreationSerializer(serializers.ModelSerializer):
         return {'id': festival.id, **validated_data, 'message': message}
 
 
-class FestivalListSerializer(serializers.ModelSerializer):
+class FestivalListSerializer(BaseFestivalSerializer):
 
-    customers_total = serializers.SerializerMethodField(read_only=True)
+    class Meta(BaseFestivalSerializer.Meta):
 
-    class Meta:
-        model = Festival
-        fields = [
-            'id',
-            'name',
-            'start_date',
-            'end_date',
-            'discount_code',
-            'customers_total',
-            'message_sent',
-        ]
-
-        extra_kwargs = {'message_sent': {'read_only': True}}
-
-    def get_customers_total(self, obj: Festival):
-        return obj.customers.count()
+        BaseFestivalSerializer.Meta.fields.remove('message')
 
 
-class RetrieveFestivalSerializer(serializers.ModelSerializer):
+class RetrieveFestivalSerializer(BaseFestivalSerializer):
 
-    customers_total = serializers.SerializerMethodField(read_only=True)
+    message = serializers.CharField(min_length=template_min_chars, max_length=template_max_chars, source='sms_message.message')
 
-    class Meta:
-        model = Festival
-        fields = [
-
-            'id',
-            'name',
-            'start_date',
-            'end_date',
-            'discount_code',
-            'percent_off',
-            'flat_rate_off',
-            'customers_total'
-
-        ]
-
-    def get_customers_total(self, obj: Festival):
-        return obj.customers.count()
+    class Meta(BaseFestivalSerializer.Meta):
+        pass
 
     def validate_name(self, value):
+        if self.instance.name == value:
+            return value
+        return super().validate_name(value)
 
-        if self.context['user'].festival_set.exclude(id=self.context['festival_id']).filter(name=value).exists():
-            raise serializers.ValidationError('name of the festival must be unique')
+    def validate_discount_code(self, value):
+        if self.instance.discount_code == value:
+            return value
+        return super().validate_discount_code(value)
 
-        return value
+    def update(self, instance: Festival, validated_data: dict):
 
+        message = validated_data.pop('sms_message')['message']
 
+        for key, val in validated_data.items():
+            setattr(instance, key, val)
 
-    def update(self, instance: Festival, validated_data):
-
-        instance.name = validated_data.get('name')
+        SendSMSMessage().update_not_pending_message_text(instance.sms_message, message)
 
         instance.save()
 
-        return instance
+        return {**validated_data, 'sms_message': {'message': message}}
 
 
 class CustomerSerializer(serializers.ModelSerializer):

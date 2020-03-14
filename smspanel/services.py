@@ -182,6 +182,11 @@ class SendSMSMessage:
         sms_messsage.reset_to_pending()
         return sms_messsage
 
+    def update_not_pending_message_text(self, sms_message: SMSMessage, new_message: str):
+        if sms_message.status == SMSMessage.STATUS_PENDING:
+            raise ValueError('sms message most not be in pending mode for send')
+        sms_message.message = new_message
+        sms_message.save()
 
     def resend_unsent_template_sms(self, user: Businessman, unsent_sms: UnsentTemplateSMS):
 
