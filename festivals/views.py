@@ -3,13 +3,14 @@ from django.shortcuts import render, get_object_or_404
 from django.utils import timezone
 from rest_framework import generics, mixins, status, permissions
 from rest_framework.decorators import api_view, permission_classes
+from rest_framework.exceptions import NotFound
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from festivals.permissions import CanDeleteOrUpdateFestival
 from smspanel.services import SendSMSMessage
-from users.models import Customer
+from users.models import Customer, Businessman
 from .models import Festival
 from .serializers import FestivalCreationSerializer, FestivalListSerializer, RetrieveFestivalSerializer, \
     CustomerSerializer, FestivalCustomerSerializer
@@ -17,6 +18,8 @@ from common.util import generate_discount_code, paginators, DiscountType
 from common.util.custom_templates import FestivalTemplate
 from common.util.sms_panel.message import ClientBulkTemplateSMSMessage
 from common.util import paginators
+
+from customers.serializers import CustomerListCreateSerializer
 
 from smspanel.permissions import HasValidCreditSendSMSToAll, HasActiveSMSPanel
 # Create your views here.
@@ -139,7 +142,7 @@ class FestivalRetrieveAPIView(generics.RetrieveAPIView, mixins.UpdateModelMixin,
         return fest
 
     def get_serializer_context(self):
-        return {'user': self.request.user, 'festival_id': self.lookup_field}
+        return {'user': self.request.user, 'festival_id': self.lookup_field, 'auto_discount': self.request.query_params.get('auto')}
 
     def put(self, request, *args, **kwargs):
 
@@ -157,7 +160,7 @@ def list_customers_in_festival(request, festival_id):
     except ObjectDoesNotExist:
         return Response({'details': ['این جشنواره وجود ندارد']}, status=status.HTTP_404_NOT_FOUND)
 
-    paginator = paginators.NumberedPaginator(request, festival.customers.all(), CustomerSerializer)
+    paginator = paginators.NumberedPaginator(request, festival.customers.all(), CustomerListCreateSerializer)
 
     return paginator.next_page()
 

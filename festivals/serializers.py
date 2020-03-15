@@ -2,6 +2,7 @@ from django.template import TemplateSyntaxError
 from django.utils import timezone
 from rest_framework import serializers
 
+from common.util import generate_discount_code, DiscountType
 from smspanel.services import SendSMSMessage
 from users.models import Customer
 from .models import Festival
@@ -146,15 +147,19 @@ class RetrieveFestivalSerializer(BaseFestivalSerializer):
     def update(self, instance: Festival, validated_data: dict):
 
         message = validated_data.pop('sms_message')['message']
+        auto_discount = self.context['auto_discount']
 
         for key, val in validated_data.items():
             setattr(instance, key, val)
+
+        if auto_discount is not None and auto_discount.lower() == 'true':
+            instance.discount_code = generate_discount_code(DiscountType.FESTIVAL)
 
         SendSMSMessage().update_not_pending_message_text(instance.sms_message, message)
 
         instance.save()
 
-        return {**validated_data, 'sms_message': {'message': message}}
+        return instance
 
 
 class CustomerSerializer(serializers.ModelSerializer):
