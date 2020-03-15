@@ -19,7 +19,7 @@ class BaseFestivalSerializer(serializers.ModelSerializer):
     message = serializers.CharField(required=True, min_length=template_min_chars, max_length=template_max_chars,
                                     validators=[sms_not_contains_link])
     name = serializers.CharField(required=True, min_length=5, max_length=20)
-    customers_total = serializers.SerializerMethodField(read_only=True)
+
     percent_off = serializers.FloatField(min_value=0, max_value=100)
 
     class Meta:
@@ -34,7 +34,6 @@ class BaseFestivalSerializer(serializers.ModelSerializer):
             'message_sent',
             'percent_off',
             'flat_rate_off',
-            'customers_total'
         ]
 
         extra_kwargs = {'message_sent': {'read_only': True}}
@@ -94,9 +93,6 @@ class BaseFestivalSerializer(serializers.ModelSerializer):
 
         return attrs
 
-    def get_customers_total(self, obj: Festival):
-        return obj.customers.count()
-
 
 class FestivalCreationSerializer(BaseFestivalSerializer):
 
@@ -115,9 +111,14 @@ class FestivalCreationSerializer(BaseFestivalSerializer):
 
 class FestivalListSerializer(BaseFestivalSerializer):
 
+    customers_total = serializers.SerializerMethodField(read_only=True)
+
     class Meta(BaseFestivalSerializer.Meta):
 
-        fields = BaseFestivalSerializer.get_fields_excluded_from('message')
+        fields = BaseFestivalSerializer.get_fields_excluded_from('message') + ['customers_total']
+
+    def get_customers_total(self, obj: Festival):
+        return obj.customers.count()
 
 
 class RetrieveFestivalSerializer(BaseFestivalSerializer):
