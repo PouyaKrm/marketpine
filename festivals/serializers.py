@@ -39,6 +39,18 @@ class BaseFestivalSerializer(serializers.ModelSerializer):
 
         extra_kwargs = {'message_sent': {'read_only': True}}
 
+    @staticmethod
+    def get_fields_excluded_from(*args) -> list:
+        """
+        returns fields that are provided field names are excluded from original fields
+        :param args: name of the fields to be excluded
+        :return: new list of fields that does not contains excluded fields provided in argument
+        """
+        fields = BaseFestivalSerializer.Meta.fields.copy()
+        for f in args:
+            fields.remove(f)
+        return fields
+
     def validate_name(self, value):
 
         if self.context['user'].festival_set.filter(name=value).exists():
@@ -105,7 +117,7 @@ class FestivalListSerializer(BaseFestivalSerializer):
 
     class Meta(BaseFestivalSerializer.Meta):
 
-        BaseFestivalSerializer.Meta.fields.remove('message')
+        fields = BaseFestivalSerializer.get_fields_excluded_from('message')
 
 
 class RetrieveFestivalSerializer(BaseFestivalSerializer):
@@ -119,6 +131,11 @@ class RetrieveFestivalSerializer(BaseFestivalSerializer):
         if self.instance.name == value:
             return value
         return super().validate_name(value)
+
+    def validate_start_date(self, value):
+        if value >= self.instance.start_date:
+            return value
+        return super().validate_start_date(value)
 
     def validate_discount_code(self, value):
         if self.instance.discount_code == value:
