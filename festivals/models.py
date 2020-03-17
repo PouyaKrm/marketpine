@@ -33,9 +33,3 @@ class Festival(models.Model):
 
     def can_delete(self) -> bool:
         return self.is_expired() or (not self.message_sent)
-# class CustomerFestival(models.Model):
-#     customer = models.ForeignKey(Customer, on_delete=models.CASCADE)
-#     festival = models.ForeignKey(Festival, on_delete=models.CASCADE)
-#
-#     class Meta:
-#         unique_together = ['customer', 'festival']
