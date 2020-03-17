@@ -1,4 +1,6 @@
 from django.db import models
+from django.utils import timezone
+
 from users.models import Businessman, Customer
 from smspanel.models import SMSMessage
 
@@ -23,7 +25,14 @@ class Festival(models.Model):
 
         unique_together = [['businessman', 'name'], ['businessman', 'discount_code']]
 
+    def is_expired(self) -> bool:
+        return self.end_date < timezone.now().date()
 
+    def can_edit(self) -> bool:
+        return (not self.is_expired()) and (not self.message_sent)
+
+    def can_delete(self) -> bool:
+        return self.is_expired() or (not self.message_sent)
 # class CustomerFestival(models.Model):
 #     customer = models.ForeignKey(Customer, on_delete=models.CASCADE)
 #     festival = models.ForeignKey(Festival, on_delete=models.CASCADE)

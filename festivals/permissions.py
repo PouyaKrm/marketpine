@@ -17,9 +17,9 @@ class CanDeleteOrUpdateFestival(permissions.BasePermission):
         if obj.businessman != request.user:
             return False
         if request.method == 'DELETE':
-            return not obj.message_sent or obj.end_date < timezone.now().date()
+            return obj.can_delete()
         if request.method == 'PUT':
-            return not obj.message_sent
+            return obj.can_edit()
         return True
 
 
