@@ -2,7 +2,11 @@ from enum import Enum
 
 from django.db import models
 from django.contrib.auth.models import AbstractUser, AbstractBaseUser, BaseUserManager
+from django.db.models.signals import pre_save, post_save
+from django.dispatch.dispatcher import receiver
 from django.utils import timezone
+
+
 
 
 class AuthStatus:
@@ -34,6 +38,13 @@ class Businessman(AbstractUser):
         return self.username
 
 
+@receiver(post_save, sender=Businessman)
+def businessman_post_save(sender, instance: Businessman, created: bool, **kwargs):
+    from invitation.models import FriendInvitationSettings
+    if created or not hasattr(instance, 'friendinvitationsettings'):
+        FriendInvitationSettings.objects.create(businessman=instance, disabled=True)
+
+
 class VerificationCodes(models.Model):
     businessman = models.OneToOneField(Businessman, on_delete=models.CASCADE)
     expiration_time = models.DateTimeField()
@@ -42,6 +53,7 @@ class VerificationCodes(models.Model):
 
     def __str__(self):
         return self.code
+
 
 class CustomerManager(BaseUserManager):
 
@@ -105,3 +117,5 @@ class BusinessmanRefreshTokens(models.Model):
     expire_at = models.DateTimeField()
     ip = models.GenericIPAddressField()
     username = models.CharField(max_length=40)
+
+

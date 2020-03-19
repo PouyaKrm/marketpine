@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import FriendInvitation, FriendInvitationDiscount
+from .models import FriendInvitation, FriendInvitationDiscount, FriendInvitationSettings
 # Register your models here.
 
 
@@ -14,4 +14,5 @@ class FriendInvitationDiscountAdminModel(admin.ModelAdmin):
 
 admin.site.register(FriendInvitation, FriendInvitationAdminModel)
 admin.site.register(FriendInvitationDiscount, FriendInvitationDiscountAdminModel)
+admin.site.register(FriendInvitationSettings)
 
