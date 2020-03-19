@@ -63,23 +63,6 @@ class SendSMSMessage:
 
 
     def send_plain_sms(self, customers: QuerySet, user: Businessman, message: str):
-
-        # client_sms = ClientSMSMessage(user.smspanelinfo, customers.all(), message)
-        # try:
-        #     sent_messages = client_sms.send_plain_next()
-        # except SendSMSException as e:
-        #     self.create_unsent_plain_sms(e, message, user, customers)
-        #     raise APIException(e.status, e.message)
-         
-        # while sent_messages is not None:
-         
-        #     user.smspanelinfo.reduce_credit(calculate_total_sms_cost(sent_messages))
-        #     SentSMS.objects.bulk_create([SentSMS(businessman=user, message_id=m['messageid'], receptor=m['receptor']) for m in sent_messages])
-        #     try:
-        #         sent_messages = client_sms.send_plain_next()
-        #     except SendSMSException as e:
-        #         self.create_unsent_plain_sms(e, message, user, customers)
-        #         raise APIException(e.status, e.message)
         sms = SMSMessage.objects.create(message=message, businessman=user, message_type=SMSMessage.TYPE_PLAIN, status=SMSMessage.STATUS_PENDING)
         SMSMessageReceivers.objects.bulk_create(
             [SMSMessageReceivers(sms_message=sms, customer=c) for c in customers.all()
@@ -92,25 +75,6 @@ class SendSMSMessage:
         
 
     def send_plain_sms_to_all(self, user: Businessman, message: str):
-
-        # client_sms = ClientToAllCustomersSMSMessage(user, message)
-
-        # try:
-        #     sent_messages = client_sms.send_plain_next()
-        # except SendSMSException as e:
-        #     self.create_unsent_plain_sms(e, message, user, user.customers.all())
-        #     raise APIException(e.status, e.message)
-
-        # while sent_messages is not None:
-            
-        #     user.smspanelinfo.reduce_credit(calculate_total_sms_cost(sent_messages))
-        #     SentSMS.objects.bulk_create([SentSMS(businessman=user, message_id=m['messageid'], receptor=m['receptor']) for m in sent_messages])
-        #     try:
-        #         sent_messages = client_sms.send_plain_next()
-        #     except SendSMSException as e:
-        #         self.create_unsent_plain_sms(e, message, user, user.customers.all())
-        #         raise APIException(e.status, e.message)
-
         sms = SMSMessage.objects.create(message=message, businessman=user, message_type=SMSMessage.TYPE_PLAIN)
         # SMSMessageReceivers.objects.create(sms_message=sms, customer=user.customers.all())
         SMSMessageReceivers.objects.bulk_create(
@@ -120,27 +84,9 @@ class SendSMSMessage:
 
         return sms
 
-    def send_by_template(self, user: Businessman, receiver_customers: QuerySet, message_template: str):
-
-        # message_by_template = ClientBulkToCustomerSMSMessage(user.smspanelinfo, receiver_customers, message_template)
-        #
-        #
-        # try:
-        #     sent_messages = message_by_template.send_bulk()
-        # except SendSMSException as e:
-        #     self.create_unsent_template_sms(e, template, user, receiver_customers)
-        #     raise APIException(e.status, e.message)
-        #
-        # while sent_messages is not None:
-        #     user.smspanelinfo.reduce_credit(calculate_total_sms_cost(sent_messages))
-        #     SentSMS.objects.bulk_create([SentSMS(businessman=user, message_id=m['messageid'], receptor=m['receptor']) for m in sent_messages])
-        #     try:
-        #         sent_messages = message_by_template.send_bulk()
-        #     except SendSMSException as e:
-        #         self.create_unsent_template_sms(e, template, user, receiver_customers)
-        #         raise APIException(e.status, e.message)
-
-        sms = SMSMessage.objects.create(message=message_template, businessman=user, message_type=SMSMessage.TYPE_TEMPLATE)
+    def send_by_template(self, user: Businessman, receiver_customers: QuerySet, message_template: str,
+                         used_for=SMSMessage.USED_FOR_NONE, **kwargs):
+        sms = SMSMessage.objects.create(message=message_template, businessman=user, message_type=SMSMessage.TYPE_TEMPLATE, used_for=used_for, **kwargs)
         SMSMessageReceivers.objects.bulk_create(
             [SMSMessageReceivers(sms_message=sms, customer=c) for c in receiver_customers]
         )
@@ -149,23 +95,6 @@ class SendSMSMessage:
         return sms
 
     def send_by_template_to_all(self, user: Businessman, template: str, used_for=SMSMessage.USED_FOR_NONE, **kwargs):
-
-        # client_sms =ClientBulkToAllToCustomerSMSMessage(user, template)
-        #
-        # try:
-        #     sent_messages = client_sms.send_bulk()
-        # except SendSMSException as e:
-        #     self.create_unsent_template_sms(e, template, user, user.customers.all())
-        #     raise APIException(e.status, e.message)
-        #
-        # while sent_messages is not None:
-        #     user.smspanelinfo.reduce_credit(calculate_total_sms_cost(sent_messages))
-        #     SentSMS.objects.bulk_create([SentSMS(businessman=user, message_id=m['messageid'], receptor=m['receptor']) for m in sent_messages])
-        #     try:
-        #         sent_messages = client_sms.send_bulk()
-        #     except SendSMSException as e:
-        #         self.create_unsent_template_sms(e, template, user, user.customers.all())
-        #         raise APIException(e.status, e.message)
         sms = SMSMessage.objects.create(message=template, businessman=user, used_for=used_for,
                                         message_type=SMSMessage.TYPE_TEMPLATE, **kwargs)
         self.__set_receivers_for_sms_message(sms, user.customers.all())
@@ -212,3 +141,5 @@ class SendSMSMessage:
     def festival_message_status_cancel(self, template: str, user: Businessman) -> SMSMessage:
         return self.send_by_template_to_all(user, template, SMSMessage.USED_FOR_FESTIVAL, status=SMSMessage.STATUS_CANCLE)
 
+    def friend_invitation_message(self, user: Businessman, template: str, customer):
+        return self.send_by_template(user, [customer], template, SMSMessage.USED_FOR_FRIEND_INVITATION)

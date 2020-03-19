@@ -1,6 +1,7 @@
 from django.db import models
 from django.conf import settings
 # Create your models here.
+from smspanel.models import SMSMessage
 from users.models import Customer, Businessman
 
 
@@ -21,13 +22,16 @@ class BaseInvitationDiscountSettings(models.Model):
         abstract = True
 
 
-class FriendInvitation(models.Model):
+class FriendInvitation(BaseInvitationDiscountSettings):
 
     businessman = models.ForeignKey(Businessman, on_delete=models.CASCADE)
     inviter = models.ForeignKey(Customer, related_name='invited_friends', null=True, on_delete=models.SET_NULL)
     invited = models.ForeignKey(Customer, null=True, on_delete=models.SET_NULL)
     invitation_date = models.DateField(auto_now_add=True)
     new = models.BooleanField(default=True)
+    inviter_discount_code = models.CharField(max_length=20, null=True)
+    invited_discount_code = models.CharField(max_length=20, null=True)
+    sms_message = models.OneToOneField(SMSMessage, null=True, blank=True, on_delete=models.SET_NULL)
 
     class Meta:
         db_table = 'friend_invitation'

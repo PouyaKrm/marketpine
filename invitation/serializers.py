@@ -4,6 +4,7 @@ from common.util.custom_validators import phone_validator, sms_not_contains_link
 from customers.serializers import CustomerListCreateSerializer
 from invitation.models import FriendInvitation, FriendInvitationDiscount, FriendInvitationSettings
 from common.util import common_serializers, DiscountType, generate_discount_code
+from smspanel.services import SendSMSMessage
 from users.models import Customer, Businessman
 
 from django.conf import settings
@@ -94,37 +95,42 @@ class FriendInvitationCreationSerializer(serializers.Serializer):
         inviter_customer = user.customers.get(phone=inviter)
         invited_customer = Customer.objects.create(businessman=user, phone=invited)
 
-        obj = FriendInvitation.objects.create(businessman=user, invited=invited_customer,
-                                              inviter=inviter_customer)
+        obj = FriendInvitation(businessman=user, invited=invited_customer, inviter_discount_code=inviter_discount_code,
+                                              inviter=inviter_customer, invited_discount_code=invited_discount_code)
+        # obj.invited_discount_code = invited_discount_code
+        # obj.inviter_discount_code = inviter_discount_code
 
-        invited_discount = FriendInvitationDiscount.objects.create(friend_invitation=obj, customer=invited_customer,
-                                                role=FriendInvitationDiscount.DISCOUNT_ROLE_INVITED, used=False,
-                                                discount_code=invited_discount_code)
-        inviter_discount = FriendInvitationDiscount(friend_invitation=obj, customer=inviter_customer,
-                                 role=FriendInvitationDiscount.DISCOUNT_ROLE_INVITER, used=False,
-                                 discount_code=inviter_discount_code
-                                 )
+        # invited_discount = FriendInvitationDiscount.objects.create(friend_invitation=obj, customer=invited_customer,
+        #                                         role=FriendInvitationDiscount.DISCOUNT_ROLE_INVITED, used=False,
+        #                                         discount_code=invited_discount_code)
+        # inviter_discount = FriendInvitationDiscount(friend_invitation=obj, customer=inviter_customer,
+        #                          role=FriendInvitationDiscount.DISCOUNT_ROLE_INVITER, used=False,
+        #                          discount_code=inviter_discount_code
+        #                          )
         settings = FriendInvitationSettings.objects.get(businessman=user)
 
         pr = FriendInvitationSettings.percent_off
         invite_settings = self.user.friendinvitationsettings
         if settings.is_percent_discount():
-            invited_discount.percent_off = invite_settings.percent_off
-            invited_discount.discount_type = invite_settings.DISCOUNT_TYPE_PERCENT
-            inviter_discount.percent_off = invite_settings.percent_off
-            inviter_discount.discount_type = invite_settings.DISCOUNT_TYPE_PERCENT
+            obj.percent_off = invite_settings.percent_off
+            obj.discount_type = invite_settings.DISCOUNT_TYPE_PERCENT
+            obj.percent_off = invite_settings.percent_off
+            obj.discount_type = invite_settings.DISCOUNT_TYPE_PERCENT
 
         else:
-            invited_discount.flat_rate_off = invite_settings.flat_rate_off
-            invited_discount.discount_type = invite_settings.DISCOUNT_TYPE_FLAT_RATE
-            inviter_discount.flat_rate_off = invite_settings.flat_rate_off
-            inviter_discount.discount_type = invite_settings.DISCOUNT_TYPE_FLAT_RATE
+            obj.flat_rate_off = invite_settings.flat_rate_off
+            obj.discount_type = invite_settings.DISCOUNT_TYPE_FLAT_RATE
+            obj.flat_rate_off = invite_settings.flat_rate_off
+            obj.discount_type = invite_settings.DISCOUNT_TYPE_FLAT_RATE
 
-        invited_discount.save()
-        inviter_discount.save()
+        # obj.save()
 
+        sms = SendSMSMessage().friend_invitation_message(user, settings.sms_template, invited_customer)
+        obj.sms_message = sms
+        obj.save()
         return {'id': obj.id, 'businessman': user.username, 'inviter': inviter, 'invited': invited,
-                   'invitation_date': obj.invitation_date, 'inviter_discount_code': inviter_discount.discount_code}
+                   'invitation_date': obj.invitation_date, 'inviter_discount_code': obj.inviter_discount_code}
+
 
     # def validate_invited(self, value):
     #
