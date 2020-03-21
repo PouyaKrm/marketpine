@@ -38,6 +38,23 @@ class Businessman(AbstractUser):
         return self.username
 
 
+class BaseModel(models.Model):
+
+    create_date = models.DateTimeField(auto_now=True, null=True)
+    update_date = models.DateTimeField(auto_now_add=True, null=True)
+
+    class Meta:
+        abstract = True
+
+
+class BusinessmanOneToOneBaseModel(BaseModel):
+
+    businessman = models.OneToOneField(Businessman, on_delete=models.PROTECT)
+
+    class Meta(BaseModel.Meta):
+        abstract = True
+
+
 @receiver(post_save, sender=Businessman)
 def businessman_post_save(sender, instance: Businessman, created: bool, **kwargs):
     from invitation.models import FriendInvitationSettings

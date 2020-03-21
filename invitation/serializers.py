@@ -24,6 +24,20 @@ class BaseFriendInvitationSerializer(serializers.Serializer):
             'invited'
         ]
 
+    def validate_inviter(self, value):
+        user = self.context['user']
+        try:
+            user.customers.get(phone=value)
+        except ObjectDoesNotExist:
+            raise serializers.ValidationError('مشتری با این شماره تلفن وجود ندارد')
+        return value
+
+    def validate_invited(self, value):
+        user = self.context['user']
+        if user.customers.filter(phone=value).exists():
+            raise serializers.ValidationError('این مشتری قبلا معرفی شده')
+        return value
+
     def validate(self, attrs):
         inviter = attrs.get('inviter')
         invited = attrs.get('invited')
@@ -33,10 +47,39 @@ class BaseFriendInvitationSerializer(serializers.Serializer):
         return attrs
 
     def create(self, validated_data: dict):
-        raise NotImplemented()
+        invited_discount_code = generate_discount_code(DiscountType.INVITATION)
+        inviter_discount_code = generate_discount_code(DiscountType.INVITATION)
 
-    def update(self, instance, validated_data):
-        raise NotImplemented()
+        # user = self.context['user']
+        user = self.context['user']
+        invited = validated_data.get('invited')
+        inviter = validated_data.get('inviter')
+        inviter_customer = user.customers.get(phone=inviter)
+        invited_customer = Customer.objects.create(businessman=user, phone=invited)
+
+        obj = FriendInvitation(businessman=user, invited=invited_customer, inviter_discount_code=inviter_discount_code,
+                               inviter=inviter_customer, invited_discount_code=invited_discount_code)
+
+        invite_settings = user.friendinvitationsettings
+        if invite_settings.is_percent_discount():
+            obj.percent_off = invite_settings.percent_off
+            obj.discount_type = invite_settings.DISCOUNT_TYPE_PERCENT
+            obj.percent_off = invite_settings.percent_off
+            obj.discount_type = invite_settings.DISCOUNT_TYPE_PERCENT
+
+        else:
+            obj.flat_rate_off = invite_settings.flat_rate_off
+            obj.discount_type = invite_settings.DISCOUNT_TYPE_FLAT_RATE
+            obj.flat_rate_off = invite_settings.flat_rate_off
+            obj.discount_type = invite_settings.DISCOUNT_TYPE_FLAT_RATE
+
+        # obj.save()
+
+        sms = SendSMSMessage().friend_invitation_message(user, invite_settings.sms_template, invited_customer)
+        obj.sms_message = sms
+        obj.save()
+        return {'id': obj.id, 'businessman': user.username, 'inviter': inviter, 'invited': invited,
+                'invitation_date': obj.invitation_date, 'inviter_discount_code': obj.inviter_discount_code}
 
 
 class FriendInvitationCreationSerializer(serializers.Serializer):

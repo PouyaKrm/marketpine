@@ -283,7 +283,8 @@ JWT_AUTH = {
 
 CORS_ORIGIN_ALLOW_ALL = True
 CORS_ALLOW_HEADERS = list(default_headers) + [
-    'x-api-key'
+    'x-api-key',
+    'x-device-key'
 ]
 CORS_EXPOSE_HEADERS = [
     'authorization',

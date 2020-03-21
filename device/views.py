@@ -1,4 +1,8 @@
 from django.http import HttpResponse,HttpResponseRedirect
+from rest_framework.views import APIView
+
+from common.util.http_helpers import bad_request, ok
+from invitation.serializers import BaseFriendInvitationSerializer
 from .models import Device
 from .serializers import CustomerRegisterSerializer
 from django.http import JsonResponse
@@ -12,19 +16,36 @@ from rest_framework.generics import GenericAPIView ,CreateAPIView
 from rest_framework.mixins import CreateModelMixin
 from rest_framework.decorators import api_view, permission_classes
 
+from .authentication import DeviceAuthenticationSchema
+
 
 # GenericAPIView,CreateModelMixin
-class RegisterCustomer(CreateAPIView):
-    serializer_class = CustomerRegisterSerializer
-    queryset = Customer.objects.all()
-    permission_classes = []
 
+class BaseCreateAPIView(CreateAPIView):
+    authentication_classes = [DeviceAuthenticationSchema]
 
     def get_serializer_context(self):
-        context={
-                "imei_number":self.kwargs["imei_number"],
-        }
-        return context
+        return {'user': self.request.user}
+
+
+class BaseAPIView(APIView):
+    authentication_classes = [DeviceAuthenticationSchema]
+
+
+class RegisterCustomer(BaseCreateAPIView):
+    serializer_class = CustomerRegisterSerializer
+    queryset = Customer.objects.all()
+
+
+class InviteFriend(BaseAPIView):
+
+    def post(self, request):
+
+        serializer = BaseFriendInvitationSerializer(data=request.data, context={'user': request.user})
+        if not serializer.is_valid():
+            return bad_request(serializer.errors)
+
+        return ok(serializer.create(serializer.validated_data))
 
 # 
 # @api_view(['POST'])

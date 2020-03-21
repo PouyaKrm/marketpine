@@ -4,6 +4,7 @@ from rest_framework_jwt.settings import api_settings
 from rest_framework.request import Request
 from strgen import StringGenerator
 import jwt
+import secrets
 
 import string
 
@@ -111,3 +112,7 @@ def create_detail_error(error: str):
 
 def create_field_error(name: str, errors: list):
     return {name: errors}
+
+
+def url_safe_secret() -> str:
+    return secrets.token_urlsafe(32)
