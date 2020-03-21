@@ -1,20 +1,11 @@
-from django.http import HttpResponse,HttpResponseRedirect
 from rest_framework.views import APIView
 
 from common.util.http_helpers import bad_request, ok
-from invitation.serializers import BaseFriendInvitationSerializer
-from .models import Device
+from customer_return_plan.invitation.serializers import BaseFriendInvitationSerializer
 from .serializers import CustomerRegisterSerializer
-from django.http import JsonResponse
-from users.models import Businessman,Customer
-from common.util.custom_validators import phone_validator
+from users.models import Customer
 
-
-from rest_framework.response import Response
-from rest_framework import status
-from rest_framework.generics import GenericAPIView ,CreateAPIView
-from rest_framework.mixins import CreateModelMixin
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.generics import CreateAPIView
 
 from .authentication import DeviceAuthenticationSchema
 

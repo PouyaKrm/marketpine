@@ -2,7 +2,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from rest_framework import serializers
 from common.util.custom_validators import phone_validator, sms_not_contains_link
 from customers.serializers import CustomerListCreateSerializer
-from invitation.models import FriendInvitation, FriendInvitationDiscount, FriendInvitationSettings
+from customer_return_plan.invitation.models import FriendInvitation, FriendInvitationSettings
 from common.util import common_serializers, DiscountType, generate_discount_code
 from smspanel.services import SendSMSMessage
 from users.models import Customer, Businessman

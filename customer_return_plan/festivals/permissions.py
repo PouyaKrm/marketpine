@@ -1,12 +1,11 @@
 from datetime import datetime
 
 from django.core.exceptions import ObjectDoesNotExist
-from django.utils import timezone
 from django.views.generic.base import View
 from rest_framework import permissions
 from rest_framework.request import Request
 
-from festivals.models import Festival
+from .models import Festival
 
 
 class CanDeleteOrUpdateFestival(permissions.BasePermission):

@@ -15,7 +15,6 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
-from faker import Faker
 from rest_framework_swagger.views import get_swagger_view
 from django.conf import settings
 from django.conf.urls.static import static
@@ -24,8 +23,7 @@ from users import urls as salesman_url
 from customers import urls as customer_url
 from groups import urls as group_url
 from smspanel import urls as smspanel_url
-from festivals import urls as festival_url
-from invitation import urls as invitation_url
+from customer_return_plan import urls as plan_url
 from dashboard import urls as dashboard_url
 from customerpurchase import urls as purchase_url
 from panelmodulus import urls as modulus_url
@@ -44,8 +42,7 @@ urlpatterns = [
     path('api/salesman/customers/', include(customer_url)),
     path('api/salesman/customers/groups/', include(group_url)),
     path('api/salesman/smspanel/', include(smspanel_url)),
-    path('api/salesman/festivals/', include(festival_url)),
-    path('api/salesman/invitations/', include(invitation_url)),
+    path('api/salesman/plan/', include(plan_url)),
     path('api/salesman/dashboard/', include(dashboard_url)),
     path('api/salesman/customer-purchase/', include(purchase_url)),
     path('api/salesman/modulus/', include(modulus_url)),

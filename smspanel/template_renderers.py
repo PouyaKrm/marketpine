@@ -1,12 +1,12 @@
 from django.core.exceptions import ObjectDoesNotExist
 
 from content_marketing.models import Post
-from festivals.models import Festival
-from invitation.models import FriendInvitation
+from customer_return_plan.festivals import Festival
+from customer_return_plan.invitation.models import FriendInvitation
 from smspanel.models import SMSMessage, SMSMessageReceivers
 import re
 
-from users.models import Customer, Businessman
+from users.models import Customer
 
 
 class BaseTemplateRenderer:

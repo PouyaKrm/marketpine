@@ -1,9 +1,6 @@
 from rest_framework import serializers
 
-from invitation.serializers import BaseFriendInvitationSerializer
-from .models import Device
-from users.models import Businessman,Customer
-from django.core.exceptions import ObjectDoesNotExist
+from users.models import Customer
 from common.util.custom_validators import phone_validator
 
 

@@ -1,22 +1,19 @@
 from django.core.exceptions import ObjectDoesNotExist
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from rest_framework import generics, mixins, status, permissions
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.exceptions import NotFound
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from festivals.permissions import CanDeleteOrUpdateFestival
+from customer_return_plan.festivals.permissions import CanDeleteOrUpdateFestival
 from smspanel.services import SendSMSMessage
-from users.models import Customer, Businessman
+from users.models import Customer
 from .models import Festival
 from .serializers import FestivalCreationSerializer, FestivalListSerializer, RetrieveFestivalSerializer, \
-    CustomerSerializer, FestivalCustomerSerializer
-from common.util import generate_discount_code, paginators, DiscountType
-from common.util.custom_templates import FestivalTemplate
-from common.util.sms_panel.message import ClientBulkTemplateSMSMessage
+    FestivalCustomerSerializer
+from common.util import generate_discount_code, DiscountType
 from common.util import paginators
 
 from customers.serializers import CustomerListCreateSerializer

@@ -24,7 +24,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='friendinvitationdiscount',
             name='friend_invitation',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='invitation.FriendInvitation'),
+            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='customer_return_plan.invitation.FriendInvitation'),
         ),
         migrations.AddField(
             model_name='friendinvitation',

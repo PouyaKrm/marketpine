@@ -6,14 +6,12 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from common.util.http_helpers import ok, bad_request
-from invitation.models import FriendInvitation, FriendInvitationDiscount
+from customer_return_plan.invitation.models import FriendInvitation
 from .serializers import FriendInvitationCreationSerializer, FriendInvitationListSerializer, \
     InvitationBusinessmanListSerializer, InvitationRetrieveSerializer, FriendInvitationSettingsSerializer
 from users.models import Businessman
 from common.util.custom_validators import phone_validator
-from common.util import paginators, generate_discount_code, DiscountType
-from .permissions import HasInvitationAccess
-from common.util.sms_panel.message import SystemSMSMessage
+from common.util import paginators
 # Create your views here.
 from rest_framework import generics
 

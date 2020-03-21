@@ -1,12 +1,7 @@
-from enum import Enum
-
 from django.db import models
 from django.contrib.auth.models import AbstractUser, AbstractBaseUser, BaseUserManager
-from django.db.models.signals import pre_save, post_save
+from django.db.models.signals import post_save
 from django.dispatch.dispatcher import receiver
-from django.utils import timezone
-
-
 
 
 class AuthStatus:
@@ -57,7 +52,7 @@ class BusinessmanOneToOneBaseModel(BaseModel):
 
 @receiver(post_save, sender=Businessman)
 def businessman_post_save(sender, instance: Businessman, created: bool, **kwargs):
-    from invitation.models import FriendInvitationSettings
+    from customer_return_plan.invitation.models import FriendInvitationSettings
     if created or not hasattr(instance, 'friendinvitationsettings'):
         FriendInvitationSettings.objects.create(businessman=instance, disabled=True)
 

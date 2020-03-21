@@ -1,6 +1,6 @@
 from django.template import Template
 from django.template.context import Context
-from festivals.models import Festival
+from customer_return_plan.festivals.models import Festival
 from users.models import Businessman, Customer
 from . import jalali
 
