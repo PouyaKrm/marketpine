@@ -18,6 +18,9 @@ class BaseInvitationDiscountSettings(models.Model):
     percent_off = models.FloatField(default=0)
     flat_rate_off = models.PositiveIntegerField(default=0)
 
+    def is_percent_discount(self) -> bool:
+        return self.discount_type == FriendInvitationSettings.DISCOUNT_TYPE_PERCENT
+
     class Meta:
         abstract = True
 
@@ -48,8 +51,6 @@ class FriendInvitationSettings(BaseInvitationDiscountSettings):
     sms_template = models.CharField(max_length=600, null=True)
     disabled = models.BooleanField(default=False)
 
-    def is_percent_discount(self) -> bool:
-        return self.discount_type == FriendInvitationSettings.DISCOUNT_TYPE_PERCENT
 
 
 class FriendInvitationDiscount(BaseInvitationDiscountSettings):

@@ -279,9 +279,9 @@ JWT_AUTH = {
 
 }
 
-
-
 CORS_ORIGIN_ALLOW_ALL = True
+
+
 CORS_ALLOW_HEADERS = list(default_headers) + [
     'x-api-key',
     'x-device-key'
@@ -297,11 +297,13 @@ except ImportError:
     pass
 
 
+
 ZARINPAL={
     'url': 'https://www.zarinpal.com/pg/services/WebGate/wsdl',
     "MERCHANT": "7055b6ac-e6dc-11e9-99c1-000c295eb8fc",
     "FORWARD_LINK": "https://www.zarinpal.com/pg/StartPay/{}/ZarinGate",  # use this string with .format method
 }
+
 
 CONTENT_MARKETING = {
     'MAX_SIZE_VIDEO': '50000000',
