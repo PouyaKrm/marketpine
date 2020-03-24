@@ -130,6 +130,7 @@ class FestivalCreationSerializer(BaseFestivalSerializer):
 class FestivalListSerializer(serializers.ModelSerializer):
 
     customers_total = serializers.SerializerMethodField(read_only=True)
+    discount_code = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = Festival
@@ -138,11 +139,15 @@ class FestivalListSerializer(serializers.ModelSerializer):
             'name',
             'start_date',
             'end_date',
-            'customers_total'
+            'customers_total',
+            'discount_code'
         ]
 
     def get_customers_total(self, obj: Festival):
         return obj.discount.customers_used.count()
+
+    def get_discount_code(self, obj: Festival):
+        return obj.discount.discount_code
 
 
 class RetrieveFestivalSerializer(NestedUpdateMixin, BaseFestivalSerializer):
