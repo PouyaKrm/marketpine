@@ -12,11 +12,10 @@ class DiscountService:
 
     def is_discount_code_unique(self, user: Businessman, code: str) -> bool:
         exists = Discount.objects.filter(businessman=user, discount_code=code, expires=False).exists()
-        if not exists:
-            return True
+        if exists:
+            return False
         exists = Discount.objects.filter(businessman=user, discount_code=code, expires=True, expire_date__gt=timezone.now()).exists()
         return not exists
-
 
     def generate_unique_code(self, user: Businessman):
         code = self.__generate_discount_code()
@@ -24,12 +23,25 @@ class DiscountService:
             code = self.__generate_discount_code()
         return code
 
-    def create_discount_auto_code(self, user: Businessman, is_percent_discount: bool,
-                                  percent_off: float, flat_rate_off: int, expires: bool, expire_date=None) -> Discount:
+    def create_discount(self, user: Businessman, expires: bool, discount_type: str,
+                        auto_discount_code: bool, percent_off: float, flat_rate_off: int, discount_code=None, expire_date=None) -> Discount:
+
         discount = Discount()
         discount.businessman = user
-        discount.discount_code = self.generate_unique_code(user)
+        if auto_discount_code:
+            discount_code = self.generate_unique_code(user)
         discount.set_expire_date_if_expires(expires, expire_date)
-        discount.set_discount_data(is_percent_discount, percent_off, flat_rate_off)
+        discount.set_discount_data(discount_code, discount_type, percent_off, flat_rate_off)
+        discount.save()
+        return discount
+
+    def update_discount(self, discount: Discount, user: Businessman, expires: bool,
+                        discount_type: str, auto_discount_code: bool, percent_off: float, flat_rate_off: int,
+                        discount_code=None, expire_date=None):
+        discount.businessman = user
+        if auto_discount_code:
+            discount_code = self.generate_unique_code(user)
+        discount.set_expire_date_if_expires(expires, expire_date)
+        discount.set_discount_data(discount_code, discount_type, percent_off, flat_rate_off)
         discount.save()
         return discount

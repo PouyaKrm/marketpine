@@ -1,12 +1,16 @@
 from django.template import TemplateSyntaxError
 from django.utils import timezone
+from drf_writable_nested import NestedUpdateMixin
 from rest_framework import serializers
 
 from common.util import generate_discount_code, DiscountType
+from customer_return_plan.services import DiscountService
 from smspanel.services import SendSMSMessage
 from users.models import Customer
 from .models import Festival
 from common.util.custom_validators import phone_validator, sms_not_contains_link
+
+from customer_return_plan.serializers import WritableDiscountCreateNestedSerializer
 
 from django.conf import settings
 
@@ -16,12 +20,18 @@ template_max_chars = settings.SMS_PANEL['TEMPLATE_MAX_CHARS']
 
 class BaseFestivalSerializer(serializers.ModelSerializer):
 
-    discount_code = serializers.CharField(min_length=8, max_length=12, required=True)
+    # discount_code = serializers.CharField(min_length=8, max_length=12, required=True)
     message = serializers.CharField(required=True, min_length=template_min_chars, max_length=template_max_chars,
                                     validators=[sms_not_contains_link])
     name = serializers.CharField(required=True, min_length=5, max_length=20)
 
-    percent_off = serializers.FloatField(min_value=0, max_value=100)
+    # percent_off = serializers.FloatField(min_value=0, max_value=100)
+    discount = WritableDiscountCreateNestedSerializer()
+
+    def __init__(self, **kwargs):
+
+        super().__init__(**kwargs)
+        self.discount_service = DiscountService()
 
     class Meta:
         model = Festival
@@ -30,11 +40,12 @@ class BaseFestivalSerializer(serializers.ModelSerializer):
             'name',
             'start_date',
             'end_date',
-            'discount_code',
+            # 'discount_code',
             'message',
             'message_sent',
-            'percent_off',
-            'flat_rate_off',
+            # 'percent_off',
+            # 'flat_rate_off',
+            'discount'
         ]
 
         extra_kwargs = {'message_sent': {'read_only': True}}
@@ -71,21 +82,21 @@ class BaseFestivalSerializer(serializers.ModelSerializer):
 
         return value
 
-    def validate_flat_rate_off(self, value):
+    # def validate_flat_rate_off(self, value):
+    #
+    #     if value < 0:
+    #         raise serializers.ValidationError('invalid value')
+    #
+    #     return value
 
-        if value < 0:
-            raise serializers.ValidationError('invalid value')
-
-        return value
-
-    def validate_discount_code(self, value):
-
-        user = self.context['user']
-
-        if user.festival_set.filter(end_date__gte=timezone.now(), discount_code=value).exists():
-            raise serializers.ValidationError('discount code must be unique')
-
-        return value
+    # def validate_discount_code(self, value):
+    #
+    #     user = self.context['user']
+    #
+    #     if user.festival_set.filter(end_date__gte=timezone.now(), discount_code=value).exists():
+    #         raise serializers.ValidationError('discount code must be unique')
+    #
+    #     return value
 
     def validate(self, attrs):
 
@@ -104,30 +115,53 @@ class FestivalCreationSerializer(BaseFestivalSerializer):
 
         user = self.context['user']
         message = validated_data.pop('message')
+        discount_data = validated_data.pop('discount')
         festival = Festival.objects.create(businessman=self.context['user'], **validated_data)
         festival.sms_message = SendSMSMessage().festival_message_status_cancel(message, user)
+        festival.discount = self.discount_service.create_discount(user=user,
+                                                                  expires=True,
+                                                                  expire_date=festival.end_date,
+                                                                  **discount_data)
+
         festival.save()
-        return {'id': festival.id, **validated_data, 'message': message}
+        return {'id': festival.id, **validated_data, 'message': message, 'discount': discount_data}
 
 
-class FestivalListSerializer(BaseFestivalSerializer):
+class FestivalListSerializer(serializers.ModelSerializer):
 
     customers_total = serializers.SerializerMethodField(read_only=True)
 
-    class Meta(BaseFestivalSerializer.Meta):
-
-        fields = BaseFestivalSerializer.get_fields_excluded_from('message') + ['customers_total']
+    class Meta:
+        model = Festival
+        fields = [
+            'id',
+            'name',
+            'start_date',
+            'end_date',
+            'customers_total'
+        ]
 
     def get_customers_total(self, obj: Festival):
-        return obj.customers.count()
+        return obj.discount.customers_used.count()
 
 
-class RetrieveFestivalSerializer(BaseFestivalSerializer):
+class RetrieveFestivalSerializer(NestedUpdateMixin, BaseFestivalSerializer):
 
     message = serializers.CharField(min_length=template_min_chars, max_length=template_max_chars, source='sms_message.message')
+    discount = WritableDiscountCreateNestedSerializer()
+
+    def __init__(self, **kwargs):
+
+        super().__init__(**kwargs)
 
     class Meta(BaseFestivalSerializer.Meta):
-        pass
+        fields = [
+            'name',
+            'start_date',
+            'end_date',
+            'discount',
+            'message',
+        ]
 
     def validate_name(self, value):
         if self.instance.name == value:
@@ -139,27 +173,28 @@ class RetrieveFestivalSerializer(BaseFestivalSerializer):
             return value
         return super().validate_start_date(value)
 
-    def validate_discount_code(self, value):
-        if self.instance.discount_code == value:
-            return value
-        return super().validate_discount_code(value)
+    # def validate_discount_code(self, value):
+    #     if self.instance.discount_code == value:
+    #         return value
+    #     return super().validate_discount_code(value)
 
     def update(self, instance: Festival, validated_data: dict):
 
         message = validated_data.pop('sms_message')['message']
-        auto_discount = self.context['auto_discount']
+        discount_data = validated_data.pop('discount')
 
         for key, val in validated_data.items():
             setattr(instance, key, val)
 
-        if auto_discount is not None and auto_discount.lower() == 'true':
-            instance.discount_code = generate_discount_code(DiscountType.FESTIVAL)
-
         SendSMSMessage().update_not_pending_message_text(instance.sms_message, message)
+
+        self.discount_service.update_discount(discount=instance.discount, expires=True, expire_date=instance.end_date,
+                                              user=instance.businessman, **discount_data)
 
         instance.save()
 
         return instance
+
 
 
 class CustomerSerializer(serializers.ModelSerializer):

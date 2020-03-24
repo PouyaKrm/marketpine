@@ -7,6 +7,7 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from common.util.http_helpers import ok, bad_request
 from customer_return_plan.festivals.permissions import CanDeleteOrUpdateFestival
 from smspanel.services import SendSMSMessage
 from users.models import Customer
@@ -19,20 +20,19 @@ from common.util import paginators
 from customers.serializers import CustomerListCreateSerializer
 
 from smspanel.permissions import HasValidCreditSendSMSToAll, HasActiveSMSPanel
+
+
 # Create your views here.
 
 
 class FestivalsListAPIView(generics.ListAPIView, mixins.CreateModelMixin):
-
     serializer_class = FestivalCreationSerializer
     permission_classes = [permissions.IsAuthenticated, HasActiveSMSPanel]
 
     def get_queryset(self):
-
         return Festival.objects.filter(businessman=self.request.user)
 
     def get_serializer_context(self):
-
         return {'user': self.request.user}
 
     def post(self, request, *args, **kwargs):
@@ -40,7 +40,6 @@ class FestivalsListAPIView(generics.ListAPIView, mixins.CreateModelMixin):
 
 
 class FestivalAPIView(APIView):
-
     permission_classes = [permissions.IsAuthenticated, HasActiveSMSPanel]
 
     def get(self, request):
@@ -77,7 +76,6 @@ class FestivalAPIView(APIView):
 
         auto = request.query_params.get('auto')
         if (auto is not None) and auto.lower() == 'true':
-
             request.data['discount_code'] = generate_discount_code(DiscountType.FESTIVAL)
 
         serializer = FestivalCreationSerializer(data=request.data)
@@ -97,7 +95,6 @@ class FestivalAPIView(APIView):
 @api_view(['PUT'])
 @permission_classes([permissions.IsAuthenticated, HasActiveSMSPanel, HasValidCreditSendSMSToAll])
 def send_festival_message(request: Request, festival_id):
-
     """
     NEW
     Sends messages to all customer of the user to inform them about festival if messages are not sent before
@@ -113,7 +110,6 @@ def send_festival_message(request: Request, festival_id):
         return Response(status=status.HTTP_404_NOT_FOUND)
 
     if festival.message_sent or festival.end_date <= timezone.now().date():
-
         return Response({'details': ['پیام های مربوط به این جشنواره قبلا فرستاده شده یا تاریخ جشنواره به اتمام رسیده']},
                         status=status.HTTP_403_FORBIDDEN)
 
@@ -124,26 +120,27 @@ def send_festival_message(request: Request, festival_id):
     return Response(status=status.HTTP_204_NO_CONTENT)
 
 
-class FestivalRetrieveAPIView(generics.RetrieveAPIView, mixins.UpdateModelMixin, mixins.DestroyModelMixin):
-
-    serializer_class = RetrieveFestivalSerializer
+class FestivalRetrieveAPIView(APIView):
     permission_classes = [permissions.IsAuthenticated, CanDeleteOrUpdateFestival]
 
-    lookup_field = 'id'
-
-    def get_object(self):
-
-        fest = get_object_or_404(self.request.user.festival_set, id=self.kwargs['id'])
-        self.check_object_permissions(self.request, fest)
-
-        return fest
+    def get(self, request, id):
+        fest = get_object_or_404(request.user.festival_set, id=id)
+        serializer = RetrieveFestivalSerializer(instance=fest)
+        return ok(serializer.data)
 
     def get_serializer_context(self):
-        return {'user': self.request.user, 'festival_id': self.lookup_field, 'auto_discount': self.request.query_params.get('auto')}
+        return {'user': self.request.user, 'festival_id': self.lookup_field}
 
-    def put(self, request, *args, **kwargs):
-
-        return self.update(request, *args, **kwargs)
+    def put(self, request, id):
+        fest = get_object_or_404(request.user.festival_set, id=id)
+        serializer = RetrieveFestivalSerializer(data=request.data, instance=fest,
+                                                context={'user': request.user,
+                                                         'discount_instance': fest.discount}
+                                                )
+        if not serializer.is_valid():
+            return bad_request(serializer.errors)
+        serializer.update(fest, serializer.validated_data)
+        return ok(serializer.data)
 
     def delete(self, request, *args, **kwargs):
         return self.destroy(request, *args, **kwargs)
@@ -151,7 +148,6 @@ class FestivalRetrieveAPIView(generics.RetrieveAPIView, mixins.UpdateModelMixin,
 
 @api_view(['GET'])
 def list_customers_in_festival(request, festival_id):
-
     try:
         festival = request.user.festival_set.get(id=festival_id)
     except ObjectDoesNotExist:
@@ -164,7 +160,6 @@ def list_customers_in_festival(request, festival_id):
 
 @api_view(['POST'])
 def add_customer_to_festival(request):
-
     serializer = FestivalCustomerSerializer(data=request.data)
     if not serializer.is_valid():
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -192,7 +187,6 @@ def add_customer_to_festival(request):
 @api_view(['DELETE'])
 @permission_classes([permissions.IsAuthenticated])
 def delete_customer_from_festival(request, festival_id, customer_id):
-
     try:
         festival = request.user.festival_set.get(id=festival_id)
     except ObjectDoesNotExist:
@@ -208,8 +202,6 @@ def delete_customer_from_festival(request, festival_id, customer_id):
 
 @api_view(['GET'])
 def check_festival_name_or_discount_code_exists(request: Request):
-
-
     """
     NEW - use this method when user is registering a festival.
     To Check that festival name or discount code already exist Use This method.
@@ -240,7 +232,6 @@ def check_festival_name_or_discount_code_exists(request: Request):
 
 @api_view(['GET'])
 def get_festival_by_discount_code(request: Request, discount_code):
-
     """
     NEW
     Retrieves specific festival by it's discount code

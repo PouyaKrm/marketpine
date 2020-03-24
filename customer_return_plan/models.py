@@ -31,17 +31,17 @@ class Discount(BusinessmanManyToOneBaseModel, BaseInvitationDiscountSettings):
     expire_date = models.DateTimeField(null=True, blank=True)
     customers_used = models.ManyToManyField(Customer, related_name="customers_used")
 
-    def set_discount_data(self, is_percent_discount: bool, percent_off: float, flat_rate_off: int):
-        if is_percent_discount:
-            self.discount_type = Discount.DISCOUNT_TYPE_PERCENT
-        else:
-            self.discount_type = Discount.DISCOUNT_TYPE_FLAT_RATE
-
+    def set_discount_data(self, discount_code: str, discount_type: str, percent_off: float, flat_rate_off: int):
+        if discount_type != Discount.DISCOUNT_TYPE_FLAT_RATE and discount_type != Discount.DISCOUNT_TYPE_PERCENT:
+            raise ValueError('invalid value for discount_type')
+        self.discount_type = discount_type
         self.percent_off = percent_off
         self.flat_rate_off = flat_rate_off
+        self.discount_code = discount_code
 
-    def set_expire_date_if_expires(self, expire: bool, expire_date):
-        if expire:
+    def set_expire_date_if_expires(self, expires: bool, expire_date):
+        self.expires = expires
+        if self.expires:
             self.expire_date = expire_date
         else:
             self.expire_date = None

@@ -15,7 +15,7 @@ class FriendInvitation(BusinessmanManyToOneBaseModel):
         (TYPE_INVITER, 'inviter')
     ]
 
-    customer = models.OneToOneField(Customer, related_name='customer', null=True, on_delete=models.SET_NULL)
+    customer = models.ForeignKey(Customer, related_name='customer', null=True, on_delete=models.SET_NULL)
     invitation_type = models.CharField(max_length=2, choices=invitation_type_choices, null=True)
     new = models.BooleanField(default=True)
     discount = models.OneToOneField(Discount, on_delete=models.PROTECT, null=True)
