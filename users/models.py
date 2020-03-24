@@ -50,6 +50,14 @@ class BusinessmanOneToOneBaseModel(BaseModel):
         abstract = True
 
 
+class BusinessmanManyToOneBaseModel(BaseModel):
+
+    businessman = models.ForeignKey(Businessman, on_delete=models.PROTECT)
+
+    class Meta(BaseModel.Meta):
+        abstract = True
+
+
 @receiver(post_save, sender=Businessman)
 def businessman_post_save(sender, instance: Businessman, created: bool, **kwargs):
     from customer_return_plan.invitation.models import FriendInvitationSettings

@@ -111,6 +111,7 @@ INSTALLED_APPS = [
     'corsheaders',
     'groups',
     'smspanel',
+    'customer_return_plan',
     'customer_return_plan.festivals',
     'customer_return_plan.invitation',
     'dashboard',
