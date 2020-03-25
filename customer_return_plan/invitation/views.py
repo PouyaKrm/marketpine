@@ -62,7 +62,7 @@ class BusinessmanInvitationListAPIView(generics.ListAPIView):
     serializer_class = InvitationBusinessmanListSerializer
 
     def get_queryset(self):
-        return FriendInvitation.objects.filter(businessman=self.request.user).all()
+        return FriendInvitation.objects.filter(businessman=self.request.user).order_by('-create_date').all()
 
 
 @api_view(['GET'])

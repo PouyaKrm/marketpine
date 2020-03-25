@@ -8,17 +8,11 @@ from users.models import Customer, Businessman, BusinessmanManyToOneBaseModel
 
 class FriendInvitation(BusinessmanManyToOneBaseModel):
 
-    TYPE_INVITED = '0'
-    TYPE_INVITER = '1'
-    invitation_type_choices = [
-        (TYPE_INVITED, 'Invited'),
-        (TYPE_INVITER, 'inviter')
-    ]
-
-    customer = models.ForeignKey(Customer, related_name='customer', null=True, on_delete=models.SET_NULL)
-    invitation_type = models.CharField(max_length=2, choices=invitation_type_choices, null=True)
+    inviter = models.ForeignKey(Customer, related_name='inviter', null=True, on_delete=models.SET_NULL)
+    invited = models.OneToOneField(Customer, related_name='invited', null=True, on_delete=models.SET_NULL)
     new = models.BooleanField(default=True)
-    discount = models.OneToOneField(Discount, on_delete=models.PROTECT, null=True)
+    inviter_discount = models.OneToOneField(Discount, related_name='inviter_discount', on_delete=models.PROTECT, null=True)
+    invited_discount = models.OneToOneField(Discount, related_name='invited_discount', on_delete=models.PROTECT, null=True)
     sms_message = models.OneToOneField(SMSMessage, null=True, blank=True, on_delete=models.SET_NULL)
 
     class Meta:

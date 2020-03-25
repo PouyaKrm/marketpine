@@ -26,10 +26,21 @@ class BaseInvitationDiscountSettings(models.Model):
 
 class Discount(BusinessmanManyToOneBaseModel, BaseInvitationDiscountSettings):
 
+    USED_FOR_NONE = '0'
+    USED_FOR_FESTIVAL = '1'
+    USED_FOR_INVITATION = '2'
+
+    used_for_choices = [
+        (USED_FOR_NONE, 'None'),
+        (USED_FOR_FESTIVAL, 'Festival'),
+        (USED_FOR_INVITATION, 'Invitation')
+    ]
+
     discount_code = models.CharField(max_length=20)
     expires = models.BooleanField(default=False)
     expire_date = models.DateTimeField(null=True, blank=True)
     customers_used = models.ManyToManyField(Customer, related_name="customers_used")
+    used_for = models.CharField(max_length=2, choices=used_for_choices, default=USED_FOR_NONE)
 
     def set_discount_data(self, discount_code: str, discount_type: str, percent_off: float, flat_rate_off: int):
         if discount_type != Discount.DISCOUNT_TYPE_FLAT_RATE and discount_type != Discount.DISCOUNT_TYPE_PERCENT:

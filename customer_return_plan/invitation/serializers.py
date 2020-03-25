@@ -3,7 +3,7 @@ from rest_framework import serializers
 from common.util.custom_validators import phone_validator, sms_not_contains_link
 from customer_return_plan.serializers import ReadOnlyDiscountSerializer
 from customer_return_plan.services import DiscountService
-from customers.serializers import CustomerListCreateSerializer
+from customers.serializers import CustomerListCreateSerializer, CustomerSerializer
 from customer_return_plan.invitation.models import FriendInvitation, FriendInvitationSettings
 from common.util import common_serializers, DiscountType, generate_discount_code
 from smspanel.services import SendSMSMessage
@@ -54,10 +54,7 @@ class BaseFriendInvitationSerializer(serializers.Serializer):
         inviter_customer = user.customers.get(phone=inviter)
         invited_customer = Customer.objects.create(businessman=user, phone=invited)
 
-        inviter = FriendInvitation(businessman=user, customer=invited_customer,
-                                   invitation_type=FriendInvitation.TYPE_INVITED)
-        invited = FriendInvitation(businessman=user, customer=inviter_customer,
-                                   invitation_type=FriendInvitation.TYPE_INVITER)
+        invitation = FriendInvitation(businessman=user, inviter=inviter_customer, invited=invited_customer)
 
         settings = FriendInvitationSettings.objects.get(businessman=user)
 
@@ -69,21 +66,21 @@ class BaseFriendInvitationSerializer(serializers.Serializer):
                                                    flat_rate_off=invite_settings.flat_rate_off
                                                    )
 
-        invited_discount = service.create_discount(user, False, invite_settings.discount_type, True,
-                                                   percent_off=invite_settings.percent_off,
-                                                   flat_rate_off=invite_settings.flat_rate_off
-                                                   )
+        invited_discount = service.create_invitation_discount(user, False, invite_settings.discount_type, True,
+                                                              percent_off=invite_settings.percent_off,
+                                                              flat_rate_off=invite_settings.flat_rate_off
+                                                              )
 
-        inviter.discount = inviter_discount
-        invited.discount = invited_discount
+        invitation.inviter_discount = inviter_discount
+        invitation.invited_discount = invited_discount
 
         sms = SendSMSMessage().friend_invitation_message(user, settings.sms_template, invited_customer)
-        invited.sms_message = sms
-        invited.save()
-        inviter.save()
-        return {'id': inviter.id, 'businessman': user.username, 'inviter': inviter.customer.phone,
-                'invited': invited.customer.phone,
-                'invitation_date': inviter.create_date, 'inviter_discount_code': inviter.discount.discount_code}
+        invitation.sms_message = sms
+        invitation.save()
+        return {'id': invitation.id, 'businessman': user.username, 'inviter': invitation.inviter.phone,
+                'invited': invitation.invited.phone,
+                'invitation_date': invitation.create_date,
+                'inviter_discount_code': invitation.inviter_discount.discount_code}
 
 
 class FriendInvitationCreationSerializer(serializers.Serializer):
@@ -137,37 +134,33 @@ class FriendInvitationCreationSerializer(serializers.Serializer):
         inviter_customer = user.customers.get(phone=inviter)
         invited_customer = Customer.objects.create(businessman=user, phone=invited)
 
-        inviter = FriendInvitation(businessman=user, customer=invited_customer,
-                                   invitation_type=FriendInvitation.TYPE_INVITED)
-        invited = FriendInvitation(businessman=user, customer=inviter_customer,
-                                   invitation_type=FriendInvitation.TYPE_INVITER)
+        invitation = FriendInvitation(businessman=user, inviter=inviter_customer, invited=invited_customer)
 
         settings = FriendInvitationSettings.objects.get(businessman=user)
 
-        invite_settings = self.user.friendinvitationsettings
+        invite_settings = user.friendinvitationsettings
 
         service = DiscountService()
-
         inviter_discount = service.create_discount(user, False, invite_settings.discount_type, True,
                                                    percent_off=invite_settings.percent_off,
                                                    flat_rate_off=invite_settings.flat_rate_off
                                                    )
 
-        invited_discount = service.create_discount(user, False, invite_settings.discount_type, True,
-                                                   percent_off=invite_settings.percent_off,
-                                                   flat_rate_off=invite_settings.flat_rate_off
-                                                   )
+        invited_discount = service.create_invitation_discount(user, False, invite_settings.discount_type, True,
+                                                              percent_off=invite_settings.percent_off,
+                                                              flat_rate_off=invite_settings.flat_rate_off
+                                                              )
 
-        inviter.discount = inviter_discount
-        invited.discount = invited_discount
+        invitation.inviter_discount = inviter_discount
+        invitation.invited_discount = invited_discount
 
         sms = SendSMSMessage().friend_invitation_message(user, settings.sms_template, invited_customer)
-        invited.sms_message = sms
-        invited.save()
-        inviter.save()
-        return {'id': inviter.id, 'businessman': user.username, 'inviter': inviter.customer.phone,
-                'invited': invited.customer.phone,
-                'invitation_date': inviter.create_date, 'inviter_discount_code': inviter.discount.discount_code}
+        invitation.sms_message = sms
+        invitation.save()
+        return {'id': invitation.id, 'businessman': user.username, 'inviter': invitation.inviter.phone,
+                'invited': invitation.invited.phone,
+                'invitation_date': invitation.create_date,
+                'inviter_discount_code': invitation.inviter_discount.discount_code}
 
 
 class FriendInvitationListSerializer(serializers.ModelSerializer):
@@ -181,32 +174,35 @@ class FriendInvitationListSerializer(serializers.ModelSerializer):
 
 
 class InvitationBusinessmanListSerializer(serializers.ModelSerializer):
-    customer = CustomerListCreateSerializer(read_only=True)
+    inviter = CustomerListCreateSerializer(read_only=True)
+    invited = CustomerListCreateSerializer(read_only=True)
 
     class Meta:
         model = FriendInvitation
         fields = [
             'id',
             'create_date',
-            'customer',
-            'invitation_type',
+            'inviter',
+            'invited',
             'new',
         ]
 
 
-class InvitationRetrieveSerializer(serializers.ModelSerializer):
-    customer = CustomerListCreateSerializer(read_only=True)
+class InvitationRetrieveSerializer(InvitationBusinessmanListSerializer):
 
-    discount = ReadOnlyDiscountSerializer(read_only=True)
+    inviter_discount = ReadOnlyDiscountSerializer(read_only=True)
+    invited_discount = ReadOnlyDiscountSerializer(read_only=True)
 
     class Meta:
         model = FriendInvitation
         fields = [
             'id',
             'create_date',
-            'customer',
+            'inviter',
+            'invited',
             'new',
-            'discount'
+            'inviter_discount',
+            'invited_discount',
         ]
 
 

@@ -5,7 +5,7 @@ from .models import FriendInvitation, FriendInvitationSettings
 
 class FriendInvitationAdminModel(admin.ModelAdmin):
 
-    list_display = ['id', 'businessman', 'customer', 'invitation_type']
+    list_display = ['id', 'businessman', 'inviter', 'invited']
 
 
 admin.site.register(FriendInvitation, FriendInvitationAdminModel)

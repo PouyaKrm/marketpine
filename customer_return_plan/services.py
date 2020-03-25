@@ -35,6 +35,25 @@ class DiscountService:
         discount.save()
         return discount
 
+    def create_festival_discount(self, user: Businessman, expires: bool, discount_type: str,
+                        auto_discount_code: bool, percent_off: float, flat_rate_off: int, discount_code=None, expire_date=None) -> Discount:
+
+        discount = self.create_discount(user, expires, discount_type, auto_discount_code, percent_off,
+                                        flat_rate_off, discount_code, expire_date)
+        discount.used_for = Discount.USED_FOR_FESTIVAL
+        discount.save()
+        return discount
+
+    def create_invitation_discount(self, user: Businessman, expires: bool, discount_type: str,
+                                 auto_discount_code: bool, percent_off: float, flat_rate_off: int, discount_code=None,
+                                 expire_date=None) -> Discount:
+
+        discount = self.create_discount(user, expires, discount_type, auto_discount_code, percent_off,
+                                        flat_rate_off, discount_code, expire_date)
+        discount.used_for = Discount.USED_FOR_INVITATION
+        discount.save()
+        return discount
+
     def update_discount(self, discount: Discount, user: Businessman, expires: bool,
                         discount_type: str, auto_discount_code: bool, percent_off: float, flat_rate_off: int,
                         discount_code=None, expire_date=None):
