@@ -2,11 +2,16 @@ from drf_writable_nested import WritableNestedModelSerializer
 from rest_framework import serializers
 
 from common.util import create_field_error
+from common.util.custom_validators import phone_validator
 from customer_return_plan.models import Discount
 from customer_return_plan.services import DiscountService
+from customers.services import CustomerService
 
 
 class ReadOnlyDiscountSerializer(serializers.ModelSerializer):
+
+    customers_used_total = serializers.SerializerMethodField(read_only=True)
+
     class Meta:
         model = Discount
         fields = [
@@ -16,8 +21,12 @@ class ReadOnlyDiscountSerializer(serializers.ModelSerializer):
             'discount_type',
             'used_for',
             'percent_off',
-            'flat_rate_off'
+            'flat_rate_off',
+            'customers_used_total'
         ]
+
+    def get_customers_used_total(self, obj: Discount):
+        return obj.customers_used.count()
 
 
 class WritableDiscountCreateNestedSerializer(WritableNestedModelSerializer):
@@ -87,3 +96,32 @@ class WritableDiscountCreateNestedSerializer(WritableNestedModelSerializer):
         discount = self.discount_service.create_discount(user, expires=expires, auto_discount_code=auto_discount,
                                                          expire_date=exp_date, **validated_data)
         return discount
+
+
+class ApplyDiscountSerializer(serializers.Serializer):
+
+    phone = serializers.CharField(max_length=15, validators=[phone_validator])
+    discount_code = serializers.CharField(max_length=16, min_length=8)
+
+    def __init__(self, *args, **kwargs):
+
+        super().__init__(*args, **kwargs)
+        self.discount_service = DiscountService()
+
+    class Meta:
+
+        fields = [
+            'phone',
+            'discount_code'
+        ]
+
+    def validate_phone(self, value):
+        if not CustomerService().customer_exists(self.context['user'], value):
+            raise serializers.ValidationError('مشتری با این شماره تلفن وجود ندارد')
+        return value
+
+    def validate_dsicount_code(self, value):
+        user = self.context['user']
+        if not self.discount_service.discount_exists_by_discount_code(user, value):
+            raise serializers.ValidationError('کد تخفیف وجود معتبر نیست')
+        return value
