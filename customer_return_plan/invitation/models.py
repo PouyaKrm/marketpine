@@ -9,7 +9,7 @@ from users.models import Customer, Businessman, BusinessmanManyToOneBaseModel
 class FriendInvitation(BusinessmanManyToOneBaseModel):
 
     inviter = models.ForeignKey(Customer, related_name='inviter', null=True, on_delete=models.SET_NULL)
-    invited = models.OneToOneField(Customer, related_name='invited', null=True, on_delete=models.SET_NULL)
+    invited = models.ForeignKey(Customer, related_name='invited', null=True, on_delete=models.SET_NULL)
     new = models.BooleanField(default=True)
     inviter_discount = models.OneToOneField(Discount, related_name='inviter_discount', on_delete=models.PROTECT, null=True)
     invited_discount = models.OneToOneField(Discount, related_name='invited_discount', on_delete=models.PROTECT, null=True)
@@ -17,6 +17,7 @@ class FriendInvitation(BusinessmanManyToOneBaseModel):
 
     class Meta:
         db_table = 'friend_invitation'
+        unique_together = [['businessman', 'invited']]
 
     def __str__(self):
         return f'{self.id} - {self.businessman.username}'

@@ -48,7 +48,7 @@ class Discount(BusinessmanManyToOneBaseModel, BaseInvitationDiscountSettings):
         self.discount_type = discount_type
         self.percent_off = percent_off
         self.flat_rate_off = flat_rate_off
-        self.discount_code = discount_code
+        self.discount_code = discount_code.lower()
 
     def set_expire_date_if_expires(self, expires: bool, expire_date):
         self.expires = expires

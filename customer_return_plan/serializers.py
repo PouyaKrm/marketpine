@@ -14,9 +14,11 @@ class ReadOnlyDiscountSerializer(serializers.ModelSerializer):
             'expires',
             'expire_date',
             'discount_type',
+            'used_for',
             'percent_off',
             'flat_rate_off'
         ]
+
 
 class WritableDiscountCreateNestedSerializer(WritableNestedModelSerializer):
     discount_code = serializers.CharField(min_length=8, max_length=16, required=False)

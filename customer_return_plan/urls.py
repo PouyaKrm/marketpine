@@ -7,5 +7,6 @@ from . import views
 urlpatterns = [
     path('dashboard/', views.dashboard_data),
     path('festival/', include(festival_url)),
-    path('invitation/', include(invitation_url))
+    path('invitation/', include(invitation_url)),
+    path('discounts/', views.DiscountListAPIView.as_view())
 ]

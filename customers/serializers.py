@@ -3,13 +3,20 @@ from rest_framework import serializers
 from common.util.custom_templates import CustomerTemplate
 from common.util.custom_validators import phone_validator
 # from common.util.sms_panel.message import SystemSMSMessage
+from customer_return_plan.services import DiscountService
 from users.models import Customer
 from django.db.models import Sum
 
 
 class CustomerListCreateSerializer(serializers.ModelSerializer):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.discount_service = DiscountService()
+
     phone = serializers.CharField(max_length=15, validators=[phone_validator])
     purchase_sum = serializers.SerializerMethodField(read_only=True)
+    has_discount = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = Customer
@@ -20,6 +27,7 @@ class CustomerListCreateSerializer(serializers.ModelSerializer):
             'telegram_id',
             'instagram_id',
             'purchase_sum',
+            'has_discount',
         ]
 
         extra_kwargs = {'telegram_id': {'read_only': True}, 'instagram_id': {'read_only': True}}
@@ -29,6 +37,11 @@ class CustomerListCreateSerializer(serializers.ModelSerializer):
         purchase = obj.customerpurchase_set.aggregate(purchase_sum=Sum('amount'))
 
         return purchase['purchase_sum']
+
+    def get_has_discount(self, obj: Customer):
+        user = self.context['user']
+
+        return self.discount_service.has_customer_any_discount(user, obj)
 
     def validate_phone(self, value):
 
