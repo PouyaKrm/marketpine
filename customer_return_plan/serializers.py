@@ -29,6 +29,22 @@ class ReadOnlyDiscountSerializer(serializers.ModelSerializer):
         return obj.customers_used.count()
 
 
+class ReadOnlyDiscountWithUsedFieldSerializer(ReadOnlyDiscountSerializer):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.discount_service = DiscountService()
+
+    used_discount = serializers.SerializerMethodField(read_only=True)
+
+    class Meta(ReadOnlyDiscountSerializer.Meta):
+        fields = ReadOnlyDiscountSerializer.Meta.fields + ['used_discount']
+
+    def get_used_discount(self, discount: Discount):
+        customer_id = self.context['customer_id']
+        return self.discount_service.has_customer_used_discount(discount, customer_id)
+
+
 class WritableDiscountCreateNestedSerializer(WritableNestedModelSerializer):
     discount_code = serializers.CharField(min_length=8, max_length=16, required=False)
     percent_off = serializers.FloatField(min_value=0, max_value=100)

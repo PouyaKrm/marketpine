@@ -1,11 +1,13 @@
 from rest_framework.decorators import api_view
+from rest_framework.generics import ListAPIView
 from rest_framework.request import Request
 from rest_framework import generics
 
 from common.util import create_detail_error
 from common.util.http_helpers import ok, bad_request
 from customer_return_plan.models import Discount
-from customer_return_plan.serializers import ReadOnlyDiscountSerializer, ApplyDiscountSerializer
+from customer_return_plan.serializers import ReadOnlyDiscountSerializer, ApplyDiscountSerializer, \
+    ReadOnlyDiscountWithUsedFieldSerializer
 from customer_return_plan.services import DiscountService
 from .festivals.models import Festival
 from .invitation.models import FriendInvitation
@@ -13,14 +15,12 @@ from .invitation.models import FriendInvitation
 
 @api_view(['GET'])
 def dashboard_data(request: Request):
-
     festivals = Festival.objects.count()
     friend_invitations = FriendInvitation.objects.count()
     return ok({'festivals_total': festivals, 'invitations_total': friend_invitations})
 
 
 class DiscountListAPIView(generics.ListAPIView):
-
     serializer_class = ReadOnlyDiscountSerializer
 
     def get_queryset(self):
@@ -46,5 +46,12 @@ def apply_discount(request: Request):
     return ok(ReadOnlyDiscountSerializer(result[1]).data)
 
 
+class CustomerDiscountsListAPIView(ListAPIView):
+    serializer_class = ReadOnlyDiscountWithUsedFieldSerializer
 
+    def get_serializer_context(self):
+        return {'customer_id': self.kwargs.get('customer_id')}
 
+    def get_queryset(self):
+        return DiscountService().get_customer_discounts_by_customer_id(self.request.user,
+                                                                       self.kwargs.get('customer_id'))

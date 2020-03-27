@@ -53,7 +53,8 @@ class DiscountService:
         )
 
         if discount_for_invited_query.exists():
-            return not discount_for_invited_query.filter(invited_discount__customers_used__id=customer.id).exists()  #checks customer used discount before
+            return not discount_for_invited_query.filter(
+                invited_discount__customers_used__id=customer.id).exists()  # checks customer used discount before
 
         inviter_discount_query = FriendInvitation.objects.filter(businessman=businessman, inviter=customer) \
             .filter(
@@ -61,7 +62,8 @@ class DiscountService:
         )
 
         if inviter_discount_query.exists():
-            return not inviter_discount_query.filter(inviter_discount__customers_used__id=customer.id).exists()  #check customer used discount
+            return not inviter_discount_query.filter(
+                inviter_discount__customers_used__id=customer.id).exists()  # check customer used discount
 
         return False
 
@@ -157,3 +159,18 @@ class DiscountService:
         return True, discount
 
         # if discount.discount_type == Discount.DISCOUNT_TYPE_PERCENT:
+
+    def get_customer_discounts_by_customer_id(self, user: Businessman, customer_id: int):
+
+        festival_discounts = Discount.objects.filter(businessman=user) \
+            .filter(Q(used_for=Discount.USED_FOR_FESTIVAL)
+                    | Q(used_for=Discount.USED_FOR_INVITATION,
+                        inviter_discount__inviter__id=customer_id)
+                    | Q(used_for=Discount.USED_FOR_INVITATION,
+                        inviter_discount__invited__id=customer_id)).all()
+
+        return festival_discounts
+
+    def has_customer_used_discount(self, discount: Discount, customer_id: int):
+        return discount.customers_used.filter(id=customer_id).exists()
+

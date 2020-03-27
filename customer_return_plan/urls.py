@@ -9,5 +9,6 @@ urlpatterns = [
     path('festival/', include(festival_url)),
     path('invitation/', include(invitation_url)),
     path('discounts/', views.DiscountListAPIView.as_view()),
-    path('discounts/apply/', views.apply_discount)
+    path('discounts/apply/', views.apply_discount),
+    path('discounts/customer/<int:customer_id>/', views.CustomerDiscountsListAPIView.as_view())
 ]
