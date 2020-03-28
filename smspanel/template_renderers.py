@@ -1,7 +1,7 @@
 from django.core.exceptions import ObjectDoesNotExist
 
 from content_marketing.models import Post
-from customer_return_plan.festivals import Festival
+from customer_return_plan.festivals.models import Festival
 from customer_return_plan.invitation.models import FriendInvitation
 from smspanel.models import SMSMessage, SMSMessageReceivers
 import re
