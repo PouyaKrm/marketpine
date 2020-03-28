@@ -76,7 +76,7 @@ class FestivalTemplateRenderer(BaseTemplateRenderer):
             'name': self.__festival.name,
             'start_date': self.__festival.start_date,
             'end_date': self.__festival.end_date,
-            'discount_code': self.__festival.discount_code
+            'discount_code': self.__festival.discount.discount_code
         }
 
         return self._render(self._sms_message.message,
@@ -98,14 +98,14 @@ class FriendInvitationTemplateRenderer(BaseTemplateRenderer):
         invite_context = {
             'inviter_phone': self.invitation.inviter.phone,
             'invited_phone': self.invitation.invited.phone,
-            'invited_code': self.invitation.invited_discount_code,
-            'invite_date': self.invitation.invitation_date
+            'invited_code': self.invitation.inviter_discount.discount_code,
+            'invite_date': self.invitation.create_date
         }
 
-        if self.invitation.is_percent_discount():
-            invite_context = {**invite_context, 'percent_off': self.invitation.percent_off}
+        if self.invitation.invited_discount.is_percent_discount():
+            invite_context = {**invite_context, 'percent_off': self.invitation.invited_discount.percent_off}
         else:
-            invite_context = {**invite_context, 'flat_rate_off': self.invitation.flat_rate_off}
+            invite_context = {**invite_context, 'flat_rate_off': self.invitation.inviter_discount.flat_rate_off}
 
         return self._render(self._sms_message.message, {
             **invite_context,
