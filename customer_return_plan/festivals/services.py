@@ -1,10 +1,7 @@
 from django.core.exceptions import ObjectDoesNotExist
 
 from customer_return_plan.festivals.models import Festival
-from customer_return_plan.services import DiscountService
 from users.models import Businessman
-
-discount_service = DiscountService()
 
 
 class FestivalService:
