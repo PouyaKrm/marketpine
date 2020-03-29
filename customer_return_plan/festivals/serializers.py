@@ -157,6 +157,7 @@ class RetrieveFestivalSerializer(NestedUpdateMixin, BaseFestivalSerializer):
 
     class Meta(BaseFestivalSerializer.Meta):
         fields = [
+            'id',
             'name',
             'start_date',
             'end_date',
