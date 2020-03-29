@@ -12,3 +12,9 @@ def no_content() -> Response:
 
 def bad_request(errors) -> Response:
     return Response(errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+def not_found(data=None) -> Response:
+    if data is None:
+        return Response(status=status.HTTP_404_NOT_FOUND)
+    return Response(data, status=status.HTTP_404_NOT_FOUND)

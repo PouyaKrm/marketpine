@@ -7,14 +7,15 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from common.util.http_helpers import ok, bad_request
+from common.util.http_helpers import ok, bad_request, not_found
 from customer_return_plan.festivals.permissions import CanDeleteOrUpdateFestival
+from customer_return_plan.festivals.services import FestivalService
 from smspanel.services import SendSMSMessage
 from users.models import Customer
 from .models import Festival
 from .serializers import FestivalCreationSerializer, FestivalListSerializer, RetrieveFestivalSerializer, \
     FestivalCustomerSerializer
-from common.util import generate_discount_code, DiscountType
+from common.util import generate_discount_code, DiscountType, create_detail_error
 from common.util import paginators
 
 from customers.serializers import CustomerListCreateSerializer
@@ -24,6 +25,7 @@ from smspanel.permissions import HasValidCreditSendSMSToAll, HasActiveSMSPanel
 
 # Create your views here.
 
+festival_service = FestivalService()
 
 class FestivalsListAPIView(generics.ListAPIView, mixins.CreateModelMixin):
     serializer_class = FestivalCreationSerializer
@@ -142,8 +144,13 @@ class FestivalRetrieveAPIView(APIView):
         serializer.update(fest, serializer.validated_data)
         return ok(serializer.data)
 
-    def delete(self, request, *args, **kwargs):
-        return self.destroy(request, *args, **kwargs)
+    def delete(self, request, id):
+        result = festival_service.delete_festival(request.user, id)
+        if not result[0]:
+            return not_found(create_detail_error('آیدی جشنواره اشتباه است'))
+
+        serializer = RetrieveFestivalSerializer(result[1])
+        return ok(serializer.data)
 
 
 @api_view(['GET'])
@@ -198,65 +205,3 @@ def delete_customer_from_festival(request, festival_id, customer_id):
     festival.customers.remove(customer)
     festival.save()
     return Response(status=status.HTTP_204_NO_CONTENT)
-
-
-@api_view(['GET'])
-def check_festival_name_or_discount_code_exists(request: Request):
-    """
-    NEW - use this method when user is registering a festival.
-    To Check that festival name or discount code already exist Use This method.
-    one of the parameters are optional. but if none of them are presented Response
-    with 400 status code will be returned.
-    parameter : name: name of the festival. - code: discount code of the festival
-    :param request:
-    :return:
-    """
-    code = request.query_params.get('code')
-    name = request.query_params.get('name')
-    payload = {}
-
-    if (name is None) and (code is None):
-        return Response({'details': ['name and code parameters are required']}, status=status.HTTP_400_BAD_REQUEST)
-
-    if (name is not None) and (request.user.festival_set.filter(name=name).exists()):
-        payload['name'] = ['این نام قبلا ثبت شده']
-
-    if (code is not None) and (request.user.festival_set.filter(discount_code=code).exists()):
-        payload['discount_code'] = ['این کد تخفیف قبلا ثبت شده']
-
-    if len(payload) == 0:
-        return Response(status=status.HTTP_404_NOT_FOUND)
-    else:
-        return Response(payload, status=status.HTTP_200_OK)
-
-
-@api_view(['GET'])
-def get_festival_by_discount_code(request: Request, discount_code):
-    """
-    NEW
-    Retrieves specific festival by it's discount code
-    :param request: Contains data of the request
-    :param discount_code: discount code of the festival that is provided by the user
-    :return: If festival exists return Response with festival data as body and 200 status code.
-    Else Response with 404 status code.
-    """
-
-    try:
-        festival = request.user.festival_set.get(discount_code=discount_code)
-    except ObjectDoesNotExist:
-        return Response(status=status.HTTP_404_NOT_FOUND)
-
-    serializer = RetrieveFestivalSerializer(festival)
-
-    return Response(serializer.data, status=status.HTTP_200_OK)
-
-
-@api_view(['GET'])
-def get_number_of_festivals(request: Request):
-    """
-    NEW
-    Represents number of festivals that is registered by the user
-    :param request:
-    :return: Response with total festivals number as body and 200 status code
-    """
-    return Response({'festivals_total': request.user.festival_set.count()}, status=status.HTTP_200_OK)

@@ -15,6 +15,7 @@ class ReadOnlyDiscountSerializer(serializers.ModelSerializer):
     class Meta:
         model = Discount
         fields = [
+            'id',
             'discount_code',
             'expires',
             'expire_date',

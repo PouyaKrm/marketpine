@@ -1,3 +1,4 @@
+from django.core.exceptions import ObjectDoesNotExist
 from django.db.models.query_utils import Q
 from django.utils import timezone
 from strgen import StringGenerator
@@ -171,6 +172,29 @@ class DiscountService:
 
         return festival_discounts
 
-    def has_customer_used_discount(self, discount: Discount, customer_id: int):
+    def has_customer_used_discount(self, discount: Discount, customer_id: int) -> (bool, bool, Discount, Customer):
         return discount.customers_used.filter(id=customer_id).exists()
 
+    def delete_customer_from_discount(self, user: Businessman, discount_id: int, customer_id: int):
+
+        try:
+            discount = Discount.objects.get(businessman=user, id=discount_id)
+        except ObjectDoesNotExist:
+            return False, False, None, None
+        try:
+            customer = discount.customers_used.get(id=customer_id)
+        except ObjectDoesNotExist:
+            return True, False, None, None
+
+        discount.customers_used.remove(customer)
+        discount.save()
+        return True, True, discount, customer
+
+    def delete_discount(self, user: Businessman, discount_id: int) -> (bool, Discount):
+
+        try:
+            discount = Discount.objects.get(businessman=user, id=discount_id)
+        except ObjectDoesNotExist:
+            return False, None
+        discount.delete()
+        return True, discount
