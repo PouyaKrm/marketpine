@@ -33,7 +33,7 @@ class DiscountService:
     def discount_exists_by_discount_code(self, businessman: Businessman, discount_code: str) -> bool:
         exists = Discount.objects.filter(
             Q(businessman=businessman, expires=False, discount_code=discount_code)
-            | Q(businessman=businessman, expires=True, expire_date__gt=timezone.now())
+            | Q(businessman=businessman, expires=True, expire_date__gt=timezone.now(), discount_code=discount_code)
         ).exists()
 
         return exists
