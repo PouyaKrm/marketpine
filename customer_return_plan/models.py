@@ -20,6 +20,9 @@ class BaseInvitationDiscountSettings(models.Model):
     def is_percent_discount(self) -> bool:
         return self.discount_type == self.DISCOUNT_TYPE_PERCENT
 
+    def is_flat_discount(self) -> bool:
+        return self.discount_type == self.DISCOUNT_TYPE_FLAT_RATE
+
     class Meta:
         abstract = True
 

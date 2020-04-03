@@ -60,9 +60,8 @@ class BusinessmanManyToOneBaseModel(BaseModel):
 
 @receiver(post_save, sender=Businessman)
 def businessman_post_save(sender, instance: Businessman, created: bool, **kwargs):
-    from customer_return_plan.invitation.models import FriendInvitationSettings
-    if created or not hasattr(instance, 'friendinvitationsettings'):
-        FriendInvitationSettings.objects.create(businessman=instance, disabled=True)
+    from customer_return_plan.invitation.services import FriendInvitationService
+    FriendInvitationService().try_create_invitation_setting(instance)
 
 
 class VerificationCodes(models.Model):

@@ -8,3 +8,6 @@ class CustomerService:
 
     def get_customer(self, user: Businessman, phone: str) -> Customer:
         return Customer.objects.get(businessman=user, phone=phone)
+
+    def get_customer_by_id(self, customer_id: int) -> Customer:
+        return Customer.objects.get(id=customer_id)

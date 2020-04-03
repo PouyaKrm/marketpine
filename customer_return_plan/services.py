@@ -1,4 +1,5 @@
 from django.core.exceptions import ObjectDoesNotExist
+from django.db.models.aggregates import Sum
 from django.db.models.query_utils import Q
 from django.utils import timezone
 from strgen import StringGenerator
@@ -7,6 +8,8 @@ from customer_return_plan.models import Discount
 from customers.services import CustomerService
 from users.models import Businessman, Customer
 
+
+customer_service = CustomerService()
 
 class DiscountService:
 
@@ -161,6 +164,23 @@ class DiscountService:
 
         # if discount.discount_type == Discount.DISCOUNT_TYPE_PERCENT:
 
+    def try_apply_discount_by_discount_ids(self, businessman: Businessman, discount_ids: [int], customer_id: int):
+        """
+        tries to add customer to customer_used field in discount
+        :param businessman: businessman who's discounts and customer belongs to
+        :param discount_ids: ids of the discounts
+        :param customer_id: id of the customer
+        :return: if any discount exists by provided ids returns True else False
+        """
+        customer = customer_service.get_customer_by_id(customer_id)
+        discounts = self.get_customer_unused_discounts(businessman, customer_id).filter(id__in=discount_ids)
+        if discounts.count() == 0:
+            return False
+        for discount in discounts.all():
+            discount.customers_used.add(customer)
+            discount.save()
+        return True
+
     def get_customer_discounts_by_customer_id(self, user: Businessman, customer_id: int):
 
         festival_discounts = Discount.objects.filter(businessman=user) \
@@ -171,6 +191,9 @@ class DiscountService:
                         inviter_discount__invited__id=customer_id)).all()
 
         return festival_discounts
+
+    def get_customer_unused_discounts(self, user: Businessman, customer_id: int):
+        return self.get_customer_discounts_by_customer_id(user, customer_id).exclude(customers_used__id=customer_id)
 
     def has_customer_used_discount(self, discount: Discount, customer_id: int) -> (bool, bool, Discount, Customer):
         return discount.customers_used.filter(id=customer_id).exists()
@@ -189,6 +212,16 @@ class DiscountService:
         discount.customers_used.remove(customer)
         discount.save()
         return True, True, discount, customer
+
+    def oldest_unused_discounts_by_ids(self, businessman: Businessman, customer_id: int, discount_ids: list):
+        """
+        retrieve list of unused discount by discounts_ids for specific customer
+        :param businessman: businessman that discounts belongs to
+        :param discount_ids: ids of the discounts
+        :return: list of tuples in order of (discount_type, percent_off, flat_rate_off)
+        """
+        return self.get_customer_unused_discounts(businessman, customer_id).filter(id__in=discount_ids).order_by(
+            'create_date')
 
     def delete_discount(self, user: Businessman, discount_id: int) -> (bool, Discount):
 
