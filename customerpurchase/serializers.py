@@ -28,7 +28,7 @@ class PurchaseCreationUpdateSerializer(serializers.ModelSerializer):
     def validate_customer_id(self, value):
 
         user = self.context['user']
-        if not customer_service.customer_exists(user, value):
+        if not customer_service.customer_exists_by_id(user, value):
             raise serializers.ValidationError('این مشتری در لیست مشریان وجود ندارد')
 
         return value

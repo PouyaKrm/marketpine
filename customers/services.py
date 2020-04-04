@@ -8,6 +8,9 @@ class CustomerService:
     def customer_exists(self, user: Businessman, phone: str) -> bool:
         return Customer.objects.filter(businessman=user, phone=phone).exists()
 
+    def customer_exists_by_id(self, user: Businessman, customer_id: int) -> bool:
+        return Customer.objects.filter(businessman=user, id=customer_id).exists()
+
     def get_customer(self, user: Businessman, phone: str) -> Customer:
         return Customer.objects.get(businessman=user, phone=phone)
 
