@@ -1,3 +1,5 @@
+from rest_framework.generics import get_object_or_404
+
 from users.models import Customer, Businessman
 
 
@@ -11,3 +13,9 @@ class CustomerService:
 
     def get_customer_by_id(self, customer_id: int) -> Customer:
         return Customer.objects.get(id=customer_id)
+
+    def get_customer_by_id(self, user: Businessman, customer_id: int):
+        return Customer.objects.get(businessman=user, id=customer_id)
+
+    def get_customer_by_id_or_404(self, user: Businessman, customer_id: int):
+        return get_object_or_404(Customer, businessman=user, id=customer_id)

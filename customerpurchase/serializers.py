@@ -3,9 +3,11 @@ from rest_framework import serializers
 from common.util import create_field_error, create_detail_error
 from customerpurchase.models import CustomerPurchase
 from common.util.common_serializers import CustomerSerializer
+from customers.services import CustomerService
 from .services import PurchaseService
 
 purchase_service = PurchaseService()
+customer_service = CustomerService()
 
 
 class PurchaseCreationUpdateSerializer(serializers.ModelSerializer):
@@ -26,7 +28,7 @@ class PurchaseCreationUpdateSerializer(serializers.ModelSerializer):
     def validate_customer_id(self, value):
 
         user = self.context['user']
-        if not user.customers.filter(id=value).exists():
+        if not customer_service.customer_exists(user, value):
             raise serializers.ValidationError('این مشتری در لیست مشریان وجود ندارد')
 
         return value

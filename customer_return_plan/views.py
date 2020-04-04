@@ -1,5 +1,5 @@
 from rest_framework.decorators import api_view
-from rest_framework.generics import ListAPIView
+from rest_framework.generics import ListAPIView, get_object_or_404
 from rest_framework.request import Request
 from rest_framework import generics
 
@@ -11,12 +11,13 @@ from customer_return_plan.serializers import ReadOnlyDiscountSerializer, ApplyDi
     ReadOnlyDiscountWithUsedFieldSerializer
 from customer_return_plan.services import DiscountService
 from customers.serializers import CustomerListCreateSerializer
+from customers.services import CustomerService
 from .festivals.models import Festival
 from .invitation.models import FriendInvitation
 
-
 discount_service = DiscountService()
 festival_service = FestivalService()
+customer_service = CustomerService()
 
 @api_view(['GET'])
 def dashboard_data(request: Request):
@@ -58,8 +59,16 @@ class CustomerDiscountsListAPIView(ListAPIView):
         return {'customer_id': self.kwargs.get('customer_id')}
 
     def get_queryset(self):
-        return DiscountService().get_customer_discounts_by_customer_id(self.request.user,
-                                                                       self.kwargs.get('customer_id'))
+        used = self.request.query_params.get('used')
+        customer_id = self.kwargs.get('customer_id')
+        customer_service.get_customer_by_id_or_404(self.request.user, customer_id)
+        if used is not None and used.lower() == 'true':
+            return discount_service.get_customer_used_discounts(self.request.user, customer_id)
+        elif used is not None and used.lower() == 'false':
+            return discount_service.get_customer_unused_discounts(self.request.user, customer_id)
+        else:
+            return discount_service.get_customer_discounts_by_customer_id(self.request.user,
+                                                                          self.kwargs.get('customer_id'))
 
 
 @api_view(['GET'])
@@ -91,7 +100,6 @@ def check_festival_name_or_discount_code_exists(request: Request):
 
 @api_view(['DELETE'])
 def remove_customer_from_discount(request: Request, discount_id: int, customer_id: int):
-
     result = discount_service.delete_customer_from_discount(request.user, discount_id, customer_id)
     if not result[0]:
         return not_found(create_detail_error('آیدی کد تخفیف اشتباه است'))

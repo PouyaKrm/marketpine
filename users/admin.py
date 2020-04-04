@@ -142,7 +142,7 @@ admin.site.register(VerificationCodes, VerificationCodeAdminModel)
 
 class CustomerAdmin(admin.ModelAdmin):
     exclude = ['last_login']
-    list_display = ['phone', 'full_name', 'register_date', 'businessman']
+    list_display = ['phone', 'id', 'full_name', 'register_date', 'businessman']
 
 
 admin.site.register(Customer, CustomerAdmin)

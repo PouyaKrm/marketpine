@@ -172,7 +172,7 @@ class DiscountService:
         :param customer_id: id of the customer
         :return: if any discount exists by provided ids returns True else False
         """
-        customer = customer_service.get_customer_by_id(customer_id)
+        customer = customer_service.get_customer_by_id(businessman, customer_id)
         discounts = self.get_customer_unused_discounts(businessman, customer_id).filter(id__in=discount_ids)
         if discounts.count() == 0:
             return False
@@ -183,17 +183,22 @@ class DiscountService:
 
     def get_customer_discounts_by_customer_id(self, user: Businessman, customer_id: int):
 
+        customer = customer_service.get_customer_by_id(user, customer_id)
+
         festival_discounts = Discount.objects.filter(businessman=user) \
             .filter(Q(used_for=Discount.USED_FOR_FESTIVAL)
                     | Q(used_for=Discount.USED_FOR_INVITATION,
-                        inviter_discount__inviter__id=customer_id)
+                        inviter_discount__inviter=customer)
                     | Q(used_for=Discount.USED_FOR_INVITATION,
-                        inviter_discount__invited__id=customer_id)).all()
+                        inviter_discount__invited=customer)).all()
 
         return festival_discounts
 
     def get_customer_unused_discounts(self, user: Businessman, customer_id: int):
         return self.get_customer_discounts_by_customer_id(user, customer_id).exclude(customers_used__id=customer_id)
+
+    def get_customer_used_discounts(self, user: Businessman, customer_id: int):
+        return self.get_customer_discounts_by_customer_id(user, customer_id).filter(customers_used__id=customer_id)
 
     def has_customer_used_discount(self, discount: Discount, customer_id: int) -> (bool, bool, Discount, Customer):
         return discount.customers_used.filter(id=customer_id).exists()
@@ -231,3 +236,4 @@ class DiscountService:
             return False, None
         discount.delete()
         return True, discount
+
