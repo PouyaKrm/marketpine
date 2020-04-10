@@ -62,6 +62,8 @@ class BusinessmanManyToOneBaseModel(BaseModel):
 def businessman_post_save(sender, instance: Businessman, created: bool, **kwargs):
     from customer_return_plan.invitation.services import FriendInvitationService
     FriendInvitationService().try_create_invitation_setting(instance)
+    from customer_return_plan.loyalty.services import loyalty_service
+    loyalty_service.try_create_loyalty_setting_for_businessman(instance)
 
 
 class VerificationCodes(models.Model):

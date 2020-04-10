@@ -118,6 +118,7 @@ INSTALLED_APPS = [
     'customerpurchase',
     'panelsetting',
     'panelprofile',
+    'customer_return_plan.loyalty',
     'rest_framework_swagger',
     'django.contrib.admin',
     'django.contrib.auth',

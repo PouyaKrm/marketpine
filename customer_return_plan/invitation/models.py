@@ -1,7 +1,7 @@
 from django.db import models
 from django.conf import settings
 # Create your models here.
-from customer_return_plan.models import BaseInvitationDiscountSettings, Discount
+from customer_return_plan.models import BaseDiscountSettings, Discount
 from smspanel.models import SMSMessage
 from users.models import Customer, Businessman, BusinessmanManyToOneBaseModel
 
@@ -23,7 +23,7 @@ class FriendInvitation(BusinessmanManyToOneBaseModel):
         return f'{self.id} - {self.businessman.username}'
 
 
-class FriendInvitationSettings(BaseInvitationDiscountSettings):
+class FriendInvitationSettings(BaseDiscountSettings):
 
     businessman = models.OneToOneField(Businessman, on_delete=models.CASCADE)
     sms_template = models.CharField(max_length=600, null=True)

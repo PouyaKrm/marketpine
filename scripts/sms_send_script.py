@@ -7,11 +7,11 @@ import sys
 
 from django.db.models import QuerySet
 
-sys.path.append(dirname(dirname(abspath(__file__))))
-os.environ['DJANGO_SETTINGS_MODULE'] = 'CRM.settings'
-import django
-
-django.setup()
+# sys.path.append(dirname(dirname(abspath(__file__))))
+# os.environ['DJANGO_SETTINGS_MODULE'] = 'CRM.settings'
+# import django
+#
+# django.setup()
 
 from django.conf import settings
 from smspanel.models import SMSMessage, SMSMessageReceivers, SentSMS
@@ -204,11 +204,17 @@ def configure() -> SendMessageTaskQueue:
     return SendMessageTaskQueue()
 
 
-task = None
+# task = None
+#
+# if __name__ == '__main__':
+#     task = configure()
+#
+# while True:
+#     task.run_send_threads()
+#     time.sleep(10)
 
-if __name__ == '__main__':
+def run_sms():
     task = configure()
-
-while True:
-    task.run_send_threads()
-    time.sleep(10)
+    while True:
+        task.run_send_threads()
+        time.sleep(10)

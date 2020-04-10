@@ -4,7 +4,7 @@ from django.db import models
 from users.models import BusinessmanManyToOneBaseModel, Customer
 
 
-class BaseInvitationDiscountSettings(models.Model):
+class BaseDiscountSettings(models.Model):
     DISCOUNT_TYPE_PERCENT = '0'
     DISCOUNT_TYPE_FLAT_RATE = '1'
 
@@ -23,20 +23,25 @@ class BaseInvitationDiscountSettings(models.Model):
     def is_flat_discount(self) -> bool:
         return self.discount_type == self.DISCOUNT_TYPE_FLAT_RATE
 
+
     class Meta:
         abstract = True
 
 
-class Discount(BusinessmanManyToOneBaseModel, BaseInvitationDiscountSettings):
+class Discount(BusinessmanManyToOneBaseModel, BaseDiscountSettings):
 
     USED_FOR_NONE = '0'
     USED_FOR_FESTIVAL = '1'
     USED_FOR_INVITATION = '2'
+    USED_FOR_LOYALTY_AMOUNT = '3'
+    USED_FOR_LOYALTY_NUMBER = '4'
 
     used_for_choices = [
         (USED_FOR_NONE, 'None'),
         (USED_FOR_FESTIVAL, 'Festival'),
-        (USED_FOR_INVITATION, 'Invitation')
+        (USED_FOR_INVITATION, 'Invitation'),
+        (USED_FOR_LOYALTY_AMOUNT, 'Loyalty Amount'),
+        (USED_FOR_LOYALTY_NUMBER, 'Loyalty Number')
     ]
 
     discount_code = models.CharField(max_length=20)
@@ -44,6 +49,7 @@ class Discount(BusinessmanManyToOneBaseModel, BaseInvitationDiscountSettings):
     expire_date = models.DateTimeField(null=True, blank=True)
     customers_used = models.ManyToManyField(Customer, related_name="customers_used")
     used_for = models.CharField(max_length=2, choices=used_for_choices, default=USED_FOR_NONE)
+    reserved_for = models.OneToOneField(Customer, on_delete=models.PROTECT, null=True)
 
     def set_discount_data(self, discount_code: str, discount_type: str, percent_off: float, flat_rate_off: int):
         if discount_type != Discount.DISCOUNT_TYPE_FLAT_RATE and discount_type != Discount.DISCOUNT_TYPE_PERCENT:

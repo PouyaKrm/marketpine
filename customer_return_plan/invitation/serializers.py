@@ -5,7 +5,7 @@ from customer_return_plan.serializers import ReadOnlyDiscountSerializer
 from customer_return_plan.services import DiscountService
 from customers.serializers import CustomerListCreateSerializer, CustomerSerializer
 from customer_return_plan.invitation.models import FriendInvitation, FriendInvitationSettings
-from common.util import common_serializers, DiscountType, generate_discount_code
+from common.util import common_serializers, DiscountType, generate_discount_code, create_field_error
 from smspanel.services import SendSMSMessage
 from users.models import Customer, Businessman
 
@@ -189,7 +189,6 @@ class InvitationBusinessmanListSerializer(serializers.ModelSerializer):
 
 
 class InvitationRetrieveSerializer(InvitationBusinessmanListSerializer):
-
     inviter_discount = ReadOnlyDiscountSerializer(read_only=True)
     invited_discount = ReadOnlyDiscountSerializer(read_only=True)
 
@@ -221,10 +220,33 @@ class FriendInvitationSettingsSerializer(serializers.ModelSerializer):
             'discount_type',
             'flat_rate_off'
         ]
-        extra_kwargs = {'disabled': {'required': True}}
+        extra_kwargs = {
+            'disabled': {'required': True},
+            'discount_type': {'required': True}
+        }
+
+    def validate_discount_type(self, value):
+        if value != FriendInvitationSettings.DISCOUNT_TYPE_PERCENT and value != FriendInvitationSettings.DISCOUNT_TYPE_FLAT_RATE:
+            raise serializers.ValidationError('مقدار نوع تخفیف غیر مجاز است')
+        return value
+
+    def validate(self, attrs):
+        percent_off = attrs.get('percent_off')
+        flat_rate_off = attrs.get('flat_rate_off')
+        discount_type = attrs.get('discount_type')
+
+        if discount_type == FriendInvitationSettings.DISCOUNT_TYPE_FLAT_RATE and flat_rate_off <= 0:
+            raise serializers.ValidationError(
+                create_field_error('flat_rate_off', ['مقدار تخفیف پولی باید بزرگتر از صفر باشد']))
+        if discount_type == FriendInvitationSettings.DISCOUNT_TYPE_PERCENT and percent_off <= 0:
+            raise serializers.ValidationError(
+                create_field_error('flat_rate_off', ['مقدار تخفیف درصدی باید بزرگتر از صفر باشد']))
+
+        return attrs
 
     def update(self, instance: FriendInvitationSettings, validated_data: dict):
         for k, v in validated_data.items():
             setattr(instance, k, v)
         instance.save()
         return instance
+

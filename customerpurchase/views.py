@@ -4,6 +4,8 @@ from rest_framework.decorators import api_view
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
+
+from customer_return_plan.loyalty.services import loyalty_service
 from customerpurchase.models import CustomerPurchase
 from .serializers import PurchaseCreationUpdateSerializer, PurchaseListSerializer, CustomerPurchaseListSerializer
 from common.util import paginators
@@ -61,14 +63,13 @@ class CustomerPurchaseUpdateDeleteAPIView(APIView):
 
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-
     def delete(self, request, purchase_id):
 
         try:
-            request.user.customerpurchase_set.get(id=purchase_id).delete()
+            purchase = request.user.customerpurchase_set.get(id=purchase_id)
         except ObjectDoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND)
-
+        loyalty_service.re_evaluate_discounts_after_purchase_update_or_delete(request.user, purchase.customer)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 

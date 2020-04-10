@@ -4,9 +4,9 @@ from common.util import create_field_error, create_detail_error
 from customerpurchase.models import CustomerPurchase
 from common.util.common_serializers import CustomerSerializer
 from customers.services import CustomerService
-from .services import PurchaseService
+from .services import purchase_service
+from customer_return_plan.loyalty.services import loyalty_service
 
-purchase_service = PurchaseService()
 customer_service = CustomerService()
 
 
@@ -56,8 +56,10 @@ class PurchaseCreationUpdateSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
 
+        customer = customer_service.get_customer_by_id(validated_data.get('customer_id'))
         user = self.context['user']
         result = purchase_service.submit_purchase_with_discounts(user, **validated_data)
+        loyalty_service.create_discount_for_loyalty(user, customer)
         return result[2]
 
     def update(self, instance, validated_data):
@@ -72,6 +74,7 @@ class PurchaseCreationUpdateSerializer(serializers.ModelSerializer):
         instance.customer = user.customers.get(id=customer_id)
 
         instance.save()
+        loyalty_service.re_evaluate_discounts_after_purchase_update_or_delete(user, instance.customer)
 
         return instance
 
@@ -85,7 +88,7 @@ class PurchaseListSerializer(serializers.ModelSerializer):
             'id',
             'customer',
             'amount',
-            'purchase_date'
+            'create_date'
         ]
 
 
@@ -95,5 +98,5 @@ class CustomerPurchaseListSerializer(serializers.ModelSerializer):
         fields = [
             'id',
             'amount',
-            'purchase_date'
+            'create_date'
         ]

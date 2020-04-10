@@ -4,6 +4,7 @@ from drf_writable_nested import NestedUpdateMixin
 from rest_framework import serializers
 
 from common.util import generate_discount_code, DiscountType
+from customer_return_plan.festivals.services import FestivalService
 from customer_return_plan.services import DiscountService
 from smspanel.services import SendSMSMessage
 from users.models import Customer
@@ -16,6 +17,7 @@ from django.conf import settings
 
 template_min_chars = settings.SMS_PANEL['TEMPLATE_MIN_CHARS']
 template_max_chars = settings.SMS_PANEL['TEMPLATE_MAX_CHARS']
+festival_service = FestivalService()
 
 
 class BaseFestivalSerializer(serializers.ModelSerializer):
@@ -63,7 +65,7 @@ class BaseFestivalSerializer(serializers.ModelSerializer):
 
     def validate_name(self, value):
 
-        if self.context['user'].festival_set.filter(name=value).exists():
+        if festival_service.festival_by_name_exists(self.context['user'], value):
             raise serializers.ValidationError('name of the festival must be unique')
 
         return value

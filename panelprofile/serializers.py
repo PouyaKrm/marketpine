@@ -46,6 +46,7 @@ class BusinessmanProfileSerializer(serializers.ModelSerializer):
             'business_name',
             'date_joined',
             'authorized',
+            'has_sms_panel',
             'panel_activation_date',
             'panel_expiration_date',
             'auth_documents',
@@ -88,6 +89,9 @@ class BusinessmanProfileSerializer(serializers.ModelSerializer):
 
 
     def get_sms_panel_details(self, obj: Businessman):
+
+        if not obj.has_sms_panel:
+            return None
 
         serializer = SMSPanelInfoSerializer(obj.smspanelinfo)
         return serializer.data

@@ -1,14 +1,15 @@
 from customer_return_plan.services import DiscountService
 from customerpurchase.models import CustomerPurchase
-from users.models import Businessman
+from users.models import Businessman, Customer
 
 discount_service = DiscountService()
 
 
 class PurchaseService:
 
-    def validate_calculate_discount_amount_for_purchase(self, businessman: Businessman, customer_id: int, discount_ids: [int],
-                                                 purchase_amount: int, ) -> (bool, bool, int):
+    def validate_calculate_discount_amount_for_purchase(self, businessman: Businessman, customer_id: int,
+                                                        discount_ids: [int],
+                                                        purchase_amount: int, ) -> (bool, bool, int):
         discounts = discount_service.oldest_unused_discounts_by_ids(businessman=businessman, customer_id=customer_id,
                                                                     discount_ids=discount_ids)
         if discounts.count() == 0:
@@ -26,10 +27,21 @@ class PurchaseService:
         return True, True, discount_amounts
 
     def submit_purchase_with_discounts(self, businessman: Businessman, customer_id: int, amount: int,
-                                       discount_ids: [int]=None) -> (bool, bool, CustomerPurchase):
+                                       discount_ids: [int] = None) -> (bool, bool, CustomerPurchase):
 
         purchase = CustomerPurchase(businessman=businessman, amount=amount, customer_id=customer_id)
         if (discount_ids is not None) and len(discount_ids) != 0:
             discount_service.try_apply_discount_by_discount_ids(businessman, discount_ids, customer_id)
         purchase.save()
         return True, True, purchase
+
+    def get_customer_all_purchases(self, businessman: Businessman, customer: Customer):
+        return CustomerPurchase.objects.filter(businessman=businessman, customer=customer)
+
+    def get_customer_all_purchase_amounts(self, businessman: Businessman, customer: Customer) -> int:
+        return self.get_customer_all_purchases(businessman, customer).aggregate(sum('amount')).get(
+            'sum_amount')
+
+
+
+purchase_service = PurchaseService()

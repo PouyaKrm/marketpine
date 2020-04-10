@@ -8,8 +8,8 @@ from customer_return_plan.models import Discount
 from customers.services import CustomerService
 from users.models import Businessman, Customer
 
-
 customer_service = CustomerService()
+
 
 class DiscountService:
 
@@ -101,6 +101,26 @@ class DiscountService:
         discount = self.create_discount(user, expires, discount_type, auto_discount_code, percent_off,
                                         flat_rate_off, discount_code, expire_date)
         discount.used_for = Discount.USED_FOR_INVITATION
+        discount.save()
+        return discount
+
+    def discount_for_loyalty_amount(self, user: Businessman, customer: Customer, expires: bool, discount_type: str,
+                                    percent_off: float, flat_rate_off: int,
+                                    expire_date=None) -> Discount:
+
+        discount = self.create_discount(user, False, discount_type, True, percent_off, flat_rate_off)
+        discount.used_for = Discount.USED_FOR_LOYALTY_AMOUNT
+        discount.reserved_for = customer
+        discount.save()
+        return discount
+
+    def discount_for_loyalty_number(self, user: Businessman, customer: Customer, expires: bool, discount_type: str,
+                                    percent_off: float, flat_rate_off: int,
+                                    expire_date=None) -> Discount:
+
+        discount = self.create_discount(user, False, discount_type, True, percent_off, flat_rate_off)
+        discount.used_for = Discount.USED_FOR_LOYALTY_NUMBER
+        discount.reserved_for = customer
         discount.save()
         return discount
 
@@ -200,6 +220,14 @@ class DiscountService:
     def get_customer_used_discounts(self, user: Businessman, customer_id: int):
         return self.get_customer_discounts_by_customer_id(user, customer_id).filter(customers_used__id=customer_id)
 
+    def get_customer_loyalty_amount_discounts(self, user: Businessman, customer: Customer):
+        return self.get_customer_discounts_by_customer_id(user, customer.id).filter(
+            used_for=Discount.USED_FOR_LOYALTY_AMOUNT)
+
+    def get_customer_loyalty_number_discounts(self, user: Businessman, customer: Customer):
+        return self.get_customer_discounts_by_customer_id(user, customer.id).filter(
+            used_for=Discount.USED_FOR_LOYALTY_NUMBER)
+
     def has_customer_used_discount(self, discount: Discount, customer_id: int) -> (bool, bool, Discount, Customer):
         return discount.customers_used.filter(id=customer_id).exists()
 
@@ -237,3 +265,19 @@ class DiscountService:
         discount.delete()
         return True, discount
 
+    def delete_last_loyalty_number_discount(self, user: Businessman, customer: Customer) -> Discount:
+        if self.get_customer_loyalty_number_discounts(user, customer).count() > 0:
+            d = self.get_customer_loyalty_number_discounts(user, customer).order_by('-create_date').first()
+            d.delete()
+            return d
+        return None
+
+    def delete_last_loyalty_amount_discount(self, user: Businessman, customer: Customer) -> Discount:
+        if self.get_customer_loyalty_amount_discounts(user, customer).count() > 0:
+            d = self.get_customer_loyalty_amount_discounts(user, customer).order_by('-create_date').first()
+            d.delete()
+            return d
+        return None
+
+
+discount_service = DiscountService()

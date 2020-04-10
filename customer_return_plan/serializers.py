@@ -3,7 +3,7 @@ from rest_framework import serializers
 
 from common.util import create_field_error
 from common.util.custom_validators import phone_validator
-from customer_return_plan.models import Discount
+from customer_return_plan.models import Discount, BaseDiscountSettings
 from customer_return_plan.services import DiscountService
 from customers.services import CustomerService
 
@@ -137,8 +137,39 @@ class ApplyDiscountSerializer(serializers.Serializer):
             raise serializers.ValidationError('مشتری با این شماره تلفن وجود ندارد')
         return value
 
-    def validate_dsicount_code(self, value):
+    def validate_discount_code(self, value):
         user = self.context['user']
         if not self.discount_service.discount_exists_by_discount_code(user, value):
             raise serializers.ValidationError('کد تخفیف وجود معتبر نیست')
         return value
+
+
+class WritableNestedDiscountSettingSerializer(WritableNestedModelSerializer):
+
+    discount_type = serializers.CharField(required=True, max_length=2)
+    percent_off = serializers.FloatField(required=True, min_value=0, max_value=100)
+    flat_rate_off = serializers.IntegerField(required=True, min_value=0)
+
+    class Meta:
+        fields = [
+            'discount_type',
+            'percent_off',
+            'flat_rate_off'
+        ]
+
+    def validate_discount_type(self, value):
+
+        if value != BaseDiscountSettings.DISCOUNT_TYPE_PERCENT and value != BaseDiscountSettings.DISCOUNT_TYPE_FLAT_RATE:
+            raise serializers.ValidationError('نوع تخفیف اشتباه است')
+        return value
+
+    def validate(self, attrs):
+        discount_type = attrs.get('discount_type')
+        percent_off = attrs.get('percent_off')
+        flat_rate_off = attrs.get('flat_rate_off')
+
+        if discount_type == BaseDiscountSettings.DISCOUNT_TYPE_PERCENT and percent_off <= 0:
+            raise serializers.ValidationError(create_field_error('percent_off', ['مقدار تخفیف درصدی اشتباه است']))
+        if discount_type == BaseDiscountSettings.DISCOUNT_TYPE_FLAT_RATE and flat_rate_off <= 0:
+            raise serializers.ValidationError(create_field_error('flat_rate_off', ['مقدار تخفیف پولی اشتباه است']))
+        return attrs
