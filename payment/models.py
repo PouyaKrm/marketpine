@@ -8,6 +8,8 @@ from zeep import Client
 from django.conf import settings
 from django.urls import reverse
 
+from panelprofile.services import sms_panel_info_service
+
 
 url = settings.ZARINPAL.get('url')
 setting_merchant = settings.ZARINPAL.get('MERCHANT')
@@ -88,27 +90,49 @@ class Payment(models.Model):
         :return:
         """
 
-        self.__verify()
-
         try:
-            if self.payment_type == PaymentTypes.SMS:
-                self.businessman.smspanelinfo.increase_credit_in_tomans(self.amount)
-
-            elif self.payment_type == PaymentTypes.ACTIVATION:
-                active_date = timezone.now()
-                self.businessman.panel_activation_date = active_date
-
-                if self.businessman.panel_expiration_date is not None:
-                    self.businessman.panel_expiration_date = self.businessman.panel_expiration_date + activation_expire_delta
-                else:
-                    self.businessman.panel_expiration_date = active_date + activation_expire_delta
-
-                self.businessman.save()
-
+            self.do_operations()
         except Exception as e:
             FailedPaymentOperation.objects.create(businessman=self.businessman, payment=self,
                                                   payment_amount=self.amount, operation_type=self.payment_type)
+            self.reverse_operations()
+
+        try:
+            self.__verify()
+            sms_panel_info_service.set_wait_for_charge_to_pending()
+        except Exception as e:
+            self.reverse_operations()
+
+    def reverse_operations(self):
+        try:
+            if self.payment_type == PaymentTypes.SMS:
+                sms_panel_info_service.decrease_credit_in_tomans(self.businessman.smspanelinfo, self.amount)
+                self.save()
+        except Exception as e:
+            self.businessman.smspanelinfo.credit -= self.amount
+            self.businessman.smspanelinfo.save()
             raise PaymentOperationFailedException(self.payment_type, e)
+        if self.payment_type == PaymentTypes.ACTIVATION:
+            self.businessman.panel_activation_date = timezone.now() - timezone.timedelta(days=1)
+            self.businessman.panel_expiration_date = timezone.now()
+            self.save()
+
+
+    def do_operations(self):
+        if self.payment_type == PaymentTypes.SMS:
+            sms_panel_info_service.increase_credit_in_tomans(self.businessman.smspanelinfo, self.amount)
+            # self.businessman.smspanelinfo.increase_credit_in_tomans(self.amount)
+
+        elif self.payment_type == PaymentTypes.ACTIVATION:
+            active_date = timezone.now()
+            self.businessman.panel_activation_date = active_date
+
+            if self.businessman.panel_expiration_date is not None:
+                self.businessman.panel_expiration_date = self.businessman.panel_expiration_date + activation_expire_delta
+            else:
+                self.businessman.panel_expiration_date = active_date + activation_expire_delta
+
+            self.businessman.save()
 
 
 class FailedPaymentOperation(models.Model):
@@ -119,3 +143,4 @@ class FailedPaymentOperation(models.Model):
     operation_type = models.CharField(max_length=2, choices=Payment.payment_choices, default='0')
     create_date = models.DateTimeField(auto_now_add=True)
     is_fixed = models.BooleanField(default=False)
+

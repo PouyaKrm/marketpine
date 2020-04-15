@@ -57,6 +57,7 @@ class SMSMessage(models.Model):
     STATUS_PENDING = '1'
     STATUS_DONE = '2'
     STATUS_FAILED = '3'
+    STATUS_WAIT_FOR_CREDIT_RECHARGE = '4'
     USED_FOR_NONE = '0'
     USED_FOR_FESTIVAL = '1'
     USED_FOR_CONTENT_MARKETING = '2'
@@ -73,7 +74,8 @@ class SMSMessage(models.Model):
         (STATUS_CANCLE, 'CANCLE'),
         (STATUS_PENDING, 'PENDING'),
         (STATUS_DONE, 'DONE'),
-        (STATUS_FAILED, 'FAILED')
+        (STATUS_FAILED, 'FAILED'),
+        (STATUS_WAIT_FOR_CREDIT_RECHARGE, 'Waiting for credit recharge')
     ]
 
     message_used_for_choices = [
@@ -109,6 +111,10 @@ class SMSMessage(models.Model):
             self.status = SMSMessage.STATUS_FAILED
         self.save()
 
+    def just_increase_fail_count(self):
+        self.send_fail_attempts += 1
+        self.save()
+
     def reset_to_pending(self):
         self.send_fail_attempts = 0
         self.status = SMSMessage.STATUS_PENDING
@@ -121,7 +127,9 @@ class SMSMessage(models.Model):
     def has_any_unsent_receivers(self):
         return SMSMessageReceivers.objects.filter(sms_message=self, is_sent=False).exists()
 
-
+    def set_status_wait_charge(self):
+        self.status = SMSMessage.STATUS_WAIT_FOR_CREDIT_RECHARGE
+        self.save()
 
 
 class SMSMessageReceivers(models.Model):

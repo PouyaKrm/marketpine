@@ -95,10 +95,18 @@ class FriendInvitationTemplateRenderer(BaseTemplateRenderer):
             raise ValueError('no record exist on invitation with provided sms message')
 
     def render(self, receiver: SMSMessageReceivers):
+        invited_discount = self.invitation.invited_discount
+        if invited_discount.is_percent_discount():
+            discount_amount = invited_discount.percent_off
+        else:
+            discount_amount = invited_discount.flat_rate_off
         invite_context = {
             'inviter_phone': self.invitation.inviter.phone,
             'invited_phone': self.invitation.invited.phone,
-            'invited_code': self.invitation.inviter_discount.discount_code,
+            'invited_full_name': self.invitation.invited.full_name,
+            'inviter_full_name': self.invitation.inviter.full_name,
+            'invited_discount_code': self.invitation.inviter_discount.discount_code,
+            'invited_discount_amount': discount_amount,
             'invite_date': self.invitation.create_date
         }
 

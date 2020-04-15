@@ -14,6 +14,9 @@ from django.db.models import QuerySet
 # django.setup()
 
 from django.conf import settings
+from django.db.models.query_utils import Q
+
+from common.util.kavenegar_local import APIException, KavenegarMessageStatus
 from smspanel.models import SMSMessage, SMSMessageReceivers, SentSMS
 from users.models import Businessman
 from common.util.sms_panel import messanging
@@ -32,6 +35,7 @@ class BaseSendMessageThread(threading.Thread):
         self.success_finish = False
         self.failed = False
         self.fail_exception = None
+        self.failed_on_low_credit = False
         self.result = None
         self.receiver_ids = [r.id for r in receivers]
 
@@ -53,6 +57,9 @@ class SendPlainMessageThread(BaseSendMessageThread):
         except Exception as e:
             self.failed = True
             self.fail_exception = e
+            if isinstance(e, APIException) and e.status == KavenegarMessageStatus.NOT_ENOUGH_CREDIT:
+                self.failed_on_low_credit = True
+
 
 
 class SendTemplateMessageThread(BaseSendMessageThread):
@@ -97,7 +104,9 @@ class SendMessageTaskQueue:
         self.threads = []
 
     def any_pending_message_remained(self):
-        return SMSMessage.objects.filter(status=SMSMessage.STATUS_PENDING).count() > 0
+        return SMSMessage.objects.filter(status=SMSMessage.STATUS_PENDING).exclude(
+            Q(used_for=SMSMessage.USED_FOR_FRIEND_INVITATION)
+            | Q(used_for=SMSMessage.USED_FOR_WELCOME_MESSAGE)).count() > 0
 
     def __has_remaining_receivers(self, sms_message):
         return SMSMessageReceivers.objects.filter(sms_message=sms_message, is_sent=False).count() > 0
@@ -126,21 +135,27 @@ class SendMessageTaskQueue:
             remained = receiver_count % self.page_size
 
             for i in range(page_size_chunk):
-                receivers.append(self.__get_receivers_by_sms_message(sms_message).all()[i * self.page_size: self.page_size * (i + 1)])
+                receivers.append(self.__get_receivers_by_sms_message(sms_message).all()[
+                                 i * self.page_size: self.page_size * (i + 1)])
 
             if remained > 0:
-                receivers.append(self.__get_receivers_by_sms_message(sms_message).all()[page_size_chunk * self.page_size: page_size_chunk * self.page_size  + remained])
+                receivers.append(self.__get_receivers_by_sms_message(sms_message).all()[
+                                 page_size_chunk * self.page_size: page_size_chunk * self.page_size + remained])
 
         else:
             for i in range(self.number_of_threads):
-                receivers.append(self.__get_receivers_by_sms_message(sms_message).all()[i * self.page_size: self.page_size * (i + 1)])
+                receivers.append(self.__get_receivers_by_sms_message(sms_message).all()[
+                                 i * self.page_size: self.page_size * (i + 1)])
 
-        self.__set_threads_by_receivers(sms_message.businessman.smspanelinfo.api_key, sms_message, receivers, sms_message.message)
+        self.__set_threads_by_receivers(sms_message.businessman.smspanelinfo.api_key, sms_message, receivers,
+                                        sms_message.message)
 
-    def __get_oldest_pending_message(self) -> SMSMessage:
+    def _get_oldest_pending_message(self) -> SMSMessage:
         if not self.any_pending_message_remained():
             return None
-        return SMSMessage.objects.filter(status=SMSMessage.STATUS_PENDING).order_by('create_date').first()
+        return SMSMessage.objects.filter(status=SMSMessage.STATUS_PENDING).order_by('create_date') \
+            .exclude(Q(used_for=SMSMessage.USED_FOR_FRIEND_INVITATION)
+                     | Q(used_for=SMSMessage.USED_FOR_WELCOME_MESSAGE)).first()
 
     def __create_sent_messages(self, result: list, businessman: Businessman):
 
@@ -154,7 +169,7 @@ class SendMessageTaskQueue:
             total_cost += r['cost']
         return total_cost
 
-    def __set_message_status_and_empty_threads(self, sms_message):
+    def _set_message_status_and_empty_threads(self, sms_message):
 
         fail_count = 0
 
@@ -171,7 +186,7 @@ class SendMessageTaskQueue:
         self.threads = []
 
     def run_send_threads(self):
-        sms_message = self.__get_oldest_pending_message()
+        sms_message = self._get_oldest_pending_message()
         if sms_message is not None:
             self.__set_unsent_receivers_send_threads(sms_message)
             for t in self.threads:
@@ -191,7 +206,7 @@ class SendMessageTaskQueue:
                 SMSMessageReceivers.objects.filter(id__in=t.receiver_ids).delete()
 
                 costs += self.__create_sent_messages(t.result, sms_message.businessman)
-            self.__set_message_status_and_empty_threads(sms_message)
+            self._set_message_status_and_empty_threads(sms_message)
             try:
                 sms_message.businessman.smspanelinfo.refresh_credit()
             except Exception as e:
@@ -212,6 +227,9 @@ def configure() -> SendMessageTaskQueue:
 # while True:
 #     task.run_send_threads()
 #     time.sleep(10)
+
+
+
 
 def run_sms():
     task = configure()
