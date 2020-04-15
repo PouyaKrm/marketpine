@@ -7,6 +7,8 @@ from customer_return_plan.models import Discount, BaseDiscountSettings
 from customer_return_plan.services import DiscountService
 from customers.services import CustomerService
 
+discount_service = DiscountService()
+
 
 class ReadOnlyDiscountSerializer(serializers.ModelSerializer):
 
@@ -27,14 +29,12 @@ class ReadOnlyDiscountSerializer(serializers.ModelSerializer):
         ]
 
     def get_customers_used_total(self, obj: Discount):
-        return obj.customers_used.count()
-
+        return discount_service.get_num_of_customers_used_discount(obj)
 
 class ReadOnlyDiscountWithUsedFieldSerializer(ReadOnlyDiscountSerializer):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.discount_service = DiscountService()
 
     used_discount = serializers.SerializerMethodField(read_only=True)
 
@@ -43,7 +43,7 @@ class ReadOnlyDiscountWithUsedFieldSerializer(ReadOnlyDiscountSerializer):
 
     def get_used_discount(self, discount: Discount):
         customer_id = self.context['customer_id']
-        return self.discount_service.has_customer_used_discount(discount, customer_id)
+        return discount_service.has_customer_used_discount(discount, customer_id)
 
 
 class WritableDiscountCreateNestedSerializer(WritableNestedModelSerializer):
@@ -53,9 +53,6 @@ class WritableDiscountCreateNestedSerializer(WritableNestedModelSerializer):
     discount_type = serializers.CharField(max_length=2)
     auto_discount_code = serializers.BooleanField(write_only=True)
 
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self.discount_service = DiscountService()
 
     class Meta:
         model = Discount
@@ -90,7 +87,7 @@ class WritableDiscountCreateNestedSerializer(WritableNestedModelSerializer):
         if not auto_discount_code and discount_code is None:
             raise serializers.ValidationError(create_field_error('discount_code', ['کد تخفیف داده اجباری است']))
 
-        is_discount_code_unique = self.discount_service.is_discount_code_unique(user=user, code=discount_code)
+        is_discount_code_unique = discount_service.is_discount_code_unique(user=user, code=discount_code)
 
         instance = self.context.get('discount_instance')
 
@@ -110,7 +107,7 @@ class WritableDiscountCreateNestedSerializer(WritableNestedModelSerializer):
 
     def create_discount(self, expires: bool, auto_discount: bool, exp_date=None, **validated_data):
         user = self.context['user']
-        discount = self.discount_service.create_discount(user, expires=expires, auto_discount_code=auto_discount,
+        discount = discount_service.create_discount(user, expires=expires, auto_discount_code=auto_discount,
                                                          expire_date=exp_date, **validated_data)
         return discount
 
@@ -120,10 +117,6 @@ class ApplyDiscountSerializer(serializers.Serializer):
     phone = serializers.CharField(max_length=15, validators=[phone_validator])
     discount_code = serializers.CharField(max_length=16, min_length=8)
 
-    def __init__(self, *args, **kwargs):
-
-        super().__init__(*args, **kwargs)
-        self.discount_service = DiscountService()
 
     class Meta:
 
@@ -139,7 +132,7 @@ class ApplyDiscountSerializer(serializers.Serializer):
 
     def validate_discount_code(self, value):
         user = self.context['user']
-        if not self.discount_service.discount_exists_by_discount_code(user, value):
+        if not discount_service.discount_exists_by_discount_code(user, value):
             raise serializers.ValidationError('کد تخفیف وجود معتبر نیست')
         return value
 

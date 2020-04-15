@@ -1,3 +1,5 @@
+from django.db.models.aggregates import Sum
+
 from customer_return_plan.services import DiscountService
 from customerpurchase.models import CustomerPurchase
 from users.models import Businessman, Customer
@@ -30,18 +32,20 @@ class PurchaseService:
                                        discount_ids: [int] = None) -> (bool, bool, CustomerPurchase):
 
         purchase = CustomerPurchase(businessman=businessman, amount=amount, customer_id=customer_id)
-        if (discount_ids is not None) and len(discount_ids) != 0:
-            discount_service.try_apply_discount_by_discount_ids(businessman, discount_ids, customer_id)
         purchase.save()
+        if (discount_ids is not None) and len(discount_ids) != 0:
+            discount_service.try_apply_discount_by_discount_ids(businessman, discount_ids, purchase)
         return True, True, purchase
 
     def get_customer_all_purchases(self, businessman: Businessman, customer: Customer):
-        return CustomerPurchase.objects.filter(businessman=businessman, customer=customer)
+        return []
+        # return CustomerPurchase.objects.filter(businessman=businessman, customer=customer)
+
 
     def get_customer_all_purchase_amounts(self, businessman: Businessman, customer: Customer) -> int:
-        return self.get_customer_all_purchases(businessman, customer).aggregate(sum('amount')).get(
-            'sum_amount')
-
+        return 0
+        # return self.get_customer_all_purchases(businessman, customer).aggregate(Sum('amount')).get(
+        #     'sum_amount')
 
 
 purchase_service = PurchaseService()

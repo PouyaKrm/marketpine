@@ -56,10 +56,9 @@ class PurchaseCreationUpdateSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
 
-        customer = customer_service.get_customer_by_id(validated_data.get('customer_id'))
         user = self.context['user']
+        customer = customer_service.get_customer_by_id(user, validated_data.get('customer_id'))
         result = purchase_service.submit_purchase_with_discounts(user, **validated_data)
-        loyalty_service.create_discount_for_loyalty(user, customer)
         return result[2]
 
     def update(self, instance, validated_data):

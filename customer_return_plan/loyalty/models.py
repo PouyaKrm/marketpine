@@ -25,8 +25,8 @@ class CustomerLoyaltyDiscountSettings(BusinessmanOneToOneBaseModel):
         (FOR_BOTH, 'Both')
     ]
 
-    purchase_number_settings = models.OneToOneField(CustomerPurchaseNumberDiscountSettings, on_delete=models.CASCADE)
-    purchase_amount_settings = models.OneToOneField(CustomerPurchaseAmountDiscountSettings, on_delete=models.CASCADE)
+    purchase_number_settings = models.OneToOneField(CustomerPurchaseNumberDiscountSettings, on_delete=models.CASCADE, null=True)
+    purchase_amount_settings = models.OneToOneField(CustomerPurchaseAmountDiscountSettings, on_delete=models.CASCADE, null=True)
     create_discount_for = models.CharField(max_length=2, choices=use_choices, default=FOR_BOTH)
     disabled = models.BooleanField(default=False)
 
