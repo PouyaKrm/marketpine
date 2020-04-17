@@ -13,6 +13,9 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
+import atexit
+import signal
+
 from django.contrib import admin
 from django.urls import path, include
 from rest_framework_swagger.views import get_swagger_view
@@ -33,6 +36,10 @@ from download import urls as download_url
 from payment import urls as payment_url
 from device import urls as device_url
 from content_marketing import urls as content_url
+
+from background_tasks.services import background_task_service
+
+
 schema_view = get_swagger_view(title='Pastebin API')
 
 urlpatterns = [
@@ -56,3 +63,19 @@ urlpatterns = [
 
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
+
+background_task_service.kill_and_create_new_back_tasks()
+
+
+def exit():
+    try:
+        background_task_service.kill_all_tasks()
+    except KeyboardInterrupt:
+        background_task_service.kill_all_tasks()
+
+# atexit.register(exit)
+
+
+def kill_t(*args, **kwargs):
+    background_task_service.kill_all_tasks()
