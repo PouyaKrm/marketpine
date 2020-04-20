@@ -119,7 +119,7 @@ INSTALLED_APPS = [
     'panelsetting',
     'panelprofile',
     'customer_return_plan.loyalty',
-    'background_tasks',
+    'background_task',
     'rest_framework_swagger',
     'django.contrib.admin',
     'django.contrib.auth',

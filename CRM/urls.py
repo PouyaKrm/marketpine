@@ -13,8 +13,6 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
-import atexit
-import signal
 
 from django.contrib import admin
 from django.urls import path, include
@@ -37,8 +35,9 @@ from payment import urls as payment_url
 from device import urls as device_url
 from content_marketing import urls as content_url
 
-from background_tasks.services import background_task_service
 
+from smspanel.background_jobs.invitate_welcome_sms import run_send_invite_sms_task
+from smspanel.background_jobs.sms_send_script import run_send_sms_task
 
 schema_view = get_swagger_view(title='Pastebin API')
 
@@ -63,3 +62,7 @@ urlpatterns = [
 
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
+run_send_invite_sms_task(repeat=10)
+run_send_sms_task(repeat=10)
+

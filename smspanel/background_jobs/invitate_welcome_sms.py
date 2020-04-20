@@ -1,9 +1,10 @@
 import logging
 import time
 
+from background_task import background
 from django.db.models.query_utils import Q
 
-from background_tasks.tasks.sms_send_task import SendMessageTaskQueue
+from smspanel.background_jobs.sms_send_script import SendMessageTaskQueue
 from smspanel.models import SMSMessage
 from django.conf import settings
 
@@ -34,17 +35,18 @@ class WelcomeInviteSmsMessage(SendMessageTaskQueue):
                 count += 1
                 if t.failed_on_low_credit:
                     not_enough_credit_count += 1
-        if count == len(self.threads):
+        all_threads_failed = count == len(self.threads)
+        all_threads_failed_on_low_credit = not_enough_credit_count == len(self.threads)
+        self.threads = []
+        if all_threads_failed:
             sms_message.just_increase_fail_count()
             if sms_message.send_fail_attempts >= max_fail_attempts:
                 sms_message.set_fail()
                 return
-        if not_enough_credit_count == len(self.threads):
+        if all_threads_failed_on_low_credit:
             sms_message.set_status_wait_charge()
         if count == 0 and not_enough_credit_count == 0:
             sms_message.set_done()
-
-        self.threads = []
 
 
 def configure() -> SendMessageTaskQueue:
@@ -52,8 +54,15 @@ def configure() -> SendMessageTaskQueue:
     return WelcomeInviteSmsMessage()
 
 
-def run_invite_welcome_message():
-    task = configure()
-    while True:
-        task.run_send_threads()
-        time.sleep(1)
+back_task = configure()
+
+
+@background()
+def run_send_invite_sms_task():
+    back_task.run_send_threads()
+
+# def run_invite_welcome_message():
+#     task = configure()
+#     while True:
+#         task.run_send_threads()
+#         time.sleep(1)

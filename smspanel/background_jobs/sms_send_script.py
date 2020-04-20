@@ -5,6 +5,7 @@ import threading
 import logging
 import sys
 
+from background_task import background
 from django.db.models import QuerySet
 
 # sys.path.append(dirname(dirname(abspath(__file__))))
@@ -16,7 +17,6 @@ from django.db.models import QuerySet
 from django.conf import settings
 from django.db.models.query_utils import Q
 
-from background_tasks.tasks.base import BaseBackgroundTask
 from common.util.kavenegar_local import APIException, KavenegarMessageStatus
 from smspanel.models import SMSMessage, SMSMessageReceivers, SentSMS
 from users.models import Businessman
@@ -99,10 +99,9 @@ class SendTemplateMessageThread(BaseSendMessageThread):
             self.fail_exception = e
 
 
-class SendMessageTaskQueue(BaseBackgroundTask):
+class SendMessageTaskQueue:
 
     def __init__(self):
-        super().__init__('send sms except invite welcome')
         self.number_of_threads = settings.SMS_PANEL['SEND_THREADS_NUMBER']
         self.page_size = settings.SMS_PANEL['SEND_TEMPLATE_PAGE_SIZE']
         self.max_fail_attempts = settings.SMS_PANEL['MAX_SEND_FAIL_ATTEMPTS']
@@ -192,44 +191,49 @@ class SendMessageTaskQueue(BaseBackgroundTask):
 
     def run_send_threads(self):
         sms_message = self._get_oldest_pending_message()
-        if sms_message is not None:
-            self.__set_unsent_receivers_send_threads(sms_message)
-            for t in self.threads:
-                t.start()
+        if sms_message is None:
+            return
+        if not sms_message.has_any_unsent_receivers():
+            sms_message.set_done()
+            return
 
-            for t in self.threads:
-                t.join()
+        self.__set_unsent_receivers_send_threads(sms_message)
+        for t in self.threads:
+            t.start()
 
-            costs = 0
-            for t in self.threads:
+        for t in self.threads:
+            t.join()
 
-                if t.failed:
-                    logging.error(t.fail_exception)
-                if not t.success_finish:
-                    continue
+        costs = 0
+        for t in self.threads:
 
-                SMSMessageReceivers.objects.filter(id__in=t.receiver_ids).delete()
+            if t.failed:
+                logging.error(t.fail_exception)
+            if not t.success_finish:
+                continue
 
-                costs += self.__create_sent_messages(t.result, sms_message.businessman)
-            self._set_message_status_and_empty_threads(sms_message)
-            try:
-                sms_message.businessman.smspanelinfo.refresh_credit()
-            except Exception as e:
-                sms_message.businessman.smspanelinfo.reduce_credit_local(costs)
-                logging.error(e)
+            SMSMessageReceivers.objects.filter(id__in=t.receiver_ids).delete()
 
-    def run_task(self):
-        logging.basicConfig(filename='errors.log', format='%(levelname)s %(asctime)s : %(message)s',
-                            level=logging.ERROR)
-        while not self.kill_thread:
-            self.run_send_threads()
-            time.sleep(10)
+            costs += self.__create_sent_messages(t.result, sms_message.businessman)
+        self._set_message_status_and_empty_threads(sms_message)
+        try:
+            sms_message.businessman.smspanelinfo.refresh_credit()
+        except Exception as e:
+            sms_message.businessman.smspanelinfo.reduce_credit_local(costs)
+            logging.error(e)
 
 
 def configure() -> SendMessageTaskQueue:
     logging.basicConfig(filename='errors.log', format='%(levelname)s %(asctime)s : %(message)s', level=logging.ERROR)
     return SendMessageTaskQueue()
 
+
+send_sms_task = configure()
+
+
+@background()
+def run_send_sms_task():
+    send_sms_task.run_send_threads()
 
 # task = None
 #
@@ -243,8 +247,8 @@ def configure() -> SendMessageTaskQueue:
 
 
 
-def run_sms():
-    task = configure()
-    while True:
-        task.run_send_threads()
-        time.sleep(10)
+# def run_sms():
+#     task = configure()
+#     while True:
+#         task.run_send_threads()
+#         time.sleep(10)
