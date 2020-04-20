@@ -90,6 +90,11 @@ class SMSPanelInfo(models.Model):
     def has_remained_credit_for_new_message_to_all(self):
         return self.remained_credit_for_new_message() > max_message_cost * self.businessman.customers.count()
 
+    def reduce_credit_local(self, costs):
+        self.credit -= costs
+        self.save()
+
+
 class AuthDoc(models.Model):
 
     file = models.FileField(storage=fs, upload_to='auth-doc', validators=[pdf_file_validator])

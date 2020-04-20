@@ -14,6 +14,6 @@ from scripts.invitate_welcome_sms import run_invite_welcome_message
 
 
 if __name__ == '__main__':
-    threading.Thread(target=run_sms).start()
-    threading.Thread(target=run_invite_welcome_message).start()
-    # run_invite_welcome_message()
+    # threading.Thread(target=run_sms).start()
+    # threading.Thread(target=run_invite_welcome_message).start()
+    run_invite_welcome_message()

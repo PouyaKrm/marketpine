@@ -26,7 +26,7 @@ def send_template_sms_message_to_all(user: Businessman, template: str):
         raise APIException(e.status, e.message)
 
     while sent_messages is not None:
-        user.smspanelinfo.reduce_credit(calculate_total_sms_cost(sent_messages))
+        user.smspanelinfo.reduce_credit_local(calculate_total_sms_cost(sent_messages))
         SentSMS.objects.bulk_create([SentSMS(businessman=user, message_id=m['messageid'], receptor=m['receptor']) for m in sent_messages])
         try:
             sent_messages = client_sms.send_bulk()

@@ -3,8 +3,11 @@ import time
 
 from django.db.models.query_utils import Q
 
-from scripts.sms_send_script import SendMessageTaskQueue
+from background_tasks.tasks.sms_send_task import SendMessageTaskQueue
 from smspanel.models import SMSMessage
+from django.conf import settings
+
+max_fail_attempts = settings.SMS_PANEL['MAX_SEND_FAIL_ATTEMPTS']
 
 
 class WelcomeInviteSmsMessage(SendMessageTaskQueue):
@@ -33,6 +36,9 @@ class WelcomeInviteSmsMessage(SendMessageTaskQueue):
                     not_enough_credit_count += 1
         if count == len(self.threads):
             sms_message.just_increase_fail_count()
+            if sms_message.send_fail_attempts >= max_fail_attempts:
+                sms_message.set_fail()
+                return
         if not_enough_credit_count == len(self.threads):
             sms_message.set_status_wait_charge()
         if count == 0 and not_enough_credit_count == 0:

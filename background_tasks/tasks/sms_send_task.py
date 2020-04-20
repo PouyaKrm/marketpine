@@ -16,7 +16,7 @@ from django.db.models import QuerySet
 from django.conf import settings
 from django.db.models.query_utils import Q
 
-from background_tasks.tasks import BaseBackgroundTask
+from background_tasks.tasks.base import BaseBackgroundTask
 from common.util.kavenegar_local import APIException, KavenegarMessageStatus
 from smspanel.models import SMSMessage, SMSMessageReceivers, SentSMS
 from users.models import Businessman
@@ -56,11 +56,12 @@ class SendPlainMessageThread(BaseSendMessageThread):
             self.result = api.send_plain(self.phones, self.message)
             self.success_finish = True
         except Exception as e:
+            if isinstance(e, APIException) and e.status == KavenegarMessageStatus.NOT_ENOUGH_CREDIT:
+                self.failed_on_low_credit = True
             self.failed = True
             self.fail_exception = e
             if isinstance(e, APIException) and e.status == KavenegarMessageStatus.NOT_ENOUGH_CREDIT:
                 self.failed_on_low_credit = True
-
 
 
 class SendTemplateMessageThread(BaseSendMessageThread):
@@ -92,6 +93,8 @@ class SendTemplateMessageThread(BaseSendMessageThread):
             self.result = messenger.send_array(self.phones, self.messages)
             self.success_finish = True
         except Exception as e:
+            if isinstance(e, APIException) and e.status == KavenegarMessageStatus.NOT_ENOUGH_CREDIT:
+                self.failed_on_low_credit = True
             self.failed = True
             self.fail_exception = e
 
@@ -212,13 +215,13 @@ class SendMessageTaskQueue(BaseBackgroundTask):
             try:
                 sms_message.businessman.smspanelinfo.refresh_credit()
             except Exception as e:
-                sms_message.businessman.smspanelinfo.reduce_credit(costs)
+                sms_message.businessman.smspanelinfo.reduce_credit_local(costs)
                 logging.error(e)
 
-    def run_task(self, event):
+    def run_task(self):
         logging.basicConfig(filename='errors.log', format='%(levelname)s %(asctime)s : %(message)s',
                             level=logging.ERROR)
-        while not event.is_set():
+        while not self.kill_thread:
             self.run_send_threads()
             time.sleep(10)
 

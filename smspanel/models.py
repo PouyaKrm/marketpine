@@ -131,6 +131,10 @@ class SMSMessage(models.Model):
         self.status = SMSMessage.STATUS_WAIT_FOR_CREDIT_RECHARGE
         self.save()
 
+    def set_fail(self):
+        self.status = SMSMessage.STATUS_FAILED
+        self.save()
+
 
 class SMSMessageReceivers(models.Model):
 

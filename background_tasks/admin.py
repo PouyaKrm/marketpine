@@ -5,15 +5,15 @@ from .models import BackgroundTask
 from django.http.request import HttpRequest
 
 
-class BackTaskAdminModel(admin.ModelAdmin):
-
-    def has_add_permission(self, request: HttpRequest, obj = ...):
-        return False
-
-    def has_delete_permission(self, request: HttpRequest, obj= ...):
-        return False
-
-    list_display = ['name', 'pid', 'status', 'create_date', 'update_date']
-
-
-admin.site.register(BackgroundTask, BackTaskAdminModel)
+# class BackTaskAdminModel(admin.ModelAdmin):
+#
+#     def has_add_permission(self, request: HttpRequest, obj = ...):
+#         return False
+#
+#     def has_delete_permission(self, request: HttpRequest, obj= ...):
+#         return True
+#
+#     list_display = ['name', 'pid', 'status', 'create_date', 'update_date']
+#
+#
+# admin.site.register(BackgroundTask, BackTaskAdminModel)

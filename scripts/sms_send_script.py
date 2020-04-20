@@ -55,11 +55,12 @@ class SendPlainMessageThread(BaseSendMessageThread):
             self.result = api.send_plain(self.phones, self.message)
             self.success_finish = True
         except Exception as e:
+            if isinstance(e, APIException) and e.status == KavenegarMessageStatus.NOT_ENOUGH_CREDIT:
+                self.failed_on_low_credit = True
             self.failed = True
             self.fail_exception = e
             if isinstance(e, APIException) and e.status == KavenegarMessageStatus.NOT_ENOUGH_CREDIT:
                 self.failed_on_low_credit = True
-
 
 
 class SendTemplateMessageThread(BaseSendMessageThread):
@@ -91,6 +92,8 @@ class SendTemplateMessageThread(BaseSendMessageThread):
             self.result = messenger.send_array(self.phones, self.messages)
             self.success_finish = True
         except Exception as e:
+            if isinstance(e, APIException) and e.status == KavenegarMessageStatus.NOT_ENOUGH_CREDIT:
+                self.failed_on_low_credit = True
             self.failed = True
             self.fail_exception = e
 
@@ -108,13 +111,13 @@ class SendMessageTaskQueue:
             Q(used_for=SMSMessage.USED_FOR_FRIEND_INVITATION)
             | Q(used_for=SMSMessage.USED_FOR_WELCOME_MESSAGE)).count() > 0
 
-    def __has_remaining_receivers(self, sms_message):
+    def _has_remaining_receivers(self, sms_message):
         return SMSMessageReceivers.objects.filter(sms_message=sms_message, is_sent=False).count() > 0
 
-    def __get_receivers_by_sms_message(self, sms_message) -> QuerySet:
+    def _get_receivers_by_sms_message(self, sms_message) -> QuerySet:
         return SMSMessageReceivers.objects.filter(sms_message=sms_message)
 
-    def __set_threads_by_receivers(self, api_key, sms_message: SMSMessage, receivers: list, message: str):
+    def _set_threads_by_receivers(self, api_key, sms_message: SMSMessage, receivers: list, message: str):
 
         self.threads = []
 
@@ -126,8 +129,8 @@ class SendMessageTaskQueue:
             for f in receivers:
                 self.threads.append(SendTemplateMessageThread(api_key, sms_message, f, message))
 
-    def __set_unsent_receivers_send_threads(self, sms_message: SMSMessage):
-        receiver_count = self.__get_receivers_by_sms_message(sms_message).filter(is_sent=False).all().count()
+    def _set_unsent_receivers_send_threads(self, sms_message: SMSMessage):
+        receiver_count = self._get_receivers_by_sms_message(sms_message).filter(is_sent=False).all().count()
         receivers = []
 
         if receiver_count <= self.number_of_threads * self.page_size:
@@ -135,20 +138,20 @@ class SendMessageTaskQueue:
             remained = receiver_count % self.page_size
 
             for i in range(page_size_chunk):
-                receivers.append(self.__get_receivers_by_sms_message(sms_message).all()[
+                receivers.append(self._get_receivers_by_sms_message(sms_message).all()[
                                  i * self.page_size: self.page_size * (i + 1)])
 
             if remained > 0:
-                receivers.append(self.__get_receivers_by_sms_message(sms_message).all()[
+                receivers.append(self._get_receivers_by_sms_message(sms_message).all()[
                                  page_size_chunk * self.page_size: page_size_chunk * self.page_size + remained])
 
         else:
             for i in range(self.number_of_threads):
-                receivers.append(self.__get_receivers_by_sms_message(sms_message).all()[
+                receivers.append(self._get_receivers_by_sms_message(sms_message).all()[
                                  i * self.page_size: self.page_size * (i + 1)])
 
-        self.__set_threads_by_receivers(sms_message.businessman.smspanelinfo.api_key, sms_message, receivers,
-                                        sms_message.message)
+        self._set_threads_by_receivers(sms_message.businessman.smspanelinfo.api_key, sms_message, receivers,
+                                       sms_message.message)
 
     def _get_oldest_pending_message(self) -> SMSMessage:
         if not self.any_pending_message_remained():
@@ -157,7 +160,7 @@ class SendMessageTaskQueue:
             .exclude(Q(used_for=SMSMessage.USED_FOR_FRIEND_INVITATION)
                      | Q(used_for=SMSMessage.USED_FOR_WELCOME_MESSAGE)).first()
 
-    def __create_sent_messages(self, result: list, businessman: Businessman):
+    def _create_sent_messages(self, result: list, businessman: Businessman):
 
         converted = message_id_receptor_cost_sms(result)
         SentSMS.objects.bulk_create([
@@ -180,38 +183,38 @@ class SendMessageTaskQueue:
         if fail_count == len(self.threads):
             sms_message.increase_send_fail_and_set_failed()
 
-        elif not self.__has_remaining_receivers(sms_message):
+        elif not self._has_remaining_receivers(sms_message):
             sms_message.set_done()
 
         self.threads = []
 
     def run_send_threads(self):
         sms_message = self._get_oldest_pending_message()
-        if sms_message is not None:
-            self.__set_unsent_receivers_send_threads(sms_message)
-            for t in self.threads:
-                t.start()
+        if sms_message is None:
+            return
+        if not self._has_remaining_receivers(sms_message):
+            sms_message.set_done()
+            return
 
-            for t in self.threads:
-                t.join()
-
-            costs = 0
-            for t in self.threads:
-
-                if t.failed:
-                    logging.error(t.fail_exception)
-                if not t.success_finish:
-                    continue
-
-                SMSMessageReceivers.objects.filter(id__in=t.receiver_ids).delete()
-
-                costs += self.__create_sent_messages(t.result, sms_message.businessman)
-            self._set_message_status_and_empty_threads(sms_message)
-            try:
-                sms_message.businessman.smspanelinfo.refresh_credit()
-            except Exception as e:
-                sms_message.businessman.smspanelinfo.reduce_credit(costs)
-                logging.error(e)
+        self._set_unsent_receivers_send_threads(sms_message)
+        for t in self.threads:
+            t.start()
+        for t in self.threads:
+            t.join()
+        costs = 0
+        for t in self.threads:
+            if t.failed:
+                logging.error(t.fail_exception)
+            if not t.success_finish:
+                continue
+            SMSMessageReceivers.objects.filter(id__in=t.receiver_ids).delete()
+            costs += self._create_sent_messages(t.result, sms_message.businessman)
+        self._set_message_status_and_empty_threads(sms_message)
+        try:
+            sms_message.businessman.smspanelinfo.refresh_credit()
+        except Exception as e:
+            sms_message.businessman.smspanelinfo.reduce_credit_local(costs)
+            logging.error(e)
 
 
 def configure() -> SendMessageTaskQueue:

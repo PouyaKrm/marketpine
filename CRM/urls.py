@@ -63,19 +63,3 @@ urlpatterns = [
 
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
-
-
-background_task_service.kill_and_create_new_back_tasks()
-
-
-def exit():
-    try:
-        background_task_service.kill_all_tasks()
-    except KeyboardInterrupt:
-        background_task_service.kill_all_tasks()
-
-# atexit.register(exit)
-
-
-def kill_t(*args, **kwargs):
-    background_task_service.kill_all_tasks()
