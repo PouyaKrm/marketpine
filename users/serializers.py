@@ -2,7 +2,7 @@ from django.core.validators import RegexValidator
 from rest_framework import serializers, validators
 from django.contrib.auth.base_user import BaseUserManager
 from common.util.sms_panel.message import SystemSMSMessage
-from .models import Businessman, VerificationCodes
+from .models import Businessman, VerificationCodes, BusinessCategory
 import secrets, datetime
 from django.conf import settings
 import os
@@ -14,7 +14,6 @@ PhonenumberValidator = RegexValidator(regex=r'^\+?1?\d{11, 12}$',
                                               " Up to 15 digits allowed.")
 
 
-
 class BusinessmanRegisterSerializer(serializers.ModelSerializer):
 
     password2 = serializers.CharField(min_length=8, max_length=16, style={'input_type': 'password', 'write_only': True})
@@ -23,6 +22,7 @@ class BusinessmanRegisterSerializer(serializers.ModelSerializer):
     email = serializers.EmailField(validators=[
         validators.UniqueValidator(queryset=Businessman.objects.all(), message="this email address is already taken")])
     phone = serializers.CharField(max_length=15, validators=[validators.UniqueValidator(queryset=Businessman.objects.all(), message="phone number must be unique")])
+    business_category = serializers.PrimaryKeyRelatedField(required=True, queryset=BusinessCategory.objects.all())
 
     class Meta:
         model = Businessman
@@ -36,7 +36,8 @@ class BusinessmanRegisterSerializer(serializers.ModelSerializer):
             'address',
             'phone',
             'email',
-            'business_name'
+            'business_name',
+            'business_category'
         ]
 
     def validate(self, attrs):
@@ -76,12 +77,10 @@ class BusinessmanRegisterSerializer(serializers.ModelSerializer):
 
         SystemSMSMessage().send_verification_code(receptor=user.phone, code=code)
 
-
         PanelSetting.objects.create(businessman=user)
 
         return user
         
-
 
 class BusinessmanPasswordResetSerializer(serializers.ModelSerializer):
 
@@ -165,3 +164,14 @@ class BusinessmanLoginSerializer(serializers.ModelSerializer):
         ]
 
         extra_kwargs = {'password': {'write_only': True}}
+
+
+class CategorySerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = BusinessCategory
+        fields = [
+            'name',
+            'id'
+        ]
+

@@ -2,6 +2,10 @@ from django.db import models
 from django.contrib.auth.models import AbstractUser, AbstractBaseUser, BaseUserManager
 from django.db.models.signals import post_save
 from django.dispatch.dispatcher import receiver
+from django.conf import settings
+
+
+categories = settings.DEFAULT_BUSINESS_CATEGORY
 
 
 class AuthStatus:
@@ -9,6 +13,35 @@ class AuthStatus:
     AUTHORIZED = '2'
     PENDING = '1'
     UNAUTHORIZED = '0'
+
+
+class BaseModel(models.Model):
+
+    create_date = models.DateTimeField(auto_now_add=True, null=True)
+    update_date = models.DateTimeField(auto_now=True, null=True)
+
+    class Meta:
+        abstract = True
+
+
+class BusinessCategory(BaseModel):
+
+    name = models.CharField(max_length=40)
+
+    @staticmethod
+    def create_default_categories():
+        if BusinessCategory.objects.count() != 0:
+            return
+        BusinessCategory.objects.bulk_create([BusinessCategory(name=n) for n in categories])
+
+    @staticmethod
+    def get_top5_category(name: str = None):
+        if name is None or name == '':
+            return BusinessCategory.objects.all()[:5]
+        return BusinessCategory.objects.filter(name__startswith=name).all()[:5]
+
+    def __str__(self):
+        return self.name
 
 
 class Businessman(AbstractUser):
@@ -22,6 +55,7 @@ class Businessman(AbstractUser):
     logo = models.ImageField(upload_to=get_upload_path, null=True, blank=True, max_length=254)
     telegram_id = models.CharField(max_length=20, blank=True, null=True)
     instagram_id = models.CharField(max_length=20, blank=True, null=True)
+    business_category = models.ForeignKey(BusinessCategory, on_delete=models.PROTECT, null=True)
     is_verified = models.BooleanField(default=False)
     AUTHORIZE_CHOICES = [('0', 'UNAUTHORIZED'), ('1', 'PENDING'), ('2', 'AUTHORIZED')]
     authorized = models.CharField(max_length=1, choices=AUTHORIZE_CHOICES, default='0')
@@ -31,15 +65,6 @@ class Businessman(AbstractUser):
 
     def __str__(self):
         return self.username
-
-
-class BaseModel(models.Model):
-
-    create_date = models.DateTimeField(auto_now_add=True, null=True)
-    update_date = models.DateTimeField(auto_now=True, null=True)
-
-    class Meta:
-        abstract = True
 
 
 class BusinessmanOneToOneBaseModel(BaseModel):

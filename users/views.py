@@ -9,6 +9,7 @@ from rest_framework.request import Request
 from django.contrib.auth import authenticate
 
 from common.util import  get_client_ip, custom_login_payload
+from common.util.http_helpers import ok
 from users.models import BusinessmanRefreshTokens
 from .serializers import *
 # Create your views here.
@@ -208,3 +209,11 @@ def user_forget_password(request):
     serializer.update(user, serializer.validated_data)
 
     return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+@api_view(['GET'])
+@permission_classes([])
+def get_top5_categories(request):
+    category_name = request.query_params.get('cname')
+    serializer = CategorySerializer(BusinessCategory.get_top5_category(category_name), many=True)
+    return ok(serializer.data)

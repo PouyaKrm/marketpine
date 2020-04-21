@@ -34,6 +34,7 @@ from download import urls as download_url
 from payment import urls as payment_url
 from device import urls as device_url
 from content_marketing import urls as content_url
+from users.models import BusinessCategory
 
 
 from smspanel.background_jobs.invitate_welcome_sms import run_send_invite_sms_task
@@ -65,4 +66,5 @@ if settings.DEBUG:
 
 run_send_invite_sms_task(repeat=10)
 run_send_sms_task(repeat=10)
+BusinessCategory.create_default_categories()
 

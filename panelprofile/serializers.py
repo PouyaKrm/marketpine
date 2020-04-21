@@ -7,7 +7,8 @@ from rest_framework.reverse import reverse
 from rest_framework import serializers
 
 from payment.models import Payment
-from users.models import AuthStatus, Businessman
+from users.models import AuthStatus, Businessman, BusinessCategory
+from users.serializers import CategorySerializer
 from .models import SMSPanelInfo, BusinessmanAuthDocs
 from django.conf import settings
 from common.util.custom_validators import pdf_file_validator, validate_logo_size
@@ -32,6 +33,8 @@ class BusinessmanProfileSerializer(serializers.ModelSerializer):
 
     auth_documents = serializers.SerializerMethodField(read_only=True)
     sms_panel_details = serializers.SerializerMethodField(read_only=True)
+    business_category = CategorySerializer(read_only=True)
+    category = serializers.PrimaryKeyRelatedField(write_only=True, queryset=BusinessCategory.objects.all())
 
     class Meta:
 
@@ -43,6 +46,7 @@ class BusinessmanProfileSerializer(serializers.ModelSerializer):
             'address',
             'phone',
             'email',
+            'business_category',
             'business_name',
             'date_joined',
             'authorized',
@@ -51,6 +55,7 @@ class BusinessmanProfileSerializer(serializers.ModelSerializer):
             'panel_expiration_date',
             'auth_documents',
             'sms_panel_details',
+            'category'
         ]
 
         extra_kwargs = {'username': {'read_only': True}, 'phone': {'read_only': True},
@@ -107,18 +112,19 @@ class BusinessmanProfileSerializer(serializers.ModelSerializer):
 
         return value
 
-    def update(self, instance, validated_data):
+    def update(self, instance: Businessman, validated_data):
 
         for key, value in validated_data.items():
 
             setattr(instance, key, value)
 
+        category = validated_data.get('category')
+        if category is not None:
+            instance.business_category = category
+
         instance.save()
 
         return instance
-
-
-
 
 
 class UploadImageSerializer(serializers.ModelSerializer):

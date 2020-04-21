@@ -322,3 +322,8 @@ CONTENT_MARKETING = {
 }
 
 
+DEFAULT_BUSINESS_CATEGORY = [
+    'سایر',
+    'رستوران',
+    'کافی شاپ',
+]

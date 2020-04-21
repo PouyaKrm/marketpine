@@ -5,12 +5,11 @@ from django.shortcuts import redirect, render
 from django.urls import reverse, path
 from django.utils.html import format_html
 from kavenegar import APIException
-from .models import Businessman, Customer, VerificationCodes, AuthStatus
+from .models import Businessman, Customer, VerificationCodes, AuthStatus, BusinessCategory
 from . import forms
 
 
 def generate_button_link(disable: bool, button_color='blue'):
-
     if disable is False:
         return '<a href={} ' \
                'style="background:  ' + button_color + \
@@ -20,22 +19,25 @@ def generate_button_link(disable: bool, button_color='blue'):
 
 
 class BusinessmanAdminModel(UserAdmin):
-
     add_form = forms.BusinessmanCreationFrom
     form = forms.BusinessmanChangeForm
     model = Businessman
-    list_display = ['id', 'username', 'business_name', 'phone', 'authorized', 'get_authorize_link', 'get_un_authorize_link']
+    list_display = ['id', 'username', 'business_name', 'phone', 'authorized', 'get_authorize_link',
+                    'get_un_authorize_link']
     readonly_fields = ['authorized']
     fieldsets = (
-            (None, {'fields': ('username', 'password')}),
-            ('General Info', {'fields': ('business_name', 'phone', 'logo', 'address', 'email')}),
-            ('Permissions', {'fields': ['is_verified', 'authorized', 'has_sms_panel', 'panel_activation_date', 'panel_expiration_date',]}),
-                 )
+        (None, {'fields': ('username', 'password')}),
+        ('General Info', {'fields': ('business_name', 'phone', 'logo', 'address', 'email', 'business_category')}),
+        ('Permissions', {
+            'fields': [
+                'is_verified', 'authorized', 'has_sms_panel', 'panel_activation_date', 'panel_expiration_date',
+            ]}),
+    )
     add_fieldsets = (
         (None, {'fields': ('username', 'password1', 'password2')}),
-        ('General Info', {'fields': ('business_name', 'phone', 'address')}),
+        ('General Info', {'fields': ('business_name', 'business_category', 'phone', 'address')}),
         ('Permissions', {'fields': ('is_verified',)}),
-        )
+    )
 
     def get_urls(self):
 
@@ -43,11 +45,11 @@ class BusinessmanAdminModel(UserAdmin):
 
         custom_urls = [
             path('authorize-user/<int:user_id>/', self.admin_site.admin_view(self.authorize_user), name='authorize'),
-            path('un-authorize-user/<int:user_id>/', self.admin_site.admin_view(self.un_authorize_user), name='un_authorize')
+            path('un-authorize-user/<int:user_id>/', self.admin_site.admin_view(self.un_authorize_user),
+                 name='un_authorize')
         ]
 
         return custom_urls + urls
-
 
     def get_authorize_link(self, obj):
 
@@ -61,8 +63,7 @@ class BusinessmanAdminModel(UserAdmin):
 
     get_authorize_link.short_description = 'Authorize user'
 
-
-    def authorize_user(self, request,  user_id):
+    def authorize_user(self, request, user_id):
 
         """
         user authorization is handled by this function
@@ -73,8 +74,8 @@ class BusinessmanAdminModel(UserAdmin):
         """
 
         if request.method == 'GET':
-            return render(request, '../templates/users/authorize_user.html', {'businessman': Businessman.objects.get(pk=user_id)})
-
+            return render(request, '../templates/users/authorize_user.html',
+                          {'businessman': Businessman.objects.get(pk=user_id)})
 
         if request.method != 'POST':
             return redirect(reverse('admin:users_businessman_changelist'))
@@ -93,7 +94,6 @@ class BusinessmanAdminModel(UserAdmin):
 
         return redirect(reverse('admin:users_businessman_changelist'))
 
-
     def get_un_authorize_link(self, obj):
 
         """
@@ -102,7 +102,8 @@ class BusinessmanAdminModel(UserAdmin):
         :return: HTML code of the unauthorization link
         """
 
-        return format_html(generate_button_link(False, 'red'), reverse('admin:un_authorize', args=[obj.pk]), 'UnAuthorize')
+        return format_html(generate_button_link(False, 'red'), reverse('admin:un_authorize', args=[obj.pk]),
+                           'UnAuthorize')
 
     get_un_authorize_link.short_description = 'un authorize user'
 
@@ -133,7 +134,6 @@ admin.site.register(Businessman, BusinessmanAdminModel)
 
 
 class VerificationCodeAdminModel(admin.ModelAdmin):
-
     list_display = ['code', 'businessman', 'expiration_time']
 
 
@@ -146,3 +146,10 @@ class CustomerAdmin(admin.ModelAdmin):
 
 
 admin.site.register(Customer, CustomerAdmin)
+
+
+class BusinessCategoryAdminModel(admin.ModelAdmin):
+    list_display = ['name', 'create_date', 'update_date']
+
+
+admin.site.register(BusinessCategory, BusinessCategoryAdminModel)

@@ -10,5 +10,6 @@ urlpatterns = [
     path('salesman/refresh/', views.get_access_token),
     path('salesman/resetpassword/', views.reset_user_password),
     path('salesman/forgetpassword/', views.user_forget_password),
+    path('salesman/categories/', views.get_top5_categories),
 
 ]
