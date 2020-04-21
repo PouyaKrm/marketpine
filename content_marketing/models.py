@@ -8,7 +8,7 @@ from django.db.models.signals import post_save, pre_save
 from django.utils import timezone
 from django.dispatch import receiver
 
-from common.util import get_file_extension
+from common.util import get_file_extension, generate_url_safe_base64_file_name
 from common.util.kavenegar_local import APIException, HTTPException
 from smspanel.models import SMSMessage
 from smspanel.services import SendSMSMessage
@@ -43,7 +43,7 @@ class Post(models.Model):
         extension = get_file_extension(filename)
 
         return f"{self.businessman.id}/{now.strftime('%Y')}/{now.strftime('%m')}/" \
-            f"{ str(base64.urlsafe_b64encode(str(uuid.uuid4()).encode('utf8')), 'utf8')}{extension}"
+            f"{generate_url_safe_base64_file_name(filename)}"
 
     businessman = models.ForeignKey(Businessman, on_delete=models.CASCADE)
     videofile = models.FileField(storage=video_storage, upload_to=get_upload_path, null=False, blank=False, max_length=254)

@@ -7,6 +7,8 @@ import jwt
 import secrets
 
 import string
+import base64
+import uuid
 
 from users.models import Businessman
 
@@ -94,6 +96,8 @@ def get_client_ip(request):
 
 def create_link(path: str, request: Request):
     domain = request.META['HTTP_HOST']
+    if not path.startswith('/', 0, 1):
+        path = '/' + path
     return request.scheme + "://" + domain + path
 
 
@@ -116,3 +120,8 @@ def create_field_error(name: str, errors: list):
 
 def url_safe_secret() -> str:
     return secrets.token_urlsafe(32)
+
+
+def generate_url_safe_base64_file_name(file_name: str) -> str:
+    extension = get_file_extension(file_name)
+    return f"{str(base64.urlsafe_b64encode(str(uuid.uuid4()).encode('utf8')), 'utf8')}{extension}"

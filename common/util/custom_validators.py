@@ -71,3 +71,12 @@ def sms_not_contains_link(value: str):
     return value
 
 
+def file_size_validator(size: int):
+
+    def validate_size(file):
+        if file.size > size:
+            raise ValidationError('file size should not exceed {}'.format(size))
+        return file
+    return validate_size
+
+
