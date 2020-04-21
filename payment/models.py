@@ -43,6 +43,9 @@ class Payment(models.Model):
     def __str__(self):
         return "{}:{} T,creation_date:{}".format(self.businessman,self.amount,self.creation_date)
 
+    def is_verified_before(self) -> bool:
+        return self.refid is not None
+
     def pay(self, request):
         # url = reverse('payment:verify', kwargs={'to': callback} if callback else None)
         CallbackURL = request.build_absolute_uri(reverse('payment:verify'))
@@ -66,7 +69,7 @@ class Payment(models.Model):
         :return:
         """
 
-        if self.refid is not None:
+        if self.is_verified_before():
             raise PaymentAlreadyVerifiedException()
 
         merchant = setting_merchant
@@ -89,6 +92,9 @@ class Payment(models.Model):
         :raises PaymentVerificationFailedException if payment verification fails.
         :return:
         """
+
+        if self.is_verified_before():
+            raise PaymentAlreadyVerifiedException()
 
         try:
             self.do_operations()

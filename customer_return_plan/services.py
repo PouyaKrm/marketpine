@@ -211,7 +211,8 @@ class DiscountService:
 
         customer = customer_service.get_customer_by_id(user, customer_id)
 
-        festival_discounts = Discount.objects.filter(businessman=user) \
+        festival_discounts = Discount.objects.filter(businessman=user).filter(
+            Q(expires=True, expire_date__gt=timezone.now()) | Q(expires=False)) \
             .filter(Q(used_for=Discount.USED_FOR_FESTIVAL)
                     | Q(used_for=Discount.USED_FOR_INVITATION,
                         inviter_discount__inviter=customer)
