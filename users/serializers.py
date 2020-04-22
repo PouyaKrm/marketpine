@@ -77,8 +77,6 @@ class BusinessmanRegisterSerializer(serializers.ModelSerializer):
 
         SystemSMSMessage().send_verification_code(receptor=user.phone, code=code)
 
-        PanelSetting.objects.create(businessman=user)
-
         return user
         
 

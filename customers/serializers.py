@@ -4,8 +4,11 @@ from common.util.custom_templates import CustomerTemplate
 from common.util.custom_validators import phone_validator
 # from common.util.sms_panel.message import SystemSMSMessage
 from customer_return_plan.services import DiscountService
+from smspanel.services import SendSMSMessage
 from users.models import Customer
 from django.db.models import Sum
+
+message_service = SendSMSMessage()
 
 
 class CustomerListCreateSerializer(serializers.ModelSerializer):
@@ -54,8 +57,6 @@ class CustomerListCreateSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         user = self.context['user']
-
-        obj = Customer.objects.create(businessman=user, **validated_data)
         # if user.panelsetting.welcome_message is not None:
         #     message = CustomerTemplate(user, user.panelsetting.welcome_message, obj).render_template()
         #
@@ -63,7 +64,7 @@ class CustomerListCreateSerializer(serializers.ModelSerializer):
         #
         #     sms.send_message(obj.phone, message)
 
-        return obj
+        return Customer().register(user, validated_data.get('phone'), validated_data.get('full_name'))
 
 
 class CustomerSerializer(serializers.ModelSerializer):

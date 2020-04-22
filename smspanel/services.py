@@ -143,3 +143,6 @@ class SendSMSMessage:
 
     def friend_invitation_message(self, user: Businessman, template: str, customer):
         return self.send_by_template(user, [customer], template, SMSMessage.USED_FOR_FRIEND_INVITATION)
+
+    def welcome_message(self, template: str, user: Businessman, customer) -> SMSMessage:
+        return self.send_by_template(user, [customer], template, SMSMessage.USED_FOR_WELCOME_MESSAGE)

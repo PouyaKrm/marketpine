@@ -10,8 +10,13 @@ class PanelSettingSerializer(serializers.ModelSerializer):
 
         model = PanelSetting
         fields = [
-            'welcome_message'
+            'welcome_message',
+            'send_welcome_message'
         ]
+
+        extra_kwargs = {
+            'send_welcome_message': {'required': True}
+        }
 
     def validate_welcome_message(self, value):
 

@@ -102,6 +102,8 @@ def businessman_post_save(sender, instance: Businessman, created: bool, **kwargs
     FriendInvitationService().try_create_invitation_setting(instance)
     from customer_return_plan.loyalty.services import loyalty_service
     loyalty_service.try_create_loyalty_setting_for_businessman(instance)
+    from panelsetting.models import PanelSetting
+    PanelSetting.try_create_panel_setting_for_businessman(instance)
 
 
 class VerificationCodes(models.Model):
@@ -168,6 +170,13 @@ class Customer(AbstractBaseUser):
     def __str__(self):
 
         return self.phone
+
+    def register(self, businessman: Businessman, phone: str, full_name: str):
+        obj = Customer.objects.create(businessman=businessman, phone=phone, full_name=full_name)
+        from smspanel.services import SendSMSMessage
+        if businessman.panelsetting.send_welcome_message:
+            SendSMSMessage().welcome_message(businessman.panelsetting.welcome_message, businessman, obj)
+        return obj
 
 
 class BusinessmanRefreshTokens(models.Model):
