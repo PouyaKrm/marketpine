@@ -66,6 +66,19 @@ class Businessman(AbstractUser):
     def __str__(self):
         return self.username
 
+    def username_phone_email_exists(self, username: str, email: str, phone: str) -> (bool, bool, bool):
+        result1 = False
+        result2 = False
+        result3 = False
+        if username is not None and username != '':
+            result1 = Businessman.objects.filter(username=username).exists()
+        if email is not None and email != '':
+            result2 = Businessman.objects.filter(email=email).exists()
+        if phone is not None and phone != '':
+            result3 = Businessman.objects.filter(phone=phone).exists()
+
+        return result1, result2, result3
+
 
 class BusinessmanOneToOneBaseModel(BaseModel):
 

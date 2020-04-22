@@ -13,6 +13,7 @@ from django.template import Template
 sms_settings = settings.SMS_PANEL
 api_key = sms_settings['API_KEY']
 system_line = sms_settings['SYSTEM_LINE']
+verification_template_name = sms_settings['VERIFICATION_TEMPLATE_NAME']
 min_credit = sms_settings['MIN_CREDIT']
 init_credit = sms_settings['INIT_CREDIT']
 pid = sms_settings['PID']
@@ -20,6 +21,7 @@ username_prefix = sms_settings['CUSTOMER_US_PREFIX']
 customer_line = sms_settings['CUSTOMER_LINE']
 send_plain_page_size = sms_settings['SEND_PLAIN_CUSTOMERS_PAGE_SIZE']
 send_template_page_size = sms_settings['SEND_TEMPLATE_PAGE_SIZE']
+
 
 class BaseSMSMessage():
 
@@ -51,16 +53,13 @@ class SystemSMSMessage(BaseSMSMessage):
         
         super().__init__(api_key, system_line)
 
-    
-
     def send_verification_code(self, receptor, code, sender=''):
 
-        return self.send_message(receptor, message=f'your verification code is: {code}')
+        return self._api.verify_lookup({'receptor': receptor, 'token': code, 'template': verification_template_name})
 
     def send_new_password(self, receptor, new_password):
 
         return self.send_message(receptor, f'your new password is:\n{new_password}')
-
 
 
 class ClientSMSMessage(BaseSMSMessage):

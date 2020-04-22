@@ -213,7 +213,18 @@ def user_forget_password(request):
 
 @api_view(['GET'])
 @permission_classes([])
-def get_top5_categories(request):
+def get_top5_categories_and_username_phone_email_exists(request):
     category_name = request.query_params.get('cname')
     serializer = CategorySerializer(BusinessCategory.get_top5_category(category_name), many=True)
     return ok(serializer.data)
+
+
+@api_view(['GET'])
+@permission_classes([])
+def exists(request: Request):
+
+    email = request.query_params.get('email')
+    uname = request.query_params.get('uname')
+    phone = request.query_params.get('phone')
+    result = Businessman().username_phone_email_exists(uname, email, phone)
+    return ok({'uname': result[0], 'email': result[1], 'phone': result[2]})
