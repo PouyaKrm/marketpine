@@ -309,12 +309,12 @@ ZARINPAL={
     "FORWARD_LINK": "https://www.zarinpal.com/pg/StartPay/{}/ZarinGate",  # use this string with .format method
 }
 
-FREE_FILE_BASE_PATH = os.path.join(BASE_DIR, '..', 'resources/')
+PUBLIC_FILE_BASE_PATH = os.path.join(BASE_DIR, '..', 'public/')
 
 CONTENT_MARKETING = {
     'MAX_SIZE_VIDEO': '50000000',
     'ALLOWED_TYPES_VIDEO': ['.mp4'],
-    'BASE_PATH': os.path.join(FREE_FILE_BASE_PATH, 'videos/'),
+    'BASE_PATH': os.path.join(PUBLIC_FILE_BASE_PATH, 'videos/'),
     'VIDEO_CONFIRM_MESSAGE': 'ویدیو بارگزاری شده شما تایید شد',
     'VIDEO_REJECT_MESSAGE': 'ویدیو بارگزاری شده شما رد شد',
     'VIDEO_PAGINATION_PAGE_SIZE': 5,
@@ -325,8 +325,8 @@ CONTENT_MARKETING = {
 }
 
 ONLINE_MENU = {
-    'BASE_PATH': os.path.join(FREE_FILE_BASE_PATH, 'menus/'),
-    'BASE_URL': 'menu',
+    'BASE_PATH': os.path.join(PUBLIC_FILE_BASE_PATH, 'menus/'),
+    'BASE_URL': '/menu/',
     'MAX_FILE_SIZE': 10000000
 }
 
