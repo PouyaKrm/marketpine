@@ -1,22 +1,23 @@
+from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
 from django.contrib.auth.models import AbstractUser, AbstractBaseUser, BaseUserManager
 from django.db.models.signals import post_save
 from django.dispatch.dispatcher import receiver
 from django.conf import settings
+from django.utils import timezone
 
+from common.util.kavenegar_local import APIException
 
 categories = settings.DEFAULT_BUSINESS_CATEGORY
 
 
 class AuthStatus:
-
     AUTHORIZED = '2'
     PENDING = '1'
     UNAUTHORIZED = '0'
 
 
 class BaseModel(models.Model):
-
     create_date = models.DateTimeField(auto_now_add=True, null=True)
     update_date = models.DateTimeField(auto_now=True, null=True)
 
@@ -25,7 +26,6 @@ class BaseModel(models.Model):
 
 
 class BusinessCategory(BaseModel):
-
     name = models.CharField(max_length=40)
 
     @staticmethod
@@ -81,7 +81,6 @@ class Businessman(AbstractUser):
 
 
 class BusinessmanOneToOneBaseModel(BaseModel):
-
     businessman = models.OneToOneField(Businessman, on_delete=models.PROTECT)
 
     class Meta(BaseModel.Meta):
@@ -89,7 +88,6 @@ class BusinessmanOneToOneBaseModel(BaseModel):
 
 
 class BusinessmanManyToOneBaseModel(BaseModel):
-
     businessman = models.ForeignKey(Businessman, on_delete=models.PROTECT)
 
     class Meta(BaseModel.Meta):
@@ -106,8 +104,7 @@ def businessman_post_save(sender, instance: Businessman, created: bool, **kwargs
     PanelSetting.try_create_panel_setting_for_businessman(instance)
 
 
-class VerificationCodes(models.Model):
-    businessman = models.OneToOneField(Businessman, on_delete=models.CASCADE)
+class VerificationCodes(BusinessmanManyToOneBaseModel):
     expiration_time = models.DateTimeField()
     num_requested = models.IntegerField(default=1)
     code = models.CharField(max_length=8, unique=True)
@@ -115,10 +112,31 @@ class VerificationCodes(models.Model):
     def __str__(self):
         return self.code
 
+    def try_resend_verification_code(self, user_id: int) -> (bool, bool, bool):
+        from common.util.sms_panel.message import SystemSMSMessage
+
+        try:
+            user = Businessman.objects.get(id=user_id)
+        except ObjectDoesNotExist:
+            return False, False, False
+        vcode = VerificationCodes.objects.filter(businessman=user, expiration_time__gt=timezone.now(),
+                                                 num_requested__lt=2,
+                                                 update_date__lte=timezone.now() - timezone.timedelta(
+                                                     minutes=1)).first()
+        if vcode is None:
+            return True, False, False
+        try:
+            SystemSMSMessage().send_verification_code(vcode.businessman.phone, vcode.code)
+        except APIException as e:
+            return True, True, False
+        vcode.num_requested += 1
+        vcode.save()
+        return True, True, True
+
 
 class CustomerManager(BaseUserManager):
 
-    def create_user(self, phone,  email=None, **extra_fields):
+    def create_user(self, phone, email=None, **extra_fields):
 
         customer = Customer(phone=phone)
 
@@ -139,16 +157,14 @@ class CustomerManager(BaseUserManager):
         pass
 
 
-
 class Customer(AbstractBaseUser):
-
     password = None
     phone = models.CharField(max_length=15)
     register_date = models.DateTimeField(auto_now_add=True)
     full_name = models.CharField(max_length=40, null=True, blank=True)
     telegram_id = models.CharField(max_length=40, null=True, blank=True)
     instagram_id = models.CharField(max_length=40, null=True, blank=True)
-    businessman = models.ForeignKey(Businessman,  related_name="customers",
+    businessman = models.ForeignKey(Businessman, related_name="customers",
                                     on_delete=models.CASCADE, related_query_name='businessman')
     email = models.EmailField(blank=True, null=True, unique=True)
     is_active = models.BooleanField(default=False)
@@ -160,15 +176,12 @@ class Customer(AbstractBaseUser):
 
     objects = CustomerManager()
 
-
     class Meta:
-
         db_table = 'customers'
 
         unique_together = ('businessman', 'phone')
 
     def __str__(self):
-
         return self.phone
 
     def register(self, businessman: Businessman, phone: str, full_name: str):
@@ -180,10 +193,7 @@ class Customer(AbstractBaseUser):
 
 
 class BusinessmanRefreshTokens(models.Model):
-
     generate_at = models.DateTimeField(auto_now_add=True)
     expire_at = models.DateTimeField()
     ip = models.GenericIPAddressField()
     username = models.CharField(max_length=40)
-
-

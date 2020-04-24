@@ -18,3 +18,7 @@ def not_found(data=None) -> Response:
     if data is None:
         return Response(status=status.HTTP_404_NOT_FOUND)
     return Response(data, status=status.HTTP_404_NOT_FOUND)
+
+
+def dependency_failed(data=None) -> Response:
+    return Response(data, status=status.HTTP_424_FAILED_DEPENDENCY)

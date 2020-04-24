@@ -9,7 +9,7 @@ from rest_framework.request import Request
 from django.contrib.auth import authenticate
 
 from common.util import  get_client_ip, custom_login_payload
-from common.util.http_helpers import ok
+from common.util.http_helpers import ok, not_found, dependency_failed, no_content
 from users.models import BusinessmanRefreshTokens
 from .serializers import *
 # Create your views here.
@@ -53,29 +53,35 @@ def create_user(request):
 @permission_classes([])
 def resend_verification_code(request, user_id):
 
-    try:
+    # try:
+    #
+    #     user = Businessman.objects.get(id=user_id)
+    #
+    #     verify_code = user.verificationcodes
+    #
+    # except ObjectDoesNotExist:
+    #     return Response(status=status.HTTP_404_NOT_FOUND)
+    #
+    # if verify_code.num_requested == 3:
+    #
+    #     return Response(status=status.HTTP_403_FORBIDDEN)
+    #
+    # verify_code.num_requested += 1
+    #
+    # verify_code.save()
+    #
+    # # code = verify_code.code
+    #
+    # SystemSMSMessage().send_verification_code(user.phone, verify_code.code)
+    #
+    # return Response(status=status.HTTP_200_OK)
 
-        user = Businessman.objects.get(id=user_id)
-
-        verify_code = user.verificationcodes
-
-    except ObjectDoesNotExist:
-        return Response(status=status.HTTP_404_NOT_FOUND)
-
-    if verify_code.num_requested == 3:
-
-        return Response(status=status.HTTP_403_FORBIDDEN)
-
-    verify_code.num_requested += 1
-
-    verify_code.save()
-
-    # code = verify_code.code
-
-    SystemSMSMessage().send_verification_code(user.phone, verify_code.code)
-
-    return Response(status=status.HTTP_200_OK)
-
+    result = VerificationCodes().try_resend_verification_code(user_id)
+    if not result[0] or (result[0] and not result[1]):
+        return not_found()
+    if result[0] and result[1] and not result[2]:
+        return dependency_failed()
+    return no_content()
 
 
 @api_view(['POST'])
