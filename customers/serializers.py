@@ -4,6 +4,7 @@ from rest_framework import serializers
 from common.util.custom_templates import CustomerTemplate
 from common.util.custom_validators import phone_validator
 # from common.util.sms_panel.message import SystemSMSMessage
+from common.util.sms_panel.message import SystemSMSMessage
 from customer_return_plan.services import DiscountService
 from customers.services import CustomerService
 from smspanel.services import SendSMSMessage
