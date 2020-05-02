@@ -17,3 +17,8 @@ class BusinessmanGroups(models.Model):
     class Meta:
 
         db_table = 'businessman_groups'
+
+    def add_customers_to_group(self, customers):
+        for c in customers:
+            self.customers.add(c)
+        self.save()

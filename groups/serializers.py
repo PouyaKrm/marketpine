@@ -69,13 +69,11 @@ class BusinessmanGroupsRetrieveSerializer(serializers.ModelSerializer):
 
         raise serializers.ValidationError('invalid customer entered')
 
-    def update(self, instance: Model, validated_data):
+    def update(self, instance: BusinessmanGroups, validated_data):
 
         customers = validated_data.get('customers')
 
-        for i in customers:
-            instance.customers.add(i)
-        instance.save()
+        instance.add_customers_to_group(customers)
 
         return instance
 
