@@ -1,39 +1,39 @@
 from django.db.models import Model
 from rest_framework import serializers
 
+from customers.serializers import CustomerReadIdListRepresentRelatedField
 from users.models import Customer
 from .models import BusinessmanGroups
 
 
 class BusinessmanGroupsCreateListSerializer(serializers.ModelSerializer):
-
-    customers_total = serializers.SerializerMethodField(read_only=True)
+    customers = CustomerReadIdListRepresentRelatedField(many=True, required=False, write_only=True)
 
     class Meta:
-
         model = BusinessmanGroups
         fields = [
             'id',
             'title',
             'create_date',
             'customers_total',
+            'customers'
         ]
 
-    def get_customers_total(self, obj):
-        return obj.customers.count()
+    def validate_title(self, value):
+        if not BusinessmanGroups.is_title_unique(value):
+            raise serializers.ValidationError("عنوان یکتا نیست")
+        return value
 
-    def update(self, instance, validated_data):
-        instance.title = validated_data.get('title')
-        instance.save()
+    def update(self, instance: BusinessmanGroups, validated_data):
+        instance.set_title_customers(validated_data.get('title'), validated_data.get('customers'))
         return instance
 
     def create(self, validated_data):
-        return BusinessmanGroups.objects.create(businessman=self.context['user'], **validated_data)
-
+        return BusinessmanGroups.create_group(self.context['user'], validated_data.get('title'),
+                                              validated_data.get('customers'))
 
 
 class CustomerSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = Customer
         fields = [
@@ -45,35 +45,26 @@ class CustomerSerializer(serializers.ModelSerializer):
         ]
 
 
-class BusinessmanGroupsRetrieveSerializer(serializers.ModelSerializer):
-
+class BusinessmanGroupsRetrieveSerializer(BusinessmanGroupsCreateListSerializer):
+    customers = CustomerReadIdListRepresentRelatedField(many=True, required=False)
 
     class Meta:
-
         model = BusinessmanGroups
         fields = [
             'id',
             'title',
             'customers',
+            'customers_total'
         ]
-        extra_kwargs = {'title': {'read_only': True}}
 
-    def validate_customers(self, value):
-
-        user = self.context['user']
-
-        result = all(el in user.customers.all() for el in value)
-
-        if result:
+    def validate_title(self, value):
+        if self.instance.title == value:
             return value
-
-        raise serializers.ValidationError('invalid customer entered')
+        return super().validate_title(value)
 
     def update(self, instance: BusinessmanGroups, validated_data):
-
-        customers = validated_data.get('customers')
-
-        instance.add_customers_to_group(customers)
-
+        instance.set_title_customers(validated_data.get('title'), validated_data.get('customers'))
         return instance
 
+    def create(self, validated_data):
+        pass

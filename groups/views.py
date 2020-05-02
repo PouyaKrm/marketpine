@@ -40,8 +40,11 @@ class BusinessmanGroupsUpdateAPIView(generics.RetrieveAPIView, mixins.UpdateMode
     Retrieves info of specific group y it's id. Updates info of the group like group title. Also deletes a group by it's id
     """
 
-    serializer_class = BusinessmanGroupsCreateListSerializer
+    serializer_class = BusinessmanGroupsRetrieveSerializer
     lookup_field = 'id'
+
+    def get_serializer_context(self):
+        return {'user': self.request.user}
 
     def get_object(self):
         obj = get_object_or_404(BusinessmanGroups, id=self.kwargs['id'], businessman=self.request.user)
@@ -76,7 +79,7 @@ class CustomerGroupRetrieveAPIView(APIView):
         # serializer = CustomerSerializer(group.customers, many=True)
         # return Response(serializer.data, status=status.HTTP_200_OK)
 
-        paginate = paginators.NumberedPaginator(request, group.customers, CustomerSerializer)
+        paginate = paginators.NumberedPaginator(request, group.customers, CustomerListSerializer)
         return paginate.next_page()
 
     def put(self, request, *args, **kwargs):
