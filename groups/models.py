@@ -1,3 +1,4 @@
+from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
 from django.db.models import QuerySet
 
@@ -10,11 +11,11 @@ from users.models import Customer, BusinessmanManyToOneBaseModel
 class BusinessmanGroups(BusinessmanManyToOneBaseModel):
 
     TYPE_NORMAL = '0'
-    TYPE_SPECIAL = '1'
+    TYPE_TOP_PURCHASE = '1'
 
     type_choices = [
         (TYPE_NORMAL, 'NORMAL'),
-        (TYPE_SPECIAL, 'SPECIAL')
+        (TYPE_TOP_PURCHASE, 'TOP_PURCHASE')
     ]
 
     title = models.CharField(max_length=40)
@@ -58,5 +59,14 @@ class BusinessmanGroups(BusinessmanManyToOneBaseModel):
         return group
 
     @staticmethod
-    def is_title_unique(title: str) -> bool:
-        return not BusinessmanGroups.objects.filter(title=title).exists()
+    def is_title_unique(user, title: str) -> bool:
+        return not BusinessmanGroups.objects.filter(businessman=user, title=title).exists()
+
+    @staticmethod
+    def set_members_for_purchase_top(user, customers):
+        try:
+            g = BusinessmanGroups.objects.get(businessman=user, type=BusinessmanGroups.TYPE_TOP_PURCHASE)
+        except ObjectDoesNotExist:
+            g = BusinessmanGroups.objects.create(title=f'top purchase-{user.username}', businessman=user, type=BusinessmanGroups.TYPE_TOP_PURCHASE)
+        g.reset_customers(customers)
+        return g

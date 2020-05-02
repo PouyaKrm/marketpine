@@ -20,7 +20,8 @@ class BusinessmanGroupsCreateListSerializer(serializers.ModelSerializer):
         ]
 
     def validate_title(self, value):
-        if not BusinessmanGroups.is_title_unique(value):
+        user = self.context['user']
+        if not BusinessmanGroups.is_title_unique(user, value):
             raise serializers.ValidationError("عنوان یکتا نیست")
         return value
 
