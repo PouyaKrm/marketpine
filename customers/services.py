@@ -22,3 +22,6 @@ class CustomerService:
 
     def get_customer_by_id_or_404(self, user: Businessman, customer_id: int):
         return get_object_or_404(Customer, businessman=user, id=customer_id)
+
+    def get_businessman_customers(self, user: Businessman):
+        return Customer.objects.filter(businessman=user).all()

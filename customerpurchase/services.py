@@ -2,6 +2,7 @@ from django.db.models.aggregates import Sum
 
 from customer_return_plan.services import DiscountService
 from customerpurchase.models import CustomerPurchase
+from groups.models import BusinessmanGroups
 from users.models import Businessman, Customer
 
 discount_service = DiscountService()
@@ -46,6 +47,15 @@ class PurchaseService:
         return 0
         # return self.get_customer_all_purchases(businessman, customer).aggregate(Sum('amount')).get(
         #     'sum_amount')
+
+    def add_customer_purchase(self, user: Businessman, customer: Customer, amount: int) -> CustomerPurchase:
+        purchase = CustomerPurchase.objects.create(businessman=user, customer=customer, amount=amount)
+        p = CustomerPurchase.objects.values('customer').annotate(purchase_sum=Sum('amount')).filter(purchase_sum__gt=0).order_by('-purchase_sum')[:5]
+        customers = []
+        for c in p.all():
+            customers.append(c['customer'])
+        BusinessmanGroups.set_members_for_purchase_top(user, customers)
+        return purchase
 
 
 purchase_service = PurchaseService()

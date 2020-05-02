@@ -3,6 +3,8 @@ from django.db.models.aggregates import Sum
 from django.db.models.query_utils import Q
 from django.utils import timezone
 from strgen import StringGenerator
+
+from customer_return_plan.festivals.models import Festival
 from customer_return_plan.invitation.models import FriendInvitation
 from customer_return_plan.models import Discount
 from customerpurchase.models import CustomerPurchase
@@ -289,6 +291,9 @@ class DiscountService:
             d.delete()
             return d
         return None
+
+    def get_total_customers_used_festival_discount(self, festival: Festival) -> int:
+        return self.get_num_of_customers_used_discount(festival.discount)
 
 
 discount_service = DiscountService()

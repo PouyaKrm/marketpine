@@ -1,14 +1,48 @@
+from django.core.exceptions import ObjectDoesNotExist
 from rest_framework import serializers
 
 from common.util.custom_templates import CustomerTemplate
 from common.util.custom_validators import phone_validator
 # from common.util.sms_panel.message import SystemSMSMessage
+from common.util.sms_panel.message import SystemSMSMessage
 from customer_return_plan.services import DiscountService
+from customers.services import CustomerService
 from smspanel.services import SendSMSMessage
 from users.models import Customer
-from django.db.models import Sum
+from django.db.models import Sum, QuerySet
 
 message_service = SendSMSMessage()
+customer_service = CustomerService()
+
+
+class CustomerReadIdListRepresentRelatedField(serializers.RelatedField):
+
+    """
+    to use this custom related field, businessman should be provided
+    with key "user" in context
+    """
+
+    def get_queryset(self) -> QuerySet:
+        user = self.context['user']
+        return customer_service.get_businessman_customers(user)
+
+    def to_representation(self, value):
+        serializer = CustomerListCreateSerializer(value, context=self.context)
+        return serializer.data
+
+    def to_internal_value(self, data) -> Customer:
+        if type(data) != int or data <= 0:
+            raise serializers.ValidationError("not valid primary key")
+        # businessman = self.context['user']
+        # query = Customer.objects.filter(businessman=businessman, id=data)
+        # # r = query.count()
+        # if not query.exists():
+        #     raise serializers.ValidationError('not all customer ids are valid')
+        # return query
+        try:
+            return Customer.objects.get(id=data)
+        except ObjectDoesNotExist:
+            raise serializers.ValidationError('not all customer ids are valid')
 
 
 class CustomerListCreateSerializer(serializers.ModelSerializer):
