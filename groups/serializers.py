@@ -16,8 +16,11 @@ class BusinessmanGroupsCreateListSerializer(serializers.ModelSerializer):
             'title',
             'create_date',
             'customers_total',
-            'customers'
+            'customers',
+            'type',
         ]
+
+        extra_kwargs = {'type': {'read_only': True}}
 
     def validate_title(self, value):
         user = self.context['user']
@@ -55,8 +58,11 @@ class BusinessmanGroupsRetrieveSerializer(BusinessmanGroupsCreateListSerializer)
             'id',
             'title',
             'customers',
-            'customers_total'
+            'customers_total',
+            'type'
         ]
+
+        extra_kwargs = {'type': {'read_only': True}}
 
     def validate_title(self, value):
         if self.instance.title == value:

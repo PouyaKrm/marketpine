@@ -46,7 +46,19 @@ class BusinessmanGroups(BusinessmanManyToOneBaseModel):
 
     def set_title_customers(self, title, customers):
 
-        self.reset_customers(customers)
+        """
+        updates the title of the group.
+        members are updated if group is not special.
+        Args:
+            title: new title of the group
+            customers: new members for the group
+
+        Returns: None
+
+        """
+
+        if not self.is_special_group():
+            self.reset_customers(customers)
         self.title = title
         self.save()
 
@@ -70,3 +82,11 @@ class BusinessmanGroups(BusinessmanManyToOneBaseModel):
             g = BusinessmanGroups.objects.create(title=f'top purchase-{user.username}', businessman=user, type=BusinessmanGroups.TYPE_TOP_PURCHASE)
         g.reset_customers(customers)
         return g
+
+    def is_special_group(self) -> bool:
+        """
+        All groups are special except Normal Group witch are created by the user
+        Returns: True is group is not Normal else, False
+
+        """
+        return self.type != BusinessmanGroups.TYPE_NORMAL

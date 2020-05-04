@@ -4,6 +4,8 @@ from rest_framework.request import Request
 
 from django.conf import settings
 
+from groups.models import BusinessmanGroups
+
 max_allowed_defined_groups = settings.SMS_PANEL['MAX_ALLOWED_DEFINED_GROUPS']
 
 
@@ -18,3 +20,16 @@ class HasValidDefinedGroups(permissions.BasePermission):
     def has_permission(self, request: Request, view: View):
 
         return request.user.businessmangroups_set.all().count() < max_allowed_defined_groups
+
+
+class CanDeleteGroup(permissions.BasePermission):
+
+    message = 'امکان حذف گروه های خاص نیست'
+
+    def has_object_permission(self, request: Request, view: View, obj: BusinessmanGroups) -> bool:
+
+        if request.method == 'DELETE':
+            return not obj.is_special_group()
+        return True
+
+
