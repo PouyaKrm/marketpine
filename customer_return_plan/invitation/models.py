@@ -22,6 +22,10 @@ class FriendInvitation(BusinessmanManyToOneBaseModel):
     def __str__(self):
         return f'{self.id} - {self.businessman.username}'
 
+    @staticmethod
+    def customer_total_invitations_count(customer: Customer) -> int:
+        return FriendInvitation.objects.filter(inviter=customer).count()
+
 
 class FriendInvitationSettings(BaseDiscountSettings):
 

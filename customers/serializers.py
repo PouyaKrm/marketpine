@@ -5,7 +5,8 @@ from common.util.custom_templates import CustomerTemplate
 from common.util.custom_validators import phone_validator
 # from common.util.sms_panel.message import SystemSMSMessage
 from common.util.sms_panel.message import SystemSMSMessage
-from customer_return_plan.services import DiscountService
+from customer_return_plan.invitation.models import FriendInvitation
+from customer_return_plan.services import DiscountService, discount_service
 from customers.services import CustomerService
 from smspanel.services import SendSMSMessage
 from users.models import Customer
@@ -54,6 +55,8 @@ class CustomerListCreateSerializer(serializers.ModelSerializer):
     phone = serializers.CharField(max_length=15, validators=[phone_validator])
     purchase_sum = serializers.SerializerMethodField(read_only=True)
     has_discount = serializers.SerializerMethodField(read_only=True)
+    invitations_total = serializers.SerializerMethodField(read_only=True)
+    used_discounts_total = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = Customer
@@ -65,6 +68,8 @@ class CustomerListCreateSerializer(serializers.ModelSerializer):
             'instagram_id',
             'purchase_sum',
             'has_discount',
+            'invitations_total',
+            'used_discounts_total'
         ]
 
         extra_kwargs = {'telegram_id': {'read_only': True}, 'instagram_id': {'read_only': True}}
@@ -74,6 +79,12 @@ class CustomerListCreateSerializer(serializers.ModelSerializer):
         purchase = obj.customerpurchase_set.aggregate(purchase_sum=Sum('amount'))
 
         return purchase['purchase_sum']
+
+    def get_invitations_total(self, obj: Customer):
+        return FriendInvitation.customer_total_invitations_count(obj)
+
+    def get_used_discounts_total(self, obj: Customer):
+        return discount_service.get_customer_unused_discounts(self.context['user'], obj.id).count()
 
     def get_has_discount(self, obj: Customer):
         user = self.context['user']
@@ -101,10 +112,7 @@ class CustomerListCreateSerializer(serializers.ModelSerializer):
         return Customer().register(user, validated_data.get('phone'), validated_data.get('full_name'))
 
 
-class CustomerSerializer(serializers.ModelSerializer):
-
-    phone = serializers.CharField(max_length=15, validators=[phone_validator])
-    purchase_sum = serializers.SerializerMethodField(read_only=True)
+class CustomerSerializer(CustomerListCreateSerializer):
 
     class Meta:
         model = Customer
@@ -115,16 +123,19 @@ class CustomerSerializer(serializers.ModelSerializer):
             'telegram_id',
             'instagram_id',
             'purchase_sum',
+            'invitations_total',
+            'used_discounts_total'
         ]
 
         extra_kwargs = {'telegram_id': {'read_only': True}, 'instagram_id': {'read_only': True}}
 
+    # def get_purchase_sum(self, obj):
+    #
+    #     purchase = obj.customerpurchase_set.aggregate(purchase_sum=Sum('amount'))
+    #
+    #     return purchase['purchase_sum']
 
-    def get_purchase_sum(self, obj):
 
-        purchase = obj.customerpurchase_set.aggregate(purchase_sum=Sum('amount'))
-
-        return purchase['purchase_sum']
 
     def validate_phone(self, value):
 
@@ -136,7 +147,6 @@ class CustomerSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError('مشتری دیگری با این شماره تلفن قبلا ثبت شده')
 
         return value
-
 
     def update(self, instance: Customer, validated_data):
 
@@ -158,3 +168,6 @@ class CustomerSerializer(serializers.ModelSerializer):
             sms.send_message(new_phone, message)
 
         return instance
+
+    def create(self, validated_data):
+        pass
