@@ -56,7 +56,7 @@ class CustomerDiscountsListAPIView(ListAPIView):
     serializer_class = ReadOnlyDiscountWithUsedFieldSerializer
 
     def get_serializer_context(self):
-        return {'customer_id': self.kwargs.get('customer_id')}
+        return {'customer_id': self.kwargs.get('customer_id'), 'user': self.request.user}
 
     def get_queryset(self):
         used = self.request.query_params.get('used')

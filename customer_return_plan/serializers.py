@@ -31,19 +31,23 @@ class ReadOnlyDiscountSerializer(serializers.ModelSerializer):
     def get_customers_used_total(self, obj: Discount):
         return discount_service.get_num_of_customers_used_discount(obj)
 
+
 class ReadOnlyDiscountWithUsedFieldSerializer(ReadOnlyDiscountSerializer):
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
     used_discount = serializers.SerializerMethodField(read_only=True)
+    date_used = serializers.SerializerMethodField(read_only=True)
 
     class Meta(ReadOnlyDiscountSerializer.Meta):
-        fields = ReadOnlyDiscountSerializer.Meta.fields + ['used_discount']
+        fields = ReadOnlyDiscountSerializer.Meta.fields + ['used_discount'] + ['date_used']
 
     def get_used_discount(self, discount: Discount):
         customer_id = self.context['customer_id']
         return discount_service.has_customer_used_discount(discount, customer_id)
+
+    def get_date_used(self, obj: Discount):
+        customer_id = self.context['customer_id']
+        user = self.context['user']
+        return discount_service.get_discount_date_used(user, obj, customer_id)
 
 
 class WritableDiscountCreateNestedSerializer(WritableNestedModelSerializer):

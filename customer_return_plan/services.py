@@ -241,6 +241,12 @@ class DiscountService:
     def has_customer_used_discount(self, discount: Discount, customer_id: int) -> (bool, bool, Discount, Customer):
         return discount.purchases.filter(customer__id=customer_id).exists()
 
+    def get_discount_date_used(self, user: Businessman, discount: Discount, customer_id: int):
+        used_discounts = self.get_customer_used_discounts(user, customer_id)
+        if not used_discounts.filter(id=discount.id).exists():
+            return None
+        return used_discounts.get(id=discount.id).purchases.first().create_date
+
     def get_num_of_customers_used_discount(self, discount: Discount) -> int:
         return discount.purchases.count()
 

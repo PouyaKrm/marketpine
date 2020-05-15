@@ -66,7 +66,7 @@ urlpatterns = [
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
-run_send_invite_sms_task(repeat=10)
-run_send_sms_task(repeat=10)
-BusinessCategory.create_default_categories()
+# run_send_invite_sms_task(repeat=10)
+# run_send_sms_task(repeat=10)
+# BusinessCategory.create_default_categories()
 
