@@ -169,6 +169,8 @@ class Customer(AbstractBaseUser):
     email = models.EmailField(blank=True, null=True, unique=True)
     is_active = models.BooleanField(default=False)
     is_staff = models.BooleanField(default=False)
+    date_joined = models.DateTimeField(null=True, auto_now_add=True)
+    update_date = models.DateTimeField(null=True, auto_now=True)
 
     USERNAME_FIELD = 'phone'
 

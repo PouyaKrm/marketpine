@@ -69,7 +69,9 @@ class CustomerListCreateSerializer(serializers.ModelSerializer):
             'purchase_sum',
             'has_discount',
             'invitations_total',
-            'used_discounts_total'
+            'used_discounts_total',
+            'date_joined',
+            'update_date'
         ]
 
         extra_kwargs = {'telegram_id': {'read_only': True}, 'instagram_id': {'read_only': True}}
@@ -124,7 +126,9 @@ class CustomerSerializer(CustomerListCreateSerializer):
             'instagram_id',
             'purchase_sum',
             'invitations_total',
-            'used_discounts_total'
+            'used_discounts_total',
+            'date_joined',
+            'update_date'
         ]
 
         extra_kwargs = {'telegram_id': {'read_only': True}, 'instagram_id': {'read_only': True}}
