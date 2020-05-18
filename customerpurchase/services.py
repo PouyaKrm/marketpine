@@ -58,4 +58,11 @@ class PurchaseService:
         return purchase
 
 
+    def get_customer_purchase_sum(self, user: Businessman, customer: Customer):
+        result = CustomerPurchase.objects.filter(businessman=user, customer=customer).aggregate(purchase_sum=Sum('amount'))['purchase_sum']
+        if result is None:
+            return 0
+        return result
+
+
 purchase_service = PurchaseService()

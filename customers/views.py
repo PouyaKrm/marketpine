@@ -31,18 +31,15 @@ class BusinessmanCustomerListAPIView(generics.ListAPIView, mixins.CreateModelMix
         # customers_all   = Customer.objects.all()
         phone = self.request.query_params.get('phone', None)
         full_name = self.request.query_params.get('full_name', None)
-
+        query = user.customers.order_by('date_joined')
         if (full_name and phone) is not None:
-            Customer_list = user.customers.filter(full_name__icontains=full_name,phone__icontains=phone)
-            return Customer_list
+            return query.filter(full_name__icontains=full_name, phone__icontains=phone)
         elif full_name is not None:
-            Customer_list = user.customers.filter(full_name__icontains=full_name)
-            return Customer_list
+            return query.filter(full_name__icontains=full_name)
         elif phone is not None:
-            Customer_list = user.customers.filter(phone__icontains=phone)
-            return Customer_list
+            return query.filter(phone__icontains=phone)
         else:
-            return user.customers.all()
+            return query.all()
 
     def get_serializer_context(self):
 

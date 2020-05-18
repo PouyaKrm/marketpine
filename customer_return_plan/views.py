@@ -65,10 +65,10 @@ class CustomerDiscountsListAPIView(ListAPIView):
         if used is not None and used.lower() == 'true':
             return discount_service.get_customer_used_discounts(self.request.user, customer_id)
         elif used is not None and used.lower() == 'false':
-            return discount_service.get_customer_unused_discounts(self.request.user, customer_id)
+            return discount_service.get_customer_unused_discounts(self.request.user, customer_id).order_by('-create_date')
         else:
             return discount_service.get_customer_discounts_by_customer_id(self.request.user,
-                                                                          self.kwargs.get('customer_id'))
+                                                                          self.kwargs.get('customer_id')).order_by('-create_date')
 
 
 @api_view(['GET'])

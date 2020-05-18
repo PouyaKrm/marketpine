@@ -7,6 +7,7 @@ from common.util.custom_validators import phone_validator
 from common.util.sms_panel.message import SystemSMSMessage
 from customer_return_plan.invitation.models import FriendInvitation
 from customer_return_plan.services import DiscountService, discount_service
+from customerpurchase.services import PurchaseService
 from customers.services import CustomerService
 from smspanel.services import SendSMSMessage
 from users.models import Customer
@@ -14,6 +15,7 @@ from django.db.models import Sum, QuerySet
 
 message_service = SendSMSMessage()
 customer_service = CustomerService()
+purchase_service = PurchaseService()
 
 
 class CustomerReadIdListRepresentRelatedField(serializers.RelatedField):
@@ -54,6 +56,7 @@ class CustomerListCreateSerializer(serializers.ModelSerializer):
 
     phone = serializers.CharField(max_length=15, validators=[phone_validator])
     purchase_sum = serializers.SerializerMethodField(read_only=True)
+    purchase_discount_sum = serializers.SerializerMethodField(read_only=True)
     has_discount = serializers.SerializerMethodField(read_only=True)
     invitations_total = serializers.SerializerMethodField(read_only=True)
     used_discounts_total = serializers.SerializerMethodField(read_only=True)
@@ -68,6 +71,7 @@ class CustomerListCreateSerializer(serializers.ModelSerializer):
             'telegram_id',
             'instagram_id',
             'purchase_sum',
+            'purchase_discount_sum',
             'has_discount',
             'invitations_total',
             'used_discounts_total',
@@ -80,9 +84,13 @@ class CustomerListCreateSerializer(serializers.ModelSerializer):
 
     def get_purchase_sum(self, obj):
 
-        purchase = obj.customerpurchase_set.aggregate(purchase_sum=Sum('amount'))
+        return purchase_service.get_customer_purchase_sum(self.context['user'], obj)
 
-        return purchase['purchase_sum']
+    def get_purchase_discount_sum(self, obj: Customer):
+        user = self.context['user']
+        purchases_total = purchase_service.get_customer_purchase_sum(user, obj)
+        p_d =  discount_service.get_customer_used_discounts_sum_amount(self.context['user'], obj.id)
+        return purchases_total - p_d
 
     def get_invitations_total(self, obj: Customer):
         return FriendInvitation.customer_total_invitations_count(obj)
@@ -96,7 +104,7 @@ class CustomerListCreateSerializer(serializers.ModelSerializer):
         return self.discount_service.has_customer_any_discount(user, obj)
 
     def get_invited_purchases_total(self, obj: Customer):
-        return FriendInvitation.customer_all_invited_friend_purchases_sum(obj)
+        return FriendInvitation.customer_all_invited_friend_purchases_sum(self.context['user'], obj)
 
     def validate_phone(self, value):
 
@@ -130,10 +138,12 @@ class CustomerSerializer(CustomerListCreateSerializer):
             'telegram_id',
             'instagram_id',
             'purchase_sum',
+            'purchase_discount_sum',
             'invitations_total',
             'used_discounts_total',
             'date_joined',
-            'update_date'
+            'update_date',
+            'invited_purchases_total'
         ]
 
         extra_kwargs = {'telegram_id': {'read_only': True}, 'instagram_id': {'read_only': True}}
@@ -143,8 +153,6 @@ class CustomerSerializer(CustomerListCreateSerializer):
     #     purchase = obj.customerpurchase_set.aggregate(purchase_sum=Sum('amount'))
     #
     #     return purchase['purchase_sum']
-
-
 
     def validate_phone(self, value):
 
