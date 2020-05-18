@@ -57,6 +57,7 @@ class CustomerListCreateSerializer(serializers.ModelSerializer):
     has_discount = serializers.SerializerMethodField(read_only=True)
     invitations_total = serializers.SerializerMethodField(read_only=True)
     used_discounts_total = serializers.SerializerMethodField(read_only=True)
+    invited_purchases_total = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = Customer
@@ -71,7 +72,8 @@ class CustomerListCreateSerializer(serializers.ModelSerializer):
             'invitations_total',
             'used_discounts_total',
             'date_joined',
-            'update_date'
+            'update_date',
+            'invited_purchases_total'
         ]
 
         extra_kwargs = {'telegram_id': {'read_only': True}, 'instagram_id': {'read_only': True}}
@@ -92,6 +94,9 @@ class CustomerListCreateSerializer(serializers.ModelSerializer):
         user = self.context['user']
 
         return self.discount_service.has_customer_any_discount(user, obj)
+
+    def get_invited_purchases_total(self, obj: Customer):
+        return FriendInvitation.customer_all_invited_friend_purchases_sum(obj)
 
     def validate_phone(self, value):
 

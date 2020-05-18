@@ -1,6 +1,8 @@
 from django.db import models
 from django.conf import settings
 # Create your models here.
+from django.db.models.aggregates import Sum
+
 from customer_return_plan.models import BaseDiscountSettings, Discount
 from smspanel.models import SMSMessage
 from users.models import Customer, Businessman, BusinessmanManyToOneBaseModel
@@ -26,6 +28,13 @@ class FriendInvitation(BusinessmanManyToOneBaseModel):
     def customer_total_invitations_count(customer: Customer) -> int:
         return FriendInvitation.objects.filter(inviter=customer).count()
 
+    @staticmethod
+    def customer_all_invited_friend_purchases_sum(inviter: Customer) -> int:
+        result = FriendInvitation.objects.filter(inviter=inviter).aggregate(Sum('invited__customerpurchase__amount'))\
+            .get('invited__customerpurchase__amount__sum')
+        if result is None:
+            return 0
+        return result
 
 class FriendInvitationSettings(BaseDiscountSettings):
 
