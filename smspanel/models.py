@@ -1,13 +1,17 @@
 from django.core.exceptions import ObjectDoesNotExist
+from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 from django.db import models
 
 # Create your models here.
+from django.db.models import QuerySet
 from django.utils import timezone
 
-from users.models import Businessman, Customer
+
+from users.models import Businessman, Customer, BusinessmanManyToOneBaseModel
 from django.conf import settings
 
 
+page_size = settings.PAGINATION_PAGE_NUM
 
 max_english_chars = settings.SMS_PANEL['ENGLISH_MAX_CHARS']
 template_max_chars = settings.SMS_PANEL['TEMPLATE_MAX_CHARS']
@@ -27,11 +31,42 @@ class SMSTemplate(models.Model):
         return self.title
 
 
-class SentSMS(models.Model):
+class SentSMS(BusinessmanManyToOneBaseModel):
 
-    businessman = models.ForeignKey(Businessman, on_delete=models.CASCADE)
     message_id = models.CharField(max_length=100)
     receptor = models.CharField(max_length=15, null=True)
+
+    @staticmethod
+    def get_all_businessman_sent_messages(user: Businessman):
+        return SentSMS.objects.filter(businessman=user).order_by('-create_date').all()
+
+    @staticmethod
+    def get_sent_sms_from_kavenegar(user: Businessman, page_num) -> (int, bool, bool, list):
+
+        """
+        retrieve sent messages for businessman from kavenegar
+        Args:
+            user:
+            page_num:
+
+        Returns: (bool: hasNextPage, bool: hasPreviousPage, list: list of sent messages from kavenegar)
+
+        """
+
+        from common.util.sms_panel.message import retrive_sent_messages
+        from panelprofile.models import SMSPanelInfo
+        p = Paginator(SentSMS.get_all_businessman_sent_messages(user), page_size)
+        pn = page_num
+        try:
+            page = p.page(page_num)
+        except (PageNotAnInteger, EmptyPage) as e:
+            pn = 1
+            page = p.page(pn)
+        message_ids = [s.message_id for s in page.object_list]
+        if len(message_ids) == 0:
+            return page.has_next(), page.has_previous(), message_ids
+        api_key = SMSPanelInfo.get_businessman_api_key(user)
+        return pn, page.has_next(), page.has_previous(), retrive_sent_messages(api_key, message_ids)
 
 
 class UnsentPlainSMS(models.Model):
@@ -40,6 +75,7 @@ class UnsentPlainSMS(models.Model):
     businessman = models.ForeignKey(Businessman, on_delete=models.CASCADE)
     create_date = models.DateTimeField(auto_now_add=True)
     customers = models.ManyToManyField(Customer)
+
 
 class UnsentTemplateSMS(models.Model):
 

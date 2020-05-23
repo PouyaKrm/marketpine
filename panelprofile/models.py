@@ -94,6 +94,13 @@ class SMSPanelInfo(models.Model):
         self.credit -= costs
         self.save()
 
+    @staticmethod
+    def get_businessman_api_key(user: Businessman) -> str:
+        result = SMSPanelInfo.objects.filter(businessman=user).first()
+        if result is None:
+            return None
+        return result.api_key
+
 
 class AuthDoc(models.Model):
 

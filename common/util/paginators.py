@@ -8,11 +8,13 @@ from rest_framework.serializers import Serializer
 from rest_framework import status
 
 from common.util import create_link
+from common.util.http_helpers import ok
 
 page_page_size = settings.PAGINATION_PAGE_NUM
 
 class PageNumberPaginationSize10(PageNumberPagination):
     page_size = page_page_size
+
 
 class NumberedPaginator(PageNumberPagination):
 
@@ -29,6 +31,7 @@ class NumberedPaginator(PageNumberPagination):
         serializer = self.srl(page_result, many=True)
 
         return self.get_paginated_response(serializer.data)
+
 
 def create_pagination_response(page, result: list, count: int, retrieve_link: str, request: Request):
 
@@ -50,5 +53,17 @@ def create_pagination_response(page, result: list, count: int, retrieve_link: st
     return Response(data, status=status.HTTP_200_OK)
 
 
+def create_pagination_response_body(data, current_page: int, has_next: bool, has_previous: bool, view_link: str) -> Response:
 
-    
+    result = {}
+    result['result'] = data
+    if has_next:
+        result['next'] = f'{view_link}?page={current_page + 1}'
+    else:
+        result['next'] = None
+
+    if has_previous:
+        result['previous'] = f'{view_link}?page={current_page - 1}'
+    else:
+        result['previous'] = None
+    return ok(result)
