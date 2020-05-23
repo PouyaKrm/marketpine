@@ -16,6 +16,5 @@ urlpatterns = [
     path('failed/', views.FailedSMSMessagesList.as_view()),
     # path('unsent-sms/template/', views.list_unsent_template_sms),
 
-    path('sent-sms/', views.get_businessman_sent_sms, name='sent_sms_retrieve'),
-    path('sent-sms/customer/<int:customer_id>/', views.get_customer_sent_sms),
+    path('sent-sms/', views.get_businessman_sent_sms, name='sent_sms_retrieve')
 ]

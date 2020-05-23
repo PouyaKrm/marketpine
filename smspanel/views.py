@@ -5,7 +5,7 @@ from django.urls import reverse
 from rest_framework.generics import ListAPIView
 
 from common.util import create_link
-from common.util.http_helpers import ok
+from common.util.http_helpers import ok, get_query_param_or_default
 from common.util.paginators import create_pagination_response, create_pagination_response_body
 from common.util.kavenegar_local import APIException, HTTPException
 from common.util.sms_panel.message import retrive_sent_messages
@@ -330,58 +330,7 @@ def resend_template_sms(request: Request, unsent_sms_id):
 def get_businessman_sent_sms(request: Request):
 
     retrieve_link = create_link(reverse('sent_sms_retrieve'), request)
-    page_num = request.query_params.get('page')
-    if page_num is None:
-        page_num = 1
-
-    result = SentSMS.get_sent_sms_from_kavenegar(request.user, page_num)
-
+    page_num = get_query_param_or_default(request, 'page', 1)
+    phone = get_query_param_or_default(request, 'phone')
+    result = SentSMS.get_sent_sms_from_kavenegar(request.user, page_num, phone)
     return create_pagination_response_body(result[3], result[0], result[1], result[2], retrieve_link)
-
-
-
-    # try:
-    #     page_num = int(request.query_params.get('page'))
-    # except ValueError:
-    #     return Response(status=status.HTTP_404_NOT_FOUND)
-    #
-    # if page_num is not None:
-    #     if p.num_pages < page_num or page_num <= 0:
-    #         return Response({'detail': 'page does not exist'}, status=status.HTTP_404_NOT_FOUND)
-    #
-    #     page = p.page(page_num)
-    #     result = retrive_sent_messages(request.user.smspanelinfo.api_key, [str(m.message_id) for m in page.object_list])
-    #     try:
-    #         return create_pagination_response(p.page(page_num), result, count, retrieve_link, request)
-    #     except APIException as e:
-    #         return Response({'status': e.status, 'message': e.message}, status=status.HTTP_424_FAILED_DEPENDENCY)
-    #
-    # elif p.count == 0:
-    #     return create_pagination_response(page, [], 0, retrieve_link, request)
-    #
-    # else:
-    #     result = retrive_sent_messages(request.user.smspanelinfo.api_key, [str(m.message_id) for m in p.page(1).object_list])
-    #     try:
-    #         return create_pagination_response(p.page(1), result, count, retrieve_link, request)
-    #     except APIException as e:
-    #         return Response({'status': e.status, 'message': e.message}, status=status.HTTP_424_FAILED_DEPENDENCY)
-
-
-
-
-@api_view(['GET'])
-def get_customer_sent_sms(request, customer_id):
-
-    try:
-        customer = Customer.objects.get(businessman=request.user, id=customer_id)
-
-    except ObjectDoesNotExist:
-        return Response({'details': ['customer does not exist']}, status=status.HTTP_404_NOT_FOUND)
-
-    sms = customer.sentsms_set.all()
-
-    serializer = SentSMSRetrieveForCustomer(sms.all(), many=True)
-
-    serializer._context = {'customer': customer}
-
-    return Response(serializer.data, status=status.HTTP_200_OK)

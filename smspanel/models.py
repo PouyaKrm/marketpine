@@ -41,21 +41,25 @@ class SentSMS(BusinessmanManyToOneBaseModel):
         return SentSMS.objects.filter(businessman=user).order_by('-create_date').all()
 
     @staticmethod
-    def get_sent_sms_from_kavenegar(user: Businessman, page_num) -> (int, bool, bool, list):
+    def get_sent_sms_from_kavenegar(user: Businessman, page_num, receptor: str = None) -> (int, bool, bool, list):
 
         """
         retrieve sent messages for businessman from kavenegar
         Args:
-            user:
-            page_num:
-
-        Returns: (bool: hasNextPage, bool: hasPreviousPage, list: list of sent messages from kavenegar)
+            user: businessman
+            page_num: number of page for pagination
+            receptor: if not None filters SentSms by receptor
+        Returns: (int: page number. this value always equal to page_num prameter, bool: hasNextPage,
+        bool: hasPreviousPage, list: list of sent messages from kavenegar)
 
         """
 
         from common.util.sms_panel.message import retrive_sent_messages
         from panelprofile.models import SMSPanelInfo
-        p = Paginator(SentSMS.get_all_businessman_sent_messages(user), page_size)
+        query = SentSMS.get_all_businessman_sent_messages(user)
+        if receptor is not None:
+            query = query.filter(receptor=receptor)
+        p = Paginator(query, page_size)
         pn = page_num
         try:
             page = p.page(page_num)
@@ -64,7 +68,7 @@ class SentSMS(BusinessmanManyToOneBaseModel):
             page = p.page(pn)
         message_ids = [s.message_id for s in page.object_list]
         if len(message_ids) == 0:
-            return page.has_next(), page.has_previous(), message_ids
+            return pn, page.has_next(), page.has_previous(), message_ids
         api_key = SMSPanelInfo.get_businessman_api_key(user)
         return pn, page.has_next(), page.has_previous(), retrive_sent_messages(api_key, message_ids)
 

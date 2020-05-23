@@ -1,4 +1,5 @@
 from rest_framework import status
+from rest_framework.request import Request
 from rest_framework.response import Response
 
 
@@ -22,3 +23,10 @@ def not_found(data=None) -> Response:
 
 def dependency_failed(data=None) -> Response:
     return Response(data, status=status.HTTP_424_FAILED_DEPENDENCY)
+
+
+def get_query_param_or_default(request: Request, name: str, default=None):
+    param = request.query_params.get(name)
+    if param is None:
+        return default
+    return param
