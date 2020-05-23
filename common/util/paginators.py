@@ -56,7 +56,7 @@ def create_pagination_response(page, result: list, count: int, retrieve_link: st
 def create_pagination_response_body(data, count: int, current_page: int, has_next: bool, has_previous: bool, view_link: str) -> Response:
 
     result = {}
-    result['result'] = data
+    result['results'] = data
     result['count'] = count
     if has_next:
         result['next'] = f'{view_link}?page={current_page + 1}'
