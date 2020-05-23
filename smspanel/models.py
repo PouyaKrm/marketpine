@@ -41,7 +41,7 @@ class SentSMS(BusinessmanManyToOneBaseModel):
         return SentSMS.objects.filter(businessman=user).order_by('-create_date').all()
 
     @staticmethod
-    def get_sent_sms_from_kavenegar(user: Businessman, page_num, receptor: str = None) -> (int, bool, bool, list):
+    def get_sent_sms_from_kavenegar(user: Businessman, page_num, receptor: str = None) -> (int, int, bool, bool, list):
 
         """
         retrieve sent messages for businessman from kavenegar
@@ -49,7 +49,9 @@ class SentSMS(BusinessmanManyToOneBaseModel):
             user: businessman
             page_num: number of page for pagination
             receptor: if not None filters SentSms by receptor
-        Returns: (int: page number. this value always equal to page_num prameter, bool: hasNextPage,
+        Returns: (int: page number. this value always equal to page_num prameter,
+        int: count,
+        bool: hasNextPage,
         bool: hasPreviousPage, list: list of sent messages from kavenegar)
 
         """
@@ -70,7 +72,7 @@ class SentSMS(BusinessmanManyToOneBaseModel):
         if len(message_ids) == 0:
             return pn, page.has_next(), page.has_previous(), message_ids
         api_key = SMSPanelInfo.get_businessman_api_key(user)
-        return pn, page.has_next(), page.has_previous(), retrive_sent_messages(api_key, message_ids)
+        return pn, query.count(), page.has_next(), page.has_previous(), retrive_sent_messages(api_key, message_ids)
 
 
 class UnsentPlainSMS(models.Model):

@@ -53,10 +53,11 @@ def create_pagination_response(page, result: list, count: int, retrieve_link: st
     return Response(data, status=status.HTTP_200_OK)
 
 
-def create_pagination_response_body(data, current_page: int, has_next: bool, has_previous: bool, view_link: str) -> Response:
+def create_pagination_response_body(data, count: int, current_page: int, has_next: bool, has_previous: bool, view_link: str) -> Response:
 
     result = {}
     result['result'] = data
+    result['count'] = count
     if has_next:
         result['next'] = f'{view_link}?page={current_page + 1}'
     else:
