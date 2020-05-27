@@ -1,6 +1,7 @@
 from rest_framework import serializers
 
 from common.util import create_field_error, create_detail_error
+from customer_return_plan.services import DiscountService
 from customerpurchase.models import CustomerPurchase
 from common.util.common_serializers import CustomerSerializer
 from customers.services import CustomerService
@@ -8,7 +9,7 @@ from .services import purchase_service
 from customer_return_plan.loyalty.services import loyalty_service
 
 customer_service = CustomerService()
-
+discount_service = DiscountService()
 
 class PurchaseCreationUpdateSerializer(serializers.ModelSerializer):
     customer_id = serializers.IntegerField(min_value=1)
@@ -59,8 +60,10 @@ class PurchaseCreationUpdateSerializer(serializers.ModelSerializer):
         user = self.context['user']
         customer = customer_service.get_customer_by_id(user, validated_data.get('customer_id'))
         amount = validated_data.get('amount')
+        discount_ids = validated_data.get('discount_ids')
         # result = purchase_service.submit_purchase_with_discounts(user, **validated_data)
         result = purchase_service.add_customer_purchase(user, customer, amount)
+        discount_service.try_apply_discount_by_discount_ids(user, discount_ids, result)
         return result
 
     def update(self, instance, validated_data):

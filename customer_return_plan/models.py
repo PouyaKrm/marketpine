@@ -49,7 +49,8 @@ class Discount(BusinessmanManyToOneBaseModel, BaseDiscountSettings):
     expires = models.BooleanField(default=False)
     expire_date = models.DateTimeField(null=True, blank=True)
     # customers_used = models.ManyToManyField(Customer, related_name="customers_used")
-    purchases = models.ManyToManyField(CustomerPurchase, related_name='purchases', related_query_name='purchases')
+    purchases = models.ManyToManyField(CustomerPurchase, related_name='purchases', related_query_name='purchases',
+                                       null=True, blank=True)
     used_for = models.CharField(max_length=2, choices=used_for_choices, default=USED_FOR_NONE)
     # reserved_for = models.OneToOneField(Customer, on_delete=models.PROTECT, null=True)
 
