@@ -241,7 +241,7 @@ class DiscountService:
     def get_customer_used_discounts_sum_amount(self, user: Businessman, customer_id):
         val = 0
         for d in self.get_customer_used_discounts(user, customer_id).all():
-            val += d.purchase_amount_for_customer(customer_id)
+            val += d.amount_of_discount_for_customer(customer_id)
         return val
 
     def has_customer_used_discount(self, discount: Discount, customer_id: int) -> (bool, bool, Discount, Customer):

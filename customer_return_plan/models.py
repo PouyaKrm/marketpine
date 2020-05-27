@@ -69,8 +69,8 @@ class Discount(BusinessmanManyToOneBaseModel, BaseDiscountSettings):
         else:
             self.expire_date = None
 
-    def purchase_amount_for_customer(self, customer_id: int):
+    def amount_of_discount_for_customer(self, customer_id: int):
         amount = self.purchases.filter(customer__id=customer_id).first().amount
         if self.is_percent_discount():
-            return amount - amount * (self.percent_off / 100)
-        return amount - self.flat_rate_off
+            return amount * (self.percent_off / 100)
+        return self.flat_rate_off
