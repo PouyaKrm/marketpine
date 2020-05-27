@@ -137,10 +137,12 @@ class UploadListPostSerializer(BasePostSerializer):
         sms_not_contains_link(template)
         return attrs
 
-    def create(self, validated_data):
+    def create(self, validated_data: dict):
         request = self.context['request']
-        template = validated_data.pop('notif_sms_template')
         send_sms = validated_data.get('send_sms')
+        template = None
+        if send_sms:
+            template = validated_data.pop('notif_sms_template')
 
         post = Post.objects.create(businessman=request.user, **validated_data)
 
@@ -150,6 +152,7 @@ class UploadListPostSerializer(BasePostSerializer):
         post.video_url = create_link(post.videofile.url, request)
         post.save()
         return post
+
 
 
     # def update(self, instance: Post, validated_data: dict):
