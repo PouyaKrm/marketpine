@@ -5,19 +5,21 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from common.util.http_helpers import not_found, no_content
 from customer_return_plan.loyalty.services import loyalty_service
 from customerpurchase.models import CustomerPurchase
 from .serializers import PurchaseCreationUpdateSerializer, PurchaseListSerializer, CustomerPurchaseListSerializer
 from common.util import paginators
 # Create your views here.
 
+from .services import purchase_service
 
 class PurchaseListCreateAPIView(APIView):
 
 
     def get(self, request):
 
-        purchases = request.user.customerpurchase_set.all()
+        purchases = purchase_service.get_businessman_all_purchases(request.user)
 
         paginate = paginators.NumberedPaginator(request, purchases, PurchaseListSerializer)
 
@@ -65,12 +67,16 @@ class CustomerPurchaseUpdateDeleteAPIView(APIView):
 
     def delete(self, request, purchase_id):
 
-        try:
-            purchase = request.user.customerpurchase_set.get(id=purchase_id)
-        except ObjectDoesNotExist:
-            return Response(status=status.HTTP_404_NOT_FOUND)
-        loyalty_service.re_evaluate_discounts_after_purchase_update_or_delete(request.user, purchase.customer)
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        # try:
+        #     purchase = request.user.customerpurchase_set.get(id=purchase_id)
+        # except ObjectDoesNotExist:
+        #     return Response(status=status.HTTP_404_NOT_FOUND)
+        # loyalty_service.re_evaluate_discounts_after_purchase_update_or_delete(request.user, purchase.customer)
+        # return Response(status=status.HTTP_204_NO_CONTENT)
+        result = purchase_service.delete_purchase_by_purchase_id(request.user, purchase_id)
+        if not result[0]:
+            return not_found()
+        return no_content()
 
 
 @api_view(['GET'])

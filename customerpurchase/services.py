@@ -1,3 +1,4 @@
+from django.core.exceptions import ObjectDoesNotExist
 from django.db.models.aggregates import Sum
 
 from customer_return_plan.services import DiscountService
@@ -9,6 +10,17 @@ discount_service = DiscountService()
 
 
 class PurchaseService:
+
+    def re_evaluate_purchase_top_group(self, user: Businessman):
+        p = CustomerPurchase.objects.values('customer').annotate(purchase_sum=Sum('amount')).filter(
+            purchase_sum__gt=0).order_by('-purchase_sum')[:5]
+        customers = []
+        for c in p.all():
+            customers.append(c['customer'])
+        BusinessmanGroups.set_members_for_purchase_top(user, customers)
+
+    def get_businessman_all_purchases(self, user: Businessman):
+        return CustomerPurchase.objects.filter(businessman=user).order_by('-create_date').all()
 
     def validate_calculate_discount_amount_for_purchase(self, businessman: Businessman, customer_id: int,
                                                         discount_ids: [int],
@@ -38,6 +50,8 @@ class PurchaseService:
             discount_service.try_apply_discount_by_discount_ids(businessman, discount_ids, purchase)
         return True, True, purchase
 
+
+
     def get_customer_all_purchases(self, businessman: Businessman, customer: Customer):
         return []
         # return CustomerPurchase.objects.filter(businessman=businessman, customer=customer)
@@ -49,14 +63,23 @@ class PurchaseService:
 
     def add_customer_purchase(self, user: Businessman, customer: Customer, amount: int) -> CustomerPurchase:
         purchase = CustomerPurchase.objects.create(businessman=user, customer=customer, amount=amount)
-        p = CustomerPurchase.objects.values('customer').annotate(purchase_sum=Sum('amount')).filter(
-            purchase_sum__gt=0).order_by('-purchase_sum')[:5]
-        customers = []
-        for c in p.all():
-            customers.append(c['customer'])
-        BusinessmanGroups.set_members_for_purchase_top(user, customers)
+        # p = CustomerPurchase.objects.values('customer').annotate(purchase_sum=Sum('amount')).filter(
+        #     purchase_sum__gt=0).order_by('-purchase_sum')[:5]
+        # customers = []
+        # for c in p.all():
+        #     customers.append(c['customer'])
+        # BusinessmanGroups.set_members_for_purchase_top(user, customers)
+        self.re_evaluate_purchase_top_group(user)
         return purchase
 
+    def delete_purchase_by_purchase_id(self, user: Businessman, purchase_id: int) -> (bool, CustomerPurchase):
+        try:
+            purchase = CustomerPurchase.objects.get(businessman=user, id=purchase_id)
+        except ObjectDoesNotExist:
+            return False, None
+        purchase.delete()
+        self.re_evaluate_purchase_top_group(user)
+        return True, purchase
 
     def get_customer_purchase_sum(self, user: Businessman, customer: Customer):
         result = CustomerPurchase.objects.filter(businessman=user, customer=customer).aggregate(purchase_sum=Sum('amount'))['purchase_sum']
