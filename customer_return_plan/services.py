@@ -6,7 +6,7 @@ from strgen import StringGenerator
 
 from customer_return_plan.festivals.models import Festival
 from customer_return_plan.invitation.models import FriendInvitation
-from customer_return_plan.models import Discount
+from customer_return_plan.models import Discount, PurchaseDiscount
 from customerpurchase.models import CustomerPurchase
 from customers.services import CustomerService
 from users.models import Businessman, Customer
@@ -159,7 +159,7 @@ class DiscountService:
         if has_discount:
             return True
         has_discount = FriendInvitation.objects.filter(businessman=businessman, inviter=customer) \
-            .exclude(inviter_discount__purchases__customer=customer.id).exists()
+            .exclude(inviter_discount__purchases__customer__id=customer.id).exists()
         return has_discount
 
     def apply_discount(self, businessman: Businessman, discount_code: str, phone: str) -> (bool, Discount):
@@ -205,7 +205,7 @@ class DiscountService:
         if discounts.count() == 0:
             return False
         for discount in discounts.all():
-            discount.purchases.add(purchase)
+            discount.connected_purchases.add(purchase)
             discount.save()
         return True
 
@@ -225,10 +225,11 @@ class DiscountService:
 
     def get_customer_unused_discounts(self, user: Businessman, customer_id: int):
         return self.get_customer_discounts_by_customer_id(user, customer_id).exclude(
-            purchases__customer__id=customer_id)
+            connected_purchases__customer__id=customer_id)
 
     def get_customer_used_discounts(self, user: Businessman, customer_id: int):
-        return self.get_customer_discounts_by_customer_id(user, customer_id).filter(purchases__customer__id=customer_id)
+        return self.get_customer_discounts_by_customer_id(user, customer_id)\
+            .filter(connected_purchases__customer__id=customer_id).order_by('-connected_purchases__create_date')
 
     def get_customer_loyalty_amount_discounts(self, user: Businessman, customer: Customer):
         return self.get_customer_discounts_by_customer_id(user, customer.id).filter(
@@ -245,16 +246,21 @@ class DiscountService:
         return val
 
     def has_customer_used_discount(self, discount: Discount, customer_id: int) -> (bool, bool, Discount, Customer):
-        return discount.purchases.filter(customer__id=customer_id).exists()
+        return discount.connected_purchases.filter(customer__id=customer_id).exists()
 
     def get_discount_date_used(self, user: Businessman, discount: Discount, customer_id: int):
-        used_discounts = self.get_customer_used_discounts(user, customer_id)
-        if not used_discounts.filter(id=discount.id).exists():
+        # used_discounts = self.get_customer_used_discounts(user, customer_id)
+        # if not used_discounts.filter(id=discount.id).exists():
+        #     return None
+        # return used_discounts.get(id=discount.id).purchases.first().create_date
+        # return None
+        query = PurchaseDiscount.objects.filter(discount=discount, discount__businessman=user).filter(purchase__customer__id=customer_id)
+        if not query.exists():
             return None
-        return used_discounts.get(id=discount.id).purchases.first().create_date
+        return query.first().create_date
 
     def get_num_of_customers_used_discount(self, discount: Discount) -> int:
-        return discount.purchases.count()
+        return discount.connected_purchases.count()
 
     def delete_customer_from_discount(self, user: Businessman, discount_id: int, customer_id: int):
 
@@ -263,13 +269,13 @@ class DiscountService:
         except ObjectDoesNotExist:
             return False, False, None, None
         try:
-            customer = discount.customers_used.get(id=customer_id)
+            purchase = discount.connected_purchases.get(customer_id=customer_id)
         except ObjectDoesNotExist:
             return True, False, None, None
 
-        discount.customers_used.remove(customer)
-        discount.save()
-        return True, True, discount, customer
+        PurchaseDiscount.objects.filter(discount__id=discount_id, purchase=purchase).delete()
+        # discount.save()
+        return True, True, discount, purchase
 
     def oldest_unused_discounts_by_ids(self, businessman: Businessman, customer_id: int, discount_ids: list):
         """

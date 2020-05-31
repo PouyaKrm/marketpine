@@ -2,7 +2,7 @@ from django.db import models
 
 # Create your models here.
 from customerpurchase.models import CustomerPurchase
-from users.models import BusinessmanManyToOneBaseModel, Customer
+from users.models import BusinessmanManyToOneBaseModel, Customer, BaseModel
 
 
 class BaseDiscountSettings(models.Model):
@@ -49,8 +49,11 @@ class Discount(BusinessmanManyToOneBaseModel, BaseDiscountSettings):
     expires = models.BooleanField(default=False)
     expire_date = models.DateTimeField(null=True, blank=True)
     # customers_used = models.ManyToManyField(Customer, related_name="customers_used")
-    purchases = models.ManyToManyField(CustomerPurchase, related_name='purchases', related_query_name='purchases',
-                                       null=True, blank=True)
+    # purchases = models.ManyToManyField(CustomerPurchase, related_name='purchases', related_query_name='purchases',
+    #                                    null=True, blank=True)
+    connected_purchases = models.ManyToManyField(CustomerPurchase, through="PurchaseDiscount",
+                                                 related_name="connected_purchases",
+                                                 related_query_name="connected_purchases", blank=True, null=True)
     used_for = models.CharField(max_length=2, choices=used_for_choices, default=USED_FOR_NONE)
     # reserved_for = models.OneToOneField(Customer, on_delete=models.PROTECT, null=True)
 
@@ -70,7 +73,18 @@ class Discount(BusinessmanManyToOneBaseModel, BaseDiscountSettings):
             self.expire_date = None
 
     def amount_of_discount_for_customer(self, customer_id: int):
-        amount = self.purchases.filter(customer__id=customer_id).first().amount
+        amount = self.connected_purchases.filter(customer__id=customer_id).first().amount
         if self.is_percent_discount():
             return amount * (self.percent_off / 100)
         return self.flat_rate_off
+
+
+class PurchaseDiscount(BaseModel):
+
+    purchase = models.ForeignKey(CustomerPurchase, on_delete=models.CASCADE, related_name="purchases",
+                                 related_query_name="purchases")
+    discount = models.ForeignKey(Discount, on_delete=models.CASCADE, related_name="discounts",
+                                 related_query_name="discounts")
+
+    class Meta:
+        unique_together = ['purchase', 'discount']
