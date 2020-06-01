@@ -88,7 +88,7 @@ class Discount(BusinessmanManyToOneBaseModel, BaseDiscountSettings):
 class PurchaseDiscount(BaseModel):
 
     purchase = models.ForeignKey(CustomerPurchase, on_delete=models.CASCADE, related_name="purchase_discount",
-                                 related_query_name="purchases")
+                                 related_query_name="purchase_discount")
     discount = models.ForeignKey(Discount, on_delete=models.CASCADE, related_name="purchase_discount",
                                  related_query_name="purchase_discount")
 

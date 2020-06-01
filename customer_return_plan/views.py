@@ -61,12 +61,11 @@ class CustomerDiscountsListAPIView(ListAPIView):
 
     def get_queryset(self):
         used = self.request.query_params.get('used')
-        customer_id = self.kwargs.get('customer_id')
-        customer_service.get_customer_by_id_or_404(self.request.user, customer_id)
+        customer = customer_service.get_customer_by_id_or_404(self.request.user, self.kwargs.get('customer_id'))
         if used is not None and used.lower() == 'true':
-            return discount_service.get_customer_used_discounts(self.request.user, customer_id)
+            return discount_service.get_customer_used_discounts(self.request.user, customer)
         elif used is not None and used.lower() == 'false':
-            return discount_service.get_customer_unused_discounts(self.request.user, customer_id).order_by('-create_date')
+            return discount_service.get_customer_unused_discounts(self.request.user, customer).order_by('-create_date')
         else:
             return discount_service.get_customer_discounts_by_customer(self.request.user,
                                                                        self.kwargs.get('customer_id')).order_by('-create_date')
