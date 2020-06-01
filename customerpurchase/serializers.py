@@ -1,19 +1,25 @@
 from rest_framework import serializers
 
 from common.util import create_field_error, create_detail_error
+from customer_return_plan.models import Discount
 from customer_return_plan.services import DiscountService
 from customerpurchase.models import CustomerPurchase
 from common.util.common_serializers import CustomerSerializer
 from customers.services import CustomerService
+from customers.serializers import CustomerReadIdListRepresentRelatedField
 from .services import purchase_service
 from customer_return_plan.loyalty.services import loyalty_service
+from customer_return_plan.serializers import DiscountReadIdListRepresentRelatedField
 
 customer_service = CustomerService()
 discount_service = DiscountService()
 
+
 class PurchaseCreationUpdateSerializer(serializers.ModelSerializer):
-    customer_id = serializers.IntegerField(min_value=1)
-    discount_ids = serializers.ListField(child=serializers.IntegerField(), write_only=True, required=False)
+    # customer_id = serializers.IntegerField(min_value=1)
+    customer = CustomerReadIdListRepresentRelatedField(required=True)
+    # discount_ids = serializers.ListField(child=serializers.IntegerField(), write_only=True, required=False)
+    discounts = DiscountReadIdListRepresentRelatedField(many=True, required=False, write_only=True)
     amount = serializers.IntegerField(min_value=1)
 
     class Meta:
@@ -21,9 +27,10 @@ class PurchaseCreationUpdateSerializer(serializers.ModelSerializer):
         model = CustomerPurchase
         fields = [
             'id',
-            'customer_id',
+            # 'customer_id',
             'amount',
-            'discount_ids'
+            'discounts',
+            'customer'
         ]
 
     def validate_customer_id(self, value):
@@ -36,20 +43,24 @@ class PurchaseCreationUpdateSerializer(serializers.ModelSerializer):
 
     def validate(self, attrs):
         user = self.context['user']
-        customer_id = attrs.get('customer_id')
-        discount_ids = attrs.get('discount_ids')
+        # customer_id = attrs.get('customer_id')
+        customer = attrs.get('customer')
+        discounts = attrs.get('discounts')
         amount = attrs.get('amount')
 
-        if discount_ids is None or len(discount_ids) == 0:
+        if discounts is None or len(discounts) == 0:
             return attrs
 
-        result = purchase_service.validate_calculate_discount_amount_for_purchase(businessman=user,
-                                                                                  customer_id=customer_id,
-                                                                                  discount_ids=discount_ids,
+        result = purchase_service.validate_calculate_discount_amount_for_purchase(discounts=discounts,
                                                                                   purchase_amount=amount)
+        can_use = False
+        for discount in discounts:
+            can_use = discount_service.can_customer_use_discount(user, discount, customer)
+            if can_use is False:
+                break
 
-        if not result[0]:
-            raise serializers.ValidationError(create_field_error('discount_ids', ['لیست تخفیف داده شده اشتباه است']))
+        if not result[0] or not can_use:
+            raise serializers.ValidationError(create_field_error('discounts', ['لیست تخفیف داده شده اشتباه است']))
         if result[0] and not result[1]:
             raise serializers.ValidationError(create_detail_error('مقدار تخفیف اعمال شده بیش از مقدار خرید است'))
 
@@ -58,12 +69,13 @@ class PurchaseCreationUpdateSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
 
         user = self.context['user']
-        customer = customer_service.get_customer_by_id(user, validated_data.get('customer_id'))
+        # customer = customer_service.get_customer_by_id(user, validated_data.get('customer_id'))
+        customer = validated_data.get('customer')
         amount = validated_data.get('amount')
-        discount_ids = validated_data.get('discount_ids')
+        discounts = validated_data.get('discounts')
         # result = purchase_service.submit_purchase_with_discounts(user, **validated_data)
         result = purchase_service.add_customer_purchase(user, customer, amount)
-        discount_service.try_apply_discount_by_discount_ids(user, discount_ids, result)
+        discount_service.try_apply_discounts(user, discounts, result)
         return result
 
     def update(self, instance, validated_data):
@@ -78,7 +90,7 @@ class PurchaseCreationUpdateSerializer(serializers.ModelSerializer):
         instance.customer = user.customers.get(id=customer_id)
 
         instance.save()
-        loyalty_service.re_evaluate_discounts_after_purchase_update_or_delete(user, instance.customer)
+        # loyalty_service.re_evaluate_discounts_after_purchase_update_or_delete(user, instance.customer)
 
         return instance
 

@@ -1,3 +1,4 @@
+from django.db.models import QuerySet
 from drf_writable_nested import WritableNestedModelSerializer
 from rest_framework import serializers
 
@@ -8,6 +9,7 @@ from customer_return_plan.services import DiscountService
 from customers.services import CustomerService
 
 discount_service = DiscountService()
+customer_service = CustomerService()
 
 
 class ReadOnlyDiscountSerializer(serializers.ModelSerializer):
@@ -36,18 +38,22 @@ class ReadOnlyDiscountWithUsedFieldSerializer(ReadOnlyDiscountSerializer):
 
     used_discount = serializers.SerializerMethodField(read_only=True)
     date_used = serializers.SerializerMethodField(read_only=True)
+    can_use = serializers.SerializerMethodField(read_only=True)
 
     class Meta(ReadOnlyDiscountSerializer.Meta):
-        fields = ReadOnlyDiscountSerializer.Meta.fields + ['used_discount'] + ['date_used']
+        fields = ReadOnlyDiscountSerializer.Meta.fields + ['used_discount', 'can_use', 'date_used']
 
     def get_used_discount(self, discount: Discount):
-        customer_id = self.context['customer_id']
-        return discount_service.has_customer_used_discount(discount, customer_id)
+        customer = self.context['customer']
+        return discount_service.has_customer_used_discount(discount, customer)
 
     def get_date_used(self, obj: Discount):
-        customer_id = self.context['customer_id']
+        customer = self.context['customer']
         user = self.context['user']
-        return discount_service.get_discount_date_used(user, obj, customer_id)
+        return discount_service.get_discount_date_used(user, obj, customer)
+
+    def get_can_use(self, obj: Discount):
+        return discount_service.can_customer_use_discount(self.context['user'], obj, self.context['customer'])
 
 
 class WritableDiscountCreateNestedSerializer(WritableNestedModelSerializer):
@@ -170,3 +176,22 @@ class WritableNestedDiscountSettingSerializer(WritableNestedModelSerializer):
         if discount_type == BaseDiscountSettings.DISCOUNT_TYPE_FLAT_RATE and flat_rate_off <= 0:
             raise serializers.ValidationError(create_field_error('flat_rate_off', ['مقدار تخفیف پولی اشتباه است']))
         return attrs
+
+
+class DiscountReadIdListRepresentRelatedField(serializers.RelatedField):
+
+    def get_queryset(self) -> QuerySet:
+        return discount_service.get_businessman_all_discounts(self.context['user'])
+
+    def to_internal_value(self, data) -> Discount:
+        if type(data) != int or data <= 0:
+            raise serializers.ValidationError('invalid id')
+        result = discount_service.get_businessman_discount_or_none(self.context['user'], data)
+        if result is None:
+            raise serializers.ValidationError('not all discount ids exists')
+        return result
+
+    def to_representation(self, value: Discount):
+        return ReadOnlyDiscountSerializer(value).data
+
+

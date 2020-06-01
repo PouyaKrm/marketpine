@@ -56,7 +56,8 @@ class CustomerDiscountsListAPIView(ListAPIView):
     serializer_class = ReadOnlyDiscountWithUsedFieldSerializer
 
     def get_serializer_context(self):
-        return {'customer_id': self.kwargs.get('customer_id'), 'user': self.request.user}
+        customer = customer_service.get_customer_by_id_or_404(self.request.user, self.kwargs.get('customer_id'))
+        return {'customer': customer, 'user': self.request.user}
 
     def get_queryset(self):
         used = self.request.query_params.get('used')
@@ -67,8 +68,8 @@ class CustomerDiscountsListAPIView(ListAPIView):
         elif used is not None and used.lower() == 'false':
             return discount_service.get_customer_unused_discounts(self.request.user, customer_id).order_by('-create_date')
         else:
-            return discount_service.get_customer_discounts_by_customer_id(self.request.user,
-                                                                          self.kwargs.get('customer_id')).order_by('-create_date')
+            return discount_service.get_customer_discounts_by_customer(self.request.user,
+                                                                       self.kwargs.get('customer_id')).order_by('-create_date')
 
 
 @api_view(['GET'])

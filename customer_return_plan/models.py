@@ -78,13 +78,19 @@ class Discount(BusinessmanManyToOneBaseModel, BaseDiscountSettings):
             return amount * (self.percent_off / 100)
         return self.flat_rate_off
 
+    def is_festival_discount(self) -> bool:
+        return self.used_for == Discount.USED_FOR_FESTIVAL
+
+    def is_invitation_discount(self) -> bool:
+        return self.used_for == Discount.USED_FOR_INVITATION
+
 
 class PurchaseDiscount(BaseModel):
 
-    purchase = models.ForeignKey(CustomerPurchase, on_delete=models.CASCADE, related_name="purchases",
+    purchase = models.ForeignKey(CustomerPurchase, on_delete=models.CASCADE, related_name="purchase_discount",
                                  related_query_name="purchases")
-    discount = models.ForeignKey(Discount, on_delete=models.CASCADE, related_name="discounts",
-                                 related_query_name="discounts")
+    discount = models.ForeignKey(Discount, on_delete=models.CASCADE, related_name="purchase_discount",
+                                 related_query_name="purchase_discount")
 
     class Meta:
         unique_together = ['purchase', 'discount']

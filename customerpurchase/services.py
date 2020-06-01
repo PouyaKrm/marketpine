@@ -1,6 +1,7 @@
 from django.core.exceptions import ObjectDoesNotExist
 from django.db.models.aggregates import Sum
 
+from customer_return_plan.models import Discount
 from customer_return_plan.services import DiscountService
 from customerpurchase.models import CustomerPurchase
 from groups.models import BusinessmanGroups
@@ -22,16 +23,14 @@ class PurchaseService:
     def get_businessman_all_purchases(self, user: Businessman):
         return CustomerPurchase.objects.filter(businessman=user).order_by('-create_date').all()
 
-    def validate_calculate_discount_amount_for_purchase(self, businessman: Businessman, customer_id: int,
-                                                        discount_ids: [int],
-                                                        purchase_amount: int, ) -> (bool, bool, int):
-        discounts = discount_service.oldest_unused_discounts_by_ids(businessman=businessman, customer_id=customer_id,
-                                                                    discount_ids=discount_ids)
-        if discounts.count() == 0:
+    def validate_calculate_discount_amount_for_purchase(self, discounts: [Discount], purchase_amount: int, ) -> (bool, bool, int):
+        # discounts = discount_service.oldest_unused_discounts_by_ids(businessman=businessman, customer=customer,
+        #                                                             discount_ids=discount_ids)
+        if len(discounts) == 0:
             return False, False, -1
 
         discount_amounts = 0
-        for discount in discounts.all():
+        for discount in discounts:
             if discount.is_flat_discount():
                 discount_amounts += discount.flat_rate_off
             elif discount.is_percent_discount():
@@ -47,7 +46,7 @@ class PurchaseService:
         purchase = CustomerPurchase(businessman=businessman, amount=amount, customer_id=customer_id)
         purchase.save()
         if (discount_ids is not None) and len(discount_ids) != 0:
-            discount_service.try_apply_discount_by_discount_ids(businessman, discount_ids, purchase)
+            discount_service.try_apply_discounts(businessman, discount_ids, purchase)
         return True, True, purchase
 
 
