@@ -53,7 +53,7 @@ class Discount(BusinessmanManyToOneBaseModel, BaseDiscountSettings):
     #                                    null=True, blank=True)
     connected_purchases = models.ManyToManyField(CustomerPurchase, through="PurchaseDiscount",
                                                  related_name="connected_purchases",
-                                                 related_query_name="connected_purchases", blank=True, null=True)
+                                                 related_query_name="connected_purchases")
     used_for = models.CharField(max_length=2, choices=used_for_choices, default=USED_FOR_NONE)
     # reserved_for = models.OneToOneField(Customer, on_delete=models.PROTECT, null=True)
 
