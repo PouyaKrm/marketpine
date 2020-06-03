@@ -17,6 +17,8 @@ max_english_chars = settings.SMS_PANEL['ENGLISH_MAX_CHARS']
 template_max_chars = settings.SMS_PANEL['TEMPLATE_MAX_CHARS']
 send_max_fail_attempts = settings.SMS_PANEL['MAX_SEND_FAIL_ATTEMPTS']
 max_message_cost = settings.SMS_PANEL['MAX_MESSAGE_COST']
+api_key = settings.SMS_PANEL['API_KEY']
+
 
 class SMSTemplate(models.Model):
 
@@ -71,7 +73,7 @@ class SentSMS(BusinessmanManyToOneBaseModel):
         message_ids = [s.message_id for s in page.object_list]
         if len(message_ids) == 0:
             return pn, query.count(), page.has_next(), page.has_previous(), message_ids
-        api_key = SMSPanelInfo.get_businessman_api_key(user)
+        # api_key = SMSPanelInfo.get_businessman_api_key(user)
         return pn, query.count(), page.has_next(), page.has_previous(), retrive_sent_messages(api_key, message_ids)
 
 
