@@ -31,7 +31,7 @@ class FriendInvitation(BusinessmanManyToOneBaseModel):
     @staticmethod
     def customer_all_invited_friend_purchases_sum(user: Businessman, inviter: Customer) -> int:
         result = FriendInvitation.objects.filter(businessman=user, inviter=inviter)\
-            .aggregate(Sum('invited__customerpurchase__amount')).get('invited__customerpurchase__amount__sum')
+            .aggregate(Sum('invited__purchases__amount')).get('invited__purchases__amount__sum')
         if result is None:
             return 0
         return result

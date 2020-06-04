@@ -73,7 +73,6 @@ class SentSMS(BusinessmanManyToOneBaseModel):
         message_ids = [s.message_id for s in page.object_list]
         if len(message_ids) == 0:
             return pn, query.count(), page.has_next(), page.has_previous(), message_ids
-        # api_key = SMSPanelInfo.get_businessman_api_key(user)
         return pn, query.count(), page.has_next(), page.has_previous(), retrive_sent_messages(api_key, message_ids)
 
 

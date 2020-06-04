@@ -53,45 +53,7 @@ class DiscountService:
         except ObjectDoesNotExist:
             return None
 
-    def can_customer_use_discount(self, businessman: Businessman, discount: Discount, customer: Customer) -> bool:
 
-        from customerpurchase.services import purchase_service
-        # discount = Discount.objects.get(discount_code=discount_code)
-
-        if discount.connected_purchases.filter(customer=customer).exists():
-            return False
-
-        # if discount.used_for == Discount.USED_FOR_FESTIVAL and \
-        #         discount.customers_used.filter(phone=customer.phone).exists():
-        #     return False
-        if discount.is_festival_discount():
-            return True
-
-        if not discount.is_invitation_discount():
-            return False
-
-        discount_for_invited_query = FriendInvitation.objects.filter(businessman=businessman, invited=customer, ) \
-            .filter(
-            invited_discount=discount,
-        )
-
-        if discount_for_invited_query.exists():
-            return True  # checks customer used discount before
-
-        inviter_discount_query = FriendInvitation.objects.filter(businessman=businessman, inviter=customer) \
-            .filter(
-            inviter_discount=discount,
-        )
-
-        if inviter_discount_query.exists():
-            amount_sum = purchase_service.get_customer_purchase_sum(businessman, discount.inviter_discount.invited)
-            # return not inviter_discount_query.filter(
-            #     inviter_discount__customers_used__id=customer.id).exists()  # check customer used discount
-            if not amount_sum > 0:
-                return False
-            return True
-
-        return False
 
     def create_discount(self, user: Businessman, expires: bool, discount_type: str,
                         auto_discount_code: bool, percent_off: float, flat_rate_off: int, discount_code=None,
@@ -231,19 +193,33 @@ class DiscountService:
 
         # customer = customer_service.get_customer_by_id(user, customer_id)
 
-        festival_discounts = Discount.objects.filter(businessman=user).filter(
-            Q(expires=True, expire_date__gt=timezone.now()) | Q(expires=False)) \
+        festival_discounts = Discount.objects.filter(businessman=user)\
+            .annotate(purchase_sum_of_invited=Sum('inviter_discount__invited__purchases__amount'))\
             .filter(Q(used_for=Discount.USED_FOR_FESTIVAL)
                     | Q(used_for=Discount.USED_FOR_INVITATION,
-                        inviter_discount__inviter=customer)
+                        inviter_discount__inviter=customer, purchase_sum_of_invited__gt=0)
                     | Q(used_for=Discount.USED_FOR_INVITATION,
-                        inviter_discount__invited=customer)).all()
+                        inviter_discount__inviter=customer, connected_purchases__customer=customer)
+                    | Q(used_for=Discount.USED_FOR_INVITATION,
+                        invited_discount__invited=customer)).order_by('-create_date').all()
 
         return festival_discounts
 
     def get_customer_unused_discounts(self, user: Businessman, customer: Customer):
-        return self.get_customer_discounts_by_customer(user, customer).exclude(
+        return self.get_customer_discounts_by_customer(user, customer)\
+            .exclude(
             connected_purchases__customer=customer)
+
+    def get_customer_available_discounts(self, user: Businessman, customer: Customer):
+        return self.get_customer_discounts_by_customer(user, customer) \
+            .exclude(expires=True, expire_date__lt=timezone.now()) \
+            .exclude(
+            connected_purchases__customer=customer)
+
+    def can_customer_use_discount(self, businessman: Businessman, discount: Discount, customer: Customer) -> bool:
+
+        return self.get_customer_available_discounts(businessman, customer).filter(id=discount.id).exists()
+
 
     def get_customer_used_discounts(self, user: Businessman, customer: Customer):
         return self.get_customer_discounts_by_customer(user, customer)\

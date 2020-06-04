@@ -38,10 +38,10 @@ class ReadOnlyDiscountWithUsedFieldSerializer(ReadOnlyDiscountSerializer):
 
     used_discount = serializers.SerializerMethodField(read_only=True)
     date_used = serializers.SerializerMethodField(read_only=True)
-    can_use = serializers.SerializerMethodField(read_only=True)
+    # can_use = serializers.SerializerMethodField(read_only=True)
 
     class Meta(ReadOnlyDiscountSerializer.Meta):
-        fields = ReadOnlyDiscountSerializer.Meta.fields + ['used_discount', 'can_use', 'date_used']
+        fields = ReadOnlyDiscountSerializer.Meta.fields + ['used_discount', 'date_used']
 
     def get_used_discount(self, discount: Discount):
         customer = self.context['customer']
@@ -52,8 +52,8 @@ class ReadOnlyDiscountWithUsedFieldSerializer(ReadOnlyDiscountSerializer):
         user = self.context['user']
         return discount_service.get_discount_date_used(user, obj, customer)
 
-    def get_can_use(self, obj: Discount):
-        return discount_service.can_customer_use_discount(self.context['user'], obj, self.context['customer'])
+    # def get_can_use(self, obj: Discount):
+    #     return discount_service.can_customer_use_discount(self.context['user'], obj, self.context['customer'])
 
 
 class WritableDiscountCreateNestedSerializer(WritableNestedModelSerializer):

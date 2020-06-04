@@ -7,7 +7,8 @@ from users.models import Customer, Businessman, BusinessmanManyToOneBaseModel
 class CustomerPurchase(BusinessmanManyToOneBaseModel):
 
     amount = models.PositiveIntegerField()
-    customer = models.ForeignKey(Customer, null=True, on_delete=models.SET_NULL)
+    customer = models.ForeignKey(Customer, null=True, on_delete=models.SET_NULL, related_name='purchases',
+                                 related_query_name='purchases')
 
     class Meta:
 
