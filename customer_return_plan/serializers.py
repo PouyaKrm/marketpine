@@ -41,7 +41,19 @@ class ReadOnlyDiscountWithUsedFieldSerializer(ReadOnlyDiscountSerializer):
     # can_use = serializers.SerializerMethodField(read_only=True)
 
     class Meta(ReadOnlyDiscountSerializer.Meta):
-        fields = ReadOnlyDiscountSerializer.Meta.fields + ['used_discount', 'date_used']
+        fields = [
+            'id',
+            'discount_code',
+            'expires',
+            'expire_date',
+            'discount_type',
+            'used_for',
+            'percent_off',
+            'flat_rate_off',
+            'customers_used_total',
+            'used_discount',
+            'date_used'
+        ]
 
     def get_used_discount(self, discount: Discount):
         customer = self.context['customer']

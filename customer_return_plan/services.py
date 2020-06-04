@@ -193,15 +193,15 @@ class DiscountService:
 
         # customer = customer_service.get_customer_by_id(user, customer_id)
 
-        festival_discounts = Discount.objects.filter(businessman=user)\
-            .annotate(purchase_sum_of_invited=Sum('inviter_discount__invited__purchases__amount'))\
+        festival_discounts = Discount.objects.annotate(purchase_sum_of_invited=Sum('inviter_discount__invited__purchases__amount')).filter(businessman=user)\
+            \
             .filter(Q(used_for=Discount.USED_FOR_FESTIVAL)
                     | Q(used_for=Discount.USED_FOR_INVITATION,
                         inviter_discount__inviter=customer, purchase_sum_of_invited__gt=0)
                     | Q(used_for=Discount.USED_FOR_INVITATION,
                         inviter_discount__inviter=customer, connected_purchases__customer=customer)
                     | Q(used_for=Discount.USED_FOR_INVITATION,
-                        invited_discount__invited=customer)).order_by('-create_date').all()
+                        invited_discount__invited=customer)).distinct().order_by('-create_date')
 
         return festival_discounts
 
@@ -211,6 +211,7 @@ class DiscountService:
             connected_purchases__customer=customer)
 
     def get_customer_available_discounts(self, user: Businessman, customer: Customer):
+        d = ""
         return self.get_customer_discounts_by_customer(user, customer) \
             .exclude(expires=True, expire_date__lt=timezone.now()) \
             .exclude(
