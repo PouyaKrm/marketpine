@@ -124,23 +124,25 @@ class DiscountService:
 
     def has_customer_any_discount(self, businessman: Businessman, customer: Customer) -> bool:
 
-        has_discount = Discount.objects.filter(businessman=businessman,
-                                               used_for=Discount.USED_FOR_FESTIVAL,
-                                               expire_date__gt=timezone.now()).exclude(
-            connected_purchases__customer=customer).exists()
-        if has_discount:
-            return True
+        # has_discount = Discount.objects.filter(businessman=businessman,
+        #                                        used_for=Discount.USED_FOR_FESTIVAL,
+        #                                        expire_date__gt=timezone.now()).exclude(
+        #     connected_purchases__customer=customer).exists()
+        # if has_discount:
+        #     return True
+        #
+        # has_discount = FriendInvitation.objects.filter(businessman=businessman, invited=customer, ) \
+        #     .exclude(
+        #     invited_discount__connected_purchases__customer=customer
+        # ).exists()
+        #
+        # if has_discount:
+        #     return True
+        # has_discount = FriendInvitation.objects.filter(businessman=businessman, inviter=customer) \
+        #     .exclude(inviter_discount__connected_purchases__customer__id=customer.id).exists()
+        # return has_discount
 
-        has_discount = FriendInvitation.objects.filter(businessman=businessman, invited=customer, ) \
-            .exclude(
-            invited_discount__connected_purchases__customer=customer
-        ).exists()
-
-        if has_discount:
-            return True
-        has_discount = FriendInvitation.objects.filter(businessman=businessman, inviter=customer) \
-            .exclude(inviter_discount__connected_purchases__customer__id=customer.id).exists()
-        return has_discount
+        return self.get_customer_available_discounts(businessman, customer).exists()
 
     def apply_discount(self, businessman: Businessman, discount_code: str, phone: str) -> (bool, Discount):
 
