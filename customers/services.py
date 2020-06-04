@@ -25,3 +25,5 @@ class CustomerService:
 
     def get_businessman_customers(self, user: Businessman):
         return Customer.objects.filter(businessman=user).all()
+
+customer_service = CustomerService()

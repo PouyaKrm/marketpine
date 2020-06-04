@@ -49,11 +49,8 @@ class PurchaseService:
             discount_service.try_apply_discounts(businessman, discount_ids, purchase)
         return True, True, purchase
 
-
-
     def get_customer_all_purchases(self, businessman: Businessman, customer: Customer):
-        return []
-        # return CustomerPurchase.objects.filter(businessman=businessman, customer=customer)
+        return CustomerPurchase.objects.filter(businessman=businessman, customer=customer)
 
     def get_customer_all_purchase_amounts(self, businessman: Businessman, customer: Customer) -> int:
         return 0

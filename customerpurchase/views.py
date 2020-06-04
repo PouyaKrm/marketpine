@@ -8,6 +8,7 @@ from rest_framework.views import APIView
 from common.util.http_helpers import not_found, no_content
 from customer_return_plan.loyalty.services import loyalty_service
 from customerpurchase.models import CustomerPurchase
+from customers.services import customer_service
 from .serializers import PurchaseCreationUpdateSerializer, PurchaseListSerializer, CustomerPurchaseListSerializer
 from common.util import paginators
 # Create your views here.
@@ -82,8 +83,9 @@ class CustomerPurchaseUpdateDeleteAPIView(APIView):
 @api_view(['GET'])
 def get_customer_purchases(request: Request, customer_id):
 
+    customer = customer_service.get_customer_by_id_or_404(request.user, customer_id)
     try:
-        customer_purchases = request.user.customers.get(id=customer_id).customerpurchase_set.all()
+        customer_purchases = purchase_service.get_customer_all_purchases(request.user, customer)
     except ObjectDoesNotExist:
         return Response(status=status.HTTP_404_NOT_FOUND)
 
