@@ -35,6 +35,7 @@ from payment import urls as payment_url
 from device import urls as device_url
 from content_marketing import urls as content_url
 from online_menu import urls as menu_url
+from mobile_app_conf import urls as mobile_conf_urls
 from users.models import BusinessCategory
 
 
@@ -61,6 +62,7 @@ urlpatterns = [
     path('api/salesman/content/',include(content_url)),
     path('api/salesman/payment/', include(payment_url)),
     path('api/salesman/menu/', include(menu_url)),
+    path('api/salesman/mobile-app/', include(mobile_conf_urls))
 ]
 
 if settings.DEBUG:

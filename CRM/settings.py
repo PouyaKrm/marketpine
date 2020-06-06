@@ -335,7 +335,9 @@ ONLINE_MENU = {
 
 MOBILE_APP_PAGE_CONF = {
     'BASE_PATH': os.path.join(PUBLIC_FILE_BASE_PATH, 'mobile_app/'),
-    'BASE_URL': '/mobile-app/'
+    'BASE_URL': '/mobile-app/',
+    'MAX_HEADER_IMAGE_SIZE': 5000000,
+    'MAX_ALLOWED_HEADERS': 2
 }
 
 DEFAULT_BUSINESS_CATEGORY = [
