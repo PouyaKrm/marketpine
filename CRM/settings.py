@@ -121,6 +121,7 @@ INSTALLED_APPS = [
     'panelprofile',
     'customer_return_plan.loyalty',
     'online_menu',
+    'mobile_app_conf',
     'background_task',
     'rest_framework_swagger',
     'django.contrib.admin',
@@ -324,10 +325,17 @@ CONTENT_MARKETING = {
     'NOTIF_TEMPLATE_MAX_CHARS': 100
 }
 
+
 ONLINE_MENU = {
     'BASE_PATH': os.path.join(PUBLIC_FILE_BASE_PATH, 'menus/'),
     'BASE_URL': '/menu/',
     'MAX_FILE_SIZE': 10000000
+}
+
+
+MOBILE_APP_PAGE_CONF = {
+    'BASE_PATH': os.path.join(PUBLIC_FILE_BASE_PATH, 'mobile_app/'),
+    'BASE_URL': '/mobile-app/'
 }
 
 DEFAULT_BUSINESS_CATEGORY = [
