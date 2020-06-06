@@ -40,7 +40,7 @@ class DiscountService:
         exists = Discount.objects.filter(
             Q(businessman=businessman, expires=False, discount_code=discount_code)
             | Q(businessman=businessman, expires=True, expire_date__gt=timezone.now(), discount_code=discount_code)
-        ).exists()
+        ).exclude(festival__marked_as_deleted_for_businessman=True).exists()
 
         return exists
 
@@ -122,28 +122,6 @@ class DiscountService:
         discount.save()
         return discount
 
-    def has_customer_any_discount(self, businessman: Businessman, customer: Customer) -> bool:
-
-        # has_discount = Discount.objects.filter(businessman=businessman,
-        #                                        used_for=Discount.USED_FOR_FESTIVAL,
-        #                                        expire_date__gt=timezone.now()).exclude(
-        #     connected_purchases__customer=customer).exists()
-        # if has_discount:
-        #     return True
-        #
-        # has_discount = FriendInvitation.objects.filter(businessman=businessman, invited=customer, ) \
-        #     .exclude(
-        #     invited_discount__connected_purchases__customer=customer
-        # ).exists()
-        #
-        # if has_discount:
-        #     return True
-        # has_discount = FriendInvitation.objects.filter(businessman=businessman, inviter=customer) \
-        #     .exclude(inviter_discount__connected_purchases__customer__id=customer.id).exists()
-        # return has_discount
-
-        return self.get_customer_available_discounts(businessman, customer).exists()
-
     def apply_discount(self, businessman: Businessman, discount_code: str, phone: str) -> (bool, Discount):
 
         """
@@ -213,9 +191,9 @@ class DiscountService:
             connected_purchases__customer=customer)
 
     def get_customer_available_discounts(self, user: Businessman, customer: Customer):
-        d = ""
         return self.get_customer_discounts_by_customer(user, customer) \
             .exclude(expires=True, expire_date__lt=timezone.now()) \
+            .exclude(festival__marked_as_deleted_for_businessman=True)\
             .exclude(
             connected_purchases__customer=customer)
 
@@ -223,6 +201,9 @@ class DiscountService:
 
         return self.get_customer_available_discounts(businessman, customer).filter(id=discount.id).exists()
 
+    def has_customer_any_discount(self, businessman: Businessman, customer: Customer) -> bool:
+
+        return self.get_customer_available_discounts(businessman, customer).exists()
 
     def get_customer_used_discounts(self, user: Businessman, customer: Customer):
         return self.get_customer_discounts_by_customer(user, customer)\

@@ -7,7 +7,7 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from common.util.http_helpers import ok, bad_request, not_found
+from common.util.http_helpers import ok, bad_request, not_found, forbidden, no_content
 from customer_return_plan.festivals.permissions import CanDeleteOrUpdateFestival
 from customer_return_plan.festivals.services import FestivalService
 from smspanel.services import SendSMSMessage
@@ -27,12 +27,13 @@ from smspanel.permissions import HasValidCreditSendSMSToAll, HasActiveSMSPanel
 
 festival_service = FestivalService()
 
+
 class FestivalsListAPIView(generics.ListAPIView, mixins.CreateModelMixin):
     serializer_class = FestivalCreationSerializer
     permission_classes = [permissions.IsAuthenticated, HasActiveSMSPanel]
 
     def get_queryset(self):
-        return Festival.objects.filter(businessman=self.request.user)
+        return festival_service.get_businessman_all_undeleted_festivals(businessman=self.request.user)
 
     def get_serializer_context(self):
         return {'user': self.request.user}
@@ -56,9 +57,11 @@ class FestivalAPIView(APIView):
         q = request.query_params.get('q')
 
         if q is not None:
-            result_set = request.user.festival_set.filter(discount_code__contains=q).all()
+            # result_set = request.user.festival_set.filter(discount_code__contains=q).all()
+            result_set = festival_service.get_businessman_festivals_filtered_by_discount_code(request.user, q)
         else:
-            result_set = request.user.festival_set.all()
+            # result_set = request.user.festival_set.all()
+            result_set = festival_service.get_businessman_all_undeleted_festivals(request.user)
 
         # serializer = FestivalListSerializer(result_set, many=True)
         # return Response(serializer.data, status=status.HTTP_200_OK)
@@ -106,20 +109,17 @@ def send_festival_message(request: Request, festival_id):
     or festival is expired Response with a message and 403 status code will be returned
     """
 
-    try:
-        festival = request.user.festival_set.get(id=festival_id)
-    except ObjectDoesNotExist:
-        return Response(status=status.HTTP_404_NOT_FOUND)
+    # try:
+    #     festival = request.user.festival_set.get(id=festival_id)
+    # except ObjectDoesNotExist:
+    result = festival_service.send_festival_message_by_festival_id_if_festival_is_not_deleted_expired_message_sent(request.user, festival_id)
+    if not result[0]:
+        return not_found()
 
-    if festival.message_sent or festival.end_date <= timezone.now().date():
-        return Response({'details': ['پیام های مربوط به این جشنواره قبلا فرستاده شده یا تاریخ جشنواره به اتمام رسیده']},
-                        status=status.HTTP_403_FORBIDDEN)
+    if result[0] and not result[1]:
+        return forbidden(create_detail_error('پیام های مربوط به این جشنواره قبلا فرستاده شده یا تاریخ جشنواره به اتمام رسیده'))
 
-    SendSMSMessage().set_message_to_pending(festival.sms_message)
-    festival.message_sent = True
-    festival.save()
-
-    return Response(status=status.HTTP_204_NO_CONTENT)
+    return no_content()
 
 
 class FestivalRetrieveAPIView(APIView):
@@ -145,7 +145,7 @@ class FestivalRetrieveAPIView(APIView):
         return ok(serializer.data)
 
     def delete(self, request, id):
-        result = festival_service.delete_festival(request.user, id)
+        result = festival_service.delete_festival_by_festival_id(request.user, id)
         if not result[0]:
             return not_found(create_detail_error('آیدی جشنواره اشتباه است'))
 

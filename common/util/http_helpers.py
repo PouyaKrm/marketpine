@@ -25,6 +25,10 @@ def dependency_failed(data=None) -> Response:
     return Response(data, status=status.HTTP_424_FAILED_DEPENDENCY)
 
 
+def forbidden(data: dict = None) -> Response:
+    return Response(data=data, status=status.HTTP_403_FORBIDDEN)
+
+
 def get_query_param_or_default(request: Request, name: str, default=None):
     param = request.query_params.get(name)
     if param is None:
