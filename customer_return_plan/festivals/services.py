@@ -14,22 +14,20 @@ class FestivalService:
             return False, None
         if not festival.is_expired() and festival.message_sent:
             return False, None
-        if festival.has_any_one_used_festival():
-            festival.mark_as_deleted()
-        else:
-            festival.delete()
-            festival.discount.delete()
+        # if festival.has_any_one_used_festival():
+        #     festival.mark_as_deleted()
+        # else:
+        festival.delete()
+        # festival.discount.delete()
         return True, festival
 
     def festival_by_name_exists(self, businessman: Businessman, festival_name: str) -> bool:
 
-        return Festival.objects.filter(businessman=businessman, name=festival_name)\
-            .exclude(marked_as_deleted_for_businessman=True).exists()
+        return Festival.objects.filter(businessman=businessman, name=festival_name).exists()
 
 
     def get_businessman_all_undeleted_festivals(self, businessman: Businessman):
-        return Festival.objects.filter(businessman=businessman, marked_as_deleted_for_businessman=False)\
-            .order_by('-create_date').all()
+        return Festival.objects.filter(businessman=businessman).order_by('-create_date').all()
 
     def get_businessman_festivals_filtered_by_discount_code(self, businessman: Businessman, discount_code: str):
         return Festival.objects.filter(businessman=businessman, discount__discount_code__contains=discount_code)\
