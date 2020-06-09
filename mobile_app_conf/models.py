@@ -14,18 +14,26 @@ storage = FileSystemStorage(location=mobile_app_base_path, base_url=mobile_app_b
 
 class MobileAppPageConf(BusinessmanOneToOneBaseModel):
 
-    store_location = models.TextField(null=True, blank=True)
+    market_location = models.TextField(null=True, blank=True)
 
     def __str__(self):
         return self.businessman.username
 
     @staticmethod
-    def add_mobile_app_header(businessman: Businessman, image):
+    def get_businessman_conf_or_create(businessman: Businessman):
+        try:
+            return MobileAppPageConf.objects.get(businessman=businessman)
+        except ObjectDoesNotExist:
+            return MobileAppPageConf.objects.create(businessman=businessman)
+
+
+    @staticmethod
+    def add_mobile_app_header(businessman: Businessman, image, show_order=None):
         try:
             conf = MobileAppPageConf.objects.get(businessman=businessman)
         except ObjectDoesNotExist:
-            conf = MobileAppPageConf.objects.create(businessman=businessman)
-        return MobileAppHeader.create_mobile_app_header(conf, image)
+            conf = MobileAppPageConf.get_businessman_conf_or_create(businessman)
+        return MobileAppHeader.create_mobile_app_header(conf, image, show_order)
 
     @staticmethod
     def headers_uploaded_count(businessman: Businessman) -> int:
@@ -33,6 +41,9 @@ class MobileAppPageConf(BusinessmanOneToOneBaseModel):
             return MobileAppPageConf.objects.get(businessman=businessman).headers.count()
         except ObjectDoesNotExist:
             return 0
+
+    def get_businessman_all_app_headers(self):
+        return self.headers.all()
 
 
 def mobile_app_header_upload_path(instance, filename):
@@ -43,11 +54,19 @@ class MobileAppHeader(BaseModel):
 
     mobile_app_page_conf = models.ForeignKey(MobileAppPageConf, related_query_name='headers', related_name='headers',
                                              on_delete=models.CASCADE)
+    show_order = models.IntegerField(null=True)
     header_image = models.ImageField(storage=storage, upload_to=mobile_app_header_upload_path)
 
     def __str__(self):
         return self.mobile_app_page_conf.businessman.username
 
     @staticmethod
-    def create_mobile_app_header(mobile_app_conf: MobileAppPageConf, image):
-        return MobileAppHeader.objects.create(mobile_app_page_conf=mobile_app_conf, header_image=image)
+    def create_mobile_app_header(mobile_app_conf: MobileAppPageConf, image, show_order=None):
+        return MobileAppHeader.objects.create(mobile_app_page_conf=mobile_app_conf, header_image=image,
+                                              show_order=show_order)
+
+    @staticmethod
+    def show_order_exists(order: int) -> bool:
+        return MobileAppHeader.objects.filter(show_order=order).exists()
+
+
