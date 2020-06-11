@@ -40,7 +40,7 @@ class DiscountService:
         exists = Discount.objects.filter(
             Q(businessman=businessman, expires=False, discount_code=discount_code)
             | Q(businessman=businessman, expires=True, expire_date__gt=timezone.now(), discount_code=discount_code)
-        ).exists()
+        ).exclude(festival__marked_as_deleted_for_businessman=True).exists()
 
         return exists
 
@@ -192,7 +192,8 @@ class DiscountService:
 
     def get_customer_available_discounts(self, user: Businessman, customer: Customer):
         return self.get_customer_discounts_by_customer(user, customer) \
-            .exclude(expires=True, expire_date__lt=timezone.now())\
+            .exclude(expires=True, expire_date__lt=timezone.now()) \
+            .exclude(festival__marked_as_deleted_for_businessman=True)\
             .exclude(
             connected_purchases__customer=customer)
 
