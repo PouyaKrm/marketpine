@@ -43,7 +43,7 @@ class CustomerReadIdListRepresentRelatedField(serializers.RelatedField):
         #     raise serializers.ValidationError('not all customer ids are valid')
         # return query
         try:
-            return Customer.objects.get(id=data)
+            return customer_service.get_customer_by_id(self.context['user'], data)
         except ObjectDoesNotExist:
             raise serializers.ValidationError('not all customer ids are valid')
 
@@ -89,14 +89,14 @@ class CustomerListCreateSerializer(serializers.ModelSerializer):
     def get_purchase_discount_sum(self, obj: Customer):
         user = self.context['user']
         purchases_total = purchase_service.get_customer_purchase_sum(user, obj)
-        p_d =  discount_service.get_customer_used_discounts_sum_amount(self.context['user'], obj.id)
+        p_d =  discount_service.get_customer_used_discounts_sum_amount(self.context['user'], obj)
         return purchases_total - p_d
 
     def get_invitations_total(self, obj: Customer):
         return FriendInvitation.customer_total_invitations_count(obj)
 
     def get_used_discounts_total(self, obj: Customer):
-        return discount_service.get_customer_unused_discounts(self.context['user'], obj.id).count()
+        return discount_service.get_customer_used_discounts(self.context['user'], obj).count()
 
     def get_has_discount(self, obj: Customer):
         user = self.context['user']
