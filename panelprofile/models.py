@@ -11,11 +11,12 @@ from common.util.sms_panel.client import ClientManagement
 from smspanel.models import SMSMessage
 from users.models import Businessman, AuthStatus
 from django.conf import settings
+from base_app.models import PrivateFileStorage, PublicFileStorage
 
 max_message_cost = settings.SMS_PANEL['MAX_MESSAGE_COST']
 
-fs = FileSystemStorage(location=settings.MEDIA_ROOT)
-auth_fs = FileSystemStorage(location=settings.MEDIA_ROOT + 'auth-docs/')
+fs = PublicFileStorage('commit_form/', '/commit-form/')
+auth_fs = PrivateFileStorage('auth-docs/', '/auth-docs/')
 
 
 class SMSPanelStatus:

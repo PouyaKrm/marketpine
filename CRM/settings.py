@@ -311,7 +311,9 @@ ZARINPAL={
     "FORWARD_LINK": "https://www.zarinpal.com/pg/StartPay/{}/ZarinGate",  # use this string with .format method
 }
 
-PUBLIC_FILE_BASE_PATH = os.path.join(BASE_DIR, '..', 'dummy/')
+PUBLIC_FILE_BASE_PATH = os.path.join(BASE_DIR, '..', 'public/')
+
+PRIVATE_FILE_BASE_PATH = os.path.join(BASE_DIR, '..', 'private/')
 
 CONTENT_MARKETING = {
     'MAX_SIZE_VIDEO': '50000000',
