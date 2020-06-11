@@ -216,10 +216,10 @@ class DiscountService:
         return self.get_customer_discounts_by_customer(user, customer).filter(
             used_for=Discount.USED_FOR_LOYALTY_NUMBER)
 
-    def get_customer_used_discounts_sum_amount(self, user: Businessman, customer_id):
+    def get_customer_used_discounts_sum_amount(self, user: Businessman, customer: Customer):
         val = 0
-        for d in self.get_customer_used_discounts(user, customer_id).all():
-            val += d.amount_of_discount_for_customer(customer_id)
+        for d in self.get_customer_used_discounts(user, customer).all():
+            val += d.amount_of_discount_for_customer(customer)
         return val
 
     def has_customer_used_discount(self, discount: Discount, customer: Customer) -> (bool, bool, Discount, Customer):
