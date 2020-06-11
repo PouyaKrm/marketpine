@@ -102,6 +102,7 @@ DOMAIN = "localhost:8000"
 # Application definition
 
 INSTALLED_APPS = [
+    'base_app',
     'content_marketing',
     'device',
     'payment',
@@ -327,7 +328,7 @@ CONTENT_MARKETING = {
 
 
 ONLINE_MENU = {
-    'BASE_PATH': os.path.join(PUBLIC_FILE_BASE_PATH, 'menus/'),
+    'SUB_DIR': 'menus/',
     'BASE_URL': '/menu/',
     'MAX_FILE_SIZE': 10000000
 }

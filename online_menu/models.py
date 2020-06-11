@@ -1,14 +1,14 @@
-from django.core.files.storage import FileSystemStorage
+from base_app.models import PublicFileStorage
 from django.db import models
 from users.models import BusinessmanOneToOneBaseModel, Businessman
 # Create your models here.
 from django.conf import settings
 from common.util import generate_url_safe_base64_file_name
 
-base_path = settings.ONLINE_MENU['BASE_PATH']
+sub_dir = settings.ONLINE_MENU['SUB_DIR']
 base_url = settings.ONLINE_MENU['BASE_URL']
 
-file_storage = FileSystemStorage(location=base_path, base_url=base_url)
+file_storage = PublicFileStorage(sub_dir, base_url=base_url)
 
 
 class OnlineMenu(BusinessmanOneToOneBaseModel):
