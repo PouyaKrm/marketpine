@@ -15,13 +15,14 @@ from smspanel.services import SendSMSMessage
 from users.models import Businessman,Customer
 
 from common.util.sms_panel.message import SystemSMSMessage
+from base_app.models import PublicFileStorage
 
-content_upload_path = settings.CONTENT_MARKETING['BASE_PATH']
+sub_dir = settings.CONTENT_MARKETING['SUB_DIR']
 video_confirm_message = settings.CONTENT_MARKETING['VIDEO_CONFIRM_MESSAGE']
 video_reject_message = settings.CONTENT_MARKETING['VIDEO_REJECT_MESSAGE']
 video_base_url = settings.CONTENT_MARKETING['BASE_URL']
 
-video_storage = FileSystemStorage(location=content_upload_path, base_url=video_base_url)
+video_storage = PublicFileStorage(subdir=sub_dir, base_url=video_base_url)
 
 
 class PostConfirmationStatus:

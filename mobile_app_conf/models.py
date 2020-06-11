@@ -5,11 +5,12 @@ from django.conf import settings
 
 from users.models import BusinessmanOneToOneBaseModel, BaseModel, Businessman
 from users.util import businessman_related_model_file_upload_path
+from base_app.models import PublicFileStorage
 
-mobile_app_base_path = settings.MOBILE_APP_PAGE_CONF['BASE_PATH']
+sub_dir = settings.MOBILE_APP_PAGE_CONF['SUB_DIR']
 mobile_app_base_url = settings.MOBILE_APP_PAGE_CONF['BASE_URL']
 
-storage = FileSystemStorage(location=mobile_app_base_path, base_url=mobile_app_base_url)
+storage = PublicFileStorage(subdir=sub_dir, base_url=mobile_app_base_url)
 
 
 class MobileAppPageConf(BusinessmanOneToOneBaseModel):

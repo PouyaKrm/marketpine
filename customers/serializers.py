@@ -43,7 +43,7 @@ class CustomerReadIdListRepresentRelatedField(serializers.RelatedField):
         #     raise serializers.ValidationError('not all customer ids are valid')
         # return query
         try:
-            return Customer.objects.get(id=data)
+            return customer_service.get_customer_by_id(self.context['user'], data)
         except ObjectDoesNotExist:
             raise serializers.ValidationError('not all customer ids are valid')
 
