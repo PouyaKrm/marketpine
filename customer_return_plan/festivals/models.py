@@ -17,7 +17,6 @@ class Festival(BusinessmanManyToOneBaseModel):
     sms_message = models.OneToOneField(SMSMessage, on_delete=models.CASCADE, null=True)  # max length of of one sms message is 70 characters
     message_sent = models.BooleanField(default=False)
     discount = models.OneToOneField(Discount, on_delete=models.PROTECT, null=True)
-    marked_as_deleted_for_businessman = models.BooleanField(default=False)
 
     class Meta:
 
@@ -34,7 +33,3 @@ class Festival(BusinessmanManyToOneBaseModel):
 
     def has_any_one_used_festival(self) -> bool:
         return self.discount.connected_purchases.count() > 0
-
-    def mark_as_deleted(self):
-        self.marked_as_deleted_for_businessman = True
-        self.save()
