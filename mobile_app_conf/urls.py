@@ -4,5 +4,5 @@ from . import views
 urlpatterns = [
     path('', views.MobileAppPageConfAPIView.as_view()),
     path('headers/', views.upload_header_image),
-    path('<int:id>/', views.MobileAppHeaderDeleteAPIView.as_view()),
+    path('headers/<int:id>/', views.MobileAppHeaderDeleteAPIView.as_view()),
 ]

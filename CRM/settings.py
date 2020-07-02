@@ -340,7 +340,7 @@ MOBILE_APP_PAGE_CONF = {
     'SUB_DIR': 'mobile_app/',
     'BASE_URL': '/mobile-app/',
     'MAX_HEADER_IMAGE_SIZE': 5000000,
-    'MAX_ALLOWED_HEADERS': 2
+    'MAX_ALLOWED_HEADERS': 4
 }
 
 DEFAULT_BUSINESS_CATEGORY = [
