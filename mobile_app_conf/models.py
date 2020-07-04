@@ -31,6 +31,7 @@ class MobileAppHeader(BaseModel):
                                              on_delete=models.CASCADE)
     show_order = models.IntegerField(null=True)
     header_image = models.ImageField(storage=storage, upload_to=mobile_app_header_upload_path)
+    header_image_size = models.BigIntegerField(null=True, blank=True)
 
     def __str__(self):
         return self.mobile_app_page_conf.businessman.username

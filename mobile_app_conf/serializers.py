@@ -25,9 +25,12 @@ class MobileAppHeaderSerializer(serializers.ModelSerializer):
         fields = [
             'id',
             'header_image',
-            'show_order'
+            'show_order',
+            'header_image_size',
         ]
-        extra_kwargs = {'show_order': {'required': True}, 'id': {'read_only': True}}
+        extra_kwargs = {'show_order': {'required': True}, 'id': {'read_only': True},
+                        'header_image_size': {'read_only': True}
+                        }
 
     def validate_show_order(self, value):
         if not mobile_page_conf_service.can_upload_new_header(self.context['request'].user, value):
@@ -39,7 +42,8 @@ class MobileAppHeaderSerializer(serializers.ModelSerializer):
         request = self.context['request']
         show_order = validated_data.get('show_order')
         app_header = mobile_page_conf_service.add_mobile_app_header(request.user, file, show_order)
-        return {'file': create_link(app_header.header_image.url, request), 'show_order': app_header.show_order}
+        return {'file': create_link(app_header.header_image.url, request), 'show_order': app_header.show_order,
+                'header_image_size': app_header.header_image_size}
 
 
 class MobileAppPageConfSerializer(serializers.ModelSerializer):

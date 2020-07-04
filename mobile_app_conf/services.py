@@ -12,6 +12,7 @@ class MobileAppPageConfService:
         conf = self.get_businessman_conf_or_create(businessman)
         header = self.get_mobile_app_header_by_show_order_or_create(conf, show_order)
         header.header_image = image
+        header.header_image_size = image.size
         header.save()
         return header
 
@@ -42,11 +43,10 @@ class MobileAppPageConfService:
             return self.show_order_exists(self.get_businessman_conf_or_create(businessman), show_order)
 
     def get_businessman_all_app_headers(self, businessman: Businessman):
-        return self.get_businessman_conf_or_create(businessman=businessman).headers.all()
+        return self.get_businessman_conf_or_create(businessman=businessman).headers.order_by('show_order', 'create_date').all()
 
     def show_order_exists(self, conf: MobileAppPageConf, show_order: int) -> bool:
         return MobileAppHeader.objects.filter(mobile_app_page_conf=conf, show_order=show_order).exists()
-
 
 
 mobile_page_conf_service = MobileAppPageConfService()
