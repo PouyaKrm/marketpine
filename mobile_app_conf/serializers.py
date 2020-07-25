@@ -2,8 +2,10 @@ from rest_framework import serializers
 
 from django.conf import settings
 
-from common.util import create_link
+from base_app.serializers import BaseModelSerializerWithRequestObj
+from common.util import create_link, get_client_ip
 from common.util.custom_validators import file_size_validator
+from common.util.gelocation import geolocation_service, LocationAPIException
 from mobile_app_conf.models import MobileAppHeader, MobileAppPageConf
 from .services import mobile_page_conf_service
 
@@ -46,19 +48,34 @@ class MobileAppHeaderSerializer(serializers.ModelSerializer):
                 'header_image_size': app_header.header_image_size}
 
 
-class MobileAppPageConfSerializer(serializers.ModelSerializer):
+class MobileAppPageConfSerializer(BaseModelSerializerWithRequestObj):
 
     headers = MobileAppHeaderSerializer(many=True, read_only=True)
+    ip_location = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = MobileAppPageConf
         fields = [
             'headers',
-            'market_location'
+            'description',
+            'location_lat',
+            'location_lng',
+            'is_location_set',
+            'ip_location'
         ]
 
+    def get_ip_location(self, obj: MobileAppPageConf):
+        if obj.is_location_set:
+            return None
+        ip = get_client_ip(self.request)
+        try:
+            return geolocation_service.get_location_by_ip(ip)
+        except LocationAPIException as e:
+            return None
+
     def update(self, instance: MobileAppPageConf, validated_data: dict):
-        instance.market_location = validated_data.get('market_location')
+        for k, v in validated_data.items():
+            setattr(instance, k, v)
         instance.save()
         return validated_data
 
