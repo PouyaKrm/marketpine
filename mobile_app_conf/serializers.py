@@ -1,8 +1,12 @@
+import ast
+
+from django.core.exceptions import ObjectDoesNotExist
+from django.db.models import QuerySet
 from rest_framework import serializers
 
 from django.conf import settings
 
-from base_app.serializers import BaseModelSerializerWithRequestObj
+from base_app.serializers import BaseModelSerializerWithRequestObj, BaseSerializerWithRequestObj
 from common.util import create_link, get_client_ip
 from common.util.custom_validators import file_size_validator
 from common.util.gelocation import geolocation_service, LocationAPIException
@@ -10,6 +14,7 @@ from mobile_app_conf.models import MobileAppHeader, MobileAppPageConf
 from .services import mobile_page_conf_service
 
 max_header_size = settings.MOBILE_APP_PAGE_CONF['MAX_HEADER_IMAGE_SIZE']
+max_allowed_headers = settings.MOBILE_APP_PAGE_CONF['MAX_ALLOWED_HEADERS']
 
 
 class FileFieldWithLinkRepresentation(serializers.FileField):
@@ -18,9 +23,38 @@ class FileFieldWithLinkRepresentation(serializers.FileField):
         return create_link(value.url, self.context['request'])
 
 
-class MobileAppHeaderSerializer(serializers.ModelSerializer):
+class MobileHeaderIdShowOrderField(serializers.Field):
 
+    def to_internal_value(self, data) -> dict:
+        if type(data) != str or len(data) > 100:
+            raise serializers.ValidationError("invalid field")
+        try:
+            result = ast.literal_eval(data)
+            if type(result) != dict:
+                raise serializers.ValidationError("inavlid dictionary")
+            return self._validate_items(result)
+        except (SyntaxError, ValueError):
+            raise serializers.ValidationError("invalid field")
+
+    def _validate_items(self, id_show_orders: dict):
+        user = self.context['request'].user
+        if len(id_show_orders) > max_allowed_headers:
+            raise serializers.ValidationError("invalid field")
+        for k, v in id_show_orders.items():
+            if type(k) != int or k <= 0:
+                raise serializers.ValidationError("{} is invalid id value".format(k))
+            if type(v) != int:
+                raise serializers.ValidationError("{} is not integer".format(v))
+            if not mobile_page_conf_service.header_id_exists_by_user(user, k):
+                raise serializers.ValidationError("header with id {} does not exist".format(k))
+            if not mobile_page_conf_service.are_show_orders_unique_for_update(user, id_show_orders):
+                raise serializers.ValidationError("some of show orders are already taken")
+            return id_show_orders
+
+
+class MobileAppHeaderSerializer(BaseModelSerializerWithRequestObj):
     header_image = FileFieldWithLinkRepresentation()
+    updated_show_orders = MobileHeaderIdShowOrderField(write_only=True)
 
     class Meta:
         model = MobileAppHeader
@@ -29,6 +63,7 @@ class MobileAppHeaderSerializer(serializers.ModelSerializer):
             'header_image',
             'show_order',
             'header_image_size',
+            'updated_show_orders'
         ]
         extra_kwargs = {'show_order': {'required': True}, 'id': {'read_only': True},
                         'header_image_size': {'read_only': True}
@@ -39,17 +74,25 @@ class MobileAppHeaderSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError('can not upload image with new show order')
         return value
 
+    def validate(self, attrs):
+        show_order = attrs.get('show_order')
+        updated_show_orders = attrs.get('updated_show_orders')
+        if show_order in updated_show_orders.values():
+            raise serializers.ValidationError("can not upload image with show order equal to show order in updated_show_orders")
+        return attrs
+
     def create(self, validated_data: dict):
         file = validated_data.get('header_image')
         request = self.context['request']
         show_order = validated_data.get('show_order')
+        updated_show_order = validated_data.get('updated_show_orders')
+        mobile_page_conf_service.update_show_orders_of_headers(self.context['request'].user, updated_show_order)
         app_header = mobile_page_conf_service.add_mobile_app_header(request.user, file, show_order)
         return {'file': create_link(app_header.header_image.url, request), 'show_order': app_header.show_order,
                 'header_image_size': app_header.header_image_size}
 
 
 class MobileAppPageConfSerializer(BaseModelSerializerWithRequestObj):
-
     headers = MobileAppHeaderSerializer(many=True, read_only=True)
     ip_location = serializers.SerializerMethodField(read_only=True)
 
@@ -81,4 +124,3 @@ class MobileAppPageConfSerializer(BaseModelSerializerWithRequestObj):
 
     def create(self, validated_data):
         pass
-

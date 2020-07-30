@@ -2,8 +2,8 @@ from django.db.models import QuerySet
 from django.shortcuts import render
 
 # Create your views here.
-from rest_framework import permissions, generics
-from rest_framework.decorators import api_view
+from rest_framework import permissions, generics, parsers
+from rest_framework.decorators import api_view, parser_classes
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -34,6 +34,7 @@ class MobileAppPageConfAPIView(APIView):
 
 
 @api_view(['POST'])
+@parser_classes([parsers.MultiPartParser])
 def upload_header_image(request: Request):
     serializer = MobileAppHeaderSerializer(data=request.data, context={'request': request})
     if not serializer.is_valid():
