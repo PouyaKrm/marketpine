@@ -40,16 +40,23 @@ class MobileHeaderIdShowOrderField(serializers.Field):
         user = self.context['request'].user
         if len(id_show_orders) > max_allowed_headers:
             raise serializers.ValidationError("invalid field")
+        parsed_dict = {}
         for k, v in id_show_orders.items():
-            if type(k) != int or k <= 0:
-                raise serializers.ValidationError("{} is invalid id value".format(k))
-            if type(v) != int:
-                raise serializers.ValidationError("{} is not integer".format(v))
-            if not mobile_page_conf_service.header_id_exists_by_user(user, k):
-                raise serializers.ValidationError("header with id {} does not exist".format(k))
-            if not mobile_page_conf_service.are_show_orders_unique_for_update(user, id_show_orders):
-                raise serializers.ValidationError("some of show orders are already taken")
-            return id_show_orders
+            try:
+                k_int = int(k)
+                v_int = int(v)
+                if k_int <= 0:
+                    raise serializers.ValidationError("{} is invalid id value".format(k_int))
+                if not mobile_page_conf_service.header_id_exists_by_user(user, k_int):
+                    raise serializers.ValidationError("header with id {} does not exist".format(k))
+                parsed_dict[k_int] = v_int
+            except ValueError:
+                raise serializers.ValidationError("field contains un parsable to int values")
+
+        if not mobile_page_conf_service.are_show_orders_unique_for_update(user, parsed_dict):
+            raise serializers.ValidationError("some of show orders are already taken")
+
+        return parsed_dict
 
 
 class MobileAppHeaderSerializer(BaseModelSerializerWithRequestObj):
