@@ -14,6 +14,7 @@ sms_settings = settings.SMS_PANEL
 api_key = sms_settings['API_KEY']
 system_line = sms_settings['SYSTEM_LINE']
 verification_template_name = sms_settings['VERIFICATION_TEMPLATE_NAME']
+one_time_password_template_name = sms_settings['CUSTOMER_ONE_TIME_PASSWORD_TEMPLATE_NAME']
 min_credit = sms_settings['MIN_CREDIT']
 init_credit = sms_settings['INIT_CREDIT']
 pid = sms_settings['PID']
@@ -61,6 +62,8 @@ class SystemSMSMessage(BaseSMSMessage):
 
         return self.send_message(receptor, f'your new password is:\n{new_password}')
 
+    def send_customer_one_time_password(self, receptor, code):
+        return self._api.verify_lookup({'receptor': receptor, 'token': code, 'template': one_time_password_template_name})
 
 class ClientSMSMessage(BaseSMSMessage):
 

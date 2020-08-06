@@ -36,6 +36,9 @@ from device import urls as device_url
 from content_marketing import urls as content_url
 from online_menu import urls as menu_url
 from mobile_app_conf import urls as mobile_conf_urls
+
+from users import customers_urls as customer_auth_urls
+
 from users.models import BusinessCategory
 
 
@@ -47,6 +50,7 @@ schema_view = get_swagger_view(title='Pastebin API')
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/accounts/', include(salesman_url)),
+    path('api/customers/accounts/', include(customer_auth_urls)),
     path('api/docs/', schema_view),
     path('api/salesman/customers/', include(customer_url)),
     path('api/salesman/customers/groups/', include(group_url)),

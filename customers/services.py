@@ -26,4 +26,7 @@ class CustomerService:
     def get_businessman_customers(self, user: Businessman):
         return Customer.objects.filter(businessman=user).all()
 
+    def get_customer_by_phone(self, phone: str) -> Customer:
+        return Customer.objects.get(phone=phone)
+
 customer_service = CustomerService()

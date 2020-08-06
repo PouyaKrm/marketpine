@@ -6,7 +6,7 @@ from .models import Businessman, VerificationCodes, BusinessCategory
 import secrets, datetime
 from django.conf import settings
 import os
-from common.util.custom_validators import validate_logo_size, password_validator
+from common.util.custom_validators import validate_logo_size, password_validator, phone_validator
 from panelsetting.models import PanelSetting
 
 PhonenumberValidator = RegexValidator(regex=r'^\+?1?\d{11, 12}$',
@@ -173,3 +173,12 @@ class CategorySerializer(serializers.ModelSerializer):
             'id'
         ]
 
+
+class CustomerPhoneSerializer(serializers.Serializer):
+
+    phone = serializers.CharField(max_length=20, validators=[phone_validator])
+
+    class Meta:
+        fields = [
+            'phone'
+        ]

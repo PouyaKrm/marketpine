@@ -194,6 +194,12 @@ class Customer(AbstractBaseUser):
         return obj
 
 
+class CustomerOneTimePasswords(BaseModel):
+    customer_phone = models.CharField(max_length=15)
+    expiration_time = models.DateTimeField()
+    code = models.CharField(max_length=20)
+
+
 class BusinessmanRefreshTokens(models.Model):
     generate_at = models.DateTimeField(auto_now_add=True)
     expire_at = models.DateTimeField()
