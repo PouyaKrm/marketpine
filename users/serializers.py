@@ -182,3 +182,14 @@ class CustomerPhoneSerializer(serializers.Serializer):
         fields = [
             'phone'
         ]
+
+
+class CustomerLoginSerializer(CustomerPhoneSerializer):
+
+    code = serializers.CharField(max_length=300)
+
+    class Meta:
+        fields = [
+            'phone',
+            'code'
+        ]

@@ -5,7 +5,7 @@ from django.shortcuts import redirect, render
 from django.urls import reverse, path
 from django.utils.html import format_html
 from kavenegar import APIException
-from .models import Businessman, Customer, VerificationCodes, AuthStatus, BusinessCategory
+from .models import Businessman, Customer, VerificationCodes, AuthStatus, BusinessCategory, CustomerOneTimePasswords
 from . import forms
 
 
@@ -153,3 +153,5 @@ class BusinessCategoryAdminModel(admin.ModelAdmin):
 
 
 admin.site.register(BusinessCategory, BusinessCategoryAdminModel)
+
+admin.site.register(CustomerOneTimePasswords)

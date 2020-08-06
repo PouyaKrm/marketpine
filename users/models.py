@@ -198,6 +198,13 @@ class CustomerOneTimePasswords(BaseModel):
     customer_phone = models.CharField(max_length=15)
     expiration_time = models.DateTimeField()
     code = models.CharField(max_length=20)
+    send_attempts = models.IntegerField(default=1)
+
+
+class CustomerLoginTokens(BaseModel):
+    token = models.TextField()
+    user_agent = models.TextField()
+    customer_phone = models.CharField(max_length=20)
 
 
 class BusinessmanRefreshTokens(models.Model):

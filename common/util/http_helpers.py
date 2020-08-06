@@ -34,3 +34,7 @@ def get_query_param_or_default(request: Request, name: str, default=None):
     if param is None:
         return default
     return param
+
+
+def get_user_agent(request: Request) -> str:
+    return request.META.get('HTTP_USER_AGENT')

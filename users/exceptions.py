@@ -13,3 +13,11 @@ class AuthenticationException(Exception):
     @staticmethod
     def for_password_send_failed():
         raise AuthenticationException(CustomerAppErrors.error_dict(CustomerAppErrors.PASSWORD_SEND_FAILED))
+
+    @staticmethod
+    def for_invalid_password():
+        raise AuthenticationException(CustomerAppErrors.error_dict(CustomerAppErrors.INVALID_PASSWORD))
+
+    @staticmethod
+    def for_one_time_password_already_sent():
+        raise AuthenticationException(CustomerAppErrors.error_dict(CustomerAppErrors.ONE_TIME_PASSWORD_ALREADY_SENT))
