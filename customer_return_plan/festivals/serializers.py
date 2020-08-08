@@ -20,6 +20,7 @@ template_max_chars = settings.SMS_PANEL['TEMPLATE_MAX_CHARS']
 festival_service = FestivalService()
 discount_service = DiscountService()
 
+
 class BaseFestivalSerializer(serializers.ModelSerializer):
     # discount_code = serializers.CharField(min_length=8, max_length=12, required=True)
     message = serializers.CharField(required=True, min_length=template_min_chars, max_length=template_max_chars,
@@ -110,12 +111,12 @@ class FestivalCreationSerializer(BaseFestivalSerializer):
         user = self.context['user']
         message = validated_data.pop('message')
         discount_data = validated_data.pop('discount')
-        festival = Festival.objects.create(businessman=self.context['user'], **validated_data)
+        festival = Festival.objects.create(businessman=user, **validated_data)
         festival.sms_message = SendSMSMessage().festival_message_status_cancel(message, user)
         festival.discount = discount_service.create_festival_discount(user=user,
-                                                                           expires=True,
-                                                                           expire_date=festival.end_date,
-                                                                           **discount_data)
+                                                                      expires=True,
+                                                                      expire_date=festival.end_date,
+                                                                      **discount_data)
 
         festival.save()
         return {'id': festival.id, **validated_data, 'message': message, 'discount': discount_data}
@@ -147,7 +148,6 @@ class RetrieveFestivalSerializer(NestedUpdateMixin, BaseFestivalSerializer):
     message = serializers.CharField(min_length=template_min_chars, max_length=template_max_chars,
                                     source='sms_message.message')
     discount = WritableDiscountCreateNestedSerializer()
-
 
     class Meta(BaseFestivalSerializer.Meta):
         fields = [
@@ -185,7 +185,7 @@ class RetrieveFestivalSerializer(NestedUpdateMixin, BaseFestivalSerializer):
         SendSMSMessage().update_not_pending_message_text(instance.sms_message, message)
 
         discount_service.update_discount(discount=instance.discount, expires=True, expire_date=instance.end_date,
-                                              user=instance.businessman, **discount_data)
+                                         user=instance.businessman, **discount_data)
 
         instance.save()
 

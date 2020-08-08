@@ -7,7 +7,7 @@ from users.models import Customer, Businessman, BusinessmanCustomer
 class CustomerService:
 
     def customer_exists(self, user: Businessman, phone: str) -> bool:
-        return Customer.objects.filter(businessman=user, phone=phone).exists()
+        return Customer.objects.filter(businessmans=user, phone=phone).exists()
 
     def customer_exists_by_id(self, user: Businessman, customer_id: int) -> bool:
         return Customer.objects.filter(businessman=user, id=customer_id).exists()
@@ -22,7 +22,7 @@ class CustomerService:
         return user.customers.get(id=customer_id)
 
     def get_customer_by_id_or_404(self, user: Businessman, customer_id: int):
-        return get_object_or_404(Customer, businessman=user, id=customer_id)
+        return get_object_or_404(Customer, businessmans=user, id=customer_id)
 
     def get_businessman_customers(self, user: Businessman):
         return Customer.objects.filter(businessmans=user).all()
@@ -30,7 +30,10 @@ class CustomerService:
     def get_customer_by_phone(self, phone: str) -> Customer:
         return Customer.objects.get(phone=phone)
 
-    def add_customer(self, businessman: Businessman, phone: str, full_name) -> Customer:
+    def get_customer_by_phone(self, businessman: Businessman, phone: str) -> Customer:
+        return businessman.customers.get(phone=phone)
+
+    def add_customer(self, businessman: Businessman, phone: str, full_name='') -> Customer:
         # c = Customer.objects.create(phone=phone, full_name=full_name)
         try:
             c = Customer.objects.get(phone=phone)

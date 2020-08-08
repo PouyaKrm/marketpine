@@ -33,13 +33,13 @@ class PurchaseCreationUpdateSerializer(serializers.ModelSerializer):
             'customer'
         ]
 
-    def validate_customer_id(self, value):
-
-        user = self.context['user']
-        if not customer_service.customer_exists_by_id(user, value):
-            raise serializers.ValidationError('این مشتری در لیست مشریان وجود ندارد')
-
-        return value
+    # def validate_customer_id(self, value):
+    #
+    #     user = self.context['user']
+    #     if not customer_service.customer_exists_by_id(user, value):
+    #         raise serializers.ValidationError('این مشتری در لیست مشریان وجود ندارد')
+    #
+    #     return value
 
     def validate(self, attrs):
         user = self.context['user']
@@ -75,24 +75,27 @@ class PurchaseCreationUpdateSerializer(serializers.ModelSerializer):
         discounts = validated_data.get('discounts')
         # result = purchase_service.submit_purchase_with_discounts(user, **validated_data)
         result = purchase_service.add_customer_purchase(user, customer, amount)
-        discount_service.try_apply_discounts(user, discounts, result)
+        if discounts is not None:
+            discount_service.try_apply_discounts(user, discounts, result)
         return result
 
     def update(self, instance, validated_data):
 
-        customer_id = validated_data.pop('customer_id')
-
-        user = self.context['user']
-
-        for k, v in validated_data.items():
-            setattr(instance, k, v)
-
-        instance.customer = user.customers.get(id=customer_id)
-
-        instance.save()
-        # loyalty_service.re_evaluate_discounts_after_purchase_update_or_delete(user, instance.customer)
-
         return instance
+
+        # customer_id = validated_data.pop('customer_id')
+        #
+        # user = self.context['user']
+        #
+        # for k, v in validated_data.items():
+        #     setattr(instance, k, v)
+        #
+        # instance.customer = customer_service.get_customer_by_id(user, customer_id)
+        #
+        # instance.save()
+        # # loyalty_service.re_evaluate_discounts_after_purchase_update_or_delete(user, instance.customer)
+        #
+        # return instance
 
 
 class PurchaseListSerializer(serializers.ModelSerializer):

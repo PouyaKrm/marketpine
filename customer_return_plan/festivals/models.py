@@ -20,8 +20,7 @@ class Festival(BusinessmanManyToOneBaseModel):
     marked_as_deleted_for_businessman = models.BooleanField(default=False)
 
     class Meta:
-
-        unique_together = [['businessman', 'name']]
+        pass
 
     def is_expired(self) -> bool:
         return self.end_date < timezone.now().date()

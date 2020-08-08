@@ -6,6 +6,7 @@ from customer_return_plan.services import DiscountService
 from customers.serializers import CustomerListCreateSerializer, CustomerSerializer
 from customer_return_plan.invitation.models import FriendInvitation, FriendInvitationSettings
 from common.util import common_serializers, DiscountType, generate_discount_code, create_field_error
+from customers.services import customer_service
 from smspanel.services import SendSMSMessage
 from users.models import Customer, Businessman
 
@@ -28,7 +29,7 @@ class BaseFriendInvitationSerializer(serializers.Serializer):
     def validate_inviter(self, value):
         user = self.context['user']
         try:
-            user.customers.get(phone=value)
+            customer_service.get_customer_by_phone(user, value)
         except ObjectDoesNotExist:
             raise serializers.ValidationError('مشتری با این شماره تلفن وجود ندارد')
         return value
@@ -51,8 +52,8 @@ class BaseFriendInvitationSerializer(serializers.Serializer):
         user = self.context['user']
         invited = validated_data.get('invited')
         inviter = validated_data.get('inviter')
-        inviter_customer = user.customers.get(phone=inviter)
-        invited_customer = Customer.objects.create(businessman=user, phone=invited)
+        inviter_customer = customer_service.get_customer_by_phone(user, phone=inviter)
+        invited_customer = customer_service.add_customer(user, invited)
 
         invitation = FriendInvitation(businessman=user, inviter=inviter_customer, invited=invited_customer)
 
@@ -131,8 +132,8 @@ class FriendInvitationCreationSerializer(serializers.Serializer):
         user = self.user
         invited = validated_data.get('invited')
         inviter = validated_data.get('inviter')
-        inviter_customer = user.customers.get(phone=inviter)
-        invited_customer = Customer.objects.create(businessman=user, phone=invited)
+        inviter_customer = customer_service.get_customer_by_phone(user, phone=inviter)
+        invited_customer = customer_service.add_customer(businessman=user, phone=invited)
 
         invitation = FriendInvitation(businessman=user, inviter=inviter_customer, invited=invited_customer)
 

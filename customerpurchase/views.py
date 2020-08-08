@@ -53,9 +53,7 @@ class CustomerPurchaseUpdateDeleteAPIView(APIView):
         except ObjectDoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND)
 
-        serializer = PurchaseCreationUpdateSerializer(data=request.data)
-
-        serializer._context = {'user': request.user}
+        serializer = PurchaseCreationUpdateSerializer(data=request.data, context={'user': request.user})
 
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
