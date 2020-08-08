@@ -37,13 +37,7 @@ from content_marketing import urls as content_url
 from online_menu import urls as menu_url
 from mobile_app_conf import urls as mobile_conf_urls
 
-from users import customers_urls as customer_auth_urls
-
-from users.models import BusinessCategory
-
-
-from smspanel.background_jobs.invitate_welcome_sms import run_send_invite_sms_task
-from smspanel.background_jobs.sms_send_script import run_send_sms_task
+from customer_application import urls as customer_auth_urls
 
 schema_view = get_swagger_view(title='Pastebin API')
 
