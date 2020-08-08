@@ -30,7 +30,7 @@ class CustomerService:
     def get_customer_by_phone(self, phone: str) -> Customer:
         return Customer.objects.get(phone=phone)
 
-    def get_customer_by_phone(self, businessman: Businessman, phone: str) -> Customer:
+    def get_customer_by_businessman_and_phone(self, businessman: Businessman, phone: str) -> Customer:
         return businessman.customers.get(phone=phone)
 
     def add_customer(self, businessman: Businessman, phone: str, full_name='') -> Customer:

@@ -1,6 +1,8 @@
 from django.db import models
 
 # Create your models here.
+from django.utils import timezone
+
 from users.models import BaseModel, Customer
 
 
@@ -10,6 +12,7 @@ class CustomerOneTimePasswords(BaseModel):
     expiration_time = models.DateTimeField()
     code = models.CharField(max_length=20)
     send_attempts = models.IntegerField(default=1)
+    last_send_time = models.DateTimeField(default=timezone.now)
 
 
 class CustomerLoginTokens(BaseModel):

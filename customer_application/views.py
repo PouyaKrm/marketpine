@@ -2,7 +2,7 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.request import Request
 
 from common.util.http_helpers import bad_request, no_content, get_user_agent, ok
-from users.exceptions import AuthenticationException
+from customer_application.exceptions import AuthenticationException
 from users.serializers import CustomerPhoneSerializer, CustomerLoginSerializer
 from .services import customer_auth_service
 

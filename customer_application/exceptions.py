@@ -1,4 +1,4 @@
-from base_app.error_codes import CustomerAppErrors
+from customer_application.error_codes import CustomerAppErrors
 
 
 class AuthenticationException(Exception):

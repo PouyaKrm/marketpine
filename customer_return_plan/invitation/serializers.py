@@ -29,7 +29,7 @@ class BaseFriendInvitationSerializer(serializers.Serializer):
     def validate_inviter(self, value):
         user = self.context['user']
         try:
-            customer_service.get_customer_by_phone(user, value)
+            customer_service.get_customer_by_businessman_and_phone(user, value)
         except ObjectDoesNotExist:
             raise serializers.ValidationError('مشتری با این شماره تلفن وجود ندارد')
         return value
@@ -52,7 +52,7 @@ class BaseFriendInvitationSerializer(serializers.Serializer):
         user = self.context['user']
         invited = validated_data.get('invited')
         inviter = validated_data.get('inviter')
-        inviter_customer = customer_service.get_customer_by_phone(user, phone=inviter)
+        inviter_customer = customer_service.get_customer_by_businessman_and_phone(user, phone=inviter)
         invited_customer = customer_service.add_customer(user, invited)
 
         invitation = FriendInvitation(businessman=user, inviter=inviter_customer, invited=invited_customer)
@@ -132,7 +132,7 @@ class FriendInvitationCreationSerializer(serializers.Serializer):
         user = self.user
         invited = validated_data.get('invited')
         inviter = validated_data.get('inviter')
-        inviter_customer = customer_service.get_customer_by_phone(user, phone=inviter)
+        inviter_customer = customer_service.get_customer_by_businessman_and_phone(user, phone=inviter)
         invited_customer = customer_service.add_customer(businessman=user, phone=invited)
 
         invitation = FriendInvitation(businessman=user, inviter=inviter_customer, invited=invited_customer)
