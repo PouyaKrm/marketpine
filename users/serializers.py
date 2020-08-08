@@ -172,24 +172,3 @@ class CategorySerializer(serializers.ModelSerializer):
             'name',
             'id'
         ]
-
-
-class CustomerPhoneSerializer(serializers.Serializer):
-
-    phone = serializers.CharField(max_length=20, validators=[phone_validator])
-
-    class Meta:
-        fields = [
-            'phone'
-        ]
-
-
-class CustomerLoginSerializer(CustomerPhoneSerializer):
-
-    code = serializers.CharField(max_length=300)
-
-    class Meta:
-        fields = [
-            'phone',
-            'code'
-        ]

@@ -21,3 +21,7 @@ class AuthenticationException(Exception):
     @staticmethod
     def for_one_time_password_already_sent():
         raise AuthenticationException(CustomerAppErrors.error_dict(CustomerAppErrors.ONE_TIME_PASSWORD_ALREADY_SENT))
+
+    @staticmethod
+    def for_login_token_does_not_exist():
+        raise AuthenticationException(CustomerAppErrors.error_dict(CustomerAppErrors.LOGIN_TOKEN_DOES_NOT_EXIST))

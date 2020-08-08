@@ -1,10 +1,11 @@
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.decorators import api_view, permission_classes, authentication_classes
 from rest_framework.request import Request
 
 from common.util.http_helpers import bad_request, no_content, get_user_agent, ok
 from customer_application.exceptions import AuthenticationException
-from users.serializers import CustomerPhoneSerializer, CustomerLoginSerializer
-from .services import customer_auth_service
+from customer_application.serializers import CustomerPhoneSerializer, CustomerLoginSerializer, BusinessmanListSerializer
+from .base_views import CustomerAuthenticationSchema, BaseListAPIView
+from .services import customer_auth_service, customer_data_service
 
 
 @api_view(['POST'])
@@ -39,3 +40,11 @@ def customer_login(request: Request):
         return ok({'token': t})
     except AuthenticationException as e:
         return bad_request(e.http_message)
+
+
+class BusinessmansList(BaseListAPIView):
+
+    serializer_class = BusinessmanListSerializer
+
+    def get_queryset(self):
+        return customer_data_service.get_all_businessmans(self.request.user)

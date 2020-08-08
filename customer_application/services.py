@@ -65,6 +65,11 @@ class CustomerLoginTokensService:
         t = jwt.encode({'customer_phone': customer.phone, 'customer_id': customer.id, 'iat': timezone.now().utcnow()}, secret, algorithm='HS256')
         return CustomerLoginTokens.objects.create(customer=customer, user_agent=user_agent, token=t)
 
+    def get_customer_by_token(self, token: str, user_agent: str) -> Customer:
+        try:
+            return CustomerLoginTokens.objects.get(token=token, user_agent=user_agent).customer
+        except ObjectDoesNotExist:
+            AuthenticationException.for_login_token_does_not_exist()
 
 class CustomerAuthService:
 
@@ -100,6 +105,17 @@ class CustomerAuthService:
             logger.error(e)
             AuthenticationException.for_customer_by_phone_does_not_exist()
 
+    def get_customer_by_login_token(self, token: str, user_agent: str) -> Customer:
+        return self._login_token_service.get_customer_by_token(token, user_agent)
+
 
 customer_auth_service = CustomerAuthService()
 
+
+class CustomerDataService:
+
+    def get_all_businessmans(self, customer: Customer):
+        return customer.businessmans.order_by('-connected_customers__create_date').all()
+
+
+customer_data_service = CustomerDataService()
