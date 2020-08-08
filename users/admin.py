@@ -5,7 +5,8 @@ from django.shortcuts import redirect, render
 from django.urls import reverse, path
 from django.utils.html import format_html
 from kavenegar import APIException
-from .models import Businessman, Customer, VerificationCodes, AuthStatus, BusinessCategory, CustomerOneTimePasswords
+from .models import Businessman, Customer, VerificationCodes, AuthStatus, BusinessCategory, CustomerOneTimePasswords, \
+    BusinessmanCustomer
 from . import forms
 
 
@@ -142,7 +143,7 @@ admin.site.register(VerificationCodes, VerificationCodeAdminModel)
 
 class CustomerAdmin(admin.ModelAdmin):
     exclude = ['last_login']
-    list_display = ['phone', 'id', 'full_name', 'register_date', 'businessman']
+    list_display = ['phone', 'id', 'full_name', 'register_date']
 
 
 admin.site.register(Customer, CustomerAdmin)
@@ -155,3 +156,5 @@ class BusinessCategoryAdminModel(admin.ModelAdmin):
 admin.site.register(BusinessCategory, BusinessCategoryAdminModel)
 
 admin.site.register(CustomerOneTimePasswords)
+
+admin.site.register(BusinessmanCustomer)

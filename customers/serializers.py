@@ -61,6 +61,7 @@ class CustomerListCreateSerializer(serializers.ModelSerializer):
     invitations_total = serializers.SerializerMethodField(read_only=True)
     used_discounts_total = serializers.SerializerMethodField(read_only=True)
     invited_purchases_total = serializers.SerializerMethodField(read_only=True)
+    date_joined = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = Customer
@@ -106,11 +107,16 @@ class CustomerListCreateSerializer(serializers.ModelSerializer):
     def get_invited_purchases_total(self, obj: Customer):
         return FriendInvitation.customer_all_invited_friend_purchases_sum(self.context['user'], obj)
 
+    def get_date_joined(self, obj: Customer):
+        user = self.context['user']
+        return customer_service.get_date_joined(obj, user)
+
+
     def validate_phone(self, value):
 
         user = self.context['user']
 
-        if user.customers.filter(phone=value).count() > 0:
+        if not customer_service.is_phone_number_unique_for_register(user, value):
             raise serializers.ValidationError('مشتری دیگری با این شماره تلفن قبلا ثبت شده')
 
         return value
@@ -124,7 +130,8 @@ class CustomerListCreateSerializer(serializers.ModelSerializer):
         #
         #     sms.send_message(obj.phone, message)
 
-        return Customer().register(user, validated_data.get('phone'), validated_data.get('full_name'))
+        # return Customer().register(user, validated_data.get('phone'), validated_data.get('full_name'))
+        return customer_service.add_customer(user, validated_data.get('phone'), validated_data.get('full_name'))
 
 
 class CustomerSerializer(CustomerListCreateSerializer):
@@ -159,32 +166,33 @@ class CustomerSerializer(CustomerListCreateSerializer):
         user = self.context['user']
 
         customer_id = self.context.get('customer_id')
+        c = customer_service.get_customer_by_id(user, customer_id)
 
-        if user.customers.exclude(id=customer_id).filter(phone=value).count() > 0:
+        if not customer_service.is_phone_number_unique_for_update(user, c, value):
             raise serializers.ValidationError('مشتری دیگری با این شماره تلفن قبلا ثبت شده')
 
         return value
 
     def update(self, instance: Customer, validated_data):
-
-        old_phone = instance.phone
-        new_phone = validated_data.get('phone')
-        user = self.context['user']
-
-        for k, v in validated_data.items():
-
-            setattr(instance, k, v)
-
-        instance.save()
-
-        if (new_phone != old_phone) and (user.panelsetting.welcome_message is not None):
-            message = CustomerTemplate(user, user.panelsetting.welcome_message, instance).render_template()
-
-            sms = SystemSMSMessage()
-
-            sms.send_message(new_phone, message)
-
         return instance
+        # old_phone = instance.phone
+        # new_phone = validated_data.get('phone')
+        # user = self.context['user']
+        #
+        # for k, v in validated_data.items():
+        #
+        #     setattr(instance, k, v)
+        #
+        # instance.save()
+        #
+        # if (new_phone != old_phone) and (user.panelsetting.welcome_message is not None):
+        #     message = CustomerTemplate(user, user.panelsetting.welcome_message, instance).render_template()
+        #
+        #     sms = SystemSMSMessage()
+        #
+        #     sms.send_message(new_phone, message)
+        #
+        # return instance
 
     def create(self, validated_data):
         pass

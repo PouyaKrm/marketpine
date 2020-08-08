@@ -30,9 +30,6 @@ class BusinessmanGroups(BusinessmanManyToOneBaseModel):
         db_table = 'businessman_groups'
 
     def reset_customers(self, customers):
-
-        print(list(customers))
-
         # self.customers.exclude(customers__in=list(customers)).delete()
         #
         # for c in customers:

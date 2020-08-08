@@ -8,7 +8,7 @@ from . import jalali
 def get_template_context(customer: Customer, additional_context: dict = None):
 
     context = {'phone': customer.phone, 'telegram_id': customer.telegram_id, 'full_name': customer.full_name,
-               'instagram_id': customer.instagram_id, 'business_name': customer.businessman.business_name}
+               'instagram_id': customer.instagram_id, 'business_name': customer.businessmans.business_name}
 
     if additional_context is not None:
         return {**context, **additional_context}

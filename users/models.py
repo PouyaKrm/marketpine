@@ -164,8 +164,8 @@ class Customer(AbstractBaseUser):
     full_name = models.CharField(max_length=40, null=True, blank=True)
     telegram_id = models.CharField(max_length=40, null=True, blank=True)
     instagram_id = models.CharField(max_length=40, null=True, blank=True)
-    businessman = models.ForeignKey(Businessman, related_name="customers",
-                                    on_delete=models.CASCADE, related_query_name='businessman')
+    businessmans = models.ManyToManyField(Businessman, related_name="customers", related_query_name='customers',
+                                          through='BusinessmanCustomer')
     email = models.EmailField(blank=True, null=True, unique=True)
     is_active = models.BooleanField(default=False)
     is_staff = models.BooleanField(default=False)
@@ -181,7 +181,7 @@ class Customer(AbstractBaseUser):
     class Meta:
         db_table = 'customers'
 
-        unique_together = ('businessman', 'phone')
+        # unique_together = ('businessman', 'phone')
 
     def __str__(self):
         return self.phone
@@ -212,3 +212,10 @@ class BusinessmanRefreshTokens(models.Model):
     expire_at = models.DateTimeField()
     ip = models.GenericIPAddressField()
     username = models.CharField(max_length=40)
+
+
+class BusinessmanCustomer(BaseModel):
+    customer = models.ForeignKey(Customer, on_delete=models.CASCADE, related_name='connected_businessmans',
+                                 related_query_name='connected_businessmans')
+    businessman = models.ForeignKey(Businessman, on_delete=models.PROTECT, related_name='connected_customers',
+                                    related_query_name='connected_customers')

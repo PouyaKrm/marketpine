@@ -3,10 +3,13 @@ from django.shortcuts import render
 from rest_framework import generics, mixins, permissions
 from rest_framework.generics import RetrieveAPIView
 from rest_framework.request import Request
+from rest_framework.response import Response
+
+from common.util.http_helpers import no_content
 from users.models import Customer
 from .serializers import CustomerSerializer, CustomerListCreateSerializer
 from .paginations import StandardResultsSetPagination
-
+from .services import customer_service
 
 
 class BusinessmanCustomerListAPIView(generics.ListAPIView, mixins.CreateModelMixin):
@@ -31,7 +34,8 @@ class BusinessmanCustomerListAPIView(generics.ListAPIView, mixins.CreateModelMix
         # customers_all   = Customer.objects.all()
         phone = self.request.query_params.get('phone', None)
         full_name = self.request.query_params.get('full_name', None)
-        query = user.customers.order_by('date_joined')
+        # query = user.customers.order_by('date_joined')
+        query = customer_service.get_businessman_customers(user)
         if (full_name and phone) is not None:
             return query.filter(full_name__icontains=full_name, phone__icontains=phone)
         elif full_name is not None:
@@ -72,3 +76,7 @@ class BusinessmanCustomerRetrieveAPIView(mixins.DestroyModelMixin, RetrieveAPIVi
 
     def delete(self, request, *args, **kwargs):
         return self.destroy(request, *args, **kwargs)
+
+    def destroy(self, request: Request, *args, **kwargs) -> Response:
+        customer_service.delete_customer_for_businessman(request.user, kwargs.get('pk'))
+        return no_content()

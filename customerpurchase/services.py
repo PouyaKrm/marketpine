@@ -13,7 +13,7 @@ discount_service = DiscountService()
 class PurchaseService:
 
     def re_evaluate_purchase_top_group(self, user: Businessman):
-        p = CustomerPurchase.objects.values('customer').annotate(purchase_sum=Sum('amount')).filter(
+        p = CustomerPurchase.objects.filter(businessman=user).values('customer').annotate(purchase_sum=Sum('amount')).filter(
             purchase_sum__gt=0).order_by('-purchase_sum')[:5]
         customers = []
         for c in p.all():
