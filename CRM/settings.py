@@ -126,6 +126,7 @@ INSTALLED_APPS = [
     'customer_return_plan.loyalty',
     'online_menu',
     'mobile_app_conf',
+    'customer_application',
     'background_task',
     'rest_framework_swagger',
     'django.contrib.admin',
