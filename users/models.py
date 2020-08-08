@@ -219,3 +219,6 @@ class BusinessmanCustomer(BaseModel):
                                  related_query_name='connected_businessmans')
     businessman = models.ForeignKey(Businessman, on_delete=models.PROTECT, related_name='connected_customers',
                                     related_query_name='connected_customers')
+
+    class Meta:
+        unique_together = ['businessman', 'customer']
