@@ -4,6 +4,7 @@ from django.db.models.aggregates import Sum
 from customer_return_plan.models import Discount
 from customer_return_plan.services import DiscountService
 from customerpurchase.models import CustomerPurchase
+from customers.services import customer_service
 from groups.models import BusinessmanGroups
 from users.models import Businessman, Customer
 
@@ -15,9 +16,10 @@ class PurchaseService:
     def re_evaluate_purchase_top_group(self, user: Businessman):
         p = CustomerPurchase.objects.filter(businessman=user).values('customer').annotate(purchase_sum=Sum('amount')).filter(
             purchase_sum__gt=0).order_by('-purchase_sum')[:5]
-        customers = []
+        customer_ids = []
         for c in p.all():
-            customers.append(c['customer'])
+            customer_ids.append(c['customer'])
+        customers = customer_service.get_bsuinessman_customers_by_ids(user, customer_ids)
         BusinessmanGroups.set_members_for_purchase_top(user, customers)
 
     def get_businessman_all_purchases(self, user: Businessman):

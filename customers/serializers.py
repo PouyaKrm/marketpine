@@ -43,7 +43,7 @@ class CustomerReadIdListRepresentRelatedField(serializers.RelatedField):
         #     raise serializers.ValidationError('not all customer ids are valid')
         # return query
         try:
-            return customer_service.get_customer_by_id(self.context['user'], data)
+            return customer_service.get_businessman_customer_by_id(self.context['user'], data)
         except ObjectDoesNotExist:
             raise serializers.ValidationError('not all customer ids are valid')
 
@@ -166,7 +166,7 @@ class CustomerSerializer(CustomerListCreateSerializer):
         user = self.context['user']
 
         customer_id = self.context.get('customer_id')
-        c = customer_service.get_customer_by_id(user, customer_id)
+        c = customer_service.get_businessman_customer_by_id(user, customer_id)
 
         if not customer_service.is_phone_number_unique_for_update(user, c, value):
             raise serializers.ValidationError('مشتری دیگری با این شماره تلفن قبلا ثبت شده')

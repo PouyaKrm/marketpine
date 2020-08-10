@@ -18,7 +18,7 @@ class CustomerService:
     def get_customer_by_id(self, customer_id: int) -> Customer:
         return Customer.objects.get(id=customer_id)
 
-    def get_customer_by_id(self, user: Businessman, customer_id: int):
+    def get_businessman_customer_by_id(self, user: Businessman, customer_id: int):
         return user.customers.get(id=customer_id)
 
     def get_customer_by_id_or_404(self, user: Businessman, customer_id: int):
@@ -26,6 +26,9 @@ class CustomerService:
 
     def get_businessman_customers(self, user: Businessman):
         return Customer.objects.filter(businessmans=user).all()
+
+    def get_bsuinessman_customers_by_ids(self, user: Businessman, customer_ids: [int]):
+        return Customer.objects.filter(businessmans=user, id__in=customer_ids).all()
 
     def get_customer_by_phone(self, phone: str) -> Customer:
         return Customer.objects.get(phone=phone)
