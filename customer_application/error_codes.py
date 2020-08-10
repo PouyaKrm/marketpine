@@ -5,6 +5,7 @@ class CustomerAppErrors:
     INVALID_PASSWORD = '2'
     ONE_TIME_PASSWORD_ALREADY_SENT = '3'
     LOGIN_TOKEN_DOES_NOT_EXIST = '4'
+    BUSINESSMAN_NOT_FOUND = '5'
 
     @staticmethod
     def error_dict(code, error: dict = None):

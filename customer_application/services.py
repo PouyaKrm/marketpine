@@ -5,9 +5,9 @@ from django.utils import timezone
 
 from common.util.kavenegar_local import APIException, HTTPException
 from customers.services import customer_service
-from customer_application.exceptions import AuthenticationException
+from customer_application.exceptions import CustomerServiceException
 from common.util.sms_panel.message import SystemSMSMessage
-from users.models import Customer
+from users.models import Customer, Businessman
 from .models import CustomerOneTimePasswords, CustomerLoginTokens
 import secrets
 import logging
@@ -34,12 +34,12 @@ class CustomerOneTimePasswordService:
         try:
             return CustomerOneTimePasswords.objects.get(customer=customer, code=code, expiration_time__gt=timezone.now())
         except ObjectDoesNotExist:
-            raise AuthenticationException.for_invalid_password()
+            raise CustomerServiceException.for_invalid_password()
 
     def _check_not_has_valid_one_time_password(self, customer: Customer):
         exist = CustomerOneTimePasswords.objects.filter(customer=customer, expiration_time__gt=timezone.now()).exists()
         if exist:
-            AuthenticationException.for_one_time_password_already_sent()
+            CustomerServiceException.for_one_time_password_already_sent()
 
     def resend_one_time_password(self, customer: Customer):
         try:
@@ -49,14 +49,14 @@ class CustomerOneTimePasswordService:
             p.save()
             self._send_one_time_password(customer.phone, p.code)
         except ObjectDoesNotExist:
-            AuthenticationException.for_invalid_password()
+            CustomerServiceException.for_invalid_password()
 
     def _send_one_time_password(self, phone, code):
         try:
             SystemSMSMessage().send_customer_one_time_password(phone, code)
         except (APIException, HTTPException) as e:
             logger.error(e)
-            AuthenticationException.for_password_send_failed()
+            CustomerServiceException.for_password_send_failed()
 
 
 class CustomerLoginTokensService:
@@ -69,7 +69,7 @@ class CustomerLoginTokensService:
         try:
             return CustomerLoginTokens.objects.get(token=token, user_agent=user_agent).customer
         except ObjectDoesNotExist:
-            AuthenticationException.for_login_token_does_not_exist()
+            CustomerServiceException.for_login_token_does_not_exist()
 
 class CustomerAuthService:
 
@@ -85,7 +85,7 @@ class CustomerAuthService:
         except (APIException, HTTPException) as e:
             logger.error(e)
             p.delete()
-            AuthenticationException.for_password_send_failed()
+            CustomerServiceException.for_password_send_failed()
 
     def login(self, phone: str, login_code: str, user_agent) -> str:
         c = self._get_customer(phone)
@@ -103,7 +103,7 @@ class CustomerAuthService:
             return customer_service.get_customer_by_phone(phone)
         except ObjectDoesNotExist as e:
             logger.error(e)
-            AuthenticationException.for_customer_by_phone_does_not_exist()
+            CustomerServiceException.for_customer_by_phone_does_not_exist()
 
     def get_customer_by_login_token(self, token: str, user_agent: str) -> Customer:
         return self._login_token_service.get_customer_by_token(token, user_agent)
@@ -116,6 +116,12 @@ class CustomerDataService:
 
     def get_all_businessmans(self, customer: Customer):
         return customer.businessmans.order_by('-connected_customers__create_date').all()
+
+    def get_businessman_of_customer_by_id(self, customer: Customer, businessman_id: int) -> Businessman:
+        try:
+            return customer.businessmans.get(id=businessman_id)
+        except ObjectDoesNotExist:
+            CustomerServiceException.for_businessman_not_found()
 
 
 customer_data_service = CustomerDataService()

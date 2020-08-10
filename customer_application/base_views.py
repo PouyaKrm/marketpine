@@ -1,11 +1,11 @@
 from rest_framework import exceptions
 from rest_framework.authentication import BaseAuthentication
-from rest_framework.generics import ListAPIView
+from rest_framework.generics import ListAPIView, RetrieveAPIView
 from rest_framework.request import Request
 from rest_framework.views import APIView
 
 from common.util.http_helpers import get_user_agent
-from customer_application.exceptions import AuthenticationException
+from customer_application.exceptions import CustomerServiceException
 from customer_application.services import customer_auth_service
 
 
@@ -22,7 +22,7 @@ class CustomerAuthenticationSchema(BaseAuthentication):
 
         try:
             return customer_auth_service.get_customer_by_login_token(token, user_agent), None
-        except AuthenticationException:
+        except CustomerServiceException:
             raise err
 
     def authenticate_header(self, request: Request):
@@ -35,6 +35,14 @@ class BaseAPIView(APIView):
 
 
 class BaseListAPIView(ListAPIView):
+
+    authentication_classes = [CustomerAuthenticationSchema]
+
+    def get_serializer_context(self):
+        return {'request': self.request}
+
+
+class BaseRetrieveAPIView(RetrieveAPIView):
 
     authentication_classes = [CustomerAuthenticationSchema]
 
