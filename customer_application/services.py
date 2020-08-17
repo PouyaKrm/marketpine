@@ -87,12 +87,12 @@ class CustomerAuthService:
             p.delete()
             CustomerServiceException.for_password_send_failed()
 
-    def login(self, phone: str, login_code: str, user_agent) -> str:
+    def login(self, phone: str, login_code: str, user_agent) -> dict:
         c = self._get_customer(phone)
         p = self._one_time_password_service.check_one_time_password(c, login_code)
         t = self._login_token_service.create_new_login_token(c, user_agent)
         p.delete()
-        return t.token
+        return {'token': t.token, 'date_joined': c.date_joined, 'phone': c.phone}
 
     def resend_one_time_password(self, phone):
         c = self._get_customer(phone)

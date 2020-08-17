@@ -6,6 +6,7 @@ from customer_application.exceptions import CustomerServiceException
 from customer_application.serializers import CustomerPhoneSerializer, CustomerLoginSerializer, \
     BaseBusinessmanSerializer, BusinessmanRetrieveSerializer
 from .base_views import CustomerAuthenticationSchema, BaseListAPIView, BaseRetrieveAPIView, BaseAPIView
+from .pagination import BusinessmanListPaginator
 from .services import customer_auth_service, customer_data_service
 
 
@@ -46,6 +47,7 @@ def customer_login(request: Request):
 class BusinessmansList(BaseListAPIView):
 
     serializer_class = BaseBusinessmanSerializer
+    pagination_class = BusinessmanListPaginator
 
     def get_queryset(self):
         return customer_data_service.get_all_businessmans(self.request.user)
