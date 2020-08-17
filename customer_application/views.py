@@ -39,7 +39,7 @@ def customer_login(request: Request):
     code = sr.validated_data.get('code')
     try:
         t = customer_auth_service.login(phone, code, ua)
-        return ok({'token': t})
+        return ok(t)
     except CustomerServiceException as e:
         return bad_request(e.http_message)
 
