@@ -159,7 +159,7 @@ class CustomerManager(BaseUserManager):
 
 class Customer(AbstractBaseUser):
     password = None
-    phone = models.CharField(max_length=15)
+    phone = models.CharField(max_length=15, unique=True)
     register_date = models.DateTimeField(auto_now_add=True)
     full_name = models.CharField(max_length=40, null=True, blank=True)
     telegram_id = models.CharField(max_length=40, null=True, blank=True)
