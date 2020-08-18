@@ -62,7 +62,7 @@ class CustomerOneTimePasswordService:
 class CustomerLoginTokensService:
 
     def create_new_login_token(self, customer: Customer, user_agent: str) -> CustomerLoginTokens:
-        t = jwt.encode({'customer_phone': customer.phone, 'customer_id': customer.id, 'iat': timezone.now().utcnow()}, secret, algorithm='HS256')
+        t = jwt.encode({'customer_phone': customer.phone, 'customer_id': customer.id, 'iat': timezone.now().utcnow()}, secret, algorithm='HS256').decode('UTF-8')
         return CustomerLoginTokens.objects.create(customer=customer, user_agent=user_agent, token=t)
 
     def get_customer_by_token(self, token: str, user_agent: str) -> Customer:
