@@ -4,6 +4,7 @@ from rest_framework import serializers
 from base_app.serializers import BaseModelSerializerWithRequestObj
 from common.util.custom_validators import phone_validator
 from customer_application.services import customer_data_service
+from customer_return_plan.invitation.services import invitation_service
 from customers.services import customer_service
 from mobile_app_conf.models import MobileAppPageConf, MobileAppHeader
 from mobile_app_conf.serializers import MobileAppPageConfSerializer, FileFieldWithLinkRepresentation
@@ -47,6 +48,7 @@ class CustomerLoginSerializer(CustomerPhoneSerializer):
 class BaseBusinessmanSerializer(BaseModelSerializerWithRequestObj):
     date_joined = serializers.SerializerMethodField(read_only=True)
     customers_total = serializers.SerializerMethodField(read_only=True)
+    is_invitation_enabled = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = Businessman
@@ -55,7 +57,8 @@ class BaseBusinessmanSerializer(BaseModelSerializerWithRequestObj):
             'business_name',
             'date_joined',
             'logo',
-            'customers_total'
+            'customers_total',
+            'is_invitation_enabled'
         ]
 
     def get_date_joined(self, obj: Businessman):
@@ -64,10 +67,11 @@ class BaseBusinessmanSerializer(BaseModelSerializerWithRequestObj):
     def get_customers_total(self, obj: Businessman):
         return obj.customers.count()
 
+    def get_is_invitation_enabled(self, obj: Businessman):
+        return invitation_service.is_invitation_enabled(obj)
 
 
 class BusinessmanMobileAppHeaderSerializer(serializers.ModelSerializer):
-
     header_image = FileFieldWithLinkRepresentation()
 
     class Meta:
@@ -79,7 +83,6 @@ class BusinessmanMobileAppHeaderSerializer(serializers.ModelSerializer):
 
 
 class BusinessmanPageDataSerializer(serializers.ModelSerializer):
-
     headers = BusinessmanMobileAppHeaderSerializer(many=True, read_only=True)
 
     class Meta:
@@ -94,7 +97,6 @@ class BusinessmanPageDataSerializer(serializers.ModelSerializer):
 
 
 class BusinessmanRetrieveSerializer(BaseBusinessmanSerializer):
-
     page_data = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
@@ -105,9 +107,10 @@ class BusinessmanRetrieveSerializer(BaseBusinessmanSerializer):
             'date_joined',
             'logo',
             'customers_total',
-            'page_data'
+            'is_invitation_enabled',
+            'page_data',
         ]
 
     def get_page_data(self, obj: Businessman):
-        p =  mobile_page_conf_service.get_businessman_conf_or_create(obj)
+        p = mobile_page_conf_service.get_businessman_conf_or_create(obj)
         return BusinessmanPageDataSerializer(p, context={'request': self.request}).data
