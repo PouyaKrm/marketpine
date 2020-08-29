@@ -146,3 +146,6 @@ class SendSMSMessage:
 
     def welcome_message(self, template: str, user: Businessman, customer) -> SMSMessage:
         return self.send_by_template(user, [customer], template, SMSMessage.USED_FOR_WELCOME_MESSAGE)
+
+
+sms_message_service = SendSMSMessage()

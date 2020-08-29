@@ -29,3 +29,7 @@ class CustomerServiceException(Exception):
     @staticmethod
     def for_businessman_not_found():
         raise CustomerServiceException(CustomerAppErrors.error_dict(CustomerAppErrors.BUSINESSMAN_NOT_FOUND))
+
+    @staticmethod
+    def for_friend_already_invited():
+        raise CustomerServiceException(CustomerAppErrors.error_dict(CustomerAppErrors.FRIEND_ALREADY_INVITED))

@@ -123,5 +123,8 @@ class CustomerDataService:
         except ObjectDoesNotExist:
             CustomerServiceException.for_businessman_not_found()
 
+    def is_customer_jouned_to_businessman(self, customer: Customer, businessman_id) -> bool:
+        return customer.businessmans.filter(id=businessman_id).exists()
+
 
 customer_data_service = CustomerDataService()

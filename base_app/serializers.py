@@ -3,13 +3,12 @@ from rest_framework import serializers
 
 def get_request_obj(*args, **kwargs):
     context = kwargs.get('context')
-    request = kwargs.get('request')
 
-    if context is not None and context['request'] is not None:
+    if context is not None and context.get('request') is not None:
         return context['request']
 
-    elif request is not None:
-        return request
+    elif kwargs.keys().__contains__('request'):
+        return kwargs.pop('request')
 
 
 class BaseModelSerializerWithRequestObj(serializers.ModelSerializer):
@@ -23,4 +22,6 @@ class BaseSerializerWithRequestObj(serializers.Serializer):
 
     def __init__(self, *args, **kwargs):
         self.request = get_request_obj(*args, **kwargs)
+        if self.request is not None:
+            kwargs.pop('request')
         super().__init__(*args, **kwargs)

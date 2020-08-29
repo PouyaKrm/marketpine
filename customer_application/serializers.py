@@ -1,12 +1,28 @@
+from django.db.models import QuerySet
 from rest_framework import serializers
 
 from base_app.serializers import BaseModelSerializerWithRequestObj
 from common.util.custom_validators import phone_validator
+from customer_application.services import customer_data_service
 from customers.services import customer_service
 from mobile_app_conf.models import MobileAppPageConf, MobileAppHeader
 from mobile_app_conf.serializers import MobileAppPageConfSerializer, FileFieldWithLinkRepresentation
 from mobile_app_conf.services import mobile_page_conf_service
 from users.models import Businessman
+
+
+class BusinessmanIdRelatedField(serializers.RelatedField):
+
+    def get_queryset(self) -> QuerySet:
+        c = self.context['user']
+        return customer_data_service.get_all_businessmans(c)
+
+    def to_internal_value(self, data: int):
+        if data is None or type(data) != int or data <= 0:
+            raise serializers.ValidationError('invalid businessman Id')
+        if not customer_data_service.is_customer_jouned_to_businessman(self.context['user'], data):
+            raise serializers.ValidationError('customer is not joined to this businessman')
+        return customer_data_service.get_businessman_of_customer_by_id(self.context['user'], data)
 
 
 class CustomerPhoneSerializer(serializers.Serializer):
