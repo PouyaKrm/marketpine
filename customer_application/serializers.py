@@ -48,7 +48,7 @@ class CustomerLoginSerializer(CustomerPhoneSerializer):
 class BaseBusinessmanSerializer(BaseModelSerializerWithRequestObj):
     date_joined = serializers.SerializerMethodField(read_only=True)
     customers_total = serializers.SerializerMethodField(read_only=True)
-    is_invitation_enabled = serializers.SerializerMethodField(read_only=True)
+    invitation_discount = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = Businessman
@@ -58,7 +58,7 @@ class BaseBusinessmanSerializer(BaseModelSerializerWithRequestObj):
             'date_joined',
             'logo',
             'customers_total',
-            'is_invitation_enabled'
+            'invitation_discount'
         ]
 
     def get_date_joined(self, obj: Businessman):
@@ -67,8 +67,11 @@ class BaseBusinessmanSerializer(BaseModelSerializerWithRequestObj):
     def get_customers_total(self, obj: Businessman):
         return obj.customers.count()
 
-    def get_is_invitation_enabled(self, obj: Businessman):
-        return invitation_service.is_invitation_enabled(obj)
+    def get_invitation_discount(self, obj: Businessman):
+        setting = invitation_service.get_businessman_invitation_setting_or_create(obj)
+        return {'disabled': setting.disabled, 'percent_off': setting.percent_off,
+                'flat_rate_off': setting.flat_rate_off, 'discount_type': setting.discount_type}
+
 
 
 class BusinessmanMobileAppHeaderSerializer(serializers.ModelSerializer):
@@ -107,7 +110,7 @@ class BusinessmanRetrieveSerializer(BaseBusinessmanSerializer):
             'date_joined',
             'logo',
             'customers_total',
-            'is_invitation_enabled',
+            'invitation_discount',
             'page_data',
         ]
 
