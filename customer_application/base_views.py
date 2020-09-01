@@ -6,6 +6,7 @@ from rest_framework.views import APIView
 
 from common.util.http_helpers import get_user_agent
 from customer_application.exceptions import CustomerServiceException
+from customer_application.pagination import CustomerAppListPaginator
 from customer_application.services import customer_auth_service
 
 
@@ -37,6 +38,7 @@ class BaseAPIView(APIView):
 class BaseListAPIView(ListAPIView):
 
     authentication_classes = [CustomerAuthenticationSchema]
+    pagination_class = CustomerAppListPaginator
 
     def get_serializer_context(self):
         return {'request': self.request}
