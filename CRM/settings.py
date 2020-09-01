@@ -52,7 +52,7 @@ hcrTQYQs+QvhU9QitwIDAQAB
 
 
 REFRESH_TOKEN_EXP_DELTA = timezone.timedelta(days=1)
-CUSTOMER_ONE_TIME_PASSWORD_EXPIRE_DELTA = timezone.timedelta(minutes=10)
+
 
 PAGINATION_PAGE_NUM = 25
 
@@ -302,12 +302,6 @@ CORS_EXPOSE_HEADERS = [
     'content-type',
 ]
 
-try:
-    from .local_settings import *
-except ImportError:
-    pass
-
-
 
 ZARINPAL={
     'url': 'https://www.zarinpal.com/pg/services/WebGate/wsdl',
@@ -352,3 +346,13 @@ DEFAULT_BUSINESS_CATEGORY = [
     'رستوران',
     'کافی شاپ',
 ]
+
+
+try:
+    from .local_settings import *
+except ImportError:
+    pass
+
+
+from .customer_app_settings import *
+
