@@ -16,7 +16,7 @@ class CustomerOneTimePasswords(BaseModel):
 
 
 class CustomerLoginTokens(BaseModel):
-    token = models.TextField()
+    token = models.TextField(unique=True)
     user_agent = models.TextField()
     customer = models.ForeignKey(Customer, on_delete=models.CASCADE, related_query_name='login_tokens',
                                  related_name='login_tokens')
