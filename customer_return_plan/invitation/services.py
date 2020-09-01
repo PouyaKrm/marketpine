@@ -49,10 +49,10 @@ class FriendInvitationService:
     def _create_invitation_discount(self, invite_settings: FriendInvitationSettings,
                                     businessman: Businessman) -> Discount:
 
-        return discount_service.create_discount(businessman, False, invite_settings.discount_type, True,
-                                                percent_off=invite_settings.percent_off,
-                                                flat_rate_off=invite_settings.flat_rate_off
-                                                )
+        return discount_service.create_invitation_discount(businessman, False, invite_settings.discount_type, True,
+                                                           percent_off=invite_settings.percent_off,
+                                                           flat_rate_off=invite_settings.flat_rate_off
+                                                           )
 
     def _send_invitation_message(self, businessman: Businessman, invitation_settings: FriendInvitationSettings,
                                  invited: Customer) -> SMSMessage:

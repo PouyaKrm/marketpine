@@ -62,19 +62,19 @@ class CustomerDiscountsListAPIView(ListAPIView):
     def get_queryset(self):
         use_state = self.request.query_params.get('ust')
         customer = customer_service.get_customer_by_id_or_404(self.request.user, self.kwargs.get('customer_id'))
-        default = discount_service.get_customer_discounts_by_customer(self.request.user, customer)
+        default = discount_service.get_customer_discounts_for_businessman(self.request.user, customer)
         if use_state is None:
             return default
 
         use_state = use_state.lower()
 
         if use_state == 'used':
-            return discount_service.get_customer_used_discounts(self.request.user, customer)
+            return discount_service.get_customer_used_discounts_for_businessman(self.request.user, customer)
         elif use_state == 'unused':
-            return discount_service.get_customer_unused_discounts(self.request.user, customer)
+            return discount_service.get_customer_unused_discounts_for_businessman(self.request.user, customer)
 
         elif use_state == 'available':
-            return discount_service.get_customer_available_discounts(self.request.user, customer)
+            return discount_service.get_customer_available_discounts_for_businessman(self.request.user, customer)
         else:
             return default
 

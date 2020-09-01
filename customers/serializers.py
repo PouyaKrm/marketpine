@@ -97,7 +97,7 @@ class CustomerListCreateSerializer(serializers.ModelSerializer):
         return FriendInvitation.customer_total_invitations_count(obj)
 
     def get_used_discounts_total(self, obj: Customer):
-        return discount_service.get_customer_used_discounts(self.context['user'], obj).count()
+        return discount_service.get_customer_used_discounts_for_businessman(self.context['user'], obj).count()
 
     def get_has_discount(self, obj: Customer):
         user = self.context['user']

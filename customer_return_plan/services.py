@@ -167,7 +167,7 @@ class DiscountService:
             discount.save()
         return True
 
-    def get_customer_discounts_by_customer(self, user: Businessman, customer: Customer):
+    def get_customer_discounts_for_businessman(self, user: Businessman, customer: Customer):
 
         # customer = customer_service.get_customer_by_id(user, customer_id)
 
@@ -184,13 +184,15 @@ class DiscountService:
 
         return festival_discounts
 
-    def get_customer_unused_discounts(self, user: Businessman, customer: Customer):
-        return self.get_customer_discounts_by_customer(user, customer) \
+    # def get_customer_discount_by_customer
+
+    def get_customer_unused_discounts_for_businessman(self, user: Businessman, customer: Customer):
+        return self.get_customer_discounts_for_businessman(user, customer) \
             .exclude(
             connected_purchases__customer=customer)
 
-    def get_customer_available_discounts(self, user: Businessman, customer: Customer):
-        return self.get_customer_discounts_by_customer(user, customer) \
+    def get_customer_available_discounts_for_businessman(self, user: Businessman, customer: Customer):
+        return self.get_customer_discounts_for_businessman(user, customer) \
             .exclude(expires=True, expire_date__lt=timezone.now()) \
             .exclude(festival__marked_as_deleted_for_businessman=True) \
             .exclude(
@@ -198,27 +200,28 @@ class DiscountService:
 
     def can_customer_use_discount(self, businessman: Businessman, discount: Discount, customer: Customer) -> bool:
 
-        return self.get_customer_available_discounts(businessman, customer).filter(id=discount.id).exists()
+        return self.get_customer_available_discounts_for_businessman(businessman, customer).filter(
+            id=discount.id).exists()
 
     def has_customer_any_discount(self, businessman: Businessman, customer: Customer) -> bool:
 
-        return self.get_customer_available_discounts(businessman, customer).exists()
+        return self.get_customer_available_discounts_for_businessman(businessman, customer).exists()
 
-    def get_customer_used_discounts(self, user: Businessman, customer: Customer):
-        return self.get_customer_discounts_by_customer(user, customer) \
+    def get_customer_used_discounts_for_businessman(self, user: Businessman, customer: Customer):
+        return self.get_customer_discounts_for_businessman(user, customer) \
             .filter(connected_purchases__customer=customer).order_by('-purchase_discount__create_date')
 
     def get_customer_loyalty_amount_discounts(self, user: Businessman, customer: Customer):
-        return self.get_customer_discounts_by_customer(user, customer).filter(
+        return self.get_customer_discounts_for_businessman(user, customer).filter(
             used_for=Discount.USED_FOR_LOYALTY_AMOUNT)
 
     def get_customer_loyalty_number_discounts(self, user: Businessman, customer: Customer):
-        return self.get_customer_discounts_by_customer(user, customer).filter(
+        return self.get_customer_discounts_for_businessman(user, customer).filter(
             used_for=Discount.USED_FOR_LOYALTY_NUMBER)
 
     def get_customer_used_discounts_sum_amount(self, user: Businessman, customer: Customer):
         val = 0
-        for d in self.get_customer_used_discounts(user, customer).all():
+        for d in self.get_customer_used_discounts_for_businessman(user, customer).all():
             val += d.amount_of_discount_for_customer(customer)
         return val
 
@@ -258,7 +261,8 @@ class DiscountService:
         :param discount_ids: ids of the discounts
         :return: list of tuples in order of (discount_type, percent_off, flat_rate_off)
         """
-        return self.get_customer_unused_discounts(businessman, customer).filter(id__in=discount_ids).order_by(
+        return self.get_customer_unused_discounts_for_businessman(businessman, customer).filter(
+            id__in=discount_ids).order_by(
             'create_date')
 
     def delete_discount(self, user: Businessman, discount_id: int) -> (bool, Discount):
@@ -288,4 +292,33 @@ class DiscountService:
         return self.get_num_of_customers_used_discount(festival.discount)
 
 
+class CustomerDiscountService:
+
+    def get_customer_discounts(self, customer: Customer):
+        discounts = Discount.objects.annotate(
+            purchase_sum_of_invited=Sum('inviter_discount__invited__purchases__amount')).filter(businessman__customers=customer)\
+            .filter(
+            Q(used_for=Discount.USED_FOR_FESTIVAL)
+            | Q(used_for=Discount.USED_FOR_INVITATION,
+                inviter_discount__inviter=customer, purchase_sum_of_invited__gt=0)
+            | Q(used_for=Discount.USED_FOR_INVITATION,
+                inviter_discount__inviter=customer, connected_purchases__customer=customer)
+            | Q(used_for=Discount.USED_FOR_INVITATION,
+                invited_discount__invited=customer)).distinct().order_by('-create_date')
+
+        return discounts
+
+    def get_customer_available_discount(self, customer: Customer):
+        return self.get_customer_discounts(customer) \
+            .exclude(expires=True, expire_date__lt=timezone.now()) \
+            .exclude(festival__marked_as_deleted_for_businessman=True) \
+            .exclude(
+            connected_purchases__customer=customer)
+
+    def get_customer_used_discounts(self, customer: Customer):
+        return self.get_customer_discounts(customer) \
+            .filter(connected_purchases__customer=customer).order_by('-purchase_discount__create_date')
+
+
 discount_service = DiscountService()
+customer_discount_service = CustomerDiscountService()
