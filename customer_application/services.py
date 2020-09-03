@@ -114,8 +114,11 @@ customer_auth_service = CustomerAuthService()
 
 class CustomerDataService:
 
-    def get_all_businessmans(self, customer: Customer):
-        return customer.businessmans.order_by('-connected_customers__create_date').all()
+    def get_all_businessmans(self, customer: Customer, business_name: str = None):
+        query = customer.businessmans.order_by('-connected_customers__create_date')
+        if business_name is not None and business_name.strip() != '':
+            query = query.filter(business_name__icontains=business_name)
+        return query.all()
 
     def get_businessman_of_customer_by_id(self, customer: Customer, businessman_id: int) -> Businessman:
         try:

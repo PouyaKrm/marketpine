@@ -50,7 +50,8 @@ class BusinessmansList(BaseListAPIView):
     pagination_class = CustomerAppListPaginator
 
     def get_queryset(self):
-        return customer_data_service.get_all_businessmans(self.request.user)
+        bn = self.request.query_params.get('bn', None)
+        return customer_data_service.get_all_businessmans(self.request.user, bn)
 
     def get_object(self):
         return customer_data_service.get_all_businessmans(self.request.user)
