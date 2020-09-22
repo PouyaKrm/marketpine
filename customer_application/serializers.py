@@ -49,6 +49,7 @@ class BaseBusinessmanSerializer(BaseModelSerializerWithRequestObj):
     date_joined = serializers.SerializerMethodField(read_only=True)
     customers_total = serializers.SerializerMethodField(read_only=True)
     invitation_discount = serializers.SerializerMethodField(read_only=True)
+    logo = FileFieldWithLinkRepresentation()
 
     class Meta:
         model = Businessman
@@ -60,6 +61,8 @@ class BaseBusinessmanSerializer(BaseModelSerializerWithRequestObj):
             'customers_total',
             'invitation_discount'
         ]
+
+        extra_kwargs = {'logo': {'read_only': True}}
 
     def get_date_joined(self, obj: Businessman):
         return customer_service.get_date_joined(self.request.user, obj)

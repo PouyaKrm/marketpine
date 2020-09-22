@@ -1,5 +1,7 @@
 from rest_framework import serializers
 
+from common.util import create_link
+
 
 def get_request_obj(*args, **kwargs):
     context = kwargs.get('context')
@@ -17,12 +19,23 @@ def pop_request_if_exist(**kwargs):
         kw.pop('request')
     return kw
 
+def add_request_to_context_if_exist(request, **kwargs):
+    kw = kwargs.copy()
+    context = kw.get('context')
+    if context is None:
+        context = {}
+    if context.get('request') is None:
+        context['request'] = request
+    kw['context'] = context
+    return kw
+
 
 class BaseModelSerializerWithRequestObj(serializers.ModelSerializer):
 
     def __init__(self, *args, **kwargs):
         self.request = get_request_obj(*args, **kwargs)
         kw = pop_request_if_exist(**kwargs)
+        kw = add_request_to_context_if_exist(self.request, **kw)
         super().__init__(*args, **kw)
 
 
@@ -31,4 +44,13 @@ class BaseSerializerWithRequestObj(serializers.Serializer):
     def __init__(self, *args, **kwargs):
         self.request = get_request_obj(*args, **kwargs)
         kw = pop_request_if_exist(**kwargs)
+        kw = add_request_to_context_if_exist(self.request, **kw)
         super().__init__(*args, **kw)
+
+
+class FileFieldWithLinkRepresentation(serializers.FileField):
+
+    def to_representation(self, value):
+        if not value:
+            return None
+        return create_link(value.url, self.context['request'])

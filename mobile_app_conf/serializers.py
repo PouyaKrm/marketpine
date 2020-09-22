@@ -6,7 +6,8 @@ from rest_framework import serializers
 
 from django.conf import settings
 
-from base_app.serializers import BaseModelSerializerWithRequestObj, BaseSerializerWithRequestObj
+from base_app.serializers import BaseModelSerializerWithRequestObj, BaseSerializerWithRequestObj, \
+    FileFieldWithLinkRepresentation
 from common.util import create_link, get_client_ip
 from common.util.custom_validators import file_size_validator
 from common.util.gelocation import geolocation_service, LocationAPIException
@@ -15,12 +16,6 @@ from .services import mobile_page_conf_service
 
 max_header_size = settings.MOBILE_APP_PAGE_CONF['MAX_HEADER_IMAGE_SIZE']
 max_allowed_headers = settings.MOBILE_APP_PAGE_CONF['MAX_ALLOWED_HEADERS']
-
-
-class FileFieldWithLinkRepresentation(serializers.FileField):
-
-    def to_representation(self, value):
-        return create_link(value.url, self.context['request'])
 
 
 class MobileHeaderIdShowOrderField(serializers.Field):
