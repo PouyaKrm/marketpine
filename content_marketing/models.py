@@ -59,6 +59,7 @@ class Post(models.Model):
     send_sms = models.BooleanField(default=False)
     sms_sent = models.BooleanField(default=False)
     send_pwa = models.BooleanField(default=False)
+    remaining_pwa_notif_customers = models.ManyToManyField(Customer, blank=True)
     # is_active = models.BooleanField(default=False)
 
     def __str__(self):
