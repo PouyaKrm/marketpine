@@ -4,6 +4,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.utils import timezone
 
 from common.util.kavenegar_local import APIException, HTTPException
+from customer_return_plan.festivals.services import festival_service
 from customers.services import customer_service
 from customer_application.exceptions import CustomerServiceException
 from common.util.sms_panel.message import SystemSMSMessage
@@ -128,6 +129,13 @@ class CustomerDataService:
 
     def is_customer_jouned_to_businessman(self, customer: Customer, businessman_id) -> bool:
         return customer.businessmans.filter(id=businessman_id).exists()
+
+    def get_notifications(self, customer: Customer):
+        f = festival_service.get_customer_latest_festival_for_notif(customer)
+        return f
+
+
+
 
 
 customer_data_service = CustomerDataService()

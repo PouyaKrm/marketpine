@@ -4,6 +4,7 @@ from rest_framework import serializers
 from base_app.serializers import BaseModelSerializerWithRequestObj
 from common.util.custom_validators import phone_validator
 from customer_application.services import customer_data_service
+from customer_return_plan.festivals.models import Festival
 from customer_return_plan.invitation.services import invitation_service
 from customers.services import customer_service
 from mobile_app_conf.models import MobileAppPageConf, MobileAppHeader
@@ -120,3 +121,22 @@ class BusinessmanRetrieveSerializer(BaseBusinessmanSerializer):
     def get_page_data(self, obj: Businessman):
         p = mobile_page_conf_service.get_businessman_conf_or_create(obj)
         return BusinessmanPageDataSerializer(p, context={'request': self.request}).data
+
+
+class FestivalNotificationSerializer(BaseModelSerializerWithRequestObj):
+    businessman = serializers.SerializerMethodField(read_only=True)
+
+    class Meta:
+        model = Festival
+        fields = [
+            'id',
+            'name',
+            'businessman'
+        ]
+
+    def get_businessman(self, f: Festival):
+        if f:
+            d = BaseBusinessmanSerializer(f.businessman, request=self.request).data
+            return d
+        return None
+

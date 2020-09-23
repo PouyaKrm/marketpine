@@ -4,7 +4,7 @@ from rest_framework.request import Request
 from common.util.http_helpers import bad_request, no_content, get_user_agent, ok
 from customer_application.exceptions import CustomerServiceException
 from customer_application.serializers import CustomerPhoneSerializer, CustomerLoginSerializer, \
-    BaseBusinessmanSerializer, BusinessmanRetrieveSerializer
+    BaseBusinessmanSerializer, BusinessmanRetrieveSerializer, FestivalNotificationSerializer
 from .base_views import CustomerAuthenticationSchema, BaseListAPIView, BaseRetrieveAPIView, BaseAPIView
 from .pagination import CustomerAppListPaginator
 from .services import customer_auth_service, customer_data_service
@@ -73,3 +73,10 @@ class BusinessmanRetrieveAPIView(BaseAPIView):
         except CustomerServiceException as e:
             return bad_request(e.http_message)
 
+
+class NotificationAPIView(BaseAPIView):
+
+    def get(self, request):
+        f = customer_data_service.get_notifications(self.request.user)
+        sr = FestivalNotificationSerializer(f, request=self.request)
+        return ok(sr.data)
