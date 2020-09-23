@@ -18,6 +18,8 @@ class Festival(BusinessmanManyToOneBaseModel):
     message_sent = models.BooleanField(default=False)
     discount = models.OneToOneField(Discount, on_delete=models.PROTECT, null=True)
     marked_as_deleted_for_businessman = models.BooleanField(default=False)
+    send_pwa_notif = models.BooleanField(default=False)
+    remaining_pwa_notif_customers = models.ManyToManyField(Customer)
 
     class Meta:
         pass
