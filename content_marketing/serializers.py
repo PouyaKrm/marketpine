@@ -8,6 +8,7 @@ from rest_framework.exceptions import ValidationError
 
 from common.util import create_link, create_field_error, create_detail_error
 from common.util.custom_validators import sms_not_contains_link
+from customers.services import customer_service
 from smspanel.models import SMSMessage, SMSMessageReceivers
 from smspanel.services import SendSMSMessage
 from .models import Post, Comment, Like, ContentMarketingSettings
@@ -140,6 +141,7 @@ class UploadListPostSerializer(BasePostSerializer):
     def create(self, validated_data: dict):
         request = self.context['request']
         send_sms = validated_data.get('send_sms')
+        send_pwa = validated_data.get('send_pwa')
         template = None
         if send_sms:
             template = validated_data.pop('notif_sms_template')
@@ -149,9 +151,14 @@ class UploadListPostSerializer(BasePostSerializer):
         if send_sms:
             messenger = SendSMSMessage()
             post.notif_sms = messenger.content_marketing_message_status_cancel(user=request.user, template=template)
+        if send_pwa:
+            post.send_pwa = True
+            c = customer_service.get_businessman_customers(request.user)
+            post.remaining_pwa_notif_customers.set(c)
         post.video_url = create_link(post.videofile.url, request)
         post.save()
         return post
+
 
 
 

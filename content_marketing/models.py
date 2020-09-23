@@ -89,7 +89,7 @@ def send_message_video_is_confirmed(sender, instance: Post, *args, **kwargs):
         if obj.confirmation_status != instance.confirmation_status:
             if instance.confirmation_status is PostConfirmationStatus.ACCEPTED:
                 messenger.send_message(instance.businessman.phone, video_confirm_message.format(title=instance.title))
-                if not instance.sms_sent:
+                if instance.send_sms and not instance.sms_sent:
                     SendSMSMessage().set_message_to_pending(instance.notif_sms)
                     instance.sms_sent = True
                     instance.save()
