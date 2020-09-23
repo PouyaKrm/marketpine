@@ -6,6 +6,7 @@ from rest_framework import serializers
 from common.util import generate_discount_code, DiscountType
 from customer_return_plan.festivals.services import FestivalService
 from customer_return_plan.services import DiscountService
+from customers.services import customer_service
 from smspanel.services import SendSMSMessage
 from users.models import Customer
 from .models import Festival
@@ -40,9 +41,10 @@ class BaseFestivalSerializer(serializers.ModelSerializer):
             # 'discount_code',
             'message',
             'message_sent',
+            'send_pwa_notif',
             # 'percent_off',
             # 'flat_rate_off',
-            'discount'
+            'discount',
         ]
 
         extra_kwargs = {'message_sent': {'read_only': True}}
@@ -117,8 +119,13 @@ class FestivalCreationSerializer(BaseFestivalSerializer):
                                                                       expires=True,
                                                                       expire_date=festival.end_date,
                                                                       **discount_data)
-
         festival.save()
+
+        if festival.send_pwa_notif:
+            c = customer_service.get_businessman_customers(user)
+            festival.remaining_pwa_notif_customers.set(c)
+            festival.save()
+
         return {'id': festival.id, **validated_data, 'message': message, 'discount': discount_data}
 
 
@@ -134,7 +141,8 @@ class FestivalListSerializer(serializers.ModelSerializer):
             'start_date',
             'end_date',
             'customers_total',
-            'discount_code'
+            'discount_code',
+            'send_pwa_notif'
         ]
 
     def get_customers_total(self, obj: Festival):
@@ -157,6 +165,7 @@ class RetrieveFestivalSerializer(NestedUpdateMixin, BaseFestivalSerializer):
             'end_date',
             'discount',
             'message',
+            'send_pwa_notif'
         ]
 
     def validate_name(self, value):
