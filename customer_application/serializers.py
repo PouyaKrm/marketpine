@@ -3,6 +3,7 @@ from rest_framework import serializers
 
 from base_app.serializers import BaseModelSerializerWithRequestObj
 from common.util.custom_validators import phone_validator
+from content_marketing.models import Post
 from customer_application.services import customer_data_service
 from customer_return_plan.festivals.models import Festival
 from customer_return_plan.invitation.services import invitation_service
@@ -138,5 +139,22 @@ class FestivalNotificationSerializer(BaseModelSerializerWithRequestObj):
         if f:
             d = BaseBusinessmanSerializer(f.businessman, request=self.request).data
             return d
-        return None
+        return {}
 
+
+class PostNotificationSerializer(BaseBusinessmanSerializer):
+
+    businessman = serializers.SerializerMethodField(read_only=True)
+
+    class Meta:
+        model = Post
+        fields = [
+            'id',
+            'businessman'
+        ]
+
+    def get_businessman(self, p: Post):
+        if p:
+            d = BaseBusinessmanSerializer(p.businessman, request=self.request).data
+            return d
+        return {}

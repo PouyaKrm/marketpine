@@ -4,7 +4,7 @@ from rest_framework.request import Request
 from common.util.http_helpers import bad_request, no_content, get_user_agent, ok
 from customer_application.exceptions import CustomerServiceException
 from customer_application.serializers import CustomerPhoneSerializer, CustomerLoginSerializer, \
-    BaseBusinessmanSerializer, BusinessmanRetrieveSerializer, FestivalNotificationSerializer
+    BaseBusinessmanSerializer, BusinessmanRetrieveSerializer, FestivalNotificationSerializer, PostNotificationSerializer
 from .base_views import CustomerAuthenticationSchema, BaseListAPIView, BaseRetrieveAPIView, BaseAPIView
 from .pagination import CustomerAppListPaginator
 from .services import customer_auth_service, customer_data_service
@@ -77,6 +77,12 @@ class BusinessmanRetrieveAPIView(BaseAPIView):
 class NotificationAPIView(BaseAPIView):
 
     def get(self, request):
-        f = customer_data_service.get_notifications(self.request.user)
-        sr = FestivalNotificationSerializer(f, request=self.request)
-        return ok(sr.data)
+        r = customer_data_service.get_notifications(self.request.user)
+        f_sr = None
+        p_sr = None
+        if r['festival'] is not None:
+            f_sr = FestivalNotificationSerializer(r['festival'], request=self.request).data
+
+        if r['post'] is not None:
+            p_sr = PostNotificationSerializer(r['post'], request=self.request).data
+        return ok({'festival': f_sr, 'post': p_sr})

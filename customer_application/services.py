@@ -9,6 +9,7 @@ from customers.services import customer_service
 from customer_application.exceptions import CustomerServiceException
 from common.util.sms_panel.message import SystemSMSMessage
 from users.models import Customer, Businessman
+from .customer_content_marketing.services import customer_app_content_marketing_service
 from .models import CustomerOneTimePasswords, CustomerLoginTokens
 import secrets
 import logging
@@ -130,12 +131,12 @@ class CustomerDataService:
     def is_customer_jouned_to_businessman(self, customer: Customer, businessman_id) -> bool:
         return customer.businessmans.filter(id=businessman_id).exists()
 
-    def get_notifications(self, customer: Customer):
+    def get_notifications(self, customer: Customer) -> dict:
         f = festival_service.get_customer_latest_festival_for_notif(customer)
-        return f
-
-
-
+        p = customer_app_content_marketing_service.get_post_for_notif(customer)
+        return {'festival': f, 'post': p}
 
 
 customer_data_service = CustomerDataService()
+
+
