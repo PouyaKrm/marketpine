@@ -138,6 +138,7 @@ INSTALLED_APPS = [
     'download',
     'download.profiledownload',
     'django_cleanup.apps.CleanupConfig',
+    'educations'
 
 ]
 
@@ -339,6 +340,11 @@ MOBILE_APP_PAGE_CONF = {
     'BASE_URL': '/mobile-app/',
     'MAX_HEADER_IMAGE_SIZE': 5000000,
     'MAX_ALLOWED_HEADERS': 4
+}
+
+EDUCATIONS = {
+    'SUB_DIR': 'educations/',
+    'BASE_URL': '/educations/'
 }
 
 DEFAULT_BUSINESS_CATEGORY = [
