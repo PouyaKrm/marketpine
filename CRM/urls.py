@@ -36,6 +36,7 @@ from device import urls as device_url
 from content_marketing import urls as content_url
 from online_menu import urls as menu_url
 from mobile_app_conf import urls as mobile_conf_urls
+from educations import urls as education_url
 
 from customer_application import urls as customer_auth_urls
 
@@ -60,7 +61,8 @@ urlpatterns = [
     path('api/salesman/content/',include(content_url)),
     path('api/salesman/payment/', include(payment_url)),
     path('api/salesman/menu/', include(menu_url)),
-    path('api/salesman/mobile-app/', include(mobile_conf_urls))
+    path('api/salesman/mobile-app/', include(mobile_conf_urls)),
+    path('api/salesman/educations/', include(education_url))
 ]
 
 if settings.DEBUG:
