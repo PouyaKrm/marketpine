@@ -4,15 +4,16 @@ from base_app.serializers import FileFieldWithLinkRepresentation
 from educations.models import EducationType, Education
 
 
-class EducationSerializer(serializers.ModelSerializer):
-    class EducationTypeSerializer(serializers.ModelSerializer):
-        class Meta:
-            model = EducationType
-            fields = [
-                'id',
-                'name'
-            ]
+class EducationTypeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = EducationType
+        fields = [
+            'id',
+            'name'
+        ]
 
+
+class EducationSerializer(serializers.ModelSerializer):
     education_type = EducationTypeSerializer(read_only=True)
     video = FileFieldWithLinkRepresentation
 
