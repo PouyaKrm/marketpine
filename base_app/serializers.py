@@ -54,3 +54,11 @@ class FileFieldWithLinkRepresentation(serializers.FileField):
         if not value:
             return None
         return create_link(value.url, self.context['request'])
+
+
+class ImageFiledWithLinkRepresentation(serializers.ImageField):
+    def to_representation(self, value):
+        if not value:
+            return None
+        return create_link(value.url, self.context['request'])
+

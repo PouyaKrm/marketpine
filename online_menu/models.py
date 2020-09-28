@@ -1,6 +1,6 @@
 from base_app.models import PublicFileStorage
 from django.db import models
-from users.models import BusinessmanOneToOneBaseModel, Businessman
+from users.models import BusinessmanOneToOneBaseModel, Businessman, BusinessmanManyToOneBaseModel
 # Create your models here.
 from django.conf import settings
 from common.util import generate_url_safe_base64_file_name
@@ -11,7 +11,7 @@ base_url = settings.ONLINE_MENU['BASE_URL']
 file_storage = PublicFileStorage(sub_dir, base_url=base_url)
 
 
-class OnlineMenu(BusinessmanOneToOneBaseModel):
+class OnlineMenu(BusinessmanManyToOneBaseModel):
     def get_upload_path(self, filename: str):
         return f'{self.businessman.id}/{generate_url_safe_base64_file_name(filename)}'
     file = models.ImageField(max_length=200, storage=file_storage, upload_to=get_upload_path)

@@ -331,7 +331,8 @@ CONTENT_MARKETING = {
 ONLINE_MENU = {
     'SUB_DIR': 'menus/',
     'BASE_URL': '/menu/',
-    'MAX_FILE_SIZE': 10000000
+    'MAX_FILE_SIZE': 10000000,
+    'MAX_ALLOWED_IMAGES': 10
 }
 
 
