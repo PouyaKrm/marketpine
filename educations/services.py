@@ -11,4 +11,5 @@ class EducationService:
     def get_all_education_types(self):
         return EducationType.objects.all()
 
+
 education_service = EducationService()
