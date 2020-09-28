@@ -3,6 +3,7 @@ from django.shortcuts import render
 # Create your views here.
 from rest_framework.decorators import api_view
 from rest_framework.generics import ListAPIView
+from rest_framework.pagination import PageNumberPagination
 
 from common.util.http_helpers import ok
 from educations.models import Education
@@ -10,9 +11,14 @@ from educations.serializers import EducationSerializer, EducationTypeSerializer
 from educations.services import education_service
 
 
+class EducationListPaginator(PageNumberPagination):
+    page_size = 6
+
+
 class EducationsListAPIView(ListAPIView):
 
     serializer_class = EducationSerializer
+    pagination_class = EducationListPaginator
 
     def get_queryset(self):
         type_id = self.request.query_params.get('type')
