@@ -16,11 +16,3 @@ class OnlineMenu(BusinessmanManyToOneBaseModel):
         return f'{self.businessman.id}/{generate_url_safe_base64_file_name(filename)}'
     image = models.ImageField(max_length=200, storage=file_storage, upload_to=get_upload_path)
     show_order = models.PositiveIntegerField(null=True)
-
-    @staticmethod
-    def delete_menu_for_user_if_exists(businessman: Businessman) -> bool:
-        if not OnlineMenu.objects.filter(businessman=businessman).exists():
-            return False
-        OnlineMenu.objects.filter(businessman=businessman).delete()
-        return True
-
