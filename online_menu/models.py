@@ -15,7 +15,5 @@ class OnlineMenu(BusinessmanManyToOneBaseModel):
     def get_upload_path(self, filename: str):
         return f'{self.businessman.id}/{generate_url_safe_base64_file_name(filename)}'
     image = models.ImageField(max_length=200, storage=file_storage, upload_to=get_upload_path)
-    show_order = models.PositiveIntegerField(null=True)
+    show_order = models.PositiveIntegerField(null=True, unique=True)
 
-    class Meta:
-        unique_together = ['id', 'show_order']
