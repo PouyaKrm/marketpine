@@ -14,7 +14,8 @@ file_storage = PublicFileStorage(sub_dir, base_url=base_url)
 class OnlineMenu(BusinessmanManyToOneBaseModel):
     def get_upload_path(self, filename: str):
         return f'{self.businessman.id}/{generate_url_safe_base64_file_name(filename)}'
-    file = models.ImageField(max_length=200, storage=file_storage, upload_to=get_upload_path)
+    image = models.ImageField(max_length=200, storage=file_storage, upload_to=get_upload_path)
+    show_order = models.PositiveIntegerField(null=True)
 
     @staticmethod
     def delete_menu_for_user_if_exists(businessman: Businessman) -> bool:
