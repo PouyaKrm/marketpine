@@ -3,6 +3,7 @@ from django.shortcuts import render, get_object_or_404
 from rest_framework import generics
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.parsers import MultiPartParser
+from rest_framework.request import Request
 from rest_framework.views import APIView
 
 from common.util import create_detail_error
@@ -20,7 +21,6 @@ class OnlineMenuAPIView(APIView):
     parser_classes = [MultiPartParser]
 
     def post(self, request):
-        context = {'request': request}
         serializer = OnlineMenuSerializer(data=request.data, request=request)
         if not serializer.is_valid():
             return bad_request(serializer.errors)
@@ -31,13 +31,24 @@ class OnlineMenuAPIView(APIView):
             return bad_request(create_detail_error('max allowed headers reached'))
         return ok(OnlineMenuSerializer(menu[1], request=request).data)
 
-    def delete(self, request):
-        result = OnlineMenu.delete_menu_for_user_if_exists(request.user)
-        if result:
-            return no_content()
-        return not_found(create_detail_error('user has no online menu'))
-
     def get(self, request):
         menus = online_menu_service.get_all_menus(request.user)
         serializer = OnlineMenuSerializer(menus, many=True, context={'request': request})
         return ok(serializer.data)
+
+
+class OnlineMenuRetrieveDeleteAPIView(APIView):
+
+    def get(self, request: Request, menu_id: int):
+        m = online_menu_service.get_menu_by_id(request.user, menu_id)
+        if m is None:
+            return not_found()
+        sr = OnlineMenuSerializer(m, request=request)
+        return ok(sr.data)
+
+    def delete(self, request: Request, menu_id: int):
+        result = online_menu_service.delete_menu_by_id(request.user, menu_id)
+        if result is not None:
+            sr = OnlineMenuSerializer(result, request=request)
+            return ok(sr.data)
+        return not_found(create_detail_error('user has no online menu'))

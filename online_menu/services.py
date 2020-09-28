@@ -23,6 +23,12 @@ class OnlineMenuService:
     def get_all_menus(self, businessman: Businessman) -> QuerySet:
         return OnlineMenu.objects.filter(businessman=businessman).all()
 
+    def get_menu_by_id(self, businessman: Businessman, menu_id: int) -> OnlineMenu:
+        try:
+            return OnlineMenu.objects.filter(businessman=businessman).get(id=menu_id)
+        except ObjectDoesNotExist:
+            return None
+
     def are_new_show_orders_unique(self, show_order: int, new_show_orders: dict) -> bool:
         return not OnlineMenu.objects.filter(show_order__in=new_show_orders.values()).exclude(
             id__in=new_show_orders.keys()).exclude(show_order=show_order).exists()
@@ -32,6 +38,14 @@ class OnlineMenuService:
             o = OnlineMenu.objects.get(show_order=show_order)
             o.delete()
             return o
+        except ObjectDoesNotExist:
+            return None
+
+    def delete_menu_by_id(self, user: Businessman, menu_id: int) -> OnlineMenu:
+        try:
+            m = OnlineMenu.objects.filter(businessman=user).get(id=menu_id)
+            m.delete()
+            return m
         except ObjectDoesNotExist:
             return None
 
