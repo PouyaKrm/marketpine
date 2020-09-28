@@ -68,12 +68,14 @@ class ImageFiledWithLinkRepresentation(serializers.ImageField):
 
 class MultipartRequestBodyDictFiled(serializers.Field):
 
-    def __init__(self, max_items: int):
-        super().__init__()
+    def __init__(self, max_items: int, max_characters: int, unique_values=True, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.max_items = max_items
+        self.unique_values = unique_values
+        self.max_chars = max_characters
 
     def to_internal_value(self, data) -> dict:
-        if type(data) != str or len(data) > 200:
+        if type(data) != str or len(data) > self.max_chars:
             raise serializers.ValidationError("invalid field")
         try:
             result = ast.literal_eval(data)
@@ -96,6 +98,11 @@ class MultipartRequestBodyDictFiled(serializers.Field):
                 parsed_dict[k_int] = v_int
             except ValueError:
                 raise serializers.ValidationError("field contains un parsable to int values")
+
+        val_set = set(id_show_orders.values())
+
+        if self.unique_values and len(val_set) != len(id_show_orders.values()):
+            raise serializers.ValidationError('values of dictionary are not unique')
 
         return parsed_dict
 
