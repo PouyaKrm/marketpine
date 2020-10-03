@@ -8,6 +8,7 @@ from customer_return_plan.festivals.services import festival_service
 from customers.services import customer_service
 from customer_application.exceptions import CustomerServiceException
 from common.util.sms_panel.message import SystemSMSMessage
+from online_menu.services import online_menu_service
 from users.models import Customer, Businessman
 from .customer_content_marketing.services import customer_app_content_marketing_service
 from .models import CustomerOneTimePasswords, CustomerLoginTokens
@@ -128,6 +129,12 @@ class CustomerDataService:
         except ObjectDoesNotExist:
             CustomerServiceException.for_businessman_not_found()
 
+    def get_businessman_by_id(self, businessman_id: int) -> Businessman:
+        try:
+            return Businessman.objects.get(id=businessman_id)
+        except ObjectDoesNotExist:
+            CustomerServiceException.for_businessman_not_found()
+
     def is_customer_jouned_to_businessman(self, customer: Customer, businessman_id) -> bool:
         return customer.businessmans.filter(id=businessman_id).exists()
 
@@ -136,6 +143,9 @@ class CustomerDataService:
         p = customer_app_content_marketing_service.get_post_for_notif(customer)
         return {'festival': f, 'post': p}
 
+    def get_online_menus_by_businessman_id(self, businessman_id: int):
+        b = self.get_businessman_by_id(businessman_id)
+        return online_menu_service.get_all_menus(b)
 
 customer_data_service = CustomerDataService()
 

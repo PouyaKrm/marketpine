@@ -1,10 +1,13 @@
+from rest_framework import permissions
 from rest_framework.decorators import api_view, permission_classes, authentication_classes
 from rest_framework.request import Request
+from rest_framework.views import APIView
 
 from common.util.http_helpers import bad_request, no_content, get_user_agent, ok
 from customer_application.exceptions import CustomerServiceException
 from customer_application.serializers import CustomerPhoneSerializer, CustomerLoginSerializer, \
     BaseBusinessmanSerializer, BusinessmanRetrieveSerializer, FestivalNotificationSerializer, PostNotificationSerializer
+from online_menu.serializers import OnlineMenuSerializer
 from .base_views import CustomerAuthenticationSchema, BaseListAPIView, BaseRetrieveAPIView, BaseAPIView
 from .pagination import CustomerAppListPaginator
 from .services import customer_auth_service, customer_data_service
@@ -57,18 +60,19 @@ class BusinessmansList(BaseListAPIView):
         return customer_data_service.get_all_businessmans(self.request.user)
 
 
-class BusinessmanRetrieveAPIView(BaseAPIView):
+class BusinessmanRetrieveAPIView(APIView):
 
-    serializer_class = BusinessmanRetrieveSerializer
-    lookup_field = 'id'
+    # serializer_class = BusinessmanRetrieveSerializer
+    permission_classes = [permissions.AllowAny]
+    # lookup_field = 'id'
 
-    def get_queryset(self):
-        return customer_data_service.get_businessman_of_customer_by_id(self.request.user, self.kwargs.get('id'))
+    # def get_queryset(self):
+    #     return customer_data_service.get_businessman_by_id(self.kwargs.get('id'))
 
     def get(self, request: Request, businessman_id: int):
         try:
-            b = customer_data_service.get_businessman_of_customer_by_id(request.user, businessman_id)
-            sr = BusinessmanRetrieveSerializer(b, context={'request': request})
+            b = customer_data_service.get_businessman_by_id(businessman_id)
+            sr = BusinessmanRetrieveSerializer(b, request=request)
             return ok(sr.data)
         except CustomerServiceException as e:
             return bad_request(e.http_message)

@@ -156,4 +156,8 @@ class BusinessCategoryAdminModel(admin.ModelAdmin):
 admin.site.register(BusinessCategory, BusinessCategoryAdminModel)
 
 
-admin.site.register(BusinessmanCustomer)
+class BusinessmanCustomerAdminModel(admin.ModelAdmin):
+    list_display = ['businessman', 'customer', 'businessman_id', 'customer_id']
+
+
+admin.site.register(BusinessmanCustomer, BusinessmanCustomerAdminModel)

@@ -11,6 +11,7 @@ from customers.services import customer_service
 from mobile_app_conf.models import MobileAppPageConf, MobileAppHeader
 from mobile_app_conf.serializers import MobileAppPageConfSerializer, FileFieldWithLinkRepresentation
 from mobile_app_conf.services import mobile_page_conf_service
+from online_menu.serializers import OnlineMenuSerializer
 from users.models import Businessman
 
 
@@ -67,6 +68,8 @@ class BaseBusinessmanSerializer(BaseModelSerializerWithRequestObj):
         extra_kwargs = {'logo': {'read_only': True}}
 
     def get_date_joined(self, obj: Businessman):
+        if self.request.user.is_authenticated:
+            return None
         return customer_service.get_date_joined(self.request.user, obj)
 
     def get_customers_total(self, obj: Businessman):
@@ -106,6 +109,7 @@ class BusinessmanPageDataSerializer(serializers.ModelSerializer):
 
 class BusinessmanRetrieveSerializer(BaseBusinessmanSerializer):
     page_data = serializers.SerializerMethodField(read_only=True)
+    menus = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = Businessman
@@ -117,12 +121,17 @@ class BusinessmanRetrieveSerializer(BaseBusinessmanSerializer):
             'customers_total',
             'invitation_discount',
             'page_data',
+            'menus'
         ]
 
     def get_page_data(self, obj: Businessman):
         p = mobile_page_conf_service.get_businessman_conf_or_create(obj)
         return BusinessmanPageDataSerializer(p, context={'request': self.request}).data
 
+    def get_menus(self, obj: Businessman):
+        menus = customer_data_service.get_online_menus_by_businessman_id(obj.id)
+        sr = OnlineMenuSerializer(menus, context={'request': self.request}, many=True)
+        return sr.data
 
 class FestivalNotificationSerializer(BaseModelSerializerWithRequestObj):
     businessman = serializers.SerializerMethodField(read_only=True)
