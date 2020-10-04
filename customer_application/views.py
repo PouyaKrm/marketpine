@@ -60,7 +60,7 @@ class BusinessmansList(BaseListAPIView):
         return customer_data_service.get_all_businessmans(self.request.user)
 
 
-class BusinessmanRetrieveAPIView(APIView):
+class BusinessmanRetrieveAPIView(BaseAPIView):
 
     # serializer_class = BusinessmanRetrieveSerializer
     permission_classes = [permissions.AllowAny]
@@ -76,6 +76,7 @@ class BusinessmanRetrieveAPIView(APIView):
             return ok(sr.data)
         except CustomerServiceException as e:
             return bad_request(e.http_message)
+
 
 
 class NotificationAPIView(BaseAPIView):
