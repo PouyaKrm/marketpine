@@ -3,7 +3,7 @@ from django.utils import timezone
 
 from payment.exceptions import PaymentCreationFailedException, PaymentVerificationFailedException, \
     PaymentAlreadyVerifiedException, PaymentOperationFailedException
-from users.models import Businessman
+from users.models import Businessman, BaseModel
 from zeep import Client
 from django.conf import settings
 from django.urls import reverse
@@ -150,3 +150,12 @@ class FailedPaymentOperation(models.Model):
     create_date = models.DateTimeField(auto_now_add=True)
     is_fixed = models.BooleanField(default=False)
 
+
+class PanelActivationPlans(BaseModel):
+
+    title = models.CharField(max_length=100)
+    description = models.TextField(null=True, blank=True)
+    price_in_toman = models.PositiveIntegerField()
+    duration = models.DurationField(null=True, blank=True)
+    is_permanent = models.BooleanField(default=False)
+    is_available = models.BooleanField(default=True)
