@@ -15,7 +15,6 @@ from panelprofile.services import sms_panel_info_service
 
 url = settings.ZARINPAL.get('url')
 setting_merchant = settings.ZARINPAL.get('MERCHANT')
-activation_expire_delta = settings.ACTIVATION_EXPIRE_DELTA
 
 
 class PanelActivationPlans(BaseModel):
