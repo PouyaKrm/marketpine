@@ -168,5 +168,4 @@ class PanelActivationPlans(BaseModel):
     price_in_toman = models.PositiveIntegerField()
     duration_type = models.CharField(max_length=2, choices=duration_choices, default=DURATION_MONTHLY)
     duration = models.DurationField(null=True, blank=True)
-    is_permanent = models.BooleanField(default=False)
     is_available = models.BooleanField(default=True)

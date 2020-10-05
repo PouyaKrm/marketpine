@@ -13,7 +13,7 @@ class PaymentOperationFailedAdmin(admin.ModelAdmin):
     list_display = ('businessman', 'operation_type', 'create_date', 'payment_amount', 'is_fixed')
 
 class PanelActiovationPalnModelAdmin(admin.ModelAdmin):
-    list_display = ['price_in_toman', 'duration_type', 'is_permanent', 'title']
+    list_display = ['price_in_toman', 'duration_type', 'title']
     readonly_fields = ['duration']
 
 
