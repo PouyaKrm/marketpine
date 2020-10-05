@@ -178,13 +178,14 @@ class Payment(models.Model):
             # self.businessman.smspanelinfo.increase_credit_in_tomans(self.amount)
 
         elif self.payment_type == PaymentTypes.ACTIVATION:
+            plan = self.panel_plan
             active_date = timezone.now()
             self.businessman.panel_activation_date = active_date
 
             if self.businessman.panel_expiration_date is not None:
-                self.businessman.panel_expiration_date = self.businessman.panel_expiration_date + activation_expire_delta
+                self.businessman.panel_expiration_date = self.businessman.panel_expiration_date + plan.duration
             else:
-                self.businessman.panel_expiration_date = active_date + activation_expire_delta
+                self.businessman.panel_expiration_date = active_date + plan.duration
 
             self.businessman.save()
 
