@@ -29,6 +29,10 @@ def forbidden(data: dict = None) -> Response:
     return Response(data=data, status=status.HTTP_403_FORBIDDEN)
 
 
+def created(data=None) -> Response:
+    return Response(data=data, status=status.HTTP_201_CREATED)
+
+
 def get_query_param_or_default(request: Request, name: str, default=None):
     param = request.query_params.get(name)
     if param is None:

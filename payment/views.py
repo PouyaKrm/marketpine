@@ -1,10 +1,10 @@
-
 from datetime import datetime
 
 import jdatetime
 from django.core.exceptions import ObjectDoesNotExist
 from django.shortcuts import render, redirect
 
+from common.util.http_helpers import bad_request, created
 from common.util.kavenegar_local import APIException
 from payment.exceptions import PaymentCreationFailedException, PaymentVerificationFailedException, \
     PaymentAlreadyVerifiedException, PaymentOperationFailedException
@@ -28,9 +28,8 @@ from .services import payment_service
 
 frontend_url = settings.FRONTEND_URL
 
+
 def verify(request):
-
-
     current_time = datetime.now()
     pay_status = request.GET.get('Status')
 
@@ -72,7 +71,6 @@ def verify(request):
                                                                  'frontend_url': frontend_url})
 
 
-
 @api_view(['POST'])
 def create_payment_sms_credit(request):
     serializer = SMSCreditPaymentCreationSerializer(data=request.data, context={'request': request})
@@ -92,24 +90,25 @@ def panel_activation_payment(request):
     serializer = PanelActivationPaymentCreationSerializer(data=request.data, context={'request': request})
 
     if not serializer.is_valid():
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        return bad_request(serializer.errors)
 
-    serializer.save()
-    return Response(serializer.data, status=status.HTTP_201_CREATED)
+    p = payment_service.create_panel_activation_payment(request,
+                                                        serializer.validated_data.get('plan'),
+                                                        serializer.validated_data.get('description'))
+    serializer = PanelActivationPaymentCreationSerializer(p)
+    return created(serializer.data)
 
 
 class ListPayView(generics.ListAPIView):
     serializer_class = PaymentListSerializer
 
-
     def get_queryset(self):
-        queryset = Payment.objects.filter(businessman=self.request.user).filter(refid__isnull=False)\
+        queryset = Payment.objects.filter(businessman=self.request.user).filter(refid__isnull=False) \
             .order_by('-verification_date')
         return queryset
 
 
 class PanelActivationPlansListAPIView(generics.ListAPIView):
-
     serializer_class = PanelActivationPlansSerializer
     queryset = payment_service.get_all_plans()
     pagination_class = None

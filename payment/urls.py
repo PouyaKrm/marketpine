@@ -8,6 +8,6 @@ urlpatterns = [
     path('verify/', verify, name='verify'),
     path('sms-panel/', create_payment_sms_credit),
     path('panel-activation/plans/', PanelActivationPlansListAPIView.as_view()),
-    path('panel-activate/', panel_activation_payment, name="constant_pay"),
+    path('panel-activation/activate/', panel_activation_payment, name="constant_pay"),
 ]
 

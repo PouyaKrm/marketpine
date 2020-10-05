@@ -17,6 +17,51 @@ url = settings.ZARINPAL.get('url')
 setting_merchant = settings.ZARINPAL.get('MERCHANT')
 activation_expire_delta = settings.ACTIVATION_EXPIRE_DELTA
 
+
+class PanelActivationPlans(BaseModel):
+
+    DURATION_MONTHLY = 'M'
+    DURATION_YEARLY = 'Y'
+    DURATION_PERMANENT = 'PER'
+
+    duration_choices = [
+        (DURATION_MONTHLY, 'MONTHLY'),
+        (DURATION_YEARLY, 'YEARLY'),
+        (DURATION_PERMANENT, 'PERMANENT')
+    ]
+
+    title = models.CharField(max_length=100)
+    description = models.TextField(null=True, blank=True)
+    price_in_toman = models.PositiveIntegerField()
+    duration_type = models.CharField(max_length=2, choices=duration_choices, default=DURATION_MONTHLY)
+    duration = models.DurationField(null=True, blank=True)
+    is_available = models.BooleanField(default=True)
+
+    def is_duration_monthly(self) -> bool:
+        return self.duration_type == PanelActivationPlans.DURATION_MONTHLY
+
+    def is_duration_yearly(self) -> bool:
+        return self.duration_type == PanelActivationPlans.DURATION_YEARLY
+
+    def is_duration_permanent(self) -> bool:
+        return self.duration_type == PanelActivationPlans.DURATION_PERMANENT
+
+    def set_duration_by_duration_type(self):
+        if self.is_duration_monthly():
+            self.duration = timezone.timedelta(days=30)
+
+        elif self.is_duration_yearly():
+            self.duration = timezone.timedelta(days=365)
+
+    def __str__(self):
+        return self.title
+
+
+@receiver(pre_save, sender=PanelActivationPlans)
+def set_duration(sender, instance: PanelActivationPlans, *args, **kwargs):
+    instance.set_duration_by_duration_type()
+
+
 class PaymentTypes:
     SMS = '0'
     ACTIVATION = '1'
@@ -41,6 +86,7 @@ class Payment(models.Model):
     amount = models.IntegerField()
     verification_date = models.DateTimeField(null=True)
     payment_type = models.CharField(max_length=2, choices=payment_choices, default='0')
+    panel_plan = models.ForeignKey(PanelActivationPlans, on_delete=models.PROTECT, null=True, blank=True)
 
     def __str__(self):
         return "{}:{} T,creation_date:{}".format(self.businessman,self.amount,self.creation_date)
@@ -152,43 +198,3 @@ class FailedPaymentOperation(models.Model):
     create_date = models.DateTimeField(auto_now_add=True)
     is_fixed = models.BooleanField(default=False)
 
-
-class PanelActivationPlans(BaseModel):
-
-    DURATION_MONTHLY = 'M'
-    DURATION_YEARLY = 'Y'
-    DURATION_PERMANENT = 'PER'
-
-    duration_choices = [
-        (DURATION_MONTHLY, 'MONTHLY'),
-        (DURATION_YEARLY, 'YEARLY'),
-        (DURATION_PERMANENT, 'PERMANENT')
-    ]
-
-    title = models.CharField(max_length=100)
-    description = models.TextField(null=True, blank=True)
-    price_in_toman = models.PositiveIntegerField()
-    duration_type = models.CharField(max_length=2, choices=duration_choices, default=DURATION_MONTHLY)
-    duration = models.DurationField(null=True, blank=True)
-    is_available = models.BooleanField(default=True)
-
-    def is_duration_monthly(self) -> bool:
-        return self.duration_type == PanelActivationPlans.DURATION_MONTHLY
-
-    def is_duration_yearly(self) -> bool:
-        return self.duration_type == PanelActivationPlans.DURATION_YEARLY
-
-    def is_duration_permanent(self) -> bool:
-        return self.duration_type == PanelActivationPlans.DURATION_PERMANENT
-
-    def set_duration_by_duration_type(self):
-        if self.is_duration_monthly():
-            self.duration = timezone.timedelta(days=30)
-
-        elif self.is_duration_yearly():
-            self.duration = timezone.timedelta(days=365)
-
-
-@receiver(pre_save, sender=PanelActivationPlans)
-def set_duration(sender, instance: PanelActivationPlans, *args, **kwargs):
-    instance.set_duration_by_duration_type()
