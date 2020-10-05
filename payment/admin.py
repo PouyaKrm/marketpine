@@ -1,4 +1,6 @@
 from django.contrib import admin
+
+from .forms import PanelActivationForm
 from .models import Payment, FailedPaymentOperation, PanelActivationPlans
 
 
@@ -14,7 +16,7 @@ class PaymentOperationFailedAdmin(admin.ModelAdmin):
 
 class PanelActiovationPalnModelAdmin(admin.ModelAdmin):
     list_display = ['price_in_toman', 'duration_type', 'title']
-    readonly_fields = ['duration']
+    form = PanelActivationForm
 
 
 admin.site.register(Payment, PaymentAdmin)
