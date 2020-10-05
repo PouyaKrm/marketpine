@@ -153,9 +153,20 @@ class FailedPaymentOperation(models.Model):
 
 class PanelActivationPlans(BaseModel):
 
+    DURATION_MONTHLY = 'M'
+    DURATION_YEARLY = 'Y'
+    DURATION_PERMANENT = 'PER'
+
+    duration_choices = [
+        (DURATION_MONTHLY, 'MONTHLY'),
+        (DURATION_YEARLY, 'YEARLY'),
+        (DURATION_PERMANENT, 'PERMANENT')
+    ]
+
     title = models.CharField(max_length=100)
     description = models.TextField(null=True, blank=True)
     price_in_toman = models.PositiveIntegerField()
+    duration_type = models.CharField(max_length=2, choices=duration_choices, default=DURATION_MONTHLY)
     duration = models.DurationField(null=True, blank=True)
     is_permanent = models.BooleanField(default=False)
     is_available = models.BooleanField(default=True)
