@@ -92,18 +92,8 @@ class PanelActivationPaymentCreationSerializer(serializers.ModelSerializer):
                         'description': {'required': True},
                         }
 
-
     def get_forward_link(self, obj):
         return zarinpal_forward_link.format(obj.authority)
-
-    def create(self, validated_data):
-        "create object payment with constant amount,businessman,phone,description"
-        request=self.context['request']
-        p = Payment.objects.create(businessman=request.user, payment_type=PaymentTypes.ACTIVATION,
-                                   amount=activation_pay_amount, phone=request.user.phone,
-                                   **validated_data)
-        p.pay(request)
-        return p
 
 
 class PaymentListSerializer(serializers.ModelSerializer):
