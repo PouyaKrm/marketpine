@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Payment, PaymentTypes
+from .models import Payment, PaymentTypes, PanelActivationPlans
 from django.conf import settings
 
 
@@ -96,3 +96,10 @@ class PaymentListSerializer(serializers.ModelSerializer):
                         }
 
 
+class PanelActivationPlansSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = PanelActivationPlans
+        exclude = [
+            'duration'
+        ]

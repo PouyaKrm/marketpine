@@ -15,7 +15,7 @@ from django.conf import settings
 from .models import Payment
 from .serializers import (SMSCreditPaymentCreationSerializer,
                           PanelActivationPaymentCreationSerializer,
-                          PaymentListSerializer
+                          PaymentListSerializer, PanelActivationPlansSerializer
                           )
 
 from .permissions import ActivatePanelPermission
@@ -24,6 +24,7 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework import status, generics, permissions
 
+from .services import payment_service
 
 frontend_url = settings.FRONTEND_URL
 
@@ -106,3 +107,9 @@ class ListPayView(generics.ListAPIView):
             .order_by('-verification_date')
         return queryset
 
+
+class PanelActivationPlansListAPIView(generics.ListAPIView):
+
+    serializer_class = PanelActivationPlansSerializer
+    queryset = payment_service.get_all_plans()
+    pagination_class = None
