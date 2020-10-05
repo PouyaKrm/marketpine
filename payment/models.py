@@ -1,4 +1,6 @@
 from django.db import models
+from django.db.models.signals import pre_save
+from django.dispatch.dispatcher import receiver
 from django.utils import timezone
 
 from payment.exceptions import PaymentCreationFailedException, PaymentVerificationFailedException, \
@@ -169,3 +171,24 @@ class PanelActivationPlans(BaseModel):
     duration_type = models.CharField(max_length=2, choices=duration_choices, default=DURATION_MONTHLY)
     duration = models.DurationField(null=True, blank=True)
     is_available = models.BooleanField(default=True)
+
+    def is_duration_monthly(self) -> bool:
+        return self.duration_type == PanelActivationPlans.DURATION_MONTHLY
+
+    def is_duration_yearly(self) -> bool:
+        return self.duration_type == PanelActivationPlans.DURATION_YEARLY
+
+    def is_duration_permanent(self) -> bool:
+        return self.duration_type == PanelActivationPlans.DURATION_PERMANENT
+
+    def set_duration_by_duration_type(self):
+        if self.is_duration_monthly():
+            self.duration = timezone.timedelta(days=30)
+
+        elif self.is_duration_yearly():
+            self.duration = timezone.timedelta(days=365)
+
+
+@receiver(pre_save, sender=PanelActivationPlans)
+def set_duration(sender, instance: PanelActivationPlans, *args, **kwargs):
+    instance.set_duration_by_duration_type()
