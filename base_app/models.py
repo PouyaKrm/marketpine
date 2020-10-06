@@ -42,7 +42,7 @@ class PanelDurationBaseModel(models.Model):
         (DURATION_PERMANENT, 'PERMANENT')
     ]
 
-    duration_type = models.CharField(max_length=2, choices=duration_choices, default=DURATION_MONTHLY)
+    duration_type = models.CharField(max_length=10, choices=duration_choices, default=DURATION_MONTHLY)
 
     class Meta:
         abstract = True
