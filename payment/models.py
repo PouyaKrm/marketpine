@@ -151,23 +151,30 @@ class Payment(models.Model):
             self.businessman.panel_expiration_date = timezone.now()
             self.save()
 
-
     def do_operations(self):
         if self.payment_type == PaymentTypes.SMS:
             sms_panel_info_service.increase_credit_in_tomans(self.businessman.smspanelinfo, self.amount)
-            # self.businessman.smspanelinfo.increase_credit_in_tomans(self.amount)
 
         elif self.payment_type == PaymentTypes.ACTIVATION:
-            plan = self.panel_plan
-            active_date = timezone.now()
-            self.businessman.panel_activation_date = active_date
+            self.__update_panel_activation_data()
 
-            if self.businessman.panel_expiration_date is not None:
-                self.businessman.panel_expiration_date = self.businessman.panel_expiration_date + plan.duration
-            else:
-                self.businessman.panel_expiration_date = active_date + plan.duration
+    def __update_panel_activation_data(self):
 
+        plan = self.panel_plan
+        active_date = timezone.now()
+        self.businessman.panel_activation_date = active_date
+        self.businessman.duration_type = plan.duration_type
+
+        if plan.is_duration_permanent():
             self.businessman.save()
+            return
+
+        if self.businessman.panel_expiration_date is not None:
+            self.businessman.panel_expiration_date = self.businessman.panel_expiration_date + plan.duration
+        else:
+            self.businessman.panel_expiration_date = active_date + plan.duration
+
+        self.businessman.save()
 
 
 class FailedPaymentOperation(models.Model):
