@@ -52,6 +52,7 @@ class BusinessmanProfileSerializer(serializers.ModelSerializer):
             'has_sms_panel',
             'panel_activation_date',
             'panel_expiration_date',
+            'duration_type',
             'auth_documents',
             'sms_panel_details',
             'category'
