@@ -1,4 +1,4 @@
-from django.core.exceptions import ObjectDoesNotExist
+from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.db import models
 from django.contrib.auth.models import AbstractUser, AbstractBaseUser, BaseUserManager
 from django.db.models.signals import post_save
@@ -61,7 +61,7 @@ class Businessman(AbstractUser, PanelDurationBaseModel):
     AUTHORIZE_CHOICES = [('0', 'UNAUTHORIZED'), ('1', 'PENDING'), ('2', 'AUTHORIZED')]
     authorized = models.CharField(max_length=1, choices=AUTHORIZE_CHOICES, default='0')
     has_sms_panel = models.BooleanField(default=False)
-    panel_activation_date = models.DateTimeField(null=True, blank=True)
+    panel_activation_date = models.DateTimeField(null=True)
     panel_expiration_date = models.DateTimeField(null=True, blank=True)
 
     def __str__(self):
@@ -79,6 +79,24 @@ class Businessman(AbstractUser, PanelDurationBaseModel):
             result3 = Businessman.objects.filter(phone=phone).exists()
 
         return result1, result2, result3
+
+    def clean(self):
+        super().clean()
+        duration_type = self.duration_type
+        panel_expire_date = self.panel_expiration_date
+
+        if duration_type != Businessman.DURATION_PERMANENT and panel_expire_date is None:
+            raise ValidationError("if duration is not permanent panel expiration date must be set")
+        elif duration_type == Businessman.DURATION_PERMANENT and panel_expire_date is not None:
+            self.panel_expiration_date = None
+
+        if self.__is_activation_date_bigger_than_expire_date():
+            raise ValidationError("expire date should be bigger than activate date")
+
+    def __is_activation_date_bigger_than_expire_date(self) -> bool:
+        act = self.panel_activation_date
+        exp = self.panel_expiration_date
+        return exp is not None and act >= exp
 
 
 class BusinessmanOneToOneBaseModel(BaseModel):

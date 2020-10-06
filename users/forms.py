@@ -1,4 +1,6 @@
 from django.contrib.auth.forms import UserCreationForm, UserChangeForm
+from rest_framework.exceptions import ValidationError
+
 from .models import Businessman, Customer
 from django import forms
 
@@ -13,6 +15,7 @@ class BusinessmanCreationFrom(UserCreationForm):
 
         fields = '__all__'
 
+
 class BusinessmanChangeForm(UserChangeForm):
 
     class Meta:
@@ -23,7 +26,10 @@ class BusinessmanChangeForm(UserChangeForm):
                   'logo',
                   'address',
                   'is_verified',
-                  'has_sms_panel'
+                  'has_sms_panel',
+                  'panel_expiration_date',
+                  'panel_activation_date',
+                  'duration_type'
                   ]
 
 

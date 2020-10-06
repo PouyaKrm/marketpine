@@ -32,6 +32,7 @@ class BusinessmanAdminModel(UserAdmin):
         ('Permissions', {
             'fields': [
                 'is_verified', 'authorized', 'has_sms_panel', 'panel_activation_date', 'panel_expiration_date',
+                'duration_type'
             ]}),
     )
     add_fieldsets = (
