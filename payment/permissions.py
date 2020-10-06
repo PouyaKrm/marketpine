@@ -14,6 +14,9 @@ class ActivatePanelPermission(permissions.BasePermission):
 
         expire_date = request.user.panel_expiration_date
 
+        if request.user.is_duration_permanent():
+            return False
+
         if expire_date is None:
             return True
 
