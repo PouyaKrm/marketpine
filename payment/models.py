@@ -3,6 +3,7 @@ from django.db.models.signals import pre_save
 from django.dispatch.dispatcher import receiver
 from django.utils import timezone
 
+from base_app.models import PanelDurationBaseModel
 from payment.exceptions import PaymentCreationFailedException, PaymentVerificationFailedException, \
     PaymentAlreadyVerifiedException, PaymentOperationFailedException
 from users.models import Businessman, BaseModel
@@ -17,33 +18,13 @@ url = settings.ZARINPAL.get('url')
 setting_merchant = settings.ZARINPAL.get('MERCHANT')
 
 
-class PanelActivationPlans(BaseModel):
-
-    DURATION_MONTHLY = 'M'
-    DURATION_YEARLY = 'Y'
-    DURATION_PERMANENT = 'PER'
-
-    duration_choices = [
-        (DURATION_MONTHLY, 'MONTHLY'),
-        (DURATION_YEARLY, 'YEARLY'),
-        (DURATION_PERMANENT, 'PERMANENT')
-    ]
+class PanelActivationPlans(BaseModel, PanelDurationBaseModel):
 
     title = models.CharField(max_length=100)
     description = models.TextField(null=True, blank=True)
     price_in_toman = models.PositiveIntegerField()
-    duration_type = models.CharField(max_length=2, choices=duration_choices, default=DURATION_MONTHLY)
     duration = models.DurationField(null=True, blank=True)
     is_available = models.BooleanField(default=True)
-
-    def is_duration_monthly(self) -> bool:
-        return self.duration_type == PanelActivationPlans.DURATION_MONTHLY
-
-    def is_duration_yearly(self) -> bool:
-        return self.duration_type == PanelActivationPlans.DURATION_YEARLY
-
-    def is_duration_permanent(self) -> bool:
-        return self.duration_type == PanelActivationPlans.DURATION_PERMANENT
 
     def set_duration_by_duration_type(self):
         if self.is_duration_monthly():

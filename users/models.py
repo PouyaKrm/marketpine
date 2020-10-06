@@ -6,6 +6,7 @@ from django.dispatch.dispatcher import receiver
 from django.conf import settings
 from django.utils import timezone
 
+from base_app.models import PanelDurationBaseModel
 from common.util.kavenegar_local import APIException
 
 categories = settings.DEFAULT_BUSINESS_CATEGORY
@@ -44,7 +45,7 @@ class BusinessCategory(BaseModel):
         return self.name
 
 
-class Businessman(AbstractUser):
+class Businessman(AbstractUser, PanelDurationBaseModel):
 
     def get_upload_path(self, filename):
         return f"{self.id}/logo/{filename}"
@@ -60,8 +61,8 @@ class Businessman(AbstractUser):
     AUTHORIZE_CHOICES = [('0', 'UNAUTHORIZED'), ('1', 'PENDING'), ('2', 'AUTHORIZED')]
     authorized = models.CharField(max_length=1, choices=AUTHORIZE_CHOICES, default='0')
     has_sms_panel = models.BooleanField(default=False)
-    panel_activation_date = models.DateTimeField(null=True)
-    panel_expiration_date = models.DateTimeField(null=True)
+    panel_activation_date = models.DateTimeField(null=True, blank=True)
+    panel_expiration_date = models.DateTimeField(null=True, blank=True)
 
     def __str__(self):
         return self.username

@@ -29,3 +29,29 @@ class PrivateFileStorage(FileSystemStorage):
 
    def __eq__(self, other):
         return self.subdir == other.subdir
+
+
+class PanelDurationBaseModel(models.Model):
+    DURATION_MONTHLY = 'M'
+    DURATION_YEARLY = 'Y'
+    DURATION_PERMANENT = 'PER'
+
+    duration_choices = [
+        (DURATION_MONTHLY, 'MONTHLY'),
+        (DURATION_YEARLY, 'YEARLY'),
+        (DURATION_PERMANENT, 'PERMANENT')
+    ]
+
+    duration_type = models.CharField(max_length=2, choices=duration_choices, default=DURATION_MONTHLY)
+
+    class Meta:
+        abstract = True
+
+    def is_duration_monthly(self) -> bool:
+        return self.duration_type == PanelDurationBaseModel.DURATION_MONTHLY
+
+    def is_duration_yearly(self) -> bool:
+        return self.duration_type == PanelDurationBaseModel.DURATION_YEARLY
+
+    def is_duration_permanent(self) -> bool:
+        return self.duration_type == PanelDurationBaseModel.DURATION_PERMANENT
