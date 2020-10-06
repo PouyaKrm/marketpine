@@ -12,14 +12,5 @@ class ActivatePanelPermission(permissions.BasePermission):
 
     def has_permission(self, request: Request, view):
 
-        expire_date = request.user.panel_expiration_date
-
-        if request.user.is_duration_permanent():
-            return False
-
-        if expire_date is None:
-            return True
-
-        now = timezone.now()
-        return expire_date <= now or expire_date - now <= days_before_expire
+        return request.user.can_activate_panel()
 

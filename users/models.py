@@ -10,7 +10,7 @@ from base_app.models import PanelDurationBaseModel
 from common.util.kavenegar_local import APIException
 
 categories = settings.DEFAULT_BUSINESS_CATEGORY
-
+days_before_expire = settings.ACTIVATION_ALLOW_REFRESH_DAYS_BEFORE_EXPIRE
 
 class AuthStatus:
     AUTHORIZED = '2'
@@ -79,6 +79,20 @@ class Businessman(AbstractUser, PanelDurationBaseModel):
             result3 = Businessman.objects.filter(phone=phone).exists()
 
         return result1, result2, result3
+
+    def can_activate_panel(self) -> bool:
+        if self.is_duration_permanent():
+            return False
+
+        if self.is_duration_permanent():
+            return False
+
+        if self.panel_expiration_date is None:
+            return True
+
+        now = timezone.now()
+
+        return self.panel_expiration_date <= now or self.panel_expiration_date - now <= days_before_expire
 
     def clean(self):
         super().clean()
