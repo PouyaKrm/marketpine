@@ -19,7 +19,7 @@ from corsheaders.defaults import default_headers
 from django.utils import timezone
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-
+FILE_UPLOAD_PERMISSIONS = 0o644
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/2.2/howto/deployment/checklist/
