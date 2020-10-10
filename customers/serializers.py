@@ -63,6 +63,7 @@ class CustomerListCreateSerializer(serializers.ModelSerializer):
     used_discounts_total = serializers.SerializerMethodField(read_only=True)
     invited_purchases_total = serializers.SerializerMethodField(read_only=True)
     date_joined = serializers.SerializerMethodField(read_only=True)
+    can_edit = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = Customer
@@ -80,6 +81,7 @@ class CustomerListCreateSerializer(serializers.ModelSerializer):
             'date_joined',
             'update_date',
             'invited_purchases_total',
+            'can_edit',
         ]
 
         extra_kwargs = {'telegram_id': {'read_only': True}, 'instagram_id': {'read_only': True}}
@@ -115,6 +117,9 @@ class CustomerListCreateSerializer(serializers.ModelSerializer):
     def get_can_edit_full_name(self, obj: Customer):
         user = self.context['user']
         return customer_service.can_edit_full_name(user, obj)
+
+    def get_can_edit(self, obj: Customer):
+        return not obj.is_phone_confirmed
 
     def validate_phone(self, value):
 
@@ -155,6 +160,7 @@ class CustomerSerializer(CustomerListCreateSerializer):
             'date_joined',
             'update_date',
             'invited_purchases_total',
+            'can_edit',
         ]
 
         extra_kwargs = {'telegram_id': {'read_only': True}, 'instagram_id': {'read_only': True}}
