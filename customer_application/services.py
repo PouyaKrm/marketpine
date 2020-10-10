@@ -94,6 +94,7 @@ class CustomerAuthService:
         c = self._get_customer(phone)
         p = self._one_time_password_service.check_one_time_password(c, login_code)
         t = self._login_token_service.create_new_login_token(c, user_agent)
+        self.set_phone_confirmed(c)
         p.delete()
         return {'token': t.token, 'date_joined': c.date_joined, 'phone': c.phone}
 
@@ -111,6 +112,11 @@ class CustomerAuthService:
     def get_customer_by_login_token(self, token: str, user_agent: str) -> Customer:
         return self._login_token_service.get_customer_by_token(token, user_agent)
 
+    def set_phone_confirmed(self, c: Customer) -> Customer:
+        if not c.is_phone_confirmed:
+            c.is_phone_confirmed = True
+            c.save()
+        return c
 
 customer_auth_service = CustomerAuthService()
 
