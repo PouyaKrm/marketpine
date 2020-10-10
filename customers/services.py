@@ -68,7 +68,7 @@ class CustomerService:
         can_change = self._can_edit_phone_number_by_change_customer(user, c, phone)
         return not c.is_phone_confirmed and (can_edit_phone or can_change)
 
-    def edit_customer(self, user: Businessman, c: Customer, phone: str, full_name: str) -> Customer:
+    def edit_customer_phone(self, user: Businessman, c: Customer, phone: str) -> Customer:
 
         if c.is_phone_confirmed:
             return c
@@ -88,6 +88,16 @@ class CustomerService:
 
         return c
 
+    def edit_full_name(self, user: Businessman, c: Customer, full_name) -> Customer:
+        can_edit = self.can_edit_full_name(user, c)
+        if not can_edit:
+            return c
+        c.full_name = full_name
+        c.save()
+        return c
+
+    def can_edit_full_name(self, user: Businessman, c: Customer) -> bool:
+        return not BusinessmanCustomer.objects.exclude(businessman=user).filter(customer=c).exists()
 
         # if c.is_phone_confirmed:
         #     return c

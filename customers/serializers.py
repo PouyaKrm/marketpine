@@ -79,7 +79,7 @@ class CustomerListCreateSerializer(serializers.ModelSerializer):
             'used_discounts_total',
             'date_joined',
             'update_date',
-            'invited_purchases_total'
+            'invited_purchases_total',
         ]
 
         extra_kwargs = {'telegram_id': {'read_only': True}, 'instagram_id': {'read_only': True}}
@@ -91,7 +91,7 @@ class CustomerListCreateSerializer(serializers.ModelSerializer):
     def get_purchase_discount_sum(self, obj: Customer):
         user = self.context['user']
         purchases_total = purchase_service.get_customer_purchase_sum(user, obj)
-        p_d =  discount_service.get_customer_used_discounts_sum_amount(self.context['user'], obj)
+        p_d = discount_service.get_customer_used_discounts_sum_amount(self.context['user'], obj)
         return purchases_total - p_d
 
     def get_invitations_total(self, obj: Customer):
@@ -112,6 +112,9 @@ class CustomerListCreateSerializer(serializers.ModelSerializer):
         user = self.context['user']
         return customer_service.get_date_joined(obj, user)
 
+    def get_can_edit_full_name(self, obj: Customer):
+        user = self.context['user']
+        return customer_service.can_edit_full_name(user, obj)
 
     def validate_phone(self, value):
 
@@ -151,7 +154,7 @@ class CustomerSerializer(CustomerListCreateSerializer):
             'used_discounts_total',
             'date_joined',
             'update_date',
-            'invited_purchases_total'
+            'invited_purchases_total',
         ]
 
         extra_kwargs = {'telegram_id': {'read_only': True}, 'instagram_id': {'read_only': True}}
@@ -179,7 +182,6 @@ class CustomerSerializer(CustomerListCreateSerializer):
         customer_id = self.context.get('customer_id')
         c = customer_service.get_customer_by_id(customer_id)
         user = self.context['user']
-        full_name = attrs.get('full_name')
 
         can_edit_phone = customer_service.can_edit_phone(user, c, phone)
         if not can_edit_phone:
@@ -190,8 +192,13 @@ class CustomerSerializer(CustomerListCreateSerializer):
         user = self.context['user']
         phone = self.validated_data.get('phone')
         full_name = self.validated_data.get('full_name')
-        new_c = customer_service.edit_customer(user, instance, phone, full_name)
+        new_c = customer_service.edit_customer_phone(user, instance, phone)
+
+        if customer_service.can_edit_full_name(user, new_c) and full_name is not None:
+            customer_service.edit_full_name(user, new_c, full_name)
+
         return new_c
 
     def create(self, validated_data):
         pass
+
