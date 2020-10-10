@@ -62,13 +62,17 @@ class BusinessmanCustomerRetrieveAPIView(mixins.DestroyModelMixin, RetrieveAPIVi
 
     serializer_class = CustomerSerializer
     permission_classes = [permissions.IsAuthenticated]
+    lookup_field = 'id'
 
     def get_serializer_context(self):
-        return {'user': self.request.user, 'customer_id': self.kwargs.get('pk')}
+        return {'user': self.request.user, 'customer_id': self.kwargs.get('id')}
 
-    def get_queryset(self):
+    def get_object(self):
 
-        return self.request.user.customers.all()
+        c_id = self.kwargs.get('id')
+        c = customer_service.get_customer_by_id_or_404(self.request.user, c_id)
+        return c
+
 
     def put(self, request: Request, *args, **kwargs):
 

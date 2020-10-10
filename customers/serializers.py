@@ -1,6 +1,7 @@
 from django.core.exceptions import ObjectDoesNotExist
 from rest_framework import serializers
 
+from common.util import create_field_error
 from common.util.custom_templates import CustomerTemplate
 from common.util.custom_validators import phone_validator
 # from common.util.sms_panel.message import SystemSMSMessage
@@ -161,38 +162,36 @@ class CustomerSerializer(CustomerListCreateSerializer):
     #
     #     return purchase['purchase_sum']
 
-    def validate_phone(self, value):
+    # def validate_phone(self, value):
+    #
+    #     user = self.context['user']
+    #
+    #     customer_id = self.context.get('customer_id')
+    #     c = customer_service.get_businessman_customer_by_id(user, customer_id)
+    #
+    #     if not customer_service.is_phone_number_unique_for_update(user, c, value):
+    #         raise serializers.ValidationError('مشتری دیگری با این شماره تلفن قبلا ثبت شده')
+    #
+    #     return value
 
-        user = self.context['user']
-
+    def validate(self, attrs):
+        phone = attrs.get('phone')
         customer_id = self.context.get('customer_id')
-        c = customer_service.get_businessman_customer_by_id(user, customer_id)
+        c = customer_service.get_customer_by_id(customer_id)
+        user = self.context['user']
+        full_name = attrs.get('full_name')
 
-        if not customer_service.is_phone_number_unique_for_update(user, c, value):
-            raise serializers.ValidationError('مشتری دیگری با این شماره تلفن قبلا ثبت شده')
-
-        return value
+        can_edit_phone = customer_service.can_edit_phone(user, c, phone)
+        if not can_edit_phone:
+            raise serializers.ValidationError(create_field_error('phone', ['امکان ویرایش این شماره وجود ندارد']))
+        return attrs
 
     def update(self, instance: Customer, validated_data):
-        return instance
-        # old_phone = instance.phone
-        # new_phone = validated_data.get('phone')
-        # user = self.context['user']
-        #
-        # for k, v in validated_data.items():
-        #
-        #     setattr(instance, k, v)
-        #
-        # instance.save()
-        #
-        # if (new_phone != old_phone) and (user.panelsetting.welcome_message is not None):
-        #     message = CustomerTemplate(user, user.panelsetting.welcome_message, instance).render_template()
-        #
-        #     sms = SystemSMSMessage()
-        #
-        #     sms.send_message(new_phone, message)
-        #
-        # return instance
+        user = self.context['user']
+        phone = self.validated_data.get('phone')
+        full_name = self.validated_data.get('full_name')
+        new_c = customer_service.edit_customer(user, instance, phone, full_name)
+        return new_c
 
     def create(self, validated_data):
         pass

@@ -1,4 +1,5 @@
 from django.core.exceptions import ObjectDoesNotExist
+from django.db.models import QuerySet
 from rest_framework.generics import get_object_or_404
 
 from users.models import Customer, Businessman, BusinessmanCustomer
@@ -53,11 +54,77 @@ class CustomerService:
     def is_phone_number_unique_for_register(self, businessman: Businessman, phone: str) -> bool:
         return not businessman.customers.filter(phone=phone).exists()
 
-    def is_phone_number_unique_for_update(self, businessman: Businessman, customer: Customer, phone: str) -> bool:
-        return not businessman.customers.filter(phone=phone).exclude(id=customer.id).exists()
+    def is_phone_number_unique(self, phone: str) -> bool:
+        return Customer.objects.filter(phone=phone).exists()
 
     def delete_customer_for_businessman(self, businessman: Businessman, customer_id):
         BusinessmanCustomer.objects.filter(businessman=businessman, customer__id=customer_id).delete()
+
+    def get_businessmans_of_customer(self, c: Customer) -> QuerySet:
+        return c.businessmans.all()
+
+    def can_edit_phone(self, user: Businessman, c: Customer, phone: str) -> bool:
+        can_edit_phone = self._can_edit_phone_number_value(user, c, phone)
+        can_change = self._can_edit_phone_number_by_change_customer(user, c, phone)
+        return not c.is_phone_confirmed and (can_edit_phone or can_change)
+
+    def edit_customer(self, user: Businessman, c: Customer, phone: str, full_name: str) -> Customer:
+
+        if c.is_phone_confirmed:
+            return c
+
+        can_edit_phone = self._can_edit_phone_number_value(user, c, phone)
+        if can_edit_phone:
+            c.phone = phone
+            c.save()
+            return c
+
+        can_change = self._can_edit_phone_number_by_change_customer(user, c, phone)
+        if can_change:
+            new_c = self.get_customer_by_phone(phone)
+            self.delete_customer_for_businessman(user, c.id)
+            BusinessmanCustomer.objects.create(businessman=user, customer=new_c)
+            return new_c
+
+        return c
+
+
+        # if c.is_phone_confirmed:
+        #     return c
+        # count = self.get_businessmans_of_customer(c).count()
+        # if count == 0:
+        #     return c
+        # if count == 1:
+        #     self._update_customer_phone_full_name(c, phone, full_name)
+        #     return c
+        # try:
+        #     new_c = self.get_customer_by_businessman_and_phone(user, phone)
+        #     if new_c.id != c.id:
+        #         self.delete_customer_for_businessman(user, c.id)
+        #         BusinessmanCustomer.objects.create(businessman=user, customer=new_c)
+        #         return new_c
+        #     return c
+        # except ObjectDoesNotExist as e:
+        #     return c
+
+    def _can_edit_phone_number_value(self, user: Businessman, c: Customer, phone: str) -> bool:
+        is_unique = self._is_phone_number_unique_for_update(c, phone)
+        businessmans = self.get_businessmans_of_customer(c)
+        if is_unique:
+            return businessmans.exclude(id=user.id).count() == 0
+
+    def _can_edit_phone_number_by_change_customer(self, user: Businessman, c: Customer, phone: str):
+        return Customer.objects.filter(phone=phone).exclude(connected_businessmans__businessman=user).exclude(id=c.id).exists()
+
+    def _is_phone_number_unique_for_update(self, customer: object, phone: object) -> object:
+        return not Customer.objects.filter(phone=phone).exclude(id=customer.id).exists()
+
+
+    def _update_customer_phone_full_name(self, c: Customer, phone: str, full_name: str) -> Customer:
+        c.phone = phone
+        c.full_name = full_name
+        c.save()
+        return c
 
 
 customer_service = CustomerService()
