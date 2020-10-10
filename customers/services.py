@@ -26,7 +26,7 @@ class CustomerService:
         return get_object_or_404(Customer, businessmans=user, id=customer_id)
 
     def get_businessman_customers(self, user: Businessman):
-        return Customer.objects.filter(businessmans=user).all()
+        return Customer.objects.filter(businessmans=user).order_by('-date_joined').all()
 
     def get_bsuinessman_customers_by_ids(self, user: Businessman, customer_ids: [int]):
         return Customer.objects.filter(businessmans=user, id__in=customer_ids).all()
