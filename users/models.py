@@ -204,6 +204,7 @@ class Customer(AbstractBaseUser):
     is_staff = models.BooleanField(default=False)
     date_joined = models.DateTimeField(null=True, auto_now_add=True)
     update_date = models.DateTimeField(null=True, auto_now=True)
+    is_phone_confirmed = models.BooleanField(default=False)
 
     USERNAME_FIELD = 'phone'
 
