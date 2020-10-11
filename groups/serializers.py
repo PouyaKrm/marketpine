@@ -60,7 +60,6 @@ class BusinessmanGroupsRetrieveSerializer(BusinessmanGroupsCreateListSerializer)
         fields = [
             'id',
             'title',
-            'customers',
             'customers_total',
             'type'
         ]
