@@ -38,7 +38,8 @@ class BusinessmanAdminModel(UserAdmin):
     add_fieldsets = (
         (None, {'fields': ('username', 'password1', 'password2')}),
         ('General Info', {'fields': ('business_name', 'business_category', 'phone', 'address')}),
-        ('Permissions', {'fields': ('is_verified',)}),
+        ('Permissions', {'fields': ('is_verified','panel_activation_date', 'panel_expiration_date',
+                'duration_type')}),
     )
 
     def get_urls(self):
