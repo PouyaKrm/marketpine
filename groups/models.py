@@ -89,8 +89,8 @@ class BusinessmanGroups(BusinessmanManyToOneBaseModel):
         return BusinessmanGroups.objects.get(businessman=user, id=group_id)
 
     @staticmethod
-    def reset_customer_groups(groups: list, customer: Customer):
-        g = BusinessmanGroups.objects.filter(customers=customer)
+    def reset_customer_groups(user, customer: Customer, groups: list):
+        g = BusinessmanGroups.objects.filter(businessman=user)
         g_ids = [g.id for g in groups]
         new_groups = g.filter(id__in=g_ids)
         removed_groups = g.exclude(id__in=g_ids)

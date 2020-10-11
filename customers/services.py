@@ -120,13 +120,13 @@ class CustomerService:
         c.save()
         return c
 
-    def reset_customer_groups(self, customer: Customer, groups: list):
+    def reset_customer_groups(self, user: Businessman, customer: Customer, groups: list):
         from groups.models import BusinessmanGroups
         if groups is None:
             return customer
         # for g in groups:
         #     g.add_member(customer)
-        BusinessmanGroups.reset_customer_groups(groups, customer)
+        BusinessmanGroups.reset_customer_groups(user, customer, groups)
         return customer
 
 

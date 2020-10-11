@@ -151,6 +151,8 @@ class CustomerListCreateSerializer(serializers.ModelSerializer):
 
 class CustomerSerializer(CustomerListCreateSerializer):
 
+    joined_groups = serializers.SerializerMethodField(read_only=True)
+
     class Meta:
         model = Customer
         fields = [
@@ -168,6 +170,7 @@ class CustomerSerializer(CustomerListCreateSerializer):
             'update_date',
             'invited_purchases_total',
             'can_edit_info',
+            'joined_groups',
         ]
 
         extra_kwargs = {'telegram_id': {'read_only': True}, 'instagram_id': {'read_only': True}}
@@ -201,6 +204,11 @@ class CustomerSerializer(CustomerListCreateSerializer):
     #         raise serializers.ValidationError(create_field_error('phone', ['امکان ویرایش این شماره وجود ندارد']))
     #     return attrs
 
+    def get_joined_groups(self, obj: Customer):
+        from groups.serializers import BusinessmanGroupsCreateListSerializer
+        sr = BusinessmanGroupsCreateListSerializer(obj.connected_groups, many=True)
+        return sr.data
+
     def update(self, instance: Customer, validated_data):
         user = self.context['user']
         groups = validated_data.get('groups')
@@ -212,7 +220,7 @@ class CustomerSerializer(CustomerListCreateSerializer):
             customer_service.edit_full_name(user, new_c, full_name)
 
         if groups is not None:
-            customer_service.reset_customer_groups(new_c, groups)
+            customer_service.reset_customer_groups(user, new_c, groups)
 
         return new_c
 
