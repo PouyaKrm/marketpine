@@ -5,8 +5,8 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from .models import BusinessmanGroups
-from .serializers import BusinessmanGroupsCreateListSerializer, BusinessmanGroupsRetrieveSerializer, CustomerSerializer
-from .permissions import HasValidDefinedGroups, CanDeleteGroup
+from .serializers import BusinessmanGroupsCreateListSerializer, BusinessmanGroupsRetrieveSerializer
+from .permissions import CanDeleteGroup
 from common.util import paginators
 
 # Create your views here.
@@ -19,7 +19,7 @@ class BusinessmanGroupsListCreateAPIView(generics.ListAPIView, mixins.CreateMode
     """
     serializer_class = BusinessmanGroupsCreateListSerializer
     pagination_class = None
-    permission_classes = [permissions.IsAuthenticated, HasValidDefinedGroups]
+    permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
 
