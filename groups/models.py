@@ -60,8 +60,13 @@ class BusinessmanGroups(BusinessmanManyToOneBaseModel):
         self.save()
 
     @staticmethod
+    def get_all_businessman_groups(user):
+        return BusinessmanGroups.objects.filter(businessman=user).all()
+
+    @staticmethod
     def get_all_businessman_normal_groups(user):
-        return BusinessmanGroups.objects.filter(businessman=user, type=BusinessmanGroups.TYPE_NORMAL).all()
+        return BusinessmanGroups.get_all_businessman_groups(user).filter(
+            type=BusinessmanGroups.TYPE_NORMAL).all()
 
     @staticmethod
     def get_group_by_id_or_404(user, group_id: int):

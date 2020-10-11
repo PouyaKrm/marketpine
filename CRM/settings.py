@@ -86,7 +86,7 @@ SMS_PANEL = {
     "SEND_PLAIN_CUSTOMERS_PAGE_SIZE": 2,
     'SEND_TEMPLATE_MAX_CUSTOMERS': 5,  # allowed number of customer in selecting specific customer for template send
     'MAX_ALLOWED_DEFINED_TEMPLATES': 7,  # defines how many sms templates that user can define
-    'MAX_ALLOWED_DEFINED_GROUPS': 7  # defines how many customer groups user can have
+    'MAX_ALLOWED_DEFINED_GROUPS': 20  # defines how many customer groups user can have
 }
 
 DOWNLOAD_SETTINGS = {

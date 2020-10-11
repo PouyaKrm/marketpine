@@ -11,7 +11,7 @@ from common.util.http_helpers import ok, bad_request
 from customers.serializers import CustomerListCreateSerializer
 from .models import BusinessmanGroups
 from .serializers import BusinessmanGroupsCreateListSerializer, BusinessmanGroupsRetrieveSerializer, CustomerSerializer
-from .permissions import CanDeleteGroup
+from .permissions import CanDeleteGroup, HasValidDefinedGroups
 
 # Create your views here.
 
@@ -24,7 +24,7 @@ class BusinessmanGroupsListCreateAPIView(generics.ListAPIView, mixins.CreateMode
     """
     serializer_class = BusinessmanGroupsCreateListSerializer
     pagination_class = None
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, HasValidDefinedGroups]
 
     def get_queryset(self):
 

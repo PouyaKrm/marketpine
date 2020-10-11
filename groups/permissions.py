@@ -19,7 +19,7 @@ class HasValidDefinedGroups(permissions.BasePermission):
 
     def has_permission(self, request: Request, view: View):
 
-        return request.user.businessmangroups_set.all().count() < max_allowed_defined_groups
+        return BusinessmanGroups.get_all_businessman_normal_groups(request.user).count() < max_allowed_defined_groups
 
 
 class CanDeleteGroup(permissions.BasePermission):
