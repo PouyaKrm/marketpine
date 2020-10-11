@@ -156,6 +156,7 @@ class CustomerSerializer(CustomerListCreateSerializer):
         fields = [
             'id',
             'phone',
+            'groups',
             'full_name',
             'telegram_id',
             'instagram_id',
@@ -177,37 +178,41 @@ class CustomerSerializer(CustomerListCreateSerializer):
     #
     #     return purchase['purchase_sum']
 
-    # def validate_phone(self, value):
-    #
+    def validate_phone(self, value):
+        pass
+        # user = self.context['user']
+        #
+        # customer_id = self.context.get('customer_id')
+        # c = customer_service.get_businessman_customer_by_id(user, customer_id)
+        #
+        # if not customer_service.is_phone_number_unique_for_update(user, c, value):
+        #     raise serializers.ValidationError('مشتری دیگری با این شماره تلفن قبلا ثبت شده')
+
+        return value
+
+    # def validate(self, attrs):
+    #     phone = attrs.get('phone')
+    #     customer_id = self.context.get('customer_id')
+    #     c = customer_service.get_customer_by_id(customer_id)
     #     user = self.context['user']
     #
-    #     customer_id = self.context.get('customer_id')
-    #     c = customer_service.get_businessman_customer_by_id(user, customer_id)
-    #
-    #     if not customer_service.is_phone_number_unique_for_update(user, c, value):
-    #         raise serializers.ValidationError('مشتری دیگری با این شماره تلفن قبلا ثبت شده')
-    #
-    #     return value
-
-    def validate(self, attrs):
-        phone = attrs.get('phone')
-        customer_id = self.context.get('customer_id')
-        c = customer_service.get_customer_by_id(customer_id)
-        user = self.context['user']
-
-        can_edit_phone = customer_service.can_edit_phone(user, c, phone)
-        if not can_edit_phone:
-            raise serializers.ValidationError(create_field_error('phone', ['امکان ویرایش این شماره وجود ندارد']))
-        return attrs
+    #     can_edit_phone = customer_service.can_edit_phone(user, c, phone)
+    #     if not can_edit_phone:
+    #         raise serializers.ValidationError(create_field_error('phone', ['امکان ویرایش این شماره وجود ندارد']))
+    #     return attrs
 
     def update(self, instance: Customer, validated_data):
         user = self.context['user']
+        groups = validated_data.get('groups')
         phone = self.validated_data.get('phone')
         full_name = self.validated_data.get('full_name')
         new_c = customer_service.edit_customer_phone(user, instance, phone)
 
         if customer_service.can_edit_full_name(user, new_c) and full_name is not None:
             customer_service.edit_full_name(user, new_c, full_name)
+
+        if groups is not None:
+            customer_service.reset_customer_groups(new_c, groups)
 
         return new_c
 

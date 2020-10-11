@@ -48,7 +48,7 @@ class CustomerService:
             BusinessmanCustomer.objects.create(customer=c, businessman=businessman)
         finally:
             if groups is not None:
-                self._add_customer_to_groups(c, groups)
+                self.reset_customer_groups(c, groups)
             return c
 
     def get_date_joined(self, customer: Customer, businessman=Businessman):
@@ -120,11 +120,14 @@ class CustomerService:
         c.save()
         return c
 
-    def _add_customer_to_groups(self, customer: Customer, groups: list):
+    def reset_customer_groups(self, customer: Customer, groups: list):
+        from groups.models import BusinessmanGroups
         if groups is None:
             return customer
-        for g in groups:
-            g.add_member(customer)
+        # for g in groups:
+        #     g.add_member(customer)
+        BusinessmanGroups.reset_customer_groups(groups, customer)
         return customer
+
 
 customer_service = CustomerService()

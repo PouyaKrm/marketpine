@@ -20,7 +20,7 @@ class BusinessmanGroups(BusinessmanManyToOneBaseModel):
 
     title = models.CharField(max_length=40)
     type = models.CharField(max_length=2, choices=type_choices, default=TYPE_NORMAL)
-    customers = models.ManyToManyField(Customer)
+    customers = models.ManyToManyField(Customer, related_name='connected_groups', related_query_name='connected_groups')
 
     def __str__(self):
         return f"{self.title} - {self.businessman.username}"
@@ -88,11 +88,29 @@ class BusinessmanGroups(BusinessmanManyToOneBaseModel):
     def get_group_by_id(user, group_id):
         return BusinessmanGroups.objects.get(businessman=user, id=group_id)
 
+    @staticmethod
+    def reset_customer_groups(groups: list, customer: Customer):
+        g = BusinessmanGroups.objects.filter(customers=customer)
+        g_ids = [g.id for g in groups]
+        new_groups = g.filter(id__in=g_ids)
+        removed_groups = g.exclude(id__in=g_ids)
+        for g in new_groups.all():
+            g.add_member(customer)
+
+        for g in removed_groups.all():
+            g.remove_member(customer)
+
+        return customer
+
+
     def add_member(self, customer: Customer) -> Customer:
         exist = self.customers.filter(id=customer.id).exists()
         if not exist:
             self.customers.add(customer)
         return customer
+
+    def remove_member(self, customer: Customer):
+        self.customers.remove(customer)
 
     def is_special_group(self) -> bool:
         """
