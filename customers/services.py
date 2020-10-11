@@ -99,24 +99,6 @@ class CustomerService:
     def can_edit_full_name(self, user: Businessman, c: Customer) -> bool:
         return not BusinessmanCustomer.objects.exclude(businessman=user).filter(customer=c).exists()
 
-        # if c.is_phone_confirmed:
-        #     return c
-        # count = self.get_businessmans_of_customer(c).count()
-        # if count == 0:
-        #     return c
-        # if count == 1:
-        #     self._update_customer_phone_full_name(c, phone, full_name)
-        #     return c
-        # try:
-        #     new_c = self.get_customer_by_businessman_and_phone(user, phone)
-        #     if new_c.id != c.id:
-        #         self.delete_customer_for_businessman(user, c.id)
-        #         BusinessmanCustomer.objects.create(businessman=user, customer=new_c)
-        #         return new_c
-        #     return c
-        # except ObjectDoesNotExist as e:
-        #     return c
-
     def _can_edit_phone_number_value(self, user: Businessman, c: Customer, phone: str) -> bool:
         is_unique = self._is_phone_number_unique_for_update(c, phone)
         businessmans = self.get_businessmans_of_customer(c)
@@ -128,7 +110,6 @@ class CustomerService:
 
     def _is_phone_number_unique_for_update(self, customer: object, phone: object) -> object:
         return not Customer.objects.filter(phone=phone).exclude(id=customer.id).exists()
-
 
     def _update_customer_phone_full_name(self, c: Customer, phone: str, full_name: str) -> Customer:
         c.phone = phone
