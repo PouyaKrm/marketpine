@@ -151,6 +151,7 @@ class CustomerListCreateSerializer(serializers.ModelSerializer):
 
 class CustomerSerializer(CustomerListCreateSerializer):
 
+    phone = serializers.CharField(required=False, max_length=15, validators=[phone_validator])
     joined_groups = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
@@ -214,7 +215,10 @@ class CustomerSerializer(CustomerListCreateSerializer):
         groups = validated_data.get('groups')
         phone = self.validated_data.get('phone')
         full_name = self.validated_data.get('full_name')
-        new_c = customer_service.edit_customer_phone(user, instance, phone)
+        new_c = instance
+
+        if phone is not None and customer_service.can_edit_phone(user, new_c, phone):
+            new_c = customer_service.edit_customer_phone(user, instance, phone)
 
         if customer_service.can_edit_full_name(user, new_c) and full_name is not None:
             customer_service.edit_full_name(user, new_c, full_name)
