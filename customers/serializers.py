@@ -1,6 +1,7 @@
 from django.core.exceptions import ObjectDoesNotExist
 from rest_framework import serializers
 
+from base_app.serializers import BusinessmanGroupRelatedField
 from common.util import create_field_error
 from common.util.custom_templates import CustomerTemplate
 from common.util.custom_validators import phone_validator
@@ -56,6 +57,7 @@ class CustomerListCreateSerializer(serializers.ModelSerializer):
         self.discount_service = DiscountService()
 
     phone = serializers.CharField(max_length=15, validators=[phone_validator])
+    groups = BusinessmanGroupRelatedField(write_only=True, required=False, many=True)
     purchase_sum = serializers.SerializerMethodField(read_only=True)
     purchase_discount_sum = serializers.SerializerMethodField(read_only=True)
     has_discount = serializers.SerializerMethodField(read_only=True)
@@ -63,13 +65,14 @@ class CustomerListCreateSerializer(serializers.ModelSerializer):
     used_discounts_total = serializers.SerializerMethodField(read_only=True)
     invited_purchases_total = serializers.SerializerMethodField(read_only=True)
     date_joined = serializers.SerializerMethodField(read_only=True)
-    can_edit = serializers.SerializerMethodField(read_only=True)
+    can_edit_info = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = Customer
         fields = [
             'id',
             'phone',
+            'groups',
             'full_name',
             'telegram_id',
             'instagram_id',
@@ -81,7 +84,7 @@ class CustomerListCreateSerializer(serializers.ModelSerializer):
             'date_joined',
             'update_date',
             'invited_purchases_total',
-            'can_edit',
+            'can_edit_info',
         ]
 
         extra_kwargs = {'telegram_id': {'read_only': True}, 'instagram_id': {'read_only': True}}
@@ -118,7 +121,7 @@ class CustomerListCreateSerializer(serializers.ModelSerializer):
         user = self.context['user']
         return customer_service.can_edit_full_name(user, obj)
 
-    def get_can_edit(self, obj: Customer):
+    def get_can_edit_info(self, obj: Customer):
         return not obj.is_phone_confirmed
 
     def validate_phone(self, value):
@@ -132,6 +135,9 @@ class CustomerListCreateSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         user = self.context['user']
+        phone = validated_data.get('phone')
+        full_name = validated_data.get('full_name')
+        groups = validated_data.get('groups')
         # if user.panelsetting.welcome_message is not None:
         #     message = CustomerTemplate(user, user.panelsetting.welcome_message, obj).render_template()
         #
@@ -140,7 +146,7 @@ class CustomerListCreateSerializer(serializers.ModelSerializer):
         #     sms.send_message(obj.phone, message)
 
         # return Customer().register(user, validated_data.get('phone'), validated_data.get('full_name'))
-        return customer_service.add_customer(user, validated_data.get('phone'), validated_data.get('full_name'))
+        return customer_service.add_customer(user, phone, full_name, groups)
 
 
 class CustomerSerializer(CustomerListCreateSerializer):
@@ -160,7 +166,7 @@ class CustomerSerializer(CustomerListCreateSerializer):
             'date_joined',
             'update_date',
             'invited_purchases_total',
-            'can_edit',
+            'can_edit_info',
         ]
 
         extra_kwargs = {'telegram_id': {'read_only': True}, 'instagram_id': {'read_only': True}}

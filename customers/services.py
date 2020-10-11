@@ -2,6 +2,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import QuerySet
 from rest_framework.generics import get_object_or_404
 
+
 from users.models import Customer, Businessman, BusinessmanCustomer
 
 
@@ -37,15 +38,17 @@ class CustomerService:
     def get_customer_by_businessman_and_phone(self, businessman: Businessman, phone: str) -> Customer:
         return businessman.customers.get(phone=phone)
 
-    def add_customer(self, businessman: Businessman, phone: str, full_name='') -> Customer:
-        # c = Customer.objects.create(phone=phone, full_name=full_name)
+    def add_customer(self, businessman: Businessman, phone: str, full_name='', groups: list = None) -> Customer:
+        c = None
         try:
             c = Customer.objects.get(phone=phone)
             BusinessmanCustomer.objects.create(customer=c, businessman=businessman)
-            return c
         except ObjectDoesNotExist:
             c = Customer.objects.create(phone=phone, full_name=full_name)
             BusinessmanCustomer.objects.create(customer=c, businessman=businessman)
+        finally:
+            if groups is not None:
+                self._add_customer_to_groups(c, groups)
             return c
 
     def get_date_joined(self, customer: Customer, businessman=Businessman):
@@ -117,5 +120,11 @@ class CustomerService:
         c.save()
         return c
 
+    def _add_customer_to_groups(self, customer: Customer, groups: list):
+        if groups is None:
+            return customer
+        for g in groups:
+            g.add_member(customer)
+        return customer
 
 customer_service = CustomerService()

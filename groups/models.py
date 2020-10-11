@@ -60,6 +60,10 @@ class BusinessmanGroups(BusinessmanManyToOneBaseModel):
         self.save()
 
     @staticmethod
+    def get_all_businessman_normal_groups(user):
+        return BusinessmanGroups.objects.filter(businessman=user, type=BusinessmanGroups.TYPE_NORMAL).all()
+
+    @staticmethod
     def create_group(user, title: str, customers=None):
         group = BusinessmanGroups.objects.create(businessman=user, title=title)
         if customers is not None:
@@ -79,6 +83,16 @@ class BusinessmanGroups(BusinessmanManyToOneBaseModel):
             g = BusinessmanGroups.objects.create(title=f'top purchase-{user.username}', businessman=user, type=BusinessmanGroups.TYPE_TOP_PURCHASE)
         g.reset_customers(customers)
         return g
+
+    @staticmethod
+    def get_group_by_id(user, group_id):
+        return BusinessmanGroups.objects.get(businessman=user, id=group_id)
+
+    def add_member(self, customer: Customer) -> Customer:
+        exist = self.customers.filter(id=customer.id).exists()
+        if not exist:
+            self.customers.add(customer)
+        return customer
 
     def is_special_group(self) -> bool:
         """

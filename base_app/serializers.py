@@ -1,8 +1,10 @@
 import ast
 
+from django.core.exceptions import ObjectDoesNotExist
 from rest_framework import serializers
 
 from common.util import create_link
+from groups.models import BusinessmanGroups
 
 
 def get_request_obj(*args, **kwargs):
@@ -106,3 +108,23 @@ class MultipartRequestBodyDictFiled(serializers.Field):
 
         return parsed_dict
 
+
+class BusinessmanGroupRelatedField(serializers.RelatedField):
+
+    def to_internal_value(self, data):
+
+        err = serializers.ValidationError('invalid integer')
+        try:
+            parsed = int(data)
+            if parsed <= 0:
+                raise err
+            g = self.get_queryset().get(id=parsed)
+            return g
+        except (SyntaxError, ValueError):
+            raise err
+        except ObjectDoesNotExist:
+            raise serializers.ValidationError('group with this id does not exist')
+
+    def get_queryset(self):
+        user = self.context['user']
+        return BusinessmanGroups.get_all_businessman_normal_groups(user)
