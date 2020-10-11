@@ -13,13 +13,13 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.CreateModel(
-            name='GroupCustomer',
+            name='Membership',
             fields=[
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('create_date', models.DateTimeField(auto_now_add=True, null=True)),
                 ('update_date', models.DateTimeField(auto_now=True, null=True)),
-                ('customer', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_query_name='group_customer', to='users.Customer')),
-                ('group', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_query_name='group_customer', to='groups.BusinessmanGroups')),
+                ('customer', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_query_name='membership', to='users.Customer')),
+                ('group', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_query_name='membership', to='groups.BusinessmanGroups')),
             ],
             options={
                 'abstract': False,
