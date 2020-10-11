@@ -1,8 +1,9 @@
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
 from django.db.models import QuerySet
+from django.shortcuts import get_object_or_404
 
-from users.models import Customer, BusinessmanManyToOneBaseModel
+from users.models import Customer, BusinessmanManyToOneBaseModel, BaseModel
 
 
 # Create your models here.
@@ -20,7 +21,8 @@ class BusinessmanGroups(BusinessmanManyToOneBaseModel):
 
     title = models.CharField(max_length=40)
     type = models.CharField(max_length=2, choices=type_choices, default=TYPE_NORMAL)
-    customers = models.ManyToManyField(Customer, related_name='connected_groups', related_query_name='connected_groups')
+    customers = models.ManyToManyField(Customer, related_name='connected_groups', related_query_name='connected_groups',
+                                       through='Membership')
 
     def __str__(self):
         return f"{self.title} - {self.businessman.username}"
@@ -30,13 +32,11 @@ class BusinessmanGroups(BusinessmanManyToOneBaseModel):
         db_table = 'businessman_groups'
 
     def reset_customers(self, customers):
-        # self.customers.exclude(customers__in=list(customers)).delete()
-        #
-        # for c in customers:
-        #     self.customers.add(c)
-        # self.save()
         self.customers.set(customers)
-        self.save()
+
+    def get_all_customers(self):
+        return self.customers.order_by('-membership__create_date').all()
+
 
     def customers_total(self):
         return self.customers.count()
@@ -62,6 +62,10 @@ class BusinessmanGroups(BusinessmanManyToOneBaseModel):
     @staticmethod
     def get_all_businessman_normal_groups(user):
         return BusinessmanGroups.objects.filter(businessman=user, type=BusinessmanGroups.TYPE_NORMAL).all()
+
+    @staticmethod
+    def get_group_by_id_or_404(user, group_id: int):
+        return get_object_or_404(BusinessmanGroups, id=group_id, businessman=user)
 
     @staticmethod
     def create_group(user, title: str, customers=None):
@@ -106,11 +110,14 @@ class BusinessmanGroups(BusinessmanManyToOneBaseModel):
     def add_member(self, customer: Customer) -> Customer:
         exist = self.customers.filter(id=customer.id).exists()
         if not exist:
-            self.customers.add(customer)
+            Membership.objects.create(group=self, customer=customer)
         return customer
 
     def remove_member(self, customer: Customer):
-        self.customers.remove(customer)
+        try:
+            Membership.objects.get(group=self, customer=customer).delete()
+        except ObjectDoesNotExist:
+            pass
 
     def is_special_group(self) -> bool:
         """
@@ -119,3 +126,10 @@ class BusinessmanGroups(BusinessmanManyToOneBaseModel):
 
         """
         return self.type != BusinessmanGroups.TYPE_NORMAL
+
+
+class Membership(BaseModel):
+
+    customer = models.ForeignKey(Customer, on_delete=models.CASCADE, related_query_name='membership')
+    group = models.ForeignKey(BusinessmanGroups, on_delete=models.CASCADE, related_query_name='membership')
+
