@@ -73,14 +73,12 @@ class BusinessmanCustomerRetrieveAPIView(mixins.DestroyModelMixin, RetrieveAPIVi
         c = customer_service.get_customer_by_id_or_404(self.request.user, c_id)
         return c
 
-
     def put(self, request: Request, *args, **kwargs):
-
         return self.update(request, *args, **kwargs)
 
     def delete(self, request, *args, **kwargs):
         return self.destroy(request, *args, **kwargs)
 
     def destroy(self, request: Request, *args, **kwargs) -> Response:
-        customer_service.delete_customer_for_businessman(request.user, kwargs.get('pk'))
+        customer_service.delete_customer_for_businessman(request.user, kwargs.get('id'))
         return no_content()
