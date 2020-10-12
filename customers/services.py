@@ -48,7 +48,7 @@ class CustomerService:
             BusinessmanCustomer.objects.create(customer=c, businessman=businessman)
         finally:
             if groups is not None:
-                self.reset_customer_groups(c, groups)
+                self.reset_customer_groups(businessman, c, groups)
             return c
 
     def get_date_joined(self, customer: Customer, businessman=Businessman):
