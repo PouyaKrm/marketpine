@@ -132,6 +132,10 @@ class BusinessmanGroups(BusinessmanManyToOneBaseModel):
         """
         return self.type != BusinessmanGroups.TYPE_NORMAL
 
+    @staticmethod
+    def is_member_of_group(user, customer: Customer, group_id):
+        return BusinessmanGroups.objects.filter(businessman=user, customers=customer, id=group_id).exists()
+
 
 class Membership(BaseModel):
 

@@ -66,6 +66,7 @@ class CustomerListCreateSerializer(serializers.ModelSerializer):
     invited_purchases_total = serializers.SerializerMethodField(read_only=True)
     date_joined = serializers.SerializerMethodField(read_only=True)
     can_edit_info = serializers.SerializerMethodField(read_only=True)
+    is_member_of_group = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = Customer
@@ -85,6 +86,7 @@ class CustomerListCreateSerializer(serializers.ModelSerializer):
             'update_date',
             'invited_purchases_total',
             'can_edit_info',
+            'is_member_of_group'
         ]
 
         extra_kwargs = {'telegram_id': {'read_only': True}, 'instagram_id': {'read_only': True}}
@@ -123,6 +125,14 @@ class CustomerListCreateSerializer(serializers.ModelSerializer):
 
     def get_can_edit_info(self, obj: Customer):
         return not obj.is_phone_confirmed
+
+    def get_is_member_of_group(self, obj: Customer):
+        from groups.models import BusinessmanGroups
+        user = self.context['user']
+        group_id = self.context.get('check_member_group_id')
+        if group_id is None:
+            return False
+        return BusinessmanGroups.is_member_of_group(user, obj, group_id)
 
     def validate_phone(self, value):
 

@@ -25,29 +25,37 @@ class BusinessmanCustomerListAPIView(generics.ListAPIView, mixins.CreateModelMix
     serializer_class = CustomerListCreateSerializer
     pagination_class = StandardResultsSetPagination
 
-
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
 
     def get_queryset(self):
         user = self.request.user
-        # customers_all   = Customer.objects.all()
         phone = self.request.query_params.get('phone', None)
         full_name = self.request.query_params.get('full_name', None)
-        # query = user.customers.order_by('date_joined')
+        group_id = self.request.query_params.get('group_id', None)
         query = customer_service.get_businessman_customers(user)
-        if (full_name and phone) is not None:
-            return query.filter(full_name__icontains=full_name, phone__icontains=phone)
-        elif full_name is not None:
-            return query.filter(full_name__icontains=full_name)
-        elif phone is not None:
-            return query.filter(phone__icontains=phone)
-        else:
-            return query.all()
+
+        if phone is not None:
+            query = query.filter(phone__icontains=phone)
+        if full_name is not None:
+            query = query.filter(full_name__icontains=full_name)
+        if group_id is not None and type(group_id) == int:
+            query = query.filter(membership__group__id=group_id, membership__group__businessman=user)
+
+        return query.all()
 
     def get_serializer_context(self):
-
-        return {'user': self.request.user}
+        g_id = self.request.query_params.get('is_group_member')
+        context = {'user': self.request.user}
+        if g_id is None:
+            return context
+        try:
+            g_id = int(g_id)
+            if g_id > 0:
+                context['check_member_group_id'] = g_id
+            return context
+        except ValueError:
+            return context
 
 
 class BusinessmanCustomerRetrieveAPIView(mixins.DestroyModelMixin, RetrieveAPIView, mixins.UpdateModelMixin):
