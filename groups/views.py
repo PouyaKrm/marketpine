@@ -7,10 +7,11 @@ from rest_framework.request import Request
 from rest_framework.views import APIView
 
 from common.util import create_detail_error
-from common.util.http_helpers import ok, bad_request
+from common.util.http_helpers import ok, bad_request, no_content
 from customers.serializers import CustomerListCreateSerializer
 from .models import BusinessmanGroups
-from .serializers import BusinessmanGroupsCreateListSerializer, BusinessmanGroupsRetrieveSerializer, CustomerSerializer
+from .serializers import BusinessmanGroupsCreateListSerializer, BusinessmanGroupsRetrieveSerializer, CustomerSerializer, \
+    BusinessmanGroupAddDeleteMemberSerializer
 from .permissions import CanDeleteGroup, HasValidDefinedGroups
 
 # Create your views here.
@@ -78,3 +79,19 @@ class GroupMembersAPIView(APIView):
         except ObjectDoesNotExist:
             return bad_request(create_detail_error('invalid id'))
 
+    def delete(self, request, group_id):
+        sr = BusinessmanGroupAddDeleteMemberSerializer(data=request.data, context={'user': request.user})
+        if not sr.is_valid():
+            return bad_request(sr.errors)
+        BusinessmanGroups.delete_members(request.user, sr.validated_data.get('customers'), group_id)
+        return no_content()
+
+    def put(self, request, group_id):
+
+        sr = BusinessmanGroupAddDeleteMemberSerializer(data=request.data, context={'user': request.user})
+        if not sr.is_valid():
+            return bad_request(sr.errors)
+        g = BusinessmanGroups.get_group_by_id_or_404(request.user, group_id)
+        BusinessmanGroups.add_members(sr.validated_data.get('customers'), g)
+        data = BusinessmanGroupsRetrieveSerializer(g).data
+        return ok(data)

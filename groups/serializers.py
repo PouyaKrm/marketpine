@@ -2,12 +2,14 @@ import ast
 
 from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Model
+from django.conf import settings
 from rest_framework import serializers
 
 from customers.serializers import CustomerReadIdListRepresentRelatedField
 from users.models import Customer
 from .models import BusinessmanGroups
 
+page_size = settings.PAGINATION_PAGE_NUM
 
 class BusinessmanGroupsCreateListSerializer(serializers.ModelSerializer):
     customers = CustomerReadIdListRepresentRelatedField(many=True, required=False, write_only=True)
@@ -77,3 +79,20 @@ class BusinessmanGroupsRetrieveSerializer(BusinessmanGroupsCreateListSerializer)
 
     def create(self, validated_data):
         pass
+
+
+class BusinessmanGroupAddDeleteMemberSerializer(serializers.Serializer):
+
+    customers = CustomerReadIdListRepresentRelatedField(required=True, many=True)
+
+    class Meta:
+        fields = [
+            'customer'
+        ]
+
+    def validate_customers(self, value):
+        if len(value) > page_size:
+            raise serializers.ValidationError('max customers length is {}'.format(page_size))
+        return value
+
+

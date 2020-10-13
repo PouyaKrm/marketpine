@@ -136,6 +136,18 @@ class BusinessmanGroups(BusinessmanManyToOneBaseModel):
     def is_member_of_group(user, customer: Customer, group_id):
         return BusinessmanGroups.objects.filter(businessman=user, customers=customer, id=group_id).exists()
 
+    @staticmethod
+    def delete_members(user, customers, group_id: int):
+        Membership.objects.filter(group__businessman=user, group_id=group_id, customer__in=customers).delete()
+
+    @staticmethod
+    def add_members(customers: [Customer], group):
+        new_members = filter(lambda c: not Membership.objects.filter(group=group, customer__id=c.id).exists(), customers)
+        if len(customers) == 0:
+            return group
+        Membership.objects.bulk_create([Membership(group=group, customer=c) for c in new_members])
+        return group
+
 
 class Membership(BaseModel):
 
