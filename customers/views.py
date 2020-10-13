@@ -35,9 +35,9 @@ class BusinessmanCustomerListAPIView(generics.ListAPIView, mixins.CreateModelMix
         group_id = self.request.query_params.get('group_id', None)
         query = customer_service.get_businessman_customers(user)
 
-        if phone is not None:
+        if phone is not None and type(phone) == str:
             query = query.filter(phone__icontains=phone)
-        if full_name is not None:
+        if full_name is not None and type(full_name) == str:
             query = query.filter(full_name__icontains=full_name)
         if group_id is not None and type(group_id) == int:
             query = query.filter(membership__group__id=group_id, membership__group__businessman=user)
