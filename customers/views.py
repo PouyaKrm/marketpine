@@ -44,7 +44,8 @@ class BusinessmanCustomerListAPIView(generics.ListAPIView, mixins.CreateModelMix
                 return query.all()
             group_id = int(group_id)
             if group_id > 0:
-                query = query.filter(membership__group__id=group_id, membership__group__businessman=user)
+                query = query.filter(membership__group__id=group_id,
+                                     membership__group__businessman=user).order_by('-membership__create_date')
         except ValueError:
             pass
 
