@@ -39,8 +39,14 @@ class BusinessmanCustomerListAPIView(generics.ListAPIView, mixins.CreateModelMix
             query = query.filter(phone__icontains=phone)
         if full_name is not None and type(full_name) == str:
             query = query.filter(full_name__icontains=full_name)
-        if group_id is not None and type(group_id) == int:
-            query = query.filter(membership__group__id=group_id, membership__group__businessman=user)
+        try:
+            if group_id is None:
+                return query.all()
+            group_id = int(group_id)
+            if group_id > 0:
+                query = query.filter(membership__group__id=group_id, membership__group__businessman=user)
+        except ValueError:
+            pass
 
         return query.all()
 
@@ -90,3 +96,4 @@ class BusinessmanCustomerRetrieveAPIView(mixins.DestroyModelMixin, RetrieveAPIVi
     def destroy(self, request: Request, *args, **kwargs) -> Response:
         customer_service.delete_customer_for_businessman(request.user, kwargs.get('id'))
         return no_content()
+
