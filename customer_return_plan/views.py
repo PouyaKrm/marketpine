@@ -3,6 +3,7 @@ from rest_framework.generics import ListAPIView, get_object_or_404
 from rest_framework.request import Request
 from rest_framework import generics
 
+from base_app.views import BaseListAPIView
 from common.util import create_detail_error
 from common.util.http_helpers import ok, bad_request, not_found
 from customer_return_plan.festivals.services import FestivalService
@@ -26,7 +27,7 @@ def dashboard_data(request: Request):
     return ok({'festivals_total': festivals, 'invitations_total': friend_invitations})
 
 
-class DiscountListAPIView(generics.ListAPIView):
+class DiscountListAPIView(BaseListAPIView):
     serializer_class = ReadOnlyDiscountSerializer
 
     def get_queryset(self):
@@ -52,7 +53,7 @@ def apply_discount(request: Request):
     return ok(ReadOnlyDiscountSerializer(result[1]).data)
 
 
-class CustomerDiscountsListAPIView(ListAPIView):
+class CustomerDiscountsListAPIView(BaseListAPIView):
     serializer_class = ReadOnlyDiscountWithUsedFieldSerializer
 
     def get_serializer_context(self):

@@ -5,6 +5,7 @@ from rest_framework.generics import RetrieveAPIView
 from rest_framework.request import Request
 from rest_framework.response import Response
 
+from base_app.views import BaseListAPIView
 from common.util.http_helpers import no_content
 from users.models import Customer
 from .serializers import CustomerSerializer, CustomerListCreateSerializer
@@ -12,7 +13,7 @@ from .paginations import StandardResultsSetPagination
 from .services import customer_service
 
 
-class BusinessmanCustomerListAPIView(generics.ListAPIView, mixins.CreateModelMixin):
+class BusinessmanCustomerListAPIView(BaseListAPIView, mixins.CreateModelMixin):
 
     """
     get:
@@ -23,7 +24,6 @@ class BusinessmanCustomerListAPIView(generics.ListAPIView, mixins.CreateModelMix
     """
 
     serializer_class = CustomerListCreateSerializer
-    # pagination_class = StandardResultsSetPagination
 
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)

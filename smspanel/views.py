@@ -4,6 +4,7 @@ from django.conf import settings
 from django.urls import reverse
 from rest_framework.generics import ListAPIView
 
+from base_app.views import BaseListAPIView
 from common.util import create_link
 from common.util.http_helpers import ok, get_query_param_or_default
 from common.util.paginators import create_pagination_response, create_pagination_response_body
@@ -39,7 +40,7 @@ def send_message_failed_response(ex: APIException):
     return Response({'status': ex.status, 'message': ex.message}, status=status.HTTP_424_FAILED_DEPENDENCY)
 
 
-class SMSTemplateCreateListAPIView(generics.ListAPIView, mixins.CreateModelMixin):
+class SMSTemplateCreateListAPIView(BaseListAPIView, mixins.CreateModelMixin):
 
     serializer_class = SMSTemplateSerializer
     pagination_class = None
@@ -248,7 +249,7 @@ def send_template_sms_to_group(request: Request, template_id, group_id):
     return create_sms_sent_success_response(request.user)
 
 
-class FailedSMSMessagesList(ListAPIView):
+class FailedSMSMessagesList(BaseListAPIView):
 
     serializer_class = SMSMessageListSerializer
 

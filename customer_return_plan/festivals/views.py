@@ -7,6 +7,7 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from base_app.views import BaseListAPIView
 from common.util.http_helpers import ok, bad_request, not_found, forbidden, no_content
 from customer_return_plan.festivals.permissions import CanDeleteOrUpdateFestival
 from customer_return_plan.festivals.services import FestivalService
@@ -28,7 +29,7 @@ from smspanel.permissions import HasValidCreditSendSMSToAll, HasActiveSMSPanel
 festival_service = FestivalService()
 
 
-class FestivalsListAPIView(generics.ListAPIView, mixins.CreateModelMixin):
+class FestivalsListAPIView(BaseListAPIView, mixins.CreateModelMixin):
     serializer_class = FestivalCreationSerializer
     permission_classes = [permissions.IsAuthenticated, HasActiveSMSPanel]
 

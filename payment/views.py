@@ -4,6 +4,7 @@ import jdatetime
 from django.core.exceptions import ObjectDoesNotExist
 from django.shortcuts import render, redirect
 
+from base_app.views import BaseListAPIView
 from common.util.http_helpers import bad_request, created
 from common.util.kavenegar_local import APIException
 from payment.exceptions import PaymentCreationFailedException, PaymentVerificationFailedException, \
@@ -99,7 +100,7 @@ def panel_activation_payment(request):
     return created(serializer.data)
 
 
-class ListPayView(generics.ListAPIView):
+class ListPayView(BaseListAPIView):
     serializer_class = PaymentListSerializer
 
     def get_queryset(self):

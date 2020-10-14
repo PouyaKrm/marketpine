@@ -3,6 +3,7 @@ from rest_framework.exceptions import NotFound
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.views import APIView
 
+from base_app.views import BaseListAPIView
 from .models import Post
 from django.conf import settings
 from rest_framework.response import Response
@@ -102,7 +103,7 @@ class PostRetrieveDeleteAPIView(APIView):
             return Response(status=status.HTTP_404_NOT_FOUND)
 
 
-class PostCommentListApiView(ListAPIView):
+class PostCommentListApiView(BaseListAPIView):
 
     serializer_class = CommentSerializer
 

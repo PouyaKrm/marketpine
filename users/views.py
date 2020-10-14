@@ -48,7 +48,6 @@ def create_user(request):
     return Response(data={'id': user.id}, status=status.HTTP_201_CREATED)
 
 
-
 @api_view(['GET'])
 @permission_classes([])
 def resend_verification_code(request, user_id):
