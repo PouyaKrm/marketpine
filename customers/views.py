@@ -12,7 +12,7 @@ from .paginations import StandardResultsSetPagination
 from .services import customer_service
 
 
-class BusinessmanCustomerListAPIView(generics.ListAPIView, mixins.set CreateModelMixin):
+class BusinessmanCustomerListAPIView(generics.ListAPIView, mixins.CreateModelMixin):
 
     """
     get:
