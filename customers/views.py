@@ -12,7 +12,7 @@ from .paginations import StandardResultsSetPagination
 from .services import customer_service
 
 
-class BusinessmanCustomerListAPIView(generics.ListAPIView, mixins.CreateModelMixin):
+class BusinessmanCustomerListAPIView(generics.ListAPIView, mixins.set CreateModelMixin):
 
     """
     get:
@@ -23,7 +23,7 @@ class BusinessmanCustomerListAPIView(generics.ListAPIView, mixins.CreateModelMix
     """
 
     serializer_class = CustomerListCreateSerializer
-    pagination_class = StandardResultsSetPagination
+    # pagination_class = StandardResultsSetPagination
 
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
