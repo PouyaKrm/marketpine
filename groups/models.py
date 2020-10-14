@@ -41,7 +41,7 @@ class BusinessmanGroups(BusinessmanManyToOneBaseModel):
     def customers_total(self):
         return self.customers.count()
 
-    def set_title_customers(self, title, customers):
+    def set_title(self, title):
 
         """
         updates the title of the group.
@@ -53,9 +53,6 @@ class BusinessmanGroups(BusinessmanManyToOneBaseModel):
         Returns: None
 
         """
-
-        if not self.is_special_group():
-            self.reset_customers(customers)
         self.title = title
         self.save()
 

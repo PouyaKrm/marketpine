@@ -34,7 +34,7 @@ class BusinessmanGroupsCreateListSerializer(serializers.ModelSerializer):
         return value
 
     def update(self, instance: BusinessmanGroups, validated_data):
-        instance.set_title_customers(validated_data.get('title'), validated_data.get('customers'))
+        instance.set_title(validated_data.get('title'), validated_data.get('customers'))
         return instance
 
     def create(self, validated_data):
@@ -74,7 +74,7 @@ class BusinessmanGroupsRetrieveSerializer(BusinessmanGroupsCreateListSerializer)
         return super().validate_title(value)
 
     def update(self, instance: BusinessmanGroups, validated_data):
-        instance.set_title_customers(validated_data.get('title'), validated_data.get('customers'))
+        instance.set_title(validated_data.get('title'))
         return instance
 
     def create(self, validated_data):
