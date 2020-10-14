@@ -83,15 +83,19 @@ class GroupMembersAPIView(APIView):
         sr = BusinessmanGroupAddDeleteMemberSerializer(data=request.data, context={'user': request.user})
         if not sr.is_valid():
             return bad_request(sr.errors)
-        BusinessmanGroups.delete_members(request.user, sr.validated_data.get('customers'), group_id)
+        g = BusinessmanGroups.get_group_by_id_or_404(request.user, group_id)
+        if g.is_special_group():
+            return bad_request(create_detail_error('امکان ویرایش اعضای گروه خاص نیست'))
+        BusinessmanGroups.delete_members(request.user, sr.validated_data.get('customers'), g)
         return no_content()
 
     def put(self, request, group_id):
-
         sr = BusinessmanGroupAddDeleteMemberSerializer(data=request.data, context={'user': request.user})
         if not sr.is_valid():
             return bad_request(sr.errors)
         g = BusinessmanGroups.get_group_by_id_or_404(request.user, group_id)
+        if g.is_special_group():
+            return bad_request(create_detail_error('امکان ویرایش اعضای گروه خاص نیست'))
         BusinessmanGroups.add_members(sr.validated_data.get('customers'), g)
         data = BusinessmanGroupsRetrieveSerializer(g).data
         return ok(data)

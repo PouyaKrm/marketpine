@@ -134,8 +134,8 @@ class BusinessmanGroups(BusinessmanManyToOneBaseModel):
         return BusinessmanGroups.objects.filter(businessman=user, customers=customer, id=group_id).exists()
 
     @staticmethod
-    def delete_members(user, customers, group_id: int):
-        Membership.objects.filter(group__businessman=user, group_id=group_id, customer__in=customers).delete()
+    def delete_members(user, customers, group):
+        Membership.objects.filter(group__businessman=user, group=group, customer__in=customers).delete()
 
     @staticmethod
     def add_members(customers: [Customer], group):
