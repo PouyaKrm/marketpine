@@ -10,6 +10,8 @@ from users.models import Customer
 from .models import BusinessmanGroups
 
 page_size = settings.PAGINATION_PAGE_NUM
+max_group_member_selection = 100
+
 
 class BusinessmanGroupsCreateListSerializer(serializers.ModelSerializer):
     customers = CustomerReadIdListRepresentRelatedField(many=True, required=False, write_only=True)
@@ -91,7 +93,7 @@ class BusinessmanGroupAddDeleteMemberSerializer(serializers.Serializer):
         ]
 
     def validate_customers(self, value):
-        if len(value) > page_size:
+        if len(value) > max_group_member_selection:
             raise serializers.ValidationError('max customers length is {}'.format(page_size))
         return value
 
