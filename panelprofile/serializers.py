@@ -33,6 +33,7 @@ class BusinessmanProfileSerializer(serializers.ModelSerializer):
     sms_panel_details = serializers.SerializerMethodField(read_only=True)
     business_category = CategorySerializer(read_only=True)
     category = serializers.PrimaryKeyRelatedField(write_only=True, queryset=BusinessCategory.objects.all())
+    defined_groups = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
 
@@ -56,7 +57,8 @@ class BusinessmanProfileSerializer(serializers.ModelSerializer):
             'duration_type',
             'auth_documents',
             'sms_panel_details',
-            'category'
+            'category',
+            'defined_groups'
         ]
 
         extra_kwargs = {'username': {'read_only': True}, 'phone': {'read_only': True},
@@ -101,6 +103,10 @@ class BusinessmanProfileSerializer(serializers.ModelSerializer):
 
         serializer = SMSPanelInfoSerializer(obj.smspanelinfo)
         return serializer.data
+
+    def get_defined_groups(self, obj: Businessman):
+        from groups.models import BusinessmanGroups
+        return BusinessmanGroups.defined_groups_num(obj)
 
     def validate_email(self, value):
 

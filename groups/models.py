@@ -145,6 +145,10 @@ class BusinessmanGroups(BusinessmanManyToOneBaseModel):
         Membership.objects.bulk_create([Membership(group=group, customer=c) for c in new_members])
         return group
 
+    @staticmethod
+    def defined_groups_num(user) -> int:
+        return BusinessmanGroups.get_all_businessman_normal_groups(user).count()
+
 
 class Membership(BaseModel):
 
