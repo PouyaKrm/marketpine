@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/2.2/ref/settings/
 """
 import datetime
+import logging.config
 import multiprocessing
 import os
 
@@ -17,6 +18,7 @@ import os
 from django.conf import settings
 from corsheaders.defaults import default_headers
 from django.utils import timezone
+from django.utils.log import DEFAULT_LOGGING
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 FILE_UPLOAD_PERMISSIONS = 0o644
@@ -50,9 +52,7 @@ uS+bpsFJ8c/KKLnk2fVs4iGtY/fPCRFeoVppqiFWs2gV390suMI16RoKDHoKuR1C
 hcrTQYQs+QvhU9QitwIDAQAB
 -----END PUBLIC KEY-----"""
 
-
 REFRESH_TOKEN_EXP_DELTA = timezone.timedelta(days=1)
-
 
 PAGINATION_PAGE_NUM = 25
 
@@ -60,7 +60,6 @@ FRONTEND_URL = "http://businesspine.ir"
 
 ACTIVATION_ALLOW_REFRESH_DAYS_BEFORE_EXPIRE = timezone.timedelta(days=2)
 ACTIVATION_COST_IN_TOMANS = 1000
-
 
 SMS_PANEL = {
     'CUSTOMER_LINE': '10004000030003',
@@ -71,14 +70,15 @@ SMS_PANEL = {
     'API_KEY': '4D4C324E43416D726C65446D7258566A4F59697153444355734E4F4D6B382B57',
     'CUSTOMER_US_PREFIX': 'bp',
     'PID': 1422,
-    'MIN_CREDIT': 100000,  #minimum credit that each user must have for sending message
+    'MIN_CREDIT': 100000,  # minimum credit that each user must have for sending message
     "MIN_CREDIT_CHARGE": 100,  # min amount that user can increase their credit in Tomans
     "MAX_CREDIT_CHARGE": 10000,  # max amount that user can increase their credit in Tomans
     'MAX_MESSAGE_COST': 600,  # this is used for credit validation before sending message. must be in rials
     'ENGLISH_MAX_CHARS': 612,
     'PERSIAN_MAX_CHARS': 268,
     'TEMPLATE_MIN_CHARS': 10,
-    'TEMPLATE_MAX_CHARS': 160,  #note: Don 't change this value. If you really want, change in SMSTemplate -> content -> max_length too
+    'TEMPLATE_MAX_CHARS': 160,
+    # note: Don 't change this value. If you really want, change in SMSTemplate -> content -> max_length too
     'SEND_THREADS_NUMBER': multiprocessing.cpu_count(),
     'MAX_SEND_FAIL_ATTEMPTS': 3,
     'SEND_TEMPLATE_PAGE_SIZE': 150,
@@ -154,7 +154,6 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = 'CRM.urls'
 
-
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
@@ -174,7 +173,6 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'CRM.wsgi.application'
 
-
 # Database
 # https://docs.djangoproject.com/en/2.2/ref/settings/#databases
 
@@ -184,7 +182,6 @@ DATABASES = {
         'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
     }
 }
-
 
 # Password validation
 # https://docs.djangoproject.com/en/2.2/ref/settings/#auth-password-validators
@@ -204,7 +201,6 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-
 # Internationalization
 # https://docs.djangoproject.com/en/2.2/topics/i18n/
 
@@ -218,15 +214,46 @@ USE_L10N = True
 
 USE_TZ = True
 
-
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/2.2/howto/static-files/
 
 STATIC_URL = '/static/'
+LOG_DIR = os.path.join(BASE_DIR, '..', 'logs')
+
+logging.config.dictConfig({
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'console': {
+            'format': '%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
+        },
+        'django.server': DEFAULT_LOGGING['formatters']['django.server'],
+    },
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'console',
+        },
+        'django.server': DEFAULT_LOGGING['handlers']['django.server'],
+    },
+    'loggers': {
+        '': {
+            'level': 'WARNING',
+            'handlers': ['console'],
+        },
+        'CRM': {
+            'level': 'INFO',
+            'handlers': ['console'],
+            # required to avoid double logging with root logger
+            'propagate': False,
+        },
+        'django.server': DEFAULT_LOGGING['loggers']['django.server'],
+    },
+})
 
 MAX_LOGO_SIZE = 200000
 MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR,'..', 'uploaded_media/')
+MEDIA_ROOT = os.path.join(BASE_DIR, '..', 'uploaded_media/')
 
 AUTH_DOC = {
     'MAX_FORM_SIZE': 2000000,
@@ -235,7 +262,6 @@ AUTH_DOC = {
 }
 
 AUTH_USER_MODEL = 'users.Businessman'
-
 
 REST_FRAMEWORK = {
 
@@ -256,19 +282,19 @@ REST_FRAMEWORK = {
 
 JWT_AUTH = {
     'JWT_ENCODE_HANDLER':
-    'rest_framework_jwt.utils.jwt_encode_handler',
+        'rest_framework_jwt.utils.jwt_encode_handler',
 
     'JWT_DECODE_HANDLER':
-    'rest_framework_jwt.utils.jwt_decode_handler',
+        'rest_framework_jwt.utils.jwt_decode_handler',
 
     'JWT_PAYLOAD_HANDLER':
-    'rest_framework_jwt.utils.jwt_payload_handler',
+        'rest_framework_jwt.utils.jwt_payload_handler',
 
     'JWT_PAYLOAD_GET_USER_ID_HANDLER':
-    'rest_framework_jwt.utils.jwt_get_user_id_from_payload_handler',
+        'rest_framework_jwt.utils.jwt_get_user_id_from_payload_handler',
 
     'JWT_RESPONSE_PAYLOAD_HANDLER':
-    'rest_framework_jwt.utils.jwt_response_payload_handler',
+        'rest_framework_jwt.utils.jwt_response_payload_handler',
 
     'JWT_SECRET_KEY': SECRET_KEY,
     'JWT_GET_USER_SECRET_KEY': None,
@@ -292,7 +318,6 @@ JWT_AUTH = {
 
 CORS_ORIGIN_ALLOW_ALL = True
 
-
 CORS_ALLOW_HEADERS = list(default_headers) + [
     'x-api-key',
     'x-device-key'
@@ -302,8 +327,7 @@ CORS_EXPOSE_HEADERS = [
     'content-type',
 ]
 
-
-ZARINPAL={
+ZARINPAL = {
     'url': 'https://www.zarinpal.com/pg/services/WebGate/wsdl',
     "MERCHANT": "7055b6ac-e6dc-11e9-99c1-000c295eb8fc",
     "FORWARD_LINK": "https://www.zarinpal.com/pg/StartPay/{}/ZarinGate",  # use this string with .format method
@@ -326,14 +350,12 @@ CONTENT_MARKETING = {
     'NOTIF_TEMPLATE_MAX_CHARS': 100
 }
 
-
 ONLINE_MENU = {
     'SUB_DIR': 'menus/',
     'BASE_URL': '/menu/',
     'MAX_FILE_SIZE': 10000000,
     'MAX_ALLOWED_IMAGES': 10
 }
-
 
 MOBILE_APP_PAGE_CONF = {
     'SUB_DIR': 'mobile_app/',
@@ -353,13 +375,9 @@ DEFAULT_BUSINESS_CATEGORY = [
     'کافی شاپ',
 ]
 
-
 try:
     from .local_settings import *
 except ImportError:
     pass
 
-
 from .customer_app_settings import *
-
-

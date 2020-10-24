@@ -1,4 +1,7 @@
 import requests
+import logging
+
+logger = logging.getLogger(__name__)
 
 try:
     import json
@@ -42,8 +45,11 @@ class KavenegarAPI(object):
                 if (response['return']['status'] == 200):
                     response = response['entries']
                 else:
-                    raise APIException(response['return']['status'], response['return']['message'])
+                    e = APIException(response['return']['status'], response['return']['message'])
+                    logger.error(e)
+                    raise e
             except ValueError as e:
+                logger.error(e)
                 raise HTTPException(e)
             return (response)
         except requests.exceptions.RequestException as e:
