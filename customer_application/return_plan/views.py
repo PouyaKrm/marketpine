@@ -10,7 +10,9 @@ from customer_application.return_plan.serializers import FriendInvitationSeriali
 from customer_application.return_plan.services import return_plan_service
 from customer_application.services import customer_data_service
 from customer_return_plan.services import customer_discount_service, discount_service
+import logging
 
+logger = logging.getLogger(__name__)
 
 @api_view(['POST'])
 @authentication_classes([CustomerAuthenticationSchema])
@@ -23,6 +25,7 @@ def friend_invitation(request: Request):
                                                            sr.validated_data.get('friend_phone'))
         return ok(result)
     except CustomerServiceException as e:
+        logger.error(e)
         return bad_request(e.http_message)
 
 
@@ -57,5 +60,6 @@ def customer_businessman_discounts_list_api_view(request: Request, businessman_i
         sr = CustomerReadonlyDiscountSerializer(result_page, request=request, many=True)
         return p.get_paginated_response(sr.data)
     except CustomerServiceException as e:
+        logger.error(e)
         return bad_request(e.http_message)
 

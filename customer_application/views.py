@@ -11,7 +11,9 @@ from online_menu.serializers import OnlineMenuSerializer
 from .base_views import CustomerAuthenticationSchema, BaseListAPIView, BaseRetrieveAPIView, BaseAPIView
 from .pagination import CustomerAppListPaginator
 from .services import customer_auth_service, customer_data_service
+import logging
 
+logger = logging.getLogger(__name__)
 
 @api_view(['POST'])
 @permission_classes([])
@@ -27,6 +29,7 @@ def send_login_code(request: Request):
             customer_auth_service.send_login_code(sr.validated_data.get('phone'))
         return no_content()
     except CustomerServiceException as e:
+        logger.error(e)
         return bad_request(e.http_message)
 
 
@@ -44,6 +47,7 @@ def customer_login(request: Request):
         t = customer_auth_service.login(phone, code, ua)
         return ok(t)
     except CustomerServiceException as e:
+        logger.error(e)
         return bad_request(e.http_message)
 
 
@@ -75,6 +79,7 @@ class BusinessmanRetrieveAPIView(BaseAPIView):
             sr = BusinessmanRetrieveSerializer(b, request=request)
             return ok(sr.data)
         except CustomerServiceException as e:
+            logger.error(e)
             return bad_request(e.http_message)
 
 
