@@ -6,6 +6,7 @@ from rest_framework.request import Request
 from rest_framework.reverse import reverse
 from rest_framework import serializers
 
+from base_app.serializers import FileFieldWithLinkRepresentation
 from payment.models import Payment
 from users.models import AuthStatus, Businessman, BusinessCategory
 from users.serializers import CategorySerializer
@@ -34,6 +35,7 @@ class BusinessmanProfileSerializer(serializers.ModelSerializer):
     business_category = CategorySerializer(read_only=True)
     category = serializers.PrimaryKeyRelatedField(write_only=True, queryset=BusinessCategory.objects.all())
     defined_groups = serializers.SerializerMethodField(read_only=True)
+    logo = FileFieldWithLinkRepresentation(read_only=True)
 
     class Meta:
 
@@ -46,6 +48,7 @@ class BusinessmanProfileSerializer(serializers.ModelSerializer):
             'address',
             'phone',
             'email',
+            'logo',
             'business_category',
             'business_name',
             'date_joined',
@@ -147,26 +150,15 @@ class UploadImageSerializer(serializers.ModelSerializer):
 
         logo = validated_data['logo']
 
-        user = self.context['user']
-
-        path = os.path.join(settings.MEDIA_ROOT, user.id.__str__(), 'logo')
-
-        if not os.path.exists(path):
-            os.makedirs(path)
-        else:
-            user.logo.delete()
-
-        instance.logo.save(logo.name, logo.file)
+        instance.logo = logo
+        instance.save()
 
         return instance
-
 
 
 class AuthSerializer(serializers.ModelSerializer):
 
     password = serializers.CharField(min_length=8, max_length=16, required=True, write_only=True)
-
-
 
     class Meta:
 

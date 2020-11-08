@@ -6,11 +6,13 @@ from django.dispatch.dispatcher import receiver
 from django.conf import settings
 from django.utils import timezone
 
-from base_app.models import PanelDurationBaseModel
+from base_app.models import PanelDurationBaseModel, PublicFileStorage
 from common.util.kavenegar_local import APIException
 
 categories = settings.DEFAULT_BUSINESS_CATEGORY
 days_before_expire = settings.ACTIVATION_ALLOW_REFRESH_DAYS_BEFORE_EXPIRE
+st = PublicFileStorage(subdir='logos', base_url='logo')
+
 
 class AuthStatus:
     AUTHORIZED = '2'
@@ -48,12 +50,13 @@ class BusinessCategory(BaseModel):
 class Businessman(AbstractUser, PanelDurationBaseModel):
 
     def get_upload_path(self, filename):
-        return f"{self.id}/logo/{filename}"
+        from common.util import generate_url_safe_base64_file_name
+        return f"{self.id}/{generate_url_safe_base64_file_name(filename)}"
 
     phone = models.CharField(max_length=15)
     address = models.TextField(max_length=500, blank=True, null=True)
     business_name = models.CharField(max_length=1000)
-    logo = models.ImageField(upload_to=get_upload_path, null=True, blank=True, max_length=254)
+    logo = models.ImageField(storage=st, upload_to=get_upload_path, null=True, blank=True, max_length=254)
     telegram_id = models.CharField(max_length=20, blank=True, null=True)
     instagram_id = models.CharField(max_length=20, blank=True, null=True)
     business_category = models.ForeignKey(BusinessCategory, on_delete=models.PROTECT, null=True)
