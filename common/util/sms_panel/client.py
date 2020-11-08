@@ -78,8 +78,8 @@ class ClientManagement:
         :param user: businessman
         :return: SMSPanelInfo that businessman property is not set to user and is not saved to database
         """
-
-        data = {'username': username_prefix + user.username, 'password': password, 'localid': user.id,
+        un = '{}_{}_{}'.format(username_prefix, user.username, user.id)
+        data = {'username': un, 'password': password, 'localid': user.id,
                 'mininumallowedcredit': min_credit, 'credit': init_credit,
                 'fullname': user.first_name + " " + user.last_name, 'planid': pid,
                 'mobile': user.phone, 'lines': customer_line, 'status': 0}

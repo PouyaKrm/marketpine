@@ -120,9 +120,9 @@ class BusinessmanAuthDocs(models.Model):
         return f'{self.businessman.id}/auth-docs/{filename}'
 
     businessman = models.OneToOneField(Businessman, on_delete=models.CASCADE)
-    form = models.FileField(upload_to=get_upload_path, max_length=80, null=True)
-    national_card = models.ImageField(upload_to=get_upload_path, max_length=80, null=True)
-    birth_certificate = models.ImageField(upload_to=get_upload_path, max_length=80, null=True)
+    form = models.FileField(upload_to=get_upload_path, max_length=300, null=True)
+    national_card = models.ImageField(upload_to=get_upload_path, max_length=300, null=True)
+    birth_certificate = models.ImageField(upload_to=get_upload_path, max_length=300, null=True)
 
     def __str__(self):
         return self.businessman.__str__()
