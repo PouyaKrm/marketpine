@@ -1,5 +1,7 @@
 import os
 from enum import Enum
+
+import jdatetime
 from rest_framework_jwt.settings import api_settings
 from rest_framework.request import Request
 from strgen import StringGenerator
@@ -125,3 +127,6 @@ def url_safe_secret() -> str:
 def generate_url_safe_base64_file_name(file_name: str) -> str:
     extension = get_file_extension(file_name)
     return f"{str(base64.urlsafe_b64encode(str(uuid.uuid4()).encode('utf8')), 'utf8')}{extension}"
+
+def gregorian_to_jalali_str(datetime):
+    return jdatetime.date.fromgregorian(date=datetime).strftime('%Y/%m/%d')

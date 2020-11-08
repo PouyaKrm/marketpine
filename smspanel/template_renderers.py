@@ -1,10 +1,15 @@
 from django.core.exceptions import ObjectDoesNotExist
+from django.conf import settings
 
+from common.util import gregorian_to_jalali_str
 from content_marketing.models import Post
 from customer_return_plan.festivals.models import Festival
 from customer_return_plan.invitation.models import FriendInvitation
 from smspanel.models import SMSMessage, SMSMessageReceivers
 import re
+import jdatetime
+
+page_url = settings.BUSINESSMAN_PAGE_URL
 
 from users.models import Customer
 
@@ -19,7 +24,10 @@ class BaseTemplateRenderer:
         return {'customer_phone': customer.phone, 'full_name': customer.full_name}
 
     def _businessman_key_value(self) -> dict:
-        return {'business_name': self._businessman.business_name}
+        return {
+            'business_name': self._businessman.business_name,
+            'page_url': page_url.format(self._businessman.id)
+        }
 
     def _all_key_values(self, customer: Customer) -> dict:
         return {
@@ -28,18 +36,18 @@ class BaseTemplateRenderer:
         }
 
     def _render(self, template: str, tag_key_value: dict):
-
         def replace(match):
             g = match.group(1)
             if not tag_key_value.keys().__contains__(g):
                 return ''
             return tag_key_value.get(g)
+
         return re.sub('#([A-Za-z0-9_]+)', replace, template)
 
     def render(self, receiver: SMSMessageReceivers):
         return self._render(self._sms_message.message, {**self._businessman_key_value(),
-                                                         **self._customer_key_value(receiver.customer)
-                                                         })
+                                                        **self._customer_key_value(receiver.customer)
+                                                        })
 
 
 class ContentMarketingTemplateRenderer(BaseTemplateRenderer):
@@ -71,11 +79,12 @@ class FestivalTemplateRenderer(BaseTemplateRenderer):
             raise ValueError('no festival with provided sms_message found')
 
     def render(self, receiver: SMSMessageReceivers):
-
+        start_date_j = gregorian_to_jalali_str(self.__festival.start_date)
+        end_date_j = gregorian_to_jalali_str(self.__festival.end_date)
         festival_context = {
             'name': self.__festival.name,
-            'start_date': self.__festival.start_date,
-            'end_date': self.__festival.end_date,
+            'start_date': start_date_j,
+            'end_date': end_date_j,
             'discount_code': self.__festival.discount.discount_code
         }
 
@@ -122,7 +131,6 @@ class FriendInvitationTemplateRenderer(BaseTemplateRenderer):
 
 
 def get_renderer_object_based_on_sms_message_used(sms_message: SMSMessage) -> BaseTemplateRenderer:
-
     if sms_message.used_for == SMSMessage.USED_FOR_CONTENT_MARKETING:
         return ContentMarketingTemplateRenderer(sms_message)
     elif sms_message.used_for == SMSMessage.USED_FOR_FESTIVAL:
@@ -131,4 +139,3 @@ def get_renderer_object_based_on_sms_message_used(sms_message: SMSMessage) -> Ba
         return FriendInvitationTemplateRenderer(sms_message)
     else:
         return BaseTemplateRenderer(sms_message)
-

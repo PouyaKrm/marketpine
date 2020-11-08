@@ -7,3 +7,5 @@ CUSTOMER_APP_PAGINATION_SETTINGS = {
     'MAX_PAGE_SIZE': 20,
     'PAGE_SIZE_QUERY_PARAM': 'page_size'
 }
+
+BUSINESSMAN_PAGE_URL = 'https://moshtarino/markets/{}'
