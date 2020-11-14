@@ -9,7 +9,7 @@ from customers.services import customer_service
 from customer_application.exceptions import CustomerServiceException
 from common.util.sms_panel.message import SystemSMSMessage
 from online_menu.services import online_menu_service
-from users.models import Customer, Businessman
+from users.models import Customer, Businessman, BusinessmanCustomer
 from users.services import businessman_service
 from .customer_content_marketing.services import customer_app_content_marketing_service
 from .models import CustomerOneTimePasswords, CustomerLoginTokens
@@ -130,11 +130,40 @@ class CustomerDataService:
             query = query.filter(business_name__icontains=business_name)
         return query.all()
 
-    def get_businessman_of_customer_by_id(self, customer: Customer, businessman_id: int) -> Businessman:
+    def is_customer_jouned_to_businessman(self, customer: Customer, businessman_id) -> bool:
+        return customer.businessmans.filter(id=businessman_id).exists()
+
+    def get_notifications(self, customer: Customer) -> dict:
+        f = festival_service.get_customer_latest_festival_for_notif(customer)
+        p = customer_app_content_marketing_service.get_post_for_notif(customer)
+        return {'festival': f, 'post': p}
+
+    def get_online_menus_by_businessman_id(self, businessman_id: int):
+        b = self.get_businessman_by_id(businessman_id)
+        return online_menu_service.get_all_menus(b)
+
+    def add_customer_to_businessman(self, page_businessman_id: str, customer: Customer) -> Businessman:
+        if customer.is_anonymous:
+            CustomerServiceException.for_should_login()
+        b = self.get_businessman_by_id_or_page_id(page_businessman_id)
+        exist = BusinessmanCustomer.objects.filter(businessman=b, customer=customer).exists()
+        if exist:
+            return b
+        BusinessmanCustomer.objects.create(businessman=b, customer=customer, joined_by=BusinessmanCustomer.JOINED_BY_CUSTOMER_APP)
+        return b
+
+    def get_businessman_by_id_or_page_id(self, page_businessman_id: str) -> Businessman:
+        is_int = True
         try:
-            return customer.businessmans.get(id=businessman_id)
-        except ObjectDoesNotExist:
-            CustomerServiceException.for_businessman_not_found()
+            parsed = int(page_businessman_id)
+        except ValueError:
+            parsed = page_businessman_id
+            is_int = False
+
+        if is_int:
+            return customer_data_service.get_businessman_by_id(parsed)
+        else:
+            return customer_data_service.get_businessman_by_page_id(parsed)
 
     def get_businessman_by_id(self, businessman_id: int) -> Businessman:
         try:
@@ -148,17 +177,12 @@ class CustomerDataService:
         except ObjectDoesNotExist:
             CustomerServiceException.for_businessman_not_found()
 
-    def is_customer_jouned_to_businessman(self, customer: Customer, businessman_id) -> bool:
-        return customer.businessmans.filter(id=businessman_id).exists()
+    def get_businessman_of_customer_by_id(self, customer: Customer, businessman_id: int) -> Businessman:
+        try:
+            return customer.businessmans.get(id=businessman_id)
+        except ObjectDoesNotExist:
+            CustomerServiceException.for_businessman_not_found()
 
-    def get_notifications(self, customer: Customer) -> dict:
-        f = festival_service.get_customer_latest_festival_for_notif(customer)
-        p = customer_app_content_marketing_service.get_post_for_notif(customer)
-        return {'festival': f, 'post': p}
-
-    def get_online_menus_by_businessman_id(self, businessman_id: int):
-        b = self.get_businessman_by_id(businessman_id)
-        return online_menu_service.get_all_menus(b)
 
 customer_data_service = CustomerDataService()
 

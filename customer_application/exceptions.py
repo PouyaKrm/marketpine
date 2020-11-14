@@ -33,3 +33,7 @@ class CustomerServiceException(Exception):
     @staticmethod
     def for_friend_already_invited():
         raise CustomerServiceException(CustomerAppErrors.error_dict(CustomerAppErrors.FRIEND_ALREADY_INVITED))
+
+    @staticmethod
+    def for_should_login():
+        raise CustomerServiceException(CustomerAppErrors.error_dict(CustomerAppErrors.USER_SHOULD_LOGIN))

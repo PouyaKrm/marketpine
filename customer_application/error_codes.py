@@ -8,6 +8,7 @@ class CustomerAppErrors:
     BUSINESSMAN_NOT_FOUND = '5'
     FRIEND_ALREADY_INVITED = '6'
     FRIEND_INVITATION_DISABLED = '7'
+    USER_SHOULD_LOGIN = '8'
 
     @staticmethod
     def error_dict(code, error: dict = None):

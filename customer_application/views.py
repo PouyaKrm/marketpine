@@ -9,6 +9,7 @@ from customer_application.serializers import CustomerPhoneSerializer, CustomerLo
     BaseBusinessmanSerializer, BusinessmanRetrieveSerializer, FestivalNotificationSerializer, PostNotificationSerializer
 from online_menu.serializers import OnlineMenuSerializer
 from .base_views import CustomerAuthenticationSchema, BaseListAPIView, BaseRetrieveAPIView, BaseAPIView
+from .error_codes import CustomerAppErrors
 from .pagination import CustomerAppListPaginator
 from .services import customer_auth_service, customer_data_service
 import logging
@@ -69,22 +70,25 @@ class BusinessmanRetrieveAPIView(BaseAPIView):
     permission_classes = [permissions.AllowAny]
 
     def get(self, request: Request, page_businessman_id: int):
-        is_int = True
         try:
-            parsed = int(page_businessman_id)
-        except ValueError:
-            parsed = page_businessman_id
-            is_int = False
-        try:
-            if is_int:
-                b = customer_data_service.get_businessman_by_id(parsed)
-            else:
-                b = customer_data_service.get_businessman_by_page_id(parsed)
+            b = customer_data_service.get_businessman_by_id_or_page_id(page_businessman_id)
             sr = BusinessmanRetrieveSerializer(b, request=request)
             return ok(sr.data)
         except CustomerServiceException as e:
             logger.error(e)
             return bad_request(e.http_message)
+
+    def post(self, request: Request, page_businessman_id: int):
+        if request.user.is_anonymous:
+            err = CustomerAppErrors.error_dict(CustomerAppErrors.USER_SHOULD_LOGIN)
+            return bad_request(err)
+        try:
+            b = customer_data_service.add_customer_to_businessman(page_businessman_id, request.user)
+            sr = BusinessmanRetrieveSerializer(b, request=request)
+            return ok(sr.data)
+        except CustomerServiceException as e:
+            return bad_request(e.http_message)
+
 
 
 class NotificationAPIView(BaseAPIView):
