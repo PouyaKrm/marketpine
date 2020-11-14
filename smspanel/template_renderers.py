@@ -24,9 +24,13 @@ class BaseTemplateRenderer:
         return {'customer_phone': customer.phone, 'full_name': customer.full_name}
 
     def _businessman_key_value(self) -> dict:
+        if self._businessman.is_page_id_set():
+            p_id = self._businessman.page_id
+        else:
+            p_id = self._businessman.id
         return {
             'business_name': self._businessman.business_name,
-            'page_url': page_url.format(self._businessman.id)
+            'page_url': page_url.format(p_id)
         }
 
     def _all_key_values(self, customer: Customer) -> dict:
