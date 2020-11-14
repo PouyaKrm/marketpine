@@ -2,6 +2,7 @@ import os
 
 from django.contrib.auth import authenticate
 from django.core.exceptions import ValidationError
+from django.core.validators import RegexValidator
 from rest_framework.request import Request
 from rest_framework.reverse import reverse
 from rest_framework import serializers
@@ -10,6 +11,7 @@ from base_app.serializers import FileFieldWithLinkRepresentation
 from payment.models import Payment
 from users.models import AuthStatus, Businessman, BusinessCategory
 from users.serializers import CategorySerializer
+from users.services import businessman_service
 from .models import SMSPanelInfo, BusinessmanAuthDocs
 from django.conf import settings
 from common.util.custom_validators import pdf_file_validator, validate_logo_size
@@ -36,6 +38,10 @@ class BusinessmanProfileSerializer(serializers.ModelSerializer):
     category = serializers.PrimaryKeyRelatedField(write_only=True, queryset=BusinessCategory.objects.all())
     defined_groups = serializers.SerializerMethodField(read_only=True)
     logo = FileFieldWithLinkRepresentation(read_only=True)
+    page_id = serializers.CharField(min_length=6, max_length=20, required=False, validators=[
+        RegexValidator(regex=r'^[a-zA-Z0-9_-]*$', message='کاراکتر غیر مجاز')
+    ])
+
 
     class Meta:
 
@@ -43,6 +49,7 @@ class BusinessmanProfileSerializer(serializers.ModelSerializer):
         fields = [
             'id',
             'username',
+            'page_id',
             'first_name',
             'last_name',
             'address',
@@ -120,6 +127,12 @@ class BusinessmanProfileSerializer(serializers.ModelSerializer):
         if users_num is not 0:
             raise serializers.ValidationError('this email address is already taken')
 
+        return value
+
+    def validate_page_id(self, value):
+        user = self.context['user']
+        if not businessman_service.is_page_id_unique(user, value):
+            raise serializers.ValidationError('این آیدی صفحه قبلا استفاده شده')
         return value
 
     def update(self, instance: Businessman, validated_data):
