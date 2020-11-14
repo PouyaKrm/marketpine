@@ -159,7 +159,7 @@ admin.site.register(BusinessCategory, BusinessCategoryAdminModel)
 
 
 class BusinessmanCustomerAdminModel(admin.ModelAdmin):
-    list_display = ['businessman', 'customer', 'businessman_id', 'customer_id']
+    list_display = ['businessman', 'customer', 'businessman_id', 'customer_id', 'joined_by']
 
 
 admin.site.register(BusinessmanCustomer, BusinessmanCustomerAdminModel)
