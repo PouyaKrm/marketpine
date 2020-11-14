@@ -59,6 +59,8 @@ class BaseBusinessmanSerializer(BaseModelSerializerWithRequestObj):
         fields = [
             'id',
             'business_name',
+            'is_page_id_set',
+            'page_id',
             'date_joined',
             'logo',
             'customers_total',
@@ -79,7 +81,6 @@ class BaseBusinessmanSerializer(BaseModelSerializerWithRequestObj):
         setting = invitation_service.get_businessman_invitation_setting_or_create(obj)
         return {'disabled': setting.disabled, 'percent_off': setting.percent_off,
                 'flat_rate_off': setting.flat_rate_off, 'discount_type': setting.discount_type}
-
 
 
 class BusinessmanMobileAppHeaderSerializer(serializers.ModelSerializer):
@@ -116,6 +117,8 @@ class BusinessmanRetrieveSerializer(BaseBusinessmanSerializer):
         fields = [
             'id',
             'business_name',
+            'is_page_id_set',
+            'page_id',
             'date_joined',
             'logo',
             'customers_total',

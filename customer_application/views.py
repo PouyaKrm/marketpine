@@ -66,22 +66,25 @@ class BusinessmansList(BaseListAPIView):
 
 class BusinessmanRetrieveAPIView(BaseAPIView):
 
-    # serializer_class = BusinessmanRetrieveSerializer
     permission_classes = [permissions.AllowAny]
-    # lookup_field = 'id'
 
-    # def get_queryset(self):
-    #     return customer_data_service.get_businessman_by_id(self.kwargs.get('id'))
-
-    def get(self, request: Request, businessman_id: int):
+    def get(self, request: Request, page_businessman_id: int):
+        is_int = True
         try:
-            b = customer_data_service.get_businessman_by_id(businessman_id)
+            parsed = int(page_businessman_id)
+        except ValueError:
+            parsed = page_businessman_id
+            is_int = False
+        try:
+            if is_int:
+                b = customer_data_service.get_businessman_by_id(parsed)
+            else:
+                b = customer_data_service.get_businessman_by_page_id(parsed)
             sr = BusinessmanRetrieveSerializer(b, request=request)
             return ok(sr.data)
         except CustomerServiceException as e:
             logger.error(e)
             return bad_request(e.http_message)
-
 
 
 class NotificationAPIView(BaseAPIView):

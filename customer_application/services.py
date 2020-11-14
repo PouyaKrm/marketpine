@@ -10,6 +10,7 @@ from customer_application.exceptions import CustomerServiceException
 from common.util.sms_panel.message import SystemSMSMessage
 from online_menu.services import online_menu_service
 from users.models import Customer, Businessman
+from users.services import businessman_service
 from .customer_content_marketing.services import customer_app_content_marketing_service
 from .models import CustomerOneTimePasswords, CustomerLoginTokens
 import secrets
@@ -138,6 +139,12 @@ class CustomerDataService:
     def get_businessman_by_id(self, businessman_id: int) -> Businessman:
         try:
             return Businessman.objects.get(id=businessman_id)
+        except ObjectDoesNotExist:
+            CustomerServiceException.for_businessman_not_found()
+
+    def get_businessman_by_page_id(self, page_id: str) -> Businessman:
+        try:
+            return businessman_service.get_businessman_by_page_id(page_id)
         except ObjectDoesNotExist:
             CustomerServiceException.for_businessman_not_found()
 

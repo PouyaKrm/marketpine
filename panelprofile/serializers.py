@@ -49,6 +49,7 @@ class BusinessmanProfileSerializer(serializers.ModelSerializer):
         fields = [
             'id',
             'username',
+            'is_page_id_set',
             'page_id',
             'first_name',
             'last_name',
@@ -75,6 +76,7 @@ class BusinessmanProfileSerializer(serializers.ModelSerializer):
                         'email': {'read_only': True},
                         'authorized': {'read_only': True},
                         'date_joined': {'read_only': True},
+                        'is_page_id_set': {'read_only': True},
                         'panel_activation_date': {'read_only': True},
                         'panel_expiration_date': {'read_only': True}
                         }
