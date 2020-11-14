@@ -59,6 +59,7 @@ class Businessman(AbstractUser, PanelDurationBaseModel):
     logo = models.ImageField(storage=st, upload_to=get_upload_path, null=True, blank=True, max_length=254)
     telegram_id = models.CharField(max_length=20, blank=True, null=True)
     instagram_id = models.CharField(max_length=20, blank=True, null=True)
+    page_id = models.CharField(max_length=40, unique=True, blank=True, null=True)
     business_category = models.ForeignKey(BusinessCategory, on_delete=models.PROTECT, null=True)
     is_verified = models.BooleanField(default=False)
     AUTHORIZE_CHOICES = [('0', 'UNAUTHORIZED'), ('1', 'PENDING'), ('2', 'AUTHORIZED')]
