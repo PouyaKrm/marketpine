@@ -38,10 +38,9 @@ class BusinessmanProfileSerializer(serializers.ModelSerializer):
     category = serializers.PrimaryKeyRelatedField(write_only=True, queryset=BusinessCategory.objects.all())
     defined_groups = serializers.SerializerMethodField(read_only=True)
     logo = FileFieldWithLinkRepresentation(read_only=True)
-    page_id = serializers.CharField(min_length=6, max_length=20, required=False, validators=[
-        RegexValidator(regex=r'^[a-zA-Z0-9_-]*$', message='کاراکتر غیر مجاز')
+    page_id = serializers.CharField(required=False, allow_blank=True, validators=[
+        RegexValidator(regex=r'^[a-zA-Z0-9_-]{6,20}*$', message='کاراکتر غیر مجاز')
     ])
-
 
     class Meta:
 
