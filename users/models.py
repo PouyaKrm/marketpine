@@ -243,10 +243,19 @@ class BusinessmanRefreshTokens(models.Model):
 
 
 class BusinessmanCustomer(BaseModel):
+
+    JOINED_BY_PANEL = '0'
+    JOINED_BY_CUSTOMER_APP = '1'
+    joined_by_choices = [
+        (JOINED_BY_PANEL, 'By Panel'),
+        (JOINED_BY_CUSTOMER_APP, 'Customer App')
+    ]
+
     customer = models.ForeignKey(Customer, on_delete=models.CASCADE, related_name='connected_businessmans',
                                  related_query_name='connected_businessmans')
     businessman = models.ForeignKey(Businessman, on_delete=models.PROTECT, related_name='connected_customers',
                                     related_query_name='connected_customers')
+    joined_by = models.CharField(max_length=2, default=JOINED_BY_PANEL, choices=joined_by_choices)
 
     class Meta:
         unique_together = ['businessman', 'customer']
