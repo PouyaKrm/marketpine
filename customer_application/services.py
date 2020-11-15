@@ -83,8 +83,8 @@ class CustomerAuthService:
 
     def send_login_code(self, phone: str):
         p = None
+        c = customer_service.get_customer_by_phone_or_create(phone)
         try:
-            c = self._get_customer(phone)
             p = self._one_time_password_service.generate_new_one_time_password(c)
         except (APIException, HTTPException) as e:
             logger.error(e)

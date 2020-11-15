@@ -130,4 +130,12 @@ class CustomerService:
         return customer
 
 
+    def get_customer_by_phone_or_create(self, phone) -> Customer:
+        try:
+            return customer_service.get_customer_by_phone(phone)
+        except ObjectDoesNotExist:
+            return Customer.objects.create(phone=phone)
+
+
+
 customer_service = CustomerService()
