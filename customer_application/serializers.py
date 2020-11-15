@@ -53,6 +53,7 @@ class BaseBusinessmanSerializer(BaseModelSerializerWithRequestObj):
     customers_total = serializers.SerializerMethodField(read_only=True)
     invitation_discount = serializers.SerializerMethodField(read_only=True)
     logo = FileFieldWithLinkRepresentation()
+    is_member = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = Businessman
@@ -62,6 +63,7 @@ class BaseBusinessmanSerializer(BaseModelSerializerWithRequestObj):
             'is_page_id_set',
             'page_id',
             'date_joined',
+            'is_member',
             'logo',
             'customers_total',
             'invitation_discount'
@@ -73,6 +75,10 @@ class BaseBusinessmanSerializer(BaseModelSerializerWithRequestObj):
         if self.request.user.is_anonymous:
             return None
         return customer_service.get_date_joined(self.request.user, obj)
+
+    def get_is_member(self, obj: Businessman):
+        user = self.request.user
+        return not user.is_anonymous and customer_data_service.is_customer_jouned_to_businessman(user, obj.id)
 
     def get_customers_total(self, obj: Businessman):
         return obj.customers.count()
@@ -120,6 +126,7 @@ class BusinessmanRetrieveSerializer(BaseBusinessmanSerializer):
             'is_page_id_set',
             'page_id',
             'date_joined',
+            'is_member',
             'logo',
             'customers_total',
             'invitation_discount',
