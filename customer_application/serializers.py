@@ -72,8 +72,13 @@ class BaseBusinessmanSerializer(BaseModelSerializerWithRequestObj):
         extra_kwargs = {'logo': {'read_only': True}}
 
     def get_date_joined(self, obj: Businessman):
-        if self.request.user.is_anonymous:
+        user = self.request.user
+        if user.is_anonymous:
             return None
+        is_joined = customer_data_service.is_customer_jouned_to_businessman(user, obj.id)
+        if not is_joined:
+            return None
+
         return customer_service.get_date_joined(self.request.user, obj)
 
     def get_is_member(self, obj: Businessman):
