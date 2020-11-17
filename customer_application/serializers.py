@@ -40,8 +40,16 @@ class CustomerPhoneSerializer(serializers.Serializer):
         ]
 
 
-class CustomerLoginUpdatePhoneSerializer(CustomerPhoneSerializer):
+class CustomerCodeSerializer(serializers.Serializer):
     code = serializers.CharField(max_length=300)
+
+    class Meta:
+        fields = [
+            'code'
+        ]
+
+
+class CustomerLoginSerializer(CustomerPhoneSerializer, CustomerCodeSerializer):
 
     class Meta:
         fields = [

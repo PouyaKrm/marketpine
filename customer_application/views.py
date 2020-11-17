@@ -5,9 +5,9 @@ from rest_framework.views import APIView
 
 from common.util.http_helpers import bad_request, no_content, get_user_agent, ok
 from customer_application.exceptions import CustomerServiceException
-from customer_application.serializers import CustomerPhoneSerializer, CustomerLoginUpdatePhoneSerializer, \
+from customer_application.serializers import CustomerPhoneSerializer, CustomerLoginSerializer, \
     BaseBusinessmanSerializer, BusinessmanRetrieveSerializer, FestivalNotificationSerializer, \
-    PostNotificationSerializer, CustomerProfileSerializer
+    PostNotificationSerializer, CustomerProfileSerializer, CustomerCodeSerializer
 from online_menu.serializers import OnlineMenuSerializer
 from .base_views import CustomerAuthenticationSchema, BaseListAPIView, BaseRetrieveAPIView, BaseAPIView
 from .error_codes import CustomerAppErrors
@@ -38,7 +38,7 @@ def send_login_code(request: Request):
 @api_view(['POST'])
 @permission_classes([])
 def customer_login(request: Request):
-    sr = CustomerLoginUpdatePhoneSerializer(data=request.data)
+    sr = CustomerLoginSerializer(data=request.data)
     if not sr.is_valid():
         return bad_request(sr.errors)
 
@@ -88,10 +88,11 @@ class PhoneUpdateSendCode(BaseAPIView):
         except CustomerServiceException as e:
             return bad_request(e.http_message)
 
+
 class PhoneUpdate(BaseAPIView):
 
     def put(self, request: Request):
-        sr = CustomerLoginUpdatePhoneSerializer(data=request.data)
+        sr = CustomerCodeSerializer(data=request.data)
         if not sr.is_valid():
             return bad_request(sr.errors)
         try:
