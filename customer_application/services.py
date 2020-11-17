@@ -137,7 +137,8 @@ class CustomerAuthService:
         t = self._login_token_service.create_new_login_token(c, user_agent)
         self.set_phone_confirmed(c)
         p.delete()
-        return {'token': t.token, 'date_joined': c.date_joined, 'phone': c.phone}
+        profile = customer_data_service.get_profile(c)
+        return {'token': t.token, 'profile': profile}
 
     def resend_one_time_password(self, phone):
         c = self._get_customer(phone)
