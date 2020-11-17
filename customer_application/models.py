@@ -28,3 +28,7 @@ class CustomerLoginTokens(BaseModel):
     customer = models.ForeignKey(Customer, on_delete=models.CASCADE, related_query_name='login_tokens',
                                  related_name='login_tokens')
 
+
+class CustomerUpdatePhoneModel(BaseModel):
+    verify_code = models.OneToOneField(CustomerVerificationCode, on_delete=models.CASCADE)
+    new_phone = models.CharField(max_length=20)

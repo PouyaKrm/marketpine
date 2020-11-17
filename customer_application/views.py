@@ -5,7 +5,7 @@ from rest_framework.views import APIView
 
 from common.util.http_helpers import bad_request, no_content, get_user_agent, ok
 from customer_application.exceptions import CustomerServiceException
-from customer_application.serializers import CustomerPhoneSerializer, CustomerLoginSerializer, \
+from customer_application.serializers import CustomerPhoneSerializer, CustomerLoginUpdatePhoneSerializer, \
     BaseBusinessmanSerializer, BusinessmanRetrieveSerializer, FestivalNotificationSerializer, \
     PostNotificationSerializer, CustomerProfileSerializer
 from online_menu.serializers import OnlineMenuSerializer
@@ -38,7 +38,7 @@ def send_login_code(request: Request):
 @api_view(['POST'])
 @permission_classes([])
 def customer_login(request: Request):
-    sr = CustomerLoginSerializer(data=request.data)
+    sr = CustomerLoginUpdatePhoneSerializer(data=request.data)
     if not sr.is_valid():
         return bad_request(sr.errors)
 
