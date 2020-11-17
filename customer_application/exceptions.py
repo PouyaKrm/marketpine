@@ -15,11 +15,11 @@ class CustomerServiceException(Exception):
         raise CustomerServiceException(CustomerAppErrors.error_dict(CustomerAppErrors.PASSWORD_SEND_FAILED))
 
     @staticmethod
-    def for_invalid_password():
+    def for_invalid_verification_code():
         raise CustomerServiceException(CustomerAppErrors.error_dict(CustomerAppErrors.INVALID_PASSWORD))
 
     @staticmethod
-    def for_one_time_password_already_sent():
+    def for_verification_code_already_sent():
         raise CustomerServiceException(CustomerAppErrors.error_dict(CustomerAppErrors.ONE_TIME_PASSWORD_ALREADY_SENT))
 
     @staticmethod

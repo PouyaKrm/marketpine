@@ -23,47 +23,63 @@ customer_one_time_password_exp_delta = settings.CUSTOMER_ONE_TIME_PASSWORD_EXPIR
 secret = settings.SECRET_KEY
 
 
-class CustomerOneTimePasswordService:
+class CustomerVerificationCodeService:
 
-    def generate_new_one_time_password(self, customer: Customer) -> CustomerVerificationCode:
-        self._check_not_has_valid_one_time_password(customer)
+    def generate_new_login_verification_code(self, customer: Customer) -> CustomerVerificationCode:
+        return self._generate_verification_code(customer, CustomerVerificationCode.USED_FOR_LOGIN)
+
+    def _generate_verification_code(self, customer: Customer, used_for) -> CustomerVerificationCode:
+        self._check_not_has_valid_one_time_password(customer, used_for)
         r = secrets.randbelow(1000000)
         if r < 100000:
             r += 100000
-        self._send_one_time_password(customer.phone, r)
+        self._send_vrification_code(customer.phone, r)
         return CustomerVerificationCode.objects.create(customer=customer, code=r,
                                                        expiration_time=timezone.now() + customer_one_time_password_exp_delta,
-                                                       last_send_time=timezone.now())
+                                                       last_send_time=timezone.now(),
+                                                       used_for=used_for)
 
-    def check_one_time_password(self, customer: Customer, code) -> CustomerVerificationCode:
+    def check_login_verification_code(self, customer: Customer, code) -> CustomerVerificationCode:
         try:
             return CustomerVerificationCode.objects.get(customer=customer, code=code,
+                                                        used_for=CustomerVerificationCode.USED_FOR_LOGIN,
                                                         expiration_time__gt=timezone.now())
         except ObjectDoesNotExist:
-            raise CustomerServiceException.for_invalid_password()
+            raise CustomerServiceException.for_invalid_verification_code()
 
-    def _check_not_has_valid_one_time_password(self, customer: Customer):
-        exist = CustomerVerificationCode.objects.filter(customer=customer, expiration_time__gt=timezone.now()).exists()
+    def _check_not_has_valid_one_time_password(self, customer: Customer, used_for):
+        exist = CustomerVerificationCode.objects.filter(used_for=used_for, customer=customer,
+                                                        expiration_time__gt=timezone.now()).exists()
         if exist:
-            CustomerServiceException.for_one_time_password_already_sent()
+            CustomerServiceException.for_verification_code_already_sent()
 
-    def resend_one_time_password(self, customer: Customer):
-        try:
-            p = CustomerVerificationCode.objects.get(customer=customer, expiration_time__gt=timezone.now(),
-                                                     send_attempts__lt=2,
-                                                     last_send_time__lt=timezone.now() - timezone.timedelta(minutes=1))
-            p.send_attempts += 1
-            p.save()
-            self._send_one_time_password(customer.phone, p.code)
-        except ObjectDoesNotExist:
-            CustomerServiceException.for_invalid_password()
+    def resend_login_verification_code(self, customer: Customer):
+        self._resend_verification_code(customer, CustomerVerificationCode.USED_FOR_LOGIN)
 
-    def _send_one_time_password(self, phone, code):
+    def _resend_verification_code(self, customer: Customer, used_for: str):
+        vc = self._get_valid_verification_code(customer, used_for)
+        vc.send_attempts += 1
+        vc.save()
+        self._send_vrification_code(customer.phone, vc)
+
+    def _send_vrification_code(self, phone: str, vc: CustomerVerificationCode):
         try:
-            SystemSMSMessage().send_customer_one_time_password(phone, code)
+            SystemSMSMessage().send_customer_one_time_password(phone, vc.code)
         except (APIException, HTTPException) as e:
             logger.error(e)
             CustomerServiceException.for_password_send_failed()
+
+    def _get_valid_verification_code(self, customer: Customer, used_for: str) -> CustomerVerificationCode:
+        try:
+            v = CustomerVerificationCode.objects.get(
+                customer=customer,
+                expiration_time__gt=timezone.now(),
+                used_for=used_for,
+                send_attempts__lt=2,
+                last_send_time__lt=timezone.now() - timezone.timedelta(minutes=1))
+            return v
+        except ObjectDoesNotExist:
+            CustomerServiceException.for_invalid_verification_code()
 
 
 class CustomerLoginTokensService:
@@ -83,14 +99,14 @@ class CustomerLoginTokensService:
 class CustomerAuthService:
 
     def __init__(self):
-        self._one_time_password_service = CustomerOneTimePasswordService()
+        self._verification_code_service = CustomerVerificationCodeService()
         self._login_token_service = CustomerLoginTokensService()
 
     def send_login_code(self, phone: str):
         p = None
         c = customer_service.get_customer_by_phone_or_create(phone)
         try:
-            p = self._one_time_password_service.generate_new_one_time_password(c)
+            p = self._verification_code_service.generate_new_login_verification_code(c)
         except (APIException, HTTPException) as e:
             logger.error(e)
             p.delete()
@@ -98,7 +114,7 @@ class CustomerAuthService:
 
     def login(self, phone: str, login_code: str, user_agent) -> dict:
         c = self._get_customer(phone)
-        p = self._one_time_password_service.check_one_time_password(c, login_code)
+        p = self._verification_code_service.check_login_verification_code(c, login_code)
         t = self._login_token_service.create_new_login_token(c, user_agent)
         self.set_phone_confirmed(c)
         p.delete()
@@ -106,7 +122,7 @@ class CustomerAuthService:
 
     def resend_one_time_password(self, phone):
         c = self._get_customer(phone)
-        self._one_time_password_service.resend_one_time_password(c)
+        self._verification_code_service.resend_login_verification_code(c)
 
     def _get_customer(self, phone: str):
         try:
@@ -206,5 +222,6 @@ class CustomerDataService:
         customer.full_name = full_name
         customer.save()
         return customer
+
 
 customer_data_service = CustomerDataService()
