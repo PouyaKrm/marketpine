@@ -28,36 +28,32 @@ class CustomerVerificationCodeService:
     def generate_new_login_verification_code(self, customer: Customer) -> CustomerVerificationCode:
         return self._generate_verification_code(customer, CustomerVerificationCode.USED_FOR_LOGIN)
 
-    def _generate_verification_code(self, customer: Customer, used_for) -> CustomerVerificationCode:
-        self._check_not_has_valid_one_time_password(customer, used_for)
-        r = secrets.randbelow(1000000)
-        if r < 100000:
-            r += 100000
-        self._send_vrification_code(customer.phone, r)
-        return CustomerVerificationCode.objects.create(customer=customer, code=r,
-                                                       expiration_time=timezone.now() + customer_one_time_password_exp_delta,
-                                                       last_send_time=timezone.now(),
-                                                       used_for=used_for)
-
     def check_login_verification_code(self, customer: Customer, code) -> CustomerVerificationCode:
-        try:
-            return CustomerVerificationCode.objects.get(customer=customer, code=code,
-                                                        used_for=CustomerVerificationCode.USED_FOR_LOGIN,
-                                                        expiration_time__gt=timezone.now())
-        except ObjectDoesNotExist:
-            raise CustomerServiceException.for_invalid_verification_code()
-
-    def _check_not_has_valid_one_time_password(self, customer: Customer, used_for):
-        exist = CustomerVerificationCode.objects.filter(used_for=used_for, customer=customer,
-                                                        expiration_time__gt=timezone.now()).exists()
-        if exist:
-            CustomerServiceException.for_verification_code_already_sent()
+        return self._get_last_unexpired_verify_code_by_code(customer, code,
+                                                            CustomerVerificationCode.USED_FOR_LOGIN)
 
     def resend_login_verification_code(self, customer: Customer):
         self._resend_verification_code(customer, CustomerVerificationCode.USED_FOR_LOGIN)
 
+    def _generate_verification_code(self, customer: Customer, used_for) -> CustomerVerificationCode:
+        self._check_not_has_unexpired_verification_code(customer, used_for)
+        r = secrets.randbelow(1000000)
+        if r < 100000:
+            r += 100000
+
+        vc = CustomerVerificationCode.objects.create(customer=customer, code=r,
+                                                     expiration_time=timezone.now() + customer_one_time_password_exp_delta,
+                                                     last_send_time=timezone.now(),
+                                                     used_for=used_for)
+        try:
+            self._send_vrification_code(customer.phone, vc)
+            return vc
+        except Exception as e:
+            vc.delete()
+            raise e
+
     def _resend_verification_code(self, customer: Customer, used_for: str):
-        vc = self._get_valid_verification_code(customer, used_for)
+        vc = self._get_valid_verification_code_for_resend(customer, used_for)
         vc.send_attempts += 1
         vc.save()
         self._send_vrification_code(customer.phone, vc)
@@ -69,7 +65,7 @@ class CustomerVerificationCodeService:
             logger.error(e)
             CustomerServiceException.for_password_send_failed()
 
-    def _get_valid_verification_code(self, customer: Customer, used_for: str) -> CustomerVerificationCode:
+    def _get_valid_verification_code_for_resend(self, customer: Customer, used_for: str) -> CustomerVerificationCode:
         try:
             v = CustomerVerificationCode.objects.get(
                 customer=customer,
@@ -80,6 +76,21 @@ class CustomerVerificationCodeService:
             return v
         except ObjectDoesNotExist:
             CustomerServiceException.for_invalid_verification_code()
+
+    def _check_not_has_unexpired_verification_code(self, customer: Customer, used_for):
+        exist = CustomerVerificationCode.objects.filter(used_for=used_for, customer=customer,
+                                                        expiration_time__gt=timezone.now()).exists()
+        if exist:
+            CustomerServiceException.for_verification_code_already_sent()
+
+    def _get_last_unexpired_verify_code_by_code(self, customer: Customer, code: str,
+                                                used_for: str) -> CustomerVerificationCode:
+        try:
+            return CustomerVerificationCode.objects.get(customer=customer, code=code,
+                                                        used_for=used_for,
+                                                        expiration_time__gt=timezone.now())
+        except ObjectDoesNotExist:
+            raise CustomerServiceException.for_invalid_verification_code()
 
 
 class CustomerLoginTokensService:
