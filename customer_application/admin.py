@@ -2,7 +2,7 @@ from django.contrib import admin
 
 # Register your models here.
 
-from .models import CustomerOneTimePasswords, CustomerLoginTokens
+from .models import CustomerVerificationCode, CustomerLoginTokens
 
-admin.site.register(CustomerOneTimePasswords)
+admin.site.register(CustomerVerificationCode)
 admin.site.register(CustomerLoginTokens)

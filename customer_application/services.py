@@ -13,7 +13,7 @@ from online_menu.services import online_menu_service
 from users.models import Customer, Businessman, BusinessmanCustomer
 from users.services import businessman_service
 from .customer_content_marketing.services import customer_app_content_marketing_service
-from .models import CustomerOneTimePasswords, CustomerLoginTokens
+from .models import CustomerVerificationCode, CustomerLoginTokens
 import secrets
 import logging
 
@@ -25,31 +25,31 @@ secret = settings.SECRET_KEY
 
 class CustomerOneTimePasswordService:
 
-    def generate_new_one_time_password(self, customer: Customer) -> CustomerOneTimePasswords:
+    def generate_new_one_time_password(self, customer: Customer) -> CustomerVerificationCode:
         self._check_not_has_valid_one_time_password(customer)
         r = secrets.randbelow(1000000)
         if r < 100000:
             r += 100000
         self._send_one_time_password(customer.phone, r)
-        return CustomerOneTimePasswords.objects.create(customer=customer, code=r,
+        return CustomerVerificationCode.objects.create(customer=customer, code=r,
                                                        expiration_time=timezone.now() + customer_one_time_password_exp_delta,
                                                        last_send_time=timezone.now())
 
-    def check_one_time_password(self, customer: Customer, code) -> CustomerOneTimePasswords:
+    def check_one_time_password(self, customer: Customer, code) -> CustomerVerificationCode:
         try:
-            return CustomerOneTimePasswords.objects.get(customer=customer, code=code,
+            return CustomerVerificationCode.objects.get(customer=customer, code=code,
                                                         expiration_time__gt=timezone.now())
         except ObjectDoesNotExist:
             raise CustomerServiceException.for_invalid_password()
 
     def _check_not_has_valid_one_time_password(self, customer: Customer):
-        exist = CustomerOneTimePasswords.objects.filter(customer=customer, expiration_time__gt=timezone.now()).exists()
+        exist = CustomerVerificationCode.objects.filter(customer=customer, expiration_time__gt=timezone.now()).exists()
         if exist:
             CustomerServiceException.for_one_time_password_already_sent()
 
     def resend_one_time_password(self, customer: Customer):
         try:
-            p = CustomerOneTimePasswords.objects.get(customer=customer, expiration_time__gt=timezone.now(),
+            p = CustomerVerificationCode.objects.get(customer=customer, expiration_time__gt=timezone.now(),
                                                      send_attempts__lt=2,
                                                      last_send_time__lt=timezone.now() - timezone.timedelta(minutes=1))
             p.send_attempts += 1
