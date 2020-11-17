@@ -30,5 +30,6 @@ class CustomerLoginTokens(BaseModel):
 
 
 class CustomerUpdatePhoneModel(BaseModel):
-    verify_code = models.OneToOneField(CustomerVerificationCode, on_delete=models.CASCADE)
+    verify_code = models.OneToOneField(CustomerVerificationCode, related_name='phone_update',
+                                       related_query_name='phone_update', on_delete=models.CASCADE)
     new_phone = models.CharField(max_length=20)

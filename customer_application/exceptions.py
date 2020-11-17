@@ -37,3 +37,7 @@ class CustomerServiceException(Exception):
     @staticmethod
     def for_should_login():
         raise CustomerServiceException(CustomerAppErrors.error_dict(CustomerAppErrors.USER_SHOULD_LOGIN))
+
+    @staticmethod
+    def for_phone_number_already_taken():
+        raise CustomerServiceException(CustomerAppErrors.error_dict(CustomerAppErrors.PHONE_NUMBER_ALREADY_TAKEN))

@@ -9,6 +9,7 @@ class CustomerAppErrors:
     FRIEND_ALREADY_INVITED = '6'
     FRIEND_INVITATION_DISABLED = '7'
     USER_SHOULD_LOGIN = '8'
+    PHONE_NUMBER_ALREADY_TAKEN = '9'
 
     @staticmethod
     def error_dict(code, error: dict = None):

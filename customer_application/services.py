@@ -13,7 +13,7 @@ from online_menu.services import online_menu_service
 from users.models import Customer, Businessman, BusinessmanCustomer
 from users.services import businessman_service
 from .customer_content_marketing.services import customer_app_content_marketing_service
-from .models import CustomerVerificationCode, CustomerLoginTokens
+from .models import CustomerVerificationCode, CustomerLoginTokens, CustomerUpdatePhoneModel
 import secrets
 import logging
 
@@ -34,6 +34,15 @@ class CustomerVerificationCodeService:
 
     def resend_login_verification_code(self, customer: Customer):
         self._resend_verification_code(customer, CustomerVerificationCode.USED_FOR_LOGIN)
+
+    def generate_new_phone_update_code(self, customer: Customer) -> CustomerVerificationCode:
+        return self._generate_verification_code(customer, CustomerVerificationCode.USED_FOR_PHONE_UPDATE)
+
+    def resend_phone_update_code(self, customer: Customer):
+        self._resend_verification_code(customer, CustomerVerificationCode.USED_FOR_PHONE_UPDATE)
+
+    def check_update_phone_code(self, customer, code) -> CustomerVerificationCode:
+        return self._get_last_unexpired_verify_code_by_code(customer, code, CustomerVerificationCode.USED_FOR_PHONE_UPDATE)
 
     def _generate_verification_code(self, customer: Customer, used_for) -> CustomerVerificationCode:
         self._check_not_has_unexpired_verification_code(customer, used_for)
@@ -63,7 +72,7 @@ class CustomerVerificationCodeService:
             SystemSMSMessage().send_customer_one_time_password(phone, vc.code)
         except (APIException, HTTPException) as e:
             logger.error(e)
-            CustomerServiceException.for_password_send_failed()
+            raise e
 
     def _get_valid_verification_code_for_resend(self, customer: Customer, used_for: str) -> CustomerVerificationCode:
         try:
@@ -119,7 +128,6 @@ class CustomerAuthService:
         try:
             p = self._verification_code_service.generate_new_login_verification_code(c)
         except (APIException, HTTPException) as e:
-            logger.error(e)
             p.delete()
             CustomerServiceException.for_password_send_failed()
 
@@ -133,7 +141,11 @@ class CustomerAuthService:
 
     def resend_one_time_password(self, phone):
         c = self._get_customer(phone)
-        self._verification_code_service.resend_login_verification_code(c)
+        try:
+            self._verification_code_service.resend_login_verification_code(c)
+        except (HTTPException, APIException) as e:
+            logger.error(e)
+            CustomerServiceException.for_password_send_failed()
 
     def _get_customer(self, phone: str):
         try:
@@ -150,6 +162,37 @@ class CustomerAuthService:
             c.is_phone_confirmed = True
             c.save()
         return c
+
+    def send_phone_update_code(self, customer: Customer, new_phone: str):
+
+        is_unique = customer_service.is_phone_number_unique_for_update(customer, new_phone)
+        is_same = new_phone == customer.phone
+        if not is_unique or is_same:
+            CustomerServiceException.for_phone_number_already_taken()
+        p = None
+        try:
+            vc = self._verification_code_service.generate_new_phone_update_code(customer)
+            p = CustomerUpdatePhoneModel.objects.create(new_phone=new_phone, verify_code=vc)
+        except (APIException, HTTPException) as e:
+            p.delete()
+            CustomerServiceException.for_password_send_failed()
+
+
+    def resend_phone_update_code(self, customer: Customer):
+        try:
+            self._verification_code_service.resend_phone_update_code(customer)
+        except (APIException, HTTPException) as e:
+            logger.error(e)
+            CustomerServiceException.for_password_send_failed()
+
+    def update_phone(self, customer: Customer, code: str) -> dict:
+        vc = self._verification_code_service.check_update_phone_code(customer, code)
+        pu = vc.phone_update
+        customer.phone = pu.new_phone
+        customer.save()
+        pu.delete()
+        vc.delete()
+        return customer_data_service.get_profile(customer)
 
 
 customer_auth_service = CustomerAuthService()

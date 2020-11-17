@@ -69,6 +69,41 @@ class ProfileAPIView(BaseAPIView):
         return ok(resp)
 
 
+class PhoneUpdateSendCode(BaseAPIView):
+
+    def post(self, request: Request):
+
+        sr = CustomerPhoneSerializer(data=request.data)
+        resend_val = request.query_params.get('resend')
+        resend = resend_val is not None and resend_val.lower() == 'true'
+        if not sr.is_valid():
+            return bad_request(sr.errors)
+        try:
+            if resend:
+                customer_auth_service.resend_phone_update_code(request.user)
+                return no_content()
+            phone = sr.validated_data.get('phone')
+            customer_auth_service.send_phone_update_code(request.user, phone)
+            return no_content()
+        except CustomerServiceException as e:
+            return bad_request(e.http_message)
+
+class PhoneUpdate(BaseAPIView):
+
+    def put(self, request: Request):
+        sr = CustomerLoginUpdatePhoneSerializer(data=request.data)
+        if not sr.is_valid():
+            return bad_request(sr.errors)
+        try:
+            code = sr.validated_data.get('code')
+            result = customer_auth_service.update_phone(request.user, code)
+            return ok(result)
+        except CustomerServiceException as e:
+            return bad_request(e.http_message)
+
+
+
+
 class BusinessmansList(BaseListAPIView):
 
     serializer_class = BaseBusinessmanSerializer
