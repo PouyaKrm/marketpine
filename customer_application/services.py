@@ -5,6 +5,7 @@ from django.utils import timezone
 
 from common.util.kavenegar_local import APIException, HTTPException
 from customer_return_plan.festivals.services import festival_service
+from customer_return_plan.services import customer_discount_service
 from customers.services import customer_service
 from customer_application.exceptions import CustomerServiceException
 from common.util.sms_panel.message import SystemSMSMessage
@@ -36,7 +37,8 @@ class CustomerOneTimePasswordService:
 
     def check_one_time_password(self, customer: Customer, code) -> CustomerOneTimePasswords:
         try:
-            return CustomerOneTimePasswords.objects.get(customer=customer, code=code, expiration_time__gt=timezone.now())
+            return CustomerOneTimePasswords.objects.get(customer=customer, code=code,
+                                                        expiration_time__gt=timezone.now())
         except ObjectDoesNotExist:
             raise CustomerServiceException.for_invalid_password()
 
@@ -48,7 +50,8 @@ class CustomerOneTimePasswordService:
     def resend_one_time_password(self, customer: Customer):
         try:
             p = CustomerOneTimePasswords.objects.get(customer=customer, expiration_time__gt=timezone.now(),
-                                                     send_attempts__lt=2, last_send_time__lt=timezone.now() - timezone.timedelta(minutes=1))
+                                                     send_attempts__lt=2,
+                                                     last_send_time__lt=timezone.now() - timezone.timedelta(minutes=1))
             p.send_attempts += 1
             p.save()
             self._send_one_time_password(customer.phone, p.code)
@@ -66,7 +69,8 @@ class CustomerOneTimePasswordService:
 class CustomerLoginTokensService:
 
     def create_new_login_token(self, customer: Customer, user_agent: str) -> CustomerLoginTokens:
-        t = jwt.encode({'customer_phone': customer.phone, 'customer_id': customer.id, 'iat': timezone.now().utcnow()}, secret, algorithm='HS256').decode('UTF-8')
+        t = jwt.encode({'customer_phone': customer.phone, 'customer_id': customer.id, 'iat': timezone.now().utcnow()},
+                       secret, algorithm='HS256').decode('UTF-8')
         return CustomerLoginTokens.objects.create(customer=customer, user_agent=user_agent, token=t)
 
     def get_customer_by_token(self, token: str, user_agent: str) -> Customer:
@@ -74,6 +78,7 @@ class CustomerLoginTokensService:
             return CustomerLoginTokens.objects.get(token=token, user_agent=user_agent).customer
         except ObjectDoesNotExist:
             CustomerServiceException.for_login_token_does_not_exist()
+
 
 class CustomerAuthService:
 
@@ -119,6 +124,7 @@ class CustomerAuthService:
             c.save()
         return c
 
+
 customer_auth_service = CustomerAuthService()
 
 
@@ -149,7 +155,8 @@ class CustomerDataService:
         exist = BusinessmanCustomer.objects.filter(businessman=b, customer=customer).exists()
         if exist:
             return b
-        BusinessmanCustomer.objects.create(businessman=b, customer=customer, joined_by=BusinessmanCustomer.JOINED_BY_CUSTOMER_APP)
+        BusinessmanCustomer.objects.create(businessman=b, customer=customer,
+                                           joined_by=BusinessmanCustomer.JOINED_BY_CUSTOMER_APP)
         return b
 
     def get_businessman_by_id_or_page_id(self, page_businessman_id: str) -> Businessman:
@@ -183,7 +190,17 @@ class CustomerDataService:
         except ObjectDoesNotExist:
             CustomerServiceException.for_businessman_not_found()
 
+    def get_profile(self, customer: Customer) -> dict:
+        total_businessman = self.get_all_businessmans(customer).count()
+        total_discounts = customer_discount_service.get_customer_available_discount(customer).count()
+        return {
+            'phone': customer.phone,
+            'is_full_name_set': customer.is_full_name_set(),
+            'full_name': customer.full_name,
+            'date_joined': customer.date_joined,
+            'total_subscribed': total_businessman,
+            'total_unused_discounts': total_discounts,
+        }
+
 
 customer_data_service = CustomerDataService()
-
-

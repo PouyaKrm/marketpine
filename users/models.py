@@ -234,6 +234,9 @@ class Customer(AbstractBaseUser):
             SendSMSMessage().welcome_message(businessman.panelsetting.welcome_message, businessman, obj)
         return obj
 
+    def is_full_name_set(self) -> bool:
+        return self.full_name is not None and len(self.full_name) > 0
+
 
 class BusinessmanRefreshTokens(models.Model):
     generate_at = models.DateTimeField(auto_now_add=True)

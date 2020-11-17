@@ -52,6 +52,12 @@ def customer_login(request: Request):
         return bad_request(e.http_message)
 
 
+class ProfileAPIView(BaseAPIView):
+
+    def get(self, request: Request):
+        resp = customer_data_service.get_profile(request.user)
+        return ok(resp)
+
 class BusinessmansList(BaseListAPIView):
 
     serializer_class = BaseBusinessmanSerializer
