@@ -6,7 +6,8 @@ from rest_framework.views import APIView
 from common.util.http_helpers import bad_request, no_content, get_user_agent, ok
 from customer_application.exceptions import CustomerServiceException
 from customer_application.serializers import CustomerPhoneSerializer, CustomerLoginSerializer, \
-    BaseBusinessmanSerializer, BusinessmanRetrieveSerializer, FestivalNotificationSerializer, PostNotificationSerializer
+    BaseBusinessmanSerializer, BusinessmanRetrieveSerializer, FestivalNotificationSerializer, \
+    PostNotificationSerializer, CustomerProfileSerializer
 from online_menu.serializers import OnlineMenuSerializer
 from .base_views import CustomerAuthenticationSchema, BaseListAPIView, BaseRetrieveAPIView, BaseAPIView
 from .error_codes import CustomerAppErrors
@@ -57,6 +58,16 @@ class ProfileAPIView(BaseAPIView):
     def get(self, request: Request):
         resp = customer_data_service.get_profile(request.user)
         return ok(resp)
+
+    def put(self, request: Request):
+        sr = CustomerProfileSerializer(data=request.data, request=request)
+        if not sr.is_valid():
+            return bad_request(sr.errors)
+        fl = sr.validated_data.get('full_name')
+        c = customer_data_service.update_full_name(request.user, fl)
+        resp = customer_data_service.get_profile(c)
+        return ok(resp)
+
 
 class BusinessmansList(BaseListAPIView):
 

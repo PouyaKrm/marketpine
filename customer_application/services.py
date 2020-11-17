@@ -202,5 +202,9 @@ class CustomerDataService:
             'total_unused_discounts': total_discounts,
         }
 
+    def update_full_name(self, customer: Customer, full_name: str) -> Customer:
+        customer.full_name = full_name
+        customer.save()
+        return customer
 
 customer_data_service = CustomerDataService()

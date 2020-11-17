@@ -12,7 +12,9 @@ from mobile_app_conf.models import MobileAppPageConf, MobileAppHeader
 from mobile_app_conf.serializers import MobileAppPageConfSerializer, FileFieldWithLinkRepresentation
 from mobile_app_conf.services import mobile_page_conf_service
 from online_menu.serializers import OnlineMenuSerializer
-from users.models import Businessman
+from users.models import Businessman, Customer
+
+customer_full_name_field = serializers.CharField(max_length=40)
 
 
 class BusinessmanIdRelatedField(serializers.RelatedField):
@@ -45,6 +47,17 @@ class CustomerLoginSerializer(CustomerPhoneSerializer):
         fields = [
             'phone',
             'code'
+        ]
+
+
+class CustomerProfileSerializer(BaseModelSerializerWithRequestObj):
+
+    full_name = customer_full_name_field
+
+    class Meta:
+        model = Customer
+        fields = [
+            'full_name'
         ]
 
 
@@ -147,6 +160,7 @@ class BusinessmanRetrieveSerializer(BaseBusinessmanSerializer):
         menus = customer_data_service.get_online_menus_by_businessman_id(obj.id)
         sr = OnlineMenuSerializer(menus, context={'request': self.request}, many=True)
         return sr.data
+
 
 class FestivalNotificationSerializer(BaseModelSerializerWithRequestObj):
     businessman = serializers.SerializerMethodField(read_only=True)
