@@ -41,3 +41,7 @@ class CustomerServiceException(Exception):
     @staticmethod
     def for_phone_number_already_taken():
         raise CustomerServiceException(CustomerAppErrors.error_dict(CustomerAppErrors.PHONE_NUMBER_ALREADY_TAKEN))
+
+    @staticmethod
+    def for_full_name_should_set():
+        raise CustomerServiceException(CustomerAppErrors.error_dict(CustomerAppErrors.FULL_NAME_MUST_BE_SET))

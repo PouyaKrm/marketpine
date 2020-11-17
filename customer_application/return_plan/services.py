@@ -8,13 +8,27 @@ from customers.services import customer_service
 from users.models import Businessman, Customer
 
 
+class InvitationInfo:
+    def __init__(self):
+        self.customer = None
+        self.businessman = None
+        self.friend_phone = None
+        self.friend_full_name = None
+        self.full_name = None
+
+
 class ReturnPlanService:
 
-    def add_friend_invitation(self, customer: Customer, businessman: Businessman, friend_phone: str):
-        self._check_invitation_is_active(businessman)
-        self._check_friend_already_invited(businessman, friend_phone)
-        c = customer_service.add_customer(businessman, friend_phone)
-        inviter_discount = invitation_service.create_invitation(businessman, customer, c)
+    def add_friend_invitation(self, info: InvitationInfo):
+        self._check_invitation_is_active(info.businessman)
+        self._check_friend_already_invited(info.businessman, info.friend_phone)
+        if not info.customer.is_full_name_set() and info.full_name is None:
+            CustomerServiceException.for_full_name_should_set()
+        elif not info.customer.is_full_name_set() and info.full_name is not None:
+            info.customer.full_name = info.full_name
+            info.customer.save()
+        c = customer_service.add_customer(info.businessman, info.friend_phone, info.friend_full_name)
+        inviter_discount = invitation_service.create_invitation(info.businessman, info.customer, c)
         return {'discount_type': inviter_discount.discount_type, 'discount_code': inviter_discount.discount_code,
                 'flat_rate_off': inviter_discount.flat_rate_off, 'percent_off': inviter_discount.percent_off}
 

@@ -2,7 +2,8 @@ from rest_framework import serializers
 
 from base_app.serializers import BaseModelSerializerWithRequestObj, BaseSerializerWithRequestObj
 from common.util.custom_validators import phone_validator
-from customer_application.serializers import BusinessmanIdRelatedField, BaseBusinessmanSerializer
+from customer_application.serializers import BusinessmanIdRelatedField, BaseBusinessmanSerializer, \
+    customer_full_name_field
 from customer_return_plan.models import Discount
 from customer_return_plan.serializers import ReadOnlyDiscountSerializer
 
@@ -10,12 +11,18 @@ from customer_return_plan.serializers import ReadOnlyDiscountSerializer
 class FriendInvitationSerializer(BaseSerializerWithRequestObj):
     businessman = BusinessmanIdRelatedField()
     friend_phone = serializers.CharField(max_length=20, validators=[phone_validator])
+    friend_full_name = serializers.CharField(max_length=40)
+    full_name = serializers.CharField(max_length=40)
 
     class Meta:
         fields = [
             'businessman',
-            'friend_phone'
+            'friend_phone',
+            'friend_full_name',
+            'full_name'
         ]
+
+        extra_kwargs = {'full_name': {'required': False}}
 
     def validate_friend_phone(self, value):
         if value == self.request.user.phone:

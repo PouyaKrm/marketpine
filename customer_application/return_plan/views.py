@@ -7,7 +7,7 @@ from customer_application.base_views import CustomerAuthenticationSchema, BaseLi
 from customer_application.exceptions import CustomerServiceException
 from customer_application.pagination import CustomerAppListPaginator
 from customer_application.return_plan.serializers import FriendInvitationSerializer, CustomerReadonlyDiscountSerializer
-from customer_application.return_plan.services import return_plan_service
+from customer_application.return_plan.services import return_plan_service, InvitationInfo
 from customer_application.services import customer_data_service
 from customer_return_plan.services import customer_discount_service, discount_service
 import logging
@@ -21,8 +21,13 @@ def friend_invitation(request: Request):
     if not sr.is_valid():
         return bad_request(sr.errors)
     try:
-        result = return_plan_service.add_friend_invitation(request.user, sr.validated_data.get('businessman'),
-                                                           sr.validated_data.get('friend_phone'))
+        inf = InvitationInfo()
+        inf.businessman = sr.validated_data.get('businessman')
+        inf.customer = request.user
+        inf.friend_phone = sr.validated_data.get('friend_phone')
+        inf.full_name = sr.validated_data.get('full_name')
+        inf.friend_full_name = sr.validated_data.get('friend_full_name')
+        result = return_plan_service.add_friend_invitation(inf)
         return ok(result)
     except CustomerServiceException as e:
         logger.error(e)
