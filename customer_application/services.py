@@ -41,7 +41,7 @@ class CustomerVerificationCodeService:
     def resend_phone_update_code(self, customer: Customer):
         self._resend_verification_code(customer, CustomerVerificationCode.USED_FOR_PHONE_UPDATE)
 
-    def check_update_phone_code(self, customer, code) -> CustomerVerificationCode:
+    def check_phone_update_code(self, customer, code) -> CustomerVerificationCode:
         return self._get_last_unexpired_verify_code_by_code(customer, code, CustomerVerificationCode.USED_FOR_PHONE_UPDATE)
 
     def _generate_verification_code(self, customer: Customer, used_for) -> CustomerVerificationCode:
@@ -186,7 +186,7 @@ class CustomerAuthService:
             CustomerServiceException.for_password_send_failed()
 
     def update_phone(self, customer: Customer, code: str) -> dict:
-        vc = self._verification_code_service.check_update_phone_code(customer, code)
+        vc = self._verification_code_service.check_phone_update_code(customer, code)
         pu = vc.phone_update
         customer.phone = pu.new_phone
         customer.save()
