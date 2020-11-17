@@ -63,8 +63,8 @@ class ProfileAPIView(BaseAPIView):
         sr = CustomerProfileSerializer(data=request.data, request=request)
         if not sr.is_valid():
             return bad_request(sr.errors)
-        fl = sr.validated_data.get('full_name')
-        c = customer_data_service.update_full_name(request.user, fl)
+        fn = sr.validated_data.get('full_name')
+        c = customer_data_service.update_full_name(request.user, fn)
         resp = customer_data_service.get_profile(c)
         return ok(resp)
 
