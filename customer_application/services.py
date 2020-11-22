@@ -35,8 +35,8 @@ class CustomerVerificationCodeService:
     def resend_login_verification_code(self, customer: Customer):
         self._resend_verification_code(customer, CustomerVerificationCode.USED_FOR_LOGIN)
 
-    def generate_new_phone_update_code(self, customer: Customer) -> CustomerVerificationCode:
-        return self._generate_verification_code(customer, CustomerVerificationCode.USED_FOR_PHONE_UPDATE)
+    def generate_new_phone_update_code(self, customer: Customer, new_phone: str) -> CustomerVerificationCode:
+        return self._generate_verification_code(customer, CustomerVerificationCode.USED_FOR_PHONE_UPDATE, new_phone)
 
     def resend_phone_update_code(self, customer: Customer):
         self._resend_verification_code(customer, CustomerVerificationCode.USED_FOR_PHONE_UPDATE)
@@ -44,7 +44,7 @@ class CustomerVerificationCodeService:
     def check_phone_update_code(self, customer, code) -> CustomerVerificationCode:
         return self._get_last_unexpired_verify_code_by_code(customer, code, CustomerVerificationCode.USED_FOR_PHONE_UPDATE)
 
-    def _generate_verification_code(self, customer: Customer, used_for) -> CustomerVerificationCode:
+    def _generate_verification_code(self, customer: Customer, used_for, phone=None) -> CustomerVerificationCode:
         self._check_not_has_unexpired_verification_code(customer, used_for)
         r = secrets.randbelow(1000000)
         if r < 100000:
@@ -55,7 +55,10 @@ class CustomerVerificationCodeService:
                                                      last_send_time=timezone.now(),
                                                      used_for=used_for)
         try:
-            self._send_vrification_code(customer.phone, vc)
+            if used_for == CustomerVerificationCode.USED_FOR_PHONE_UPDATE:
+                self._send_vrification_code(phone, vc)
+            else:
+                self._send_vrification_code(customer.phone, vc)
             return vc
         except Exception as e:
             vc.delete()
@@ -65,7 +68,10 @@ class CustomerVerificationCodeService:
         vc = self._get_valid_verification_code_for_resend(customer, used_for)
         vc.send_attempts += 1
         vc.save()
-        self._send_vrification_code(customer.phone, vc)
+        if used_for == CustomerVerificationCode.USED_FOR_PHONE_UPDATE:
+            self._send_vrification_code(vc.phone_update.new_phone, vc)
+        else:
+            self._send_vrification_code(customer.phone, vc)
 
     def _send_vrification_code(self, phone: str, vc: CustomerVerificationCode):
         try:
@@ -172,7 +178,7 @@ class CustomerAuthService:
             CustomerServiceException.for_phone_number_already_taken()
         p = None
         try:
-            vc = self._verification_code_service.generate_new_phone_update_code(customer)
+            vc = self._verification_code_service.generate_new_phone_update_code(customer, new_phone)
             p = CustomerUpdatePhoneModel.objects.create(new_phone=new_phone, verify_code=vc)
         except (APIException, HTTPException) as e:
             p.delete()
@@ -180,6 +186,7 @@ class CustomerAuthService:
 
 
     def resend_phone_update_code(self, customer: Customer):
+        vc = self._verification_code_service.check_phone_update_code(customer, code)
         try:
             self._verification_code_service.resend_phone_update_code(customer)
         except (APIException, HTTPException) as e:
