@@ -184,9 +184,7 @@ class CustomerAuthService:
             p.delete()
             CustomerServiceException.for_password_send_failed()
 
-
     def resend_phone_update_code(self, customer: Customer):
-        vc = self._verification_code_service.check_phone_update_code(customer, code)
         try:
             self._verification_code_service.resend_phone_update_code(customer)
         except (APIException, HTTPException) as e:
