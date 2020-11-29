@@ -10,6 +10,7 @@ from customers.services import customer_service
 from customer_application.exceptions import CustomerServiceException
 from common.util.sms_panel.message import SystemSMSMessage
 from online_menu.services import online_menu_service
+from smspanel.services import sms_message_service
 from users.models import Customer, Businessman, BusinessmanCustomer
 from users.services import businessman_service
 from .customer_content_marketing.services import customer_app_content_marketing_service
@@ -233,6 +234,7 @@ class CustomerDataService:
             return b
         BusinessmanCustomer.objects.create(businessman=b, customer=customer,
                                            joined_by=BusinessmanCustomer.JOINED_BY_CUSTOMER_APP)
+        sms_message_service.send_welcome_message(b, customer)
         return b
 
     def get_businessman_by_id_or_page_id(self, page_businessman_id: str) -> Businessman:

@@ -230,8 +230,8 @@ class Customer(AbstractBaseUser):
     def register(self, businessman: Businessman, phone: str, full_name: str):
         obj = Customer.objects.create(businessman=businessman, phone=phone, full_name=full_name)
         from smspanel.services import SendSMSMessage
-        if businessman.panelsetting.send_welcome_message:
-            SendSMSMessage().welcome_message(businessman.panelsetting.welcome_message, businessman, obj)
+        # if businessman.panelsetting.send_welcome_message:
+        #     SendSMSMessage().send_welcome_message(businessman.panelsetting.welcome_message, businessman, obj)
         return obj
 
     def is_full_name_set(self) -> bool:

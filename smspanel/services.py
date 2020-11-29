@@ -142,8 +142,11 @@ class SendSMSMessage:
     def friend_invitation_message(self, user: Businessman, template: str, customer):
         return self.send_by_template(user, [customer], template, SMSMessage.USED_FOR_FRIEND_INVITATION)
 
-    def welcome_message(self, template: str, user: Businessman, customer) -> SMSMessage:
-        return self.send_by_template(user, [customer], template, SMSMessage.USED_FOR_WELCOME_MESSAGE)
+    def send_welcome_message(self, user: Businessman, customer) -> SMSMessage:
+        wm = self.get_welcome_message_or_create(user)
+        if not user.has_sms_panel or not wm.send_message:
+            return None
+        return self.send_by_template(user, [customer], wm.message, SMSMessage.USED_FOR_WELCOME_MESSAGE)
 
     def update_welcome_message(self, businessman: Businessman, message: str, send_message: bool) -> WelcomeMessage:
         w = self.get_welcome_message_or_create(businessman)

@@ -2,7 +2,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import QuerySet
 from rest_framework.generics import get_object_or_404
 
-
+from smspanel.services import sms_message_service
 from users.models import Customer, Businessman, BusinessmanCustomer
 
 
@@ -47,6 +47,7 @@ class CustomerService:
             c = Customer.objects.create(phone=phone, full_name=full_name)
             BusinessmanCustomer.objects.create(customer=c, businessman=businessman)
         finally:
+            sms_message_service.send_welcome_message(businessman, c)
             if groups is not None:
                 self.reset_customer_groups(businessman, c, groups)
             return c

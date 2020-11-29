@@ -344,6 +344,8 @@ class RetrieveUpdateWelcomeMessageApiView(APIView):
     Retrieves and updates data of the panel setting
     """
 
+    permissions = [permissions.IsAuthenticated, HasActiveSMSPanel]
+
     def get(self, request: Request):
 
         """
