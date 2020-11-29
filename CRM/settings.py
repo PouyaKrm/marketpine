@@ -120,7 +120,6 @@ INSTALLED_APPS = [
     'customer_return_plan.invitation',
     'dashboard',
     'customerpurchase',
-    'panelsetting',
     'panelprofile',
     'customer_return_plan.loyalty',
     'online_menu',

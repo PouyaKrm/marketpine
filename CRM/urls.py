@@ -28,7 +28,6 @@ from customer_return_plan import urls as plan_url
 from dashboard import urls as dashboard_url
 from customerpurchase import urls as purchase_url
 from panelmodulus import urls as modulus_url
-from panelsetting import urls as setiing_ulr
 from panelprofile import urls as profile_url
 from download import urls as download_url
 from payment import urls as payment_url
@@ -55,7 +54,6 @@ urlpatterns = [
     path('api/salesman/customer-purchase/', include(purchase_url)),
     path('api/salesman/modulus/', include(modulus_url)),
     path('api/salesman/profile/', include(profile_url)),
-    path('api/salesman/settings/', include(setiing_ulr)),
     path('api/download/', include(download_url)),
     path('api/salesman/device/',include(device_url)),
     path('api/salesman/content/',include(content_url)),
