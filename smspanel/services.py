@@ -1,3 +1,4 @@
+from django.core.exceptions import ObjectDoesNotExist
 
 from users.models import Businessman
 from common.util.sms_panel.message import ClientBulkToCustomerSMSMessage, ClientBulkToAllToCustomerSMSMessage, \
@@ -5,19 +6,19 @@ from common.util.sms_panel.message import ClientBulkToCustomerSMSMessage, Client
 from common.util.sms_panel.exceptions import SendSMSException
 from common.util.sms_panel.helpers import calculate_total_sms_cost
 from common.util.kavenegar_local import APIException
-from .models import UnsentTemplateSMS, SentSMS, UnsentPlainSMS, SMSMessage, SMSMessageReceivers
+from .models import UnsentTemplateSMS, SentSMS, UnsentPlainSMS, SMSMessage, SMSMessageReceivers, WelcomeMessage
 from django.db.models import QuerySet
 
 from groups.models import BusinessmanGroups
 
-def send_template_sms_message_to_all(user: Businessman, template: str):
 
+def send_template_sms_message_to_all(user: Businessman, template: str):
     """
     Because send to all by template does not have any serailizer, this helper method is created.
     This method send sms message to all customers and saves the record of them in the database.
     """
 
-    client_sms =ClientBulkToAllToCustomerSMSMessage(user, template)
+    client_sms = ClientBulkToAllToCustomerSMSMessage(user, template)
 
     try:
         sent_messages = client_sms.send_bulk()
@@ -27,7 +28,8 @@ def send_template_sms_message_to_all(user: Businessman, template: str):
 
     while sent_messages is not None:
         user.smspanelinfo.reduce_credit_local(calculate_total_sms_cost(sent_messages))
-        SentSMS.objects.bulk_create([SentSMS(businessman=user, message_id=m['messageid'], receptor=m['receptor']) for m in sent_messages])
+        SentSMS.objects.bulk_create(
+            [SentSMS(businessman=user, message_id=m['messageid'], receptor=m['receptor']) for m in sent_messages])
         try:
             sent_messages = client_sms.send_bulk()
         except SendSMSException as e:
@@ -44,9 +46,8 @@ class SendSMSMessage:
         obj.customers.add(*remained_recoptors)
         obj.save()
 
-      
-
-    def create_unsent_template_sms(self, ex: SendSMSException, template: str, businessman: Businessman, receptors: QuerySet):
+    def create_unsent_template_sms(self, ex: SendSMSException, template: str, businessman: Businessman,
+                                   receptors: QuerySet):
 
         remained_receptors = receptors.order_by('id').filter(id__gte=ex.failed_on.id).all()
         obj = UnsentTemplateSMS.objects.create(businessman=businessman, template=template)
@@ -61,9 +62,9 @@ class SendSMSMessage:
         sms.save()
         sms.set_reserved_credit_by_receivers()
 
-
     def send_plain_sms(self, customers: QuerySet, user: Businessman, message: str):
-        sms = SMSMessage.objects.create(message=message, businessman=user, message_type=SMSMessage.TYPE_PLAIN, status=SMSMessage.STATUS_PENDING)
+        sms = SMSMessage.objects.create(message=message, businessman=user, message_type=SMSMessage.TYPE_PLAIN,
+                                        status=SMSMessage.STATUS_PENDING)
         SMSMessageReceivers.objects.bulk_create(
             [SMSMessageReceivers(sms_message=sms, customer=c) for c in customers.all()
              ])
@@ -71,8 +72,6 @@ class SendSMSMessage:
         sms.set_reserved_credit_by_receivers()
 
         return sms
-
-        
 
     def send_plain_sms_to_all(self, user: Businessman, message: str):
         sms = SMSMessage.objects.create(message=message, businessman=user, message_type=SMSMessage.TYPE_PLAIN)
@@ -86,7 +85,8 @@ class SendSMSMessage:
 
     def send_by_template(self, user: Businessman, receiver_customers: QuerySet, message_template: str,
                          used_for=SMSMessage.USED_FOR_NONE, **kwargs):
-        sms = SMSMessage.objects.create(message=message_template, businessman=user, message_type=SMSMessage.TYPE_TEMPLATE, used_for=used_for, **kwargs)
+        sms = SMSMessage.objects.create(message=message_template, businessman=user,
+                                        message_type=SMSMessage.TYPE_TEMPLATE, used_for=used_for, **kwargs)
         SMSMessageReceivers.objects.bulk_create(
             [SMSMessageReceivers(sms_message=sms, customer=c) for c in receiver_customers]
         )
@@ -100,9 +100,6 @@ class SendSMSMessage:
         self.__set_receivers_for_sms_message(sms, user.customers.all())
 
         return sms
-
-
-
 
     def set_message_to_pending(self, sms_messsage: SMSMessage):
 
@@ -139,13 +136,29 @@ class SendSMSMessage:
         return self.set_message_to_pending(sms_message)
 
     def festival_message_status_cancel(self, template: str, user: Businessman) -> SMSMessage:
-        return self.send_by_template_to_all(user, template, SMSMessage.USED_FOR_FESTIVAL, status=SMSMessage.STATUS_CANCLE)
+        return self.send_by_template_to_all(user, template, SMSMessage.USED_FOR_FESTIVAL,
+                                            status=SMSMessage.STATUS_CANCLE)
 
     def friend_invitation_message(self, user: Businessman, template: str, customer):
         return self.send_by_template(user, [customer], template, SMSMessage.USED_FOR_FRIEND_INVITATION)
 
     def welcome_message(self, template: str, user: Businessman, customer) -> SMSMessage:
         return self.send_by_template(user, [customer], template, SMSMessage.USED_FOR_WELCOME_MESSAGE)
+
+    def update_welcome_message(self, businessman: Businessman, message: str, send_message: bool) -> WelcomeMessage:
+        w = self.get_welcome_message_or_create(businessman)
+        w.message = message
+        w.send_message = send_message
+        w.save()
+        return w
+
+    def get_welcome_message_or_create(self, businessman: Businessman) -> WelcomeMessage:
+        try:
+            return WelcomeMessage.objects.get(businessman=businessman)
+        except ObjectDoesNotExist:
+            s = WelcomeMessage.objects.create(businessman=businessman,
+                                              message='به {} خوش آمدید'.format(businessman.business_name))
+            return s
 
 
 sms_message_service = SendSMSMessage()

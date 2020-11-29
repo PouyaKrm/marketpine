@@ -12,9 +12,8 @@ urlpatterns = [
     path('send-sms/template/to-all/<int:template_id>/', views.send_sms_by_template_to_all),
     path('send-sms/template/<int:template_id>/to-group/<int:group_id>/', views.send_template_sms_to_group),
     path('resend-sms/template/<int:unsent_sms_id>/', views.resend_template_sms),
-
     path('failed/', views.FailedSMSMessagesList.as_view()),
     # path('unsent-sms/template/', views.list_unsent_template_sms),
-
-    path('sent-sms/', views.get_businessman_sent_sms, name='sent_sms_retrieve')
+    path('sent-sms/', views.get_businessman_sent_sms, name='sent_sms_retrieve'),
+    path('welcome-message/', views.RetrieveUpdateWelcomeMessageApiView.as_view()),
 ]

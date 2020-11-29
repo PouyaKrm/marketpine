@@ -7,7 +7,7 @@ from django.db.models import QuerySet
 from django.utils import timezone
 
 
-from users.models import Businessman, Customer, BusinessmanManyToOneBaseModel
+from users.models import Businessman, Customer, BusinessmanManyToOneBaseModel, BusinessmanOneToOneBaseModel
 from django.conf import settings
 
 
@@ -188,3 +188,10 @@ class SMSMessageReceivers(models.Model):
 
     class Meta:
         unique_together = ['sms_message', 'customer']
+
+
+class WelcomeMessage(BusinessmanOneToOneBaseModel):
+
+    message = models.CharField(null=True, blank=True, max_length=max_english_chars)
+    send_message = models.BooleanField(default=False)
+

@@ -1,8 +1,9 @@
 from django.template import TemplateSyntaxError
 from rest_framework import serializers
 
+from base_app.serializers import BaseModelSerializerWithRequestObj
 from common.util.custom_validators import sms_not_contains_link
-from .models import SMSTemplate, SentSMS, UnsentPlainSMS, UnsentTemplateSMS, SMSMessage
+from .models import SMSTemplate, SentSMS, UnsentPlainSMS, UnsentTemplateSMS, SMSMessage, WelcomeMessage
 from common.util.custom_templates import render_template, get_fake_context, render_template_with_customer_data
 from .services import SendSMSMessage
 from django.conf import settings
@@ -268,18 +269,18 @@ class UnsentTemplateSMSListSerializer(serializers.ModelSerializer):
             'create_date',
         ]
 
-#
-# class CustomerSentSMSSerializer(serializers.ModelSerializer):
-#
-#     class Meta:
-#
-#         model = CustomerSentSMS
-#         fields = [
-#             'customer',
-#             'sent_date'
-#         ]
-#
-#     def create(self, validated_data: dict):
-#
-#         businessman = self.context['businessman']
-#         sms = SentSMS.objects.create(businessman=businessman, **validated_data)
+
+class WelcomeMessageSerializer(BaseModelSerializerWithRequestObj):
+
+    class Meta:
+
+        model = WelcomeMessage
+        fields = [
+            'message',
+            'send_message'
+        ]
+
+        extra_kwargs = {
+            'message': {'required': True},
+            'send_message': {'required': True}
+        }

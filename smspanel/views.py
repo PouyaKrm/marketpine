@@ -3,10 +3,11 @@ from django.core.paginator import Paginator
 from django.conf import settings
 from django.urls import reverse
 from rest_framework.generics import ListAPIView
+from rest_framework.views import APIView
 
 from base_app.views import BaseListAPIView
 from common.util import create_link
-from common.util.http_helpers import ok, get_query_param_or_default
+from common.util.http_helpers import ok, get_query_param_or_default, bad_request
 from common.util.paginators import create_pagination_response, create_pagination_response_body
 from common.util.kavenegar_local import APIException, HTTPException
 from common.util.sms_panel.message import retrive_sent_messages
@@ -19,7 +20,7 @@ from rest_framework.response import Response
 from users.models import Customer, Businessman
 from .serializers import SMSTemplateSerializer, SendSMSSerializer, SentSMSRetrieveForCustomer, \
     SendPlainSMSToAllSerializer, SendByTemplateSerializer, SendPlainToGroup, UnsentPlainSMSListSerializer, \
-    UnsentTemplateSMSListSerializer, SMSMessageListSerializer
+    UnsentTemplateSMSListSerializer, SMSMessageListSerializer, WelcomeMessageSerializer
 from .models import SMSTemplate, SentSMS, SMSMessage
 from .permissions import HasValidCreditSendSMS, HasValidCreditSendSMSToAll, HasValidCreditResendFailedSMS, \
     HasValidCreditResendTemplateSMS, HasValidCreditSendSMSToGroup, HasActiveSMSPanel
@@ -27,7 +28,7 @@ from .serializers import SMSTemplateSerializer, SendSMSSerializer, SentSMSRetrie
 from .models import SMSTemplate, SentSMS
 from common.util import paginators, jalali
 
-from .services import send_template_sms_message_to_all, SendSMSMessage
+from .services import send_template_sms_message_to_all, SendSMSMessage, sms_message_service
 
 from common.util.sms_panel.message import ClientBulkToAllToCustomerSMSMessage
 
@@ -335,3 +336,40 @@ def get_businessman_sent_sms(request: Request):
     phone = get_query_param_or_default(request, 'phone')
     result = SentSMS.get_sent_sms_from_kavenegar(request.user, page_num, phone)
     return create_pagination_response_body(result[4], result[1], result[0], result[2], result[3], retrieve_link)
+
+
+class RetrieveUpdateWelcomeMessageApiView(APIView):
+
+    """
+    Retrieves and updates data of the panel setting
+    """
+
+    def get(self, request: Request):
+
+        """
+        Represent current settings of the panel of the authenticated user
+        :param request: Contains data of the request
+        :return: Response with body of the current settings and 200 status code
+        """
+        wm = sms_message_service.get_welcome_message_or_create(request.user)
+        sr = WelcomeMessageSerializer(wm)
+        return ok(sr.data)
+
+    def put(self, request: Request):
+
+        """
+        Updates Setting of the panel
+        :param request: Contains data of the request
+        :return: If new data for settings is invalid Returns Response with error messages and 400 status code, Else
+        Response with body of the new settings and 200 status code
+        """
+
+        sr = WelcomeMessageSerializer(data=request.data, request=self.request)
+        if not sr.is_valid():
+            return bad_request(sr.errors)
+        message = sr.validated_data.get('message')
+        send_message = sr.validated_data.get('send_message')
+        wm = sms_message_service.update_welcome_message(request.user, message, send_message)
+        sr = WelcomeMessageSerializer(wm)
+        return ok(sr.data)
+
