@@ -255,9 +255,9 @@ MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, '..', 'uploaded_media/')
 
 AUTH_DOC = {
-    'MAX_FORM_SIZE': 2000000,
-    'MAX_CARD_SIZE': 3000000,
-    'MAX_CERTIFICATE_SIZE': 3000000,
+    'MAX_FORM_SIZE': 10000000,
+    'MAX_CARD_SIZE': 10000000,
+    'MAX_CERTIFICATE_SIZE': 10000000,
 }
 
 AUTH_USER_MODEL = 'users.Businessman'
