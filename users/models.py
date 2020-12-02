@@ -225,13 +225,6 @@ class Customer(AbstractBaseUser):
     def __str__(self):
         return self.phone
 
-    def register(self, businessman: Businessman, phone: str, full_name: str):
-        obj = Customer.objects.create(businessman=businessman, phone=phone, full_name=full_name)
-        from smspanel.services import SendSMSMessage
-        # if businessman.panelsetting.send_welcome_message:
-        #     SendSMSMessage().send_welcome_message(businessman.panelsetting.welcome_message, businessman, obj)
-        return obj
-
     def is_full_name_set(self) -> bool:
         return self.full_name is not None and len(self.full_name) > 0
 
