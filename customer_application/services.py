@@ -75,8 +75,12 @@ class CustomerVerificationCodeService:
             self._send_vrification_code(customer.phone, vc)
 
     def _send_vrification_code(self, phone: str, vc: CustomerVerificationCode):
+        sms = SystemSMSMessage()
         try:
-            SystemSMSMessage().send_customer_one_time_password(phone, vc.code)
+            if vc.used_for == CustomerVerificationCode.USED_FOR_LOGIN:
+                sms.send_customer_one_time_password(phone, vc.code)
+            elif vc.used_for == CustomerVerificationCode.USED_FOR_PHONE_UPDATE:
+                sms.send_customer_phone_change_code(phone, vc.code)
         except (APIException, HTTPException) as e:
             logger.error(e)
             raise e

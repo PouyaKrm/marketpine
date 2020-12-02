@@ -15,6 +15,7 @@ api_key = sms_settings['API_KEY']
 system_line = sms_settings['SYSTEM_LINE']
 verification_template_name = sms_settings['VERIFICATION_TEMPLATE_NAME']
 one_time_password_template_name = sms_settings['CUSTOMER_ONE_TIME_PASSWORD_TEMPLATE_NAME']
+phone_change_template_name = sms_settings['CUSTOMER_PHONE_CHANGE_TEMPLATE_NAME']
 min_credit = sms_settings['MIN_CREDIT']
 init_credit = sms_settings['INIT_CREDIT']
 pid = sms_settings['PID']
@@ -64,6 +65,10 @@ class SystemSMSMessage(BaseSMSMessage):
 
     def send_customer_one_time_password(self, receptor, code):
         return self._api.verify_lookup({'receptor': receptor, 'token': code, 'template': one_time_password_template_name})
+
+    def send_customer_phone_change_code(self, receptor: str, code: str):
+        return self._api.verify_lookup({'receptor': receptor, 'token': code, 'template': phone_change_template_name})
+
 
 class ClientSMSMessage(BaseSMSMessage):
 
