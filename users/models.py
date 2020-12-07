@@ -53,6 +53,10 @@ class Businessman(AbstractUser, PanelDurationBaseModel):
         from common.util import generate_url_safe_base64_file_name
         return f"{self.id}/{generate_url_safe_base64_file_name(filename)}"
 
+    AUTHORIZATION_UNAUTHORIZED = '0'
+    AUTHORIZATION_PENDING = '1'
+    AUTHORIZATION_AUTHORIZED = '2'
+
     phone = models.CharField(max_length=15)
     address = models.TextField(max_length=500, blank=True, null=True)
     business_name = models.CharField(max_length=1000)
@@ -62,7 +66,9 @@ class Businessman(AbstractUser, PanelDurationBaseModel):
     page_id = models.CharField(max_length=40, unique=True, blank=True, null=True)
     business_category = models.ForeignKey(BusinessCategory, on_delete=models.PROTECT, null=True)
     is_verified = models.BooleanField(default=False)
-    AUTHORIZE_CHOICES = [('0', 'UNAUTHORIZED'), ('1', 'PENDING'), ('2', 'AUTHORIZED')]
+    AUTHORIZE_CHOICES = [(AUTHORIZATION_UNAUTHORIZED, 'UNAUTHORIZED'),
+                         (AUTHORIZATION_PENDING, 'PENDING'),
+                         (AUTHORIZATION_AUTHORIZED, 'AUTHORIZED')]
     authorized = models.CharField(max_length=1, choices=AUTHORIZE_CHOICES, default='0')
     has_sms_panel = models.BooleanField(default=False)
     panel_activation_date = models.DateTimeField(null=True)
@@ -121,6 +127,9 @@ class Businessman(AbstractUser, PanelDurationBaseModel):
 
     def is_panel_active(self) -> bool:
         return self.is_duration_permanent() or (self.panel_expiration_date is not None and self.panel_expiration_date > timezone.now())
+
+    def is_authorized(self) -> bool:
+        return self.authorized == Businessman.AUTHORIZATION_AUTHORIZED
 
 
 class BusinessmanOneToOneBaseModel(BaseModel):

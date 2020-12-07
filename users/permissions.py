@@ -44,3 +44,11 @@ class HasValidRefreshToken(permissions.BasePermission):
 
         return True
 
+
+class IsBusinessmanAuthorized(permissions.BasePermission):
+
+    message = 'تا ارسال مدارک احراز هویت امکان دسترسی به این قسمت نیست'
+
+    def has_permission(self, request: Request, view: View) -> bool:
+
+        return request.user.is_authorized()
