@@ -18,6 +18,7 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.request import Request
 from rest_framework.response import Response
 from users.models import Customer, Businessman
+from users.permissions import IsPanelActivePermissionPostPutMethod
 from .serializers import SMSTemplateSerializer, SendSMSSerializer, SentSMSRetrieveForCustomer, \
     SendPlainSMSToAllSerializer, SendByTemplateSerializer, SendPlainToGroup, UnsentPlainSMSListSerializer, \
     UnsentTemplateSMSListSerializer, SMSMessageListSerializer, WelcomeMessageSerializer
@@ -45,7 +46,7 @@ class SMSTemplateCreateListAPIView(BaseListAPIView, mixins.CreateModelMixin):
 
     serializer_class = SMSTemplateSerializer
     pagination_class = None
-    permission_classes = [permissions.IsAuthenticated, HasActiveSMSPanel]
+    permission_classes = [permissions.IsAuthenticated, IsPanelActivePermissionPostPutMethod, HasActiveSMSPanel]
 
     def get_serializer_context(self):
         return {'user': self.request.user}
@@ -61,7 +62,7 @@ class SMSTemplateRetrieveAPIView(generics.RetrieveAPIView, mixins.UpdateModelMix
                                  mixins.DestroyModelMixin):
 
     serializer_class = SMSTemplateSerializer
-    permission_classes = [permissions.IsAuthenticated, HasActiveSMSPanel]
+    permission_classes = [permissions.IsAuthenticated, IsPanelActivePermissionPostPutMethod, HasActiveSMSPanel]
 
     def get_queryset(self):
         return SMSTemplate.objects.filter(businessman=self.request.user)
@@ -80,7 +81,10 @@ class SMSTemplateRetrieveAPIView(generics.RetrieveAPIView, mixins.UpdateModelMix
 
 
 @api_view(['POST'])
-@permission_classes([permissions.IsAuthenticated, HasActiveSMSPanel, HasValidCreditSendSMS])
+@permission_classes([permissions.IsAuthenticated,
+                     IsPanelActivePermissionPostPutMethod,
+                     HasActiveSMSPanel,
+                     HasValidCreditSendSMS])
 def send_plain_sms(request):
 
     """
@@ -111,7 +115,7 @@ def send_plain_sms(request):
 
 
 @api_view(['POST'])
-@permission_classes([permissions.IsAuthenticated, HasActiveSMSPanel, HasValidCreditSendSMSToAll])
+@permission_classes([permissions.IsAuthenticated, IsPanelActivePermissionPostPutMethod, HasActiveSMSPanel, HasValidCreditSendSMSToAll])
 def send_plain_to_all(request):
 
     """
@@ -142,7 +146,7 @@ def send_plain_to_all(request):
 
 
 @api_view(['POST'])
-@permission_classes([permissions.IsAuthenticated, HasActiveSMSPanel, HasValidCreditSendSMS])
+@permission_classes([permissions.IsAuthenticated, IsPanelActivePermissionPostPutMethod, HasActiveSMSPanel, HasValidCreditSendSMS])
 def send_sms_by_template(request, template_id):
 
     """
@@ -175,7 +179,7 @@ def send_sms_by_template(request, template_id):
 
 
 @api_view(['POST'])
-@permission_classes([permissions.IsAuthenticated, HasActiveSMSPanel, HasValidCreditSendSMSToAll])
+@permission_classes([permissions.IsAuthenticated, IsPanelActivePermissionPostPutMethod, HasActiveSMSPanel, HasValidCreditSendSMSToAll])
 def send_sms_by_template_to_all(request, template_id):
 
     """
@@ -199,7 +203,10 @@ def send_sms_by_template_to_all(request, template_id):
 
 
 @api_view(['POST'])
-@permission_classes([permissions.IsAuthenticated, HasActiveSMSPanel, HasValidCreditSendSMSToGroup])
+@permission_classes([permissions.IsAuthenticated,
+                     IsPanelActivePermissionPostPutMethod,
+                     HasActiveSMSPanel,
+                     HasValidCreditSendSMSToGroup])
 def send_plain_sms_to_group(request: Request, group_id):
 
 
@@ -228,7 +235,10 @@ def send_plain_sms_to_group(request: Request, group_id):
 
 
 @api_view(['POST'])
-@permission_classes([permissions.IsAuthenticated, HasActiveSMSPanel, HasValidCreditSendSMSToGroup])
+@permission_classes([permissions.IsAuthenticated,
+                     IsPanelActivePermissionPostPutMethod,
+                     HasActiveSMSPanel,
+                     HasValidCreditSendSMSToGroup])
 def send_template_sms_to_group(request: Request, template_id, group_id):
     
     try:
@@ -259,7 +269,10 @@ class FailedSMSMessagesList(BaseListAPIView):
 
 
 @api_view(['POST'])
-@permission_classes([permissions.IsAuthenticated, HasActiveSMSPanel, HasValidCreditResendFailedSMS])
+@permission_classes([permissions.IsAuthenticated,
+                     IsPanelActivePermissionPostPutMethod,
+                     HasActiveSMSPanel,
+                     HasValidCreditResendFailedSMS])
 def resend_failed_sms(request, sms_id):
     try:
         sms = request.user.smsmessage_set.get(id=sms_id, status=SMSMessage.STATUS_FAILED)
@@ -269,7 +282,6 @@ def resend_failed_sms(request, sms_id):
     SendSMSMessage().set_message_to_pending(request.user, sms)
     serializer = SMSMessageListSerializer(sms)
     return Response(serializer.data, status=status.HTTP_200_OK)
-
 
 
 @api_view(['GET'])
@@ -286,7 +298,10 @@ def list_unsent_template_sms(request: Request):
 
 
 @api_view(['POST'])
-@permission_classes([permissions.IsAuthenticated, HasActiveSMSPanel, HasValidCreditResendFailedSMS])
+@permission_classes([permissions.IsAuthenticated,
+                     IsPanelActivePermissionPostPutMethod,
+                     HasActiveSMSPanel,
+                     HasValidCreditResendFailedSMS])
 def resend_plain_sms(request: Request, unsent_sms_id):
 
     try:
@@ -309,7 +324,10 @@ def resend_plain_sms(request: Request, unsent_sms_id):
 
 
 @api_view(['POST'])
-@permission_classes([permissions.IsAuthenticated, HasValidCreditResendTemplateSMS])
+@permission_classes([permissions.IsAuthenticated,
+                     IsPanelActivePermissionPostPutMethod,
+                     HasActiveSMSPanel,
+                     HasValidCreditResendTemplateSMS])
 def resend_template_sms(request: Request, unsent_sms_id):
 
     try:
