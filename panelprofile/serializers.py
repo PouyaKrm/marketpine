@@ -8,6 +8,7 @@ from rest_framework.reverse import reverse
 from rest_framework import serializers
 
 from base_app.serializers import FileFieldWithLinkRepresentation
+from customers.services import customer_service
 from payment.models import Payment
 from users.models import AuthStatus, Businessman, BusinessCategory
 from users.serializers import CategorySerializer
@@ -42,6 +43,8 @@ class BusinessmanProfileSerializer(serializers.ModelSerializer):
         RegexValidator(regex=r'^[a-zA-Z0-9_-]{6,20}$', message='کاراکتر غیر مجاز')
     ])
 
+    customers_total = serializers.SerializerMethodField(read_only=True)
+
     class Meta:
 
         model = Businessman
@@ -68,7 +71,8 @@ class BusinessmanProfileSerializer(serializers.ModelSerializer):
             'auth_documents',
             'sms_panel_details',
             'category',
-            'defined_groups'
+            'defined_groups',
+            'customers_total'
         ]
 
         extra_kwargs = {'username': {'read_only': True}, 'phone': {'read_only': True},
@@ -118,6 +122,10 @@ class BusinessmanProfileSerializer(serializers.ModelSerializer):
     def get_defined_groups(self, obj: Businessman):
         from groups.models import BusinessmanGroups
         return BusinessmanGroups.defined_groups_num(obj)
+
+    def get_customers_total(self, obj: Businessman):
+        user = self.context['user']
+        return customer_service.get_businessman_customers(user).count()
 
     def validate_email(self, value):
 
