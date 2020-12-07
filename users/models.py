@@ -119,6 +119,9 @@ class Businessman(AbstractUser, PanelDurationBaseModel):
     def is_page_id_set(self):
         return self.page_id is not None and len(self.page_id.strip()) != 0
 
+    def is_panel_active(self) -> bool:
+        return self.is_duration_permanent() or (self.panel_expiration_date is not None and self.panel_expiration_date > timezone.now())
+
 
 class BusinessmanOneToOneBaseModel(BaseModel):
     businessman = models.OneToOneField(Businessman, on_delete=models.PROTECT)

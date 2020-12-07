@@ -8,6 +8,7 @@ from rest_framework.response import Response
 from base_app.views import BaseListAPIView
 from common.util.http_helpers import no_content
 from users.models import Customer
+from .permissions import CanAddCustomer
 from .serializers import CustomerSerializer, CustomerListCreateSerializer
 from .paginations import StandardResultsSetPagination
 from .services import customer_service
@@ -24,6 +25,7 @@ class BusinessmanCustomerListAPIView(BaseListAPIView, mixins.CreateModelMixin):
     """
 
     serializer_class = CustomerListCreateSerializer
+    permission_classes = [permissions.IsAuthenticated, CanAddCustomer]
 
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
