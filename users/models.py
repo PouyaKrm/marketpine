@@ -70,7 +70,7 @@ class Businessman(AbstractUser, PanelDurationBaseModel):
                          (AUTHORIZATION_PENDING, 'PENDING'),
                          (AUTHORIZATION_AUTHORIZED, 'AUTHORIZED')]
     authorized = models.CharField(max_length=1, choices=AUTHORIZE_CHOICES, default='0')
-    has_sms_panel = models.BooleanField(default=False)
+    has_sms_panel: bool = models.BooleanField(default=False)
     panel_activation_date = models.DateTimeField(null=True)
     panel_expiration_date = models.DateTimeField(null=True, blank=True)
 

@@ -175,6 +175,7 @@ class Payment(models.Model):
             self.businessman.panel_expiration_date = active_date + plan.duration
 
         self.businessman.save()
+        self.businessman.smspanelinfo.activate()
 
 
 class FailedPaymentOperation(models.Model):

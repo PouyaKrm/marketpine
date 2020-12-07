@@ -54,8 +54,14 @@ class SMSPanelInfo(models.Model):
         activates sms panel on kavenegar
         :return:
         """
+
+        if self.status == SMSPanelStatus.ACTIVE_LOGIN:
+            return
+
         ClientManagement().activate_sms_panel(self.api_key)
         self.status = SMSPanelStatus.ACTIVE_LOGIN
+        self.businessman.has_sms_panel = True
+        self.businessman.save()
         self.save()
 
     def create_sms_panel(self, user: Businessman, password: str):
@@ -160,7 +166,6 @@ class BusinessmanAuthDocs(models.Model):
         if self.businessman.authorized != AuthStatus.PENDING:
             return
 
-        self.businessman.smspanelinfo.activate()
         self.businessman.authorized = AuthStatus.AUTHORIZED
         self.businessman.save()
 
