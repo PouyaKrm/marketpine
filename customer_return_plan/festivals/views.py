@@ -13,6 +13,7 @@ from customer_return_plan.festivals.permissions import CanDeleteOrUpdateFestival
 from customer_return_plan.festivals.services import FestivalService
 from smspanel.services import SendSMSMessage
 from users.models import Customer
+from users.permissions import IsPanelActivePermissionPostPutMethod
 from .models import Festival
 from .serializers import FestivalCreationSerializer, FestivalListSerializer, RetrieveFestivalSerializer, \
     FestivalCustomerSerializer
@@ -31,7 +32,7 @@ festival_service = FestivalService()
 
 class FestivalsListAPIView(BaseListAPIView, mixins.CreateModelMixin):
     serializer_class = FestivalCreationSerializer
-    permission_classes = [permissions.IsAuthenticated, HasActiveSMSPanel]
+    permission_classes = [permissions.IsAuthenticated, IsPanelActivePermissionPostPutMethod, HasActiveSMSPanel]
 
     def get_queryset(self):
         return festival_service.get_businessman_all_undeleted_festivals(businessman=self.request.user)
@@ -44,7 +45,7 @@ class FestivalsListAPIView(BaseListAPIView, mixins.CreateModelMixin):
 
 
 class FestivalAPIView(APIView):
-    permission_classes = [permissions.IsAuthenticated, HasActiveSMSPanel]
+    permission_classes = [permissions.IsAuthenticated, IsPanelActivePermissionPostPutMethod, HasActiveSMSPanel]
 
     def get(self, request):
 

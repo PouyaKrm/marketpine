@@ -4,6 +4,7 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework.views import APIView
 
 from base_app.views import BaseListAPIView
+from users.permissions import IsPanelActivePermissionPostPutMethod
 from .models import Post
 from django.conf import settings
 from rest_framework.response import Response
@@ -68,6 +69,7 @@ class PostCreateListAPIView(CreateAPIView, ListModelMixin):
     parser_class = (FileUploadParser,)
     serializer_class = UploadListPostSerializer
     permission_classes = [permissions.IsAuthenticated,
+                          IsPanelActivePermissionPostPutMethod,
                           DoesNotHavePendingPostForUpload,
                           HasValidCreditForVideoUploadMessage
                           ]

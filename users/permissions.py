@@ -52,3 +52,21 @@ class IsBusinessmanAuthorized(permissions.BasePermission):
     def has_permission(self, request: Request, view: View) -> bool:
 
         return request.user.is_authorized()
+
+
+class IsPanelActive(permissions.BasePermission):
+
+    message = 'تا فعال سازی پنل امکان دسترسی به این قسمت نیست'
+
+    def has_permission(self, request: Request, view: View) -> bool:
+
+        return request.user.is_panel_active()
+
+
+class IsPanelActivePermissionPostPutMethod(IsPanelActive):
+
+    def has_permission(self, request: Request, view) -> bool:
+        if request.method != 'POST' and request.method != 'PUT':
+            return True
+
+        return super().has_permission(request, view)
