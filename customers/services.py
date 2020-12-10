@@ -52,6 +52,11 @@ class CustomerService:
                 self.reset_customer_groups(businessman, c, groups)
             return c
 
+    def customer_registered_in_date(self, businessman: Businessman, date):
+        return self.get_businessman_customers(businessman).filter(connected_businessmans__create_date__year=date.year,
+                                                                  connected_businessmans__create_date__month=date.month,
+                                                                  connected_businessmans__create_date__day=date.day)
+
     def get_date_joined(self, customer: Customer, businessman=Businessman):
         return BusinessmanCustomer.objects.get(customer=customer, businessman=businessman).create_date
 

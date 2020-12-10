@@ -46,6 +46,15 @@ class FriendInvitationService:
             s.save()
             return s
 
+    def invitations_added_in_month(self, businessman: Businessman, date):
+        return FriendInvitation.objects.filter(businessman=businessman,
+                                               create_date__year=date.year,
+                                               create_date__month=date.month,
+                                               create_date__day=date.day)
+
+    def get_businessman_all_invitations(self, businessman: Businessman):
+        return FriendInvitation.objects.filter(businessman=businessman)
+
     def _create_invitation_discount(self, invite_settings: FriendInvitationSettings,
                                     businessman: Businessman) -> Discount:
 

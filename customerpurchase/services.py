@@ -85,5 +85,8 @@ class PurchaseService:
             return 0
         return result
 
+    def get_all_businessman_purchases_by_dsicount(self, businessman: Businessman):
+        return CustomerPurchase.objects.filter(businessman=businessman, connected_purchases__businessman=businessman)
+
 
 purchase_service = PurchaseService()
