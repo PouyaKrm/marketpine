@@ -291,12 +291,26 @@ class DiscountService:
     def get_total_customers_used_festival_discount(self, festival: Festival) -> int:
         return self.get_num_of_customers_used_discount(festival.discount)
 
+    def get_used_festival_discounts_in_month(self, businessman: Businessman, date):
+        return Discount.objects.filter(businessman=businessman,
+                                       used_for=Discount.USED_FOR_FESTIVAL,
+                                       purchase_discount__create_date__year=date.year,
+                                       purchase_discount__create_date__month=date.month)
+
+    def get_used_invitation_discounts_in_month(self, businessman: Businessman, date):
+        return Discount.objects.filter(businessman=businessman,
+                                       used_for=Discount.USED_FOR_INVITATION,
+                                       purchase_discount__create_date__year=date.year,
+                                       purchase_discount__create_date__month=date.month
+                                       )
+
 
 class CustomerDiscountService:
 
     def get_customer_discounts(self, customer: Customer):
         discounts = Discount.objects.annotate(
-            purchase_sum_of_invited=Sum('inviter_discount__invited__purchases__amount')).filter(businessman__customers=customer)\
+            purchase_sum_of_invited=Sum('inviter_discount__invited__purchases__amount')).filter(
+            businessman__customers=customer) \
             .filter(
             Q(used_for=Discount.USED_FOR_FESTIVAL)
             | Q(used_for=Discount.USED_FOR_INVITATION,

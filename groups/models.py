@@ -10,7 +10,6 @@ from users.models import Customer, BusinessmanManyToOneBaseModel, BaseModel
 
 
 class BusinessmanGroups(BusinessmanManyToOneBaseModel):
-
     TYPE_NORMAL = '0'
     TYPE_TOP_PURCHASE = '1'
 
@@ -36,7 +35,6 @@ class BusinessmanGroups(BusinessmanManyToOneBaseModel):
 
     def get_all_customers(self):
         return self.customers.order_by('-membership__create_date').all()
-
 
     def customers_total(self):
         return self.customers.count()
@@ -83,12 +81,17 @@ class BusinessmanGroups(BusinessmanManyToOneBaseModel):
 
     @staticmethod
     def set_members_for_purchase_top(user, customers):
-        try:
-            g = BusinessmanGroups.objects.get(businessman=user, type=BusinessmanGroups.TYPE_TOP_PURCHASE)
-        except ObjectDoesNotExist:
-            g = BusinessmanGroups.objects.create(title=f'top purchase-{user.username}', businessman=user, type=BusinessmanGroups.TYPE_TOP_PURCHASE)
+        g = BusinessmanGroups.get_purchase_top_group_or_create(user)
         g.reset_customers(customers)
         return g
+
+    @staticmethod
+    def get_purchase_top_group_or_create(user):
+        try:
+            return BusinessmanGroups.objects.get(businessman=user, type=BusinessmanGroups.TYPE_TOP_PURCHASE)
+        except ObjectDoesNotExist:
+            return BusinessmanGroups.objects.create(title=f'top purchase-{user.username}', businessman=user,
+                                                    type=BusinessmanGroups.TYPE_TOP_PURCHASE)
 
     @staticmethod
     def get_group_by_id(user, group_id):
@@ -107,7 +110,6 @@ class BusinessmanGroups(BusinessmanManyToOneBaseModel):
             g.remove_member(customer)
 
         return customer
-
 
     def add_member(self, customer: Customer) -> Customer:
         exist = self.customers.filter(id=customer.id).exists()
@@ -139,7 +141,8 @@ class BusinessmanGroups(BusinessmanManyToOneBaseModel):
 
     @staticmethod
     def add_members(customers: [Customer], group):
-        new_members = filter(lambda c: not Membership.objects.filter(group=group, customer__id=c.id).exists(), customers)
+        new_members = filter(lambda c: not Membership.objects.filter(group=group, customer__id=c.id).exists(),
+                             customers)
         if len(customers) == 0:
             return group
         Membership.objects.bulk_create([Membership(group=group, customer=c) for c in new_members])
@@ -151,7 +154,5 @@ class BusinessmanGroups(BusinessmanManyToOneBaseModel):
 
 
 class Membership(BaseModel):
-
     customer = models.ForeignKey(Customer, on_delete=models.CASCADE, related_query_name='membership')
     group = models.ForeignKey(BusinessmanGroups, on_delete=models.CASCADE, related_query_name='membership')
-
