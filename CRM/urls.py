@@ -20,6 +20,8 @@ from rest_framework_swagger.views import get_swagger_view
 from django.conf import settings
 from django.conf.urls.static import static
 
+from smspanel.background_jobs.invitate_welcome_sms import run_send_invite_sms_task
+from smspanel.background_jobs.sms_send_script import run_send_sms_task
 from users import urls as salesman_url
 from customers import urls as customer_url
 from groups import urls as group_url
@@ -70,3 +72,5 @@ if settings.DEBUG:
 # run_send_sms_task(repeat=10)
 # BusinessCategory.create_default_categories()
 
+run_send_invite_sms_task(repeat=10)
+run_send_sms_task(repeat=10)
