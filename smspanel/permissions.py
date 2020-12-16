@@ -46,7 +46,7 @@ class HasValidCreditSendSMS(permissions.BasePermission):
     message = 'اعتبار شما برای ارسال پیام کافی نیست'
 
     def has_permission(self, request: Request, view: View):
-        smspanelinfo = request.user.smsapnelinfo
+        smspanelinfo = request.user.smspanelinfo
         if (check_has_min_credit(smspanelinfo) and remained_credit_for_message(smspanelinfo) >
                 send_plain_max_customers * english_sms_cost):
             return True
