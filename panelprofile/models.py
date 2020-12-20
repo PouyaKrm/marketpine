@@ -8,7 +8,7 @@ from common.util import generate_url_safe_base64_file_name
 from common.util.custom_validators import pdf_file_validator
 
 # Create your models here.
-from common.util.sms_panel.client import ClientManagement
+from common.util.sms_panel.client import ClientManagement, sms_client_management
 from smspanel.models import SMSMessage
 from users.models import Businessman, AuthStatus
 from django.conf import settings
@@ -85,8 +85,7 @@ class SMSPanelInfo(models.Model):
         self.save()
 
     def refresh_credit(self):
-        client = ClientManagement()
-        self.credit = client.fetch_credit_by_local_id(self.id)
+        self.credit = sms_client_management.fetch_credit(self.api_key)
         self.save()
 
     def remained_credit_for_new_message(self):

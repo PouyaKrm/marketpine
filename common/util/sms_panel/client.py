@@ -33,6 +33,16 @@ class ClientManagement:
 
         return resp_data['entries']
 
+    def fetch(self, businessman_api_key: str) -> dict:
+        url = 'http://api.kavenegar.com/v1/{}/client/fetch.json'.format(self.api_key)
+        resp = requests.post(url, {'apikey': businessman_api_key})
+        resp_data = resp.json()
+        if resp.status_code != 200:
+            raise APIException(resp.status_code, resp_data['return']['message'])
+
+        return resp_data['entries']
+
+
     def fetch_by_local_id(self, local_id):
 
         """
@@ -157,6 +167,11 @@ class ClientManagement:
             raise APIException(resp_data.status_code, resp_data['return']['message'])
         return resp_data['entries']['remaincredit']
 
+    def fetch_credit(self, businessman_api_key: str):
+        return self.fetch(businessman_api_key)['remaincredit']
+
     def fetch_credit_by_local_id(self, id: int):
         return self.fetch_by_local_id(id)['remaincredit']
 
+
+sms_client_management = ClientManagement()
