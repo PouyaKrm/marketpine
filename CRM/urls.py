@@ -38,6 +38,7 @@ from content_marketing import urls as content_url
 from online_menu import urls as menu_url
 from mobile_app_conf import urls as mobile_conf_urls
 from educations import urls as education_url
+from background_task.models import Task
 
 from customer_application import urls as customer_auth_urls
 
@@ -72,5 +73,6 @@ if settings.DEBUG:
 # run_send_sms_task(repeat=10)
 # BusinessCategory.create_default_categories()
 
-run_send_invite_sms_task(repeat=10)
-run_send_sms_task(repeat=10)
+if not Task.objects.exists():
+    run_send_invite_sms_task(repeat=10)
+    run_send_sms_task(repeat=10)
