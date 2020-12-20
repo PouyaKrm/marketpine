@@ -44,6 +44,7 @@ class BaseFestivalSerializer(serializers.ModelSerializer):
             'send_pwa_notif',
             # 'percent_off',
             # 'flat_rate_off',
+            'message_sent',
             'discount',
         ]
 
@@ -142,6 +143,7 @@ class FestivalListSerializer(serializers.ModelSerializer):
             'end_date',
             'customers_total',
             'discount_code',
+            'message_sent',
             'send_pwa_notif'
         ]
 
@@ -165,6 +167,7 @@ class RetrieveFestivalSerializer(NestedUpdateMixin, BaseFestivalSerializer):
             'end_date',
             'discount',
             'message',
+            'message_sent',
             'send_pwa_notif'
         ]
 
