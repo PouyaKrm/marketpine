@@ -89,8 +89,8 @@ class FestivalTemplateRenderer(BaseTemplateRenderer):
             'festival_name': self.__festival.name,
             'start_date': start_date_j,
             'end_date': end_date_j,
-            'percent_off': self.__festival.discount.percent_off,
-            'flat_rate_off': self.__festival.discount.flat_rate_off,
+            'percent_off': self.__festival.discount.percent_off.__str__(),
+            'flat_rate_off': self.__festival.discount.flat_rate_off.__str__(),
             'discount_code': self.__festival.discount.discount_code
         }
 
