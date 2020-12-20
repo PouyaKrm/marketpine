@@ -59,25 +59,21 @@ class SMSPanelInfo(models.Model):
         if self.status == SMSPanelStatus.ACTIVE_LOGIN:
             return
 
-        ClientManagement().activate_sms_panel(self.api_key)
+        sms_client_management.activate_sms_panel(self.api_key)
         self.status = SMSPanelStatus.ACTIVE_LOGIN
         self.businessman.has_sms_panel = True
         self.businessman.save()
         self.save()
 
     def create_sms_panel(self, user: Businessman, password: str):
-        client = ClientManagement()
-        info = client.add_user(user, password)
+        info = sms_client_management.add_user(user, password)
         info.businessman = user
         info.save()
         return info
         
     def update_panel_info(self):
-        client = ClientManagement()
-        info = client.fetch_user(self.businessman)
-
+        info = sms_client_management.fetch_user(self.businessman)
         self.api_key = info.api_key
-            
         self.credit = info.credit
         self.sms_farsi_cost = info.sms_farsi_cost
         self.sms_english_cost = info.sms_english_cost
@@ -112,8 +108,6 @@ class SMSPanelInfo(models.Model):
 class AuthDoc(models.Model):
 
     file = models.FileField(storage=fs, upload_to='auth-doc', validators=[pdf_file_validator])
-
-
 
 
 class BusinessmanAuthDocs(models.Model):

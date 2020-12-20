@@ -107,6 +107,16 @@ class ClientManagement:
         return info
 
     def fetch_user(self, user):
+        """
+        important:
+        To use this method businessman must have a relation to SMSPanelInfo object
+        otherwise this method will raise an exception
+        """
+
+        result = self.fetch(user.smspanelinfo.api_key)
+        return self.__create_sms_panel_info_object_by_api_respone(result)
+
+    def fetch_user_by_local_id(self, user):
 
         """
         providing simpler function to fetch user data from kavenegar
@@ -114,18 +124,10 @@ class ClientManagement:
         :return: SMSPanelInfo info that businessman property is not set and is not saved in database
         """
 
-        from panelprofile.models import SMSPanelInfo
         result = self.fetch_by_local_id(user.id)
+        return self.__create_sms_panel_info_object_by_api_respone(result)
 
-        info = SMSPanelInfo()
-        info.api_key = result['apikey']
-        info.status = '0'
-        info.credit = result['remaincredit']
-        info.sms_farsi_cost = result['smsfarsicost']
-        info.sms_english_cost = result['smsenglishcost']
-        info.username = result['username']
 
-        return info
 
     def activate_sms_panel(self, businessman_api_key):
         """
@@ -173,5 +175,17 @@ class ClientManagement:
     def fetch_credit_by_local_id(self, id: int):
         return self.fetch_by_local_id(id)['remaincredit']
 
+    def __create_sms_panel_info_object_by_api_respone(self, response: dict):
+        from panelprofile.models import SMSPanelInfo
+
+        info = SMSPanelInfo()
+        info.api_key = response['apikey']
+        info.status = '0'
+        info.credit = response['remaincredit']
+        info.sms_farsi_cost = response['smsfarsicost']
+        info.sms_english_cost = response['smsenglishcost']
+        info.username = response['username']
+
+        return info
 
 sms_client_management = ClientManagement()
