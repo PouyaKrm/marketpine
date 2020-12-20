@@ -86,9 +86,11 @@ class FestivalTemplateRenderer(BaseTemplateRenderer):
         start_date_j = gregorian_to_jalali_str(self.__festival.start_date)
         end_date_j = gregorian_to_jalali_str(self.__festival.end_date)
         festival_context = {
-            'name': self.__festival.name,
+            'festival_name': self.__festival.name,
             'start_date': start_date_j,
             'end_date': end_date_j,
+            'percent_off': self.__festival.discount.percent_off,
+            'flat_rate_off': self.__festival.discount.flat_rate_off,
             'discount_code': self.__festival.discount.discount_code
         }
 
