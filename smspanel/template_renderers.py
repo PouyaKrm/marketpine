@@ -46,7 +46,7 @@ class BaseTemplateRenderer:
                 return ''
             return tag_key_value.get(g)
 
-        return re.sub('#([A-Za-z0-9_]+)', replace, template)
+        return re.sub('#([A-Za-z0-9_]+)', replace, template).replace(u'\xa0', u' ')
 
     def render(self, receiver: SMSMessageReceivers):
         return self._render(self._sms_message.message, {**self._businessman_key_value(),
