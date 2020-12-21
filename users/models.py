@@ -58,7 +58,6 @@ class Businessman(AbstractUser, PanelDurationBaseModel):
     AUTHORIZATION_AUTHORIZED = '2'
 
     phone = models.CharField(max_length=15)
-    address = models.TextField(max_length=500, blank=True, null=True)
     business_name = models.CharField(max_length=1000)
     logo = models.ImageField(storage=st, upload_to=get_upload_path, null=True, blank=True, max_length=254)
     telegram_id = models.CharField(max_length=20, blank=True, null=True)
