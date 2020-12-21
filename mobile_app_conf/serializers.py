@@ -95,7 +95,7 @@ class MobileAppHeaderSerializer(BaseModelSerializerWithRequestObj):
 
 
 class MobileAppPageConfSerializer(BaseModelSerializerWithRequestObj):
-    address = serializers.CharField(required=False, max_length=1000)
+    address = serializers.CharField(required=False, allow_blank=True, allow_null=True, max_length=1000)
     headers = MobileAppHeaderSerializer(many=True, read_only=True)
     ip_location = serializers.SerializerMethodField(read_only=True)
 
@@ -103,6 +103,7 @@ class MobileAppPageConfSerializer(BaseModelSerializerWithRequestObj):
         model = MobileAppPageConf
         fields = [
             'address',
+            'is_address_set',
             'headers',
             'description',
             'location_lat',
@@ -110,6 +111,8 @@ class MobileAppPageConfSerializer(BaseModelSerializerWithRequestObj):
             'is_location_set',
             'ip_location'
         ]
+
+        extra_kwargs = {'is_address_set': {'read_only': True}}
 
     def get_ip_location(self, obj: MobileAppPageConf):
         if obj.is_location_set:
@@ -124,7 +127,7 @@ class MobileAppPageConfSerializer(BaseModelSerializerWithRequestObj):
         for k, v in validated_data.items():
             setattr(instance, k, v)
         instance.save()
-        return validated_data
+        return {**validated_data, 'is_address_set': instance.is_address_set()}
 
     def create(self, validated_data):
         pass

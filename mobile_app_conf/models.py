@@ -23,6 +23,9 @@ class MobileAppPageConf(BusinessmanOneToOneBaseModel):
     def __str__(self):
         return self.businessman.username
 
+    def is_address_set(self) -> bool:
+        return self.address is not None and len(self.address.strip()) != 0
+
 
 def mobile_app_header_upload_path(instance, filename):
     return businessman_related_model_file_upload_path(instance.mobile_app_page_conf, filename)
