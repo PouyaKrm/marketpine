@@ -95,12 +95,14 @@ class MobileAppHeaderSerializer(BaseModelSerializerWithRequestObj):
 
 
 class MobileAppPageConfSerializer(BaseModelSerializerWithRequestObj):
+    address = serializers.CharField(required=False, max_length=1000)
     headers = MobileAppHeaderSerializer(many=True, read_only=True)
     ip_location = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = MobileAppPageConf
         fields = [
+            'address',
             'headers',
             'description',
             'location_lat',
