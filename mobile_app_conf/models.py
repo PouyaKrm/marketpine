@@ -14,6 +14,7 @@ storage = PublicFileStorage(subdir=sub_dir, base_url=mobile_app_base_url)
 
 
 class MobileAppPageConf(BusinessmanOneToOneBaseModel):
+    address = models.TextField(null=True, blank=True)
     description = models.CharField(max_length=1000, null=True, blank=True,)
     location_lat = models.FloatField(null=True, blank=True)
     location_lng = models.FloatField(null=True, blank=True)
