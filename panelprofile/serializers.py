@@ -55,7 +55,6 @@ class BusinessmanProfileSerializer(serializers.ModelSerializer):
             'page_id',
             'first_name',
             'last_name',
-            'address',
             'phone',
             'email',
             'logo',
