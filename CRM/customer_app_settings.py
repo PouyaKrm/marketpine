@@ -8,4 +8,4 @@ CUSTOMER_APP_PAGINATION_SETTINGS = {
     'PAGE_SIZE_QUERY_PARAM': 'page_size'
 }
 
-BUSINESSMAN_PAGE_URL = 'https://moshtarino/{}'
+BUSINESSMAN_PAGE_URL = 'https://moshtarino.com/{}'
