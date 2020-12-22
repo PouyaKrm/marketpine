@@ -56,7 +56,7 @@ def customer_businessman_discounts_list_api_view(request: Request, businessman_i
     p = CustomerAppListPaginator()
     ust = request.query_params.get('ust', 'available')
     try:
-        businessman = customer_data_service.get_businessman_of_customer_by_id(customer, businessman_id)
+        businessman = customer_data_service.get_businessman_by_id_or_page_id(businessman_id)
         if ust == 'used':
             discounts = discount_service.get_customer_used_discounts_for_businessman(businessman, customer)
         else:
