@@ -258,7 +258,7 @@ def resend_failed_sms(request, sms_id):
     except ObjectDoesNotExist:
         return Response(status=status.HTTP_404_NOT_FOUND)
 
-    SendSMSMessage().set_message_to_pending(request.user, sms)
+    sms_message_service.set_message_to_pending(sms)
     serializer = SMSMessageListSerializer(sms)
     return Response(serializer.data, status=status.HTTP_200_OK)
 
