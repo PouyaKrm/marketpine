@@ -133,6 +133,8 @@ class BusinessmanPageDataSerializer(serializers.ModelSerializer):
         model = MobileAppPageConf
         fields = [
             'description',
+            'address',
+            'is_address_set',
             'is_location_set',
             'location_lat',
             'location_lng',
