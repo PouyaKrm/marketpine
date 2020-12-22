@@ -14,6 +14,7 @@ sms_settings = settings.SMS_PANEL
 api_key = sms_settings['API_KEY']
 system_line = sms_settings['SYSTEM_LINE']
 verification_template_name = sms_settings['VERIFICATION_TEMPLATE_NAME']
+new_password_forget_template_name = sms_settings['BUSINESSMAN_NEW_PASSWORD_FORGET_TEMPLATE_NAME']
 one_time_password_template_name = sms_settings['CUSTOMER_ONE_TIME_PASSWORD_TEMPLATE_NAME']
 phone_change_template_name = sms_settings['CUSTOMER_PHONE_CHANGE_TEMPLATE_NAME']
 min_credit = sms_settings['MIN_CREDIT']
@@ -28,7 +29,6 @@ send_template_page_size = sms_settings['SEND_TEMPLATE_PAGE_SIZE']
 class BaseSMSMessage():
 
     def __init__(self, api_key: str, line: str):
-        
         self._api = KavenegarAPI(api_key)
         self._line = line
 
@@ -36,7 +36,6 @@ class BaseSMSMessage():
         return self._api.sms_send(params)
 
     def send_message(self, receptor, message, local_ids=None):
-
         params = {
             'sender': self._line,
             'receptor': f'{receptor}',
@@ -52,26 +51,27 @@ class BaseSMSMessage():
 class SystemSMSMessage(BaseSMSMessage):
 
     def __init__(self):
-        
         super().__init__(api_key, system_line)
 
     def send_verification_code(self, receptor, code, sender=''):
-
         return self._api.verify_lookup({'receptor': receptor, 'token': code, 'template': verification_template_name})
 
     def send_new_password(self, receptor, new_password):
-
-        return self.send_message(receptor, f'your new password is:\n{new_password}')
+        return self._api.verify_lookup({
+            'receptor': receptor,
+            'token': new_password,
+            'template': new_password_forget_template_name
+        })
 
     def send_customer_one_time_password(self, receptor, code):
-        return self._api.verify_lookup({'receptor': receptor, 'token': code, 'template': one_time_password_template_name})
+        return self._api.verify_lookup(
+            {'receptor': receptor, 'token': code, 'template': one_time_password_template_name})
 
     def send_customer_phone_change_code(self, receptor: str, code: str):
         return self._api.verify_lookup({'receptor': receptor, 'token': code, 'template': phone_change_template_name})
 
 
 class ClientSMSMessage(BaseSMSMessage):
-
     """
     sends one same message to specific number of customers
     """
@@ -91,19 +91,19 @@ class ClientSMSMessage(BaseSMSMessage):
             return None
 
         phones = ""
-        
+
         if self._remained_count <= send_plain_page_size:
             customers = self._customers.all()[self._index:]
             self._remained_count = 0
             self._index = self._receptors_count
             return customers
-        
-        customers = self._customers.all()[self._index : self._index + send_plain_page_size]
+
+        customers = self._customers.all()[self._index: self._index + send_plain_page_size]
 
         self._index += send_plain_page_size
 
         self._remained_count -= send_plain_page_size
-      
+
         return customers
 
     def send_plain_next(self):
@@ -132,8 +132,6 @@ class ClientSMSMessage(BaseSMSMessage):
         except APIException as e:
             raise SendSMSException(e.status, e.message, current_customer, self._last_customer)
 
-
-
     def send_friend_invitation_welcome_message(self, business_name: str, invited_phone: str, discount_code: str,
                                                bot_link: str = None):
 
@@ -144,11 +142,9 @@ class ClientSMSMessage(BaseSMSMessage):
             message = f'مشتری عزیز شما به {business_name} دعوت شدید. با استفاده از کد تخفیف {discount_code} در اولین خرید از تخفیف بهرمند شوید. با استفاده از لینک زیر در بات تلگرام ما عضو شوید. {bot_link}'
 
         return self.send_message(invited_phone, message)
-        
 
 
 class ClientToAllCustomersSMSMessage(ClientSMSMessage):
-
     """
     a helper class for sending one message to all custmers of a businessman
     """
@@ -156,7 +152,6 @@ class ClientToAllCustomersSMSMessage(ClientSMSMessage):
     def __init__(self, businessman: Businessman, message: str):
 
         super().__init__(businessman.smspanelinfo, businessman.customers.all(), message)
-
 
     def send_plain_next(self):
 
@@ -181,11 +176,9 @@ class ClientToAllCustomersSMSMessage(ClientSMSMessage):
             return self.send_message(phones, self._message)
         except APIException as e:
             raise SendSMSException(e.status, e.message, current_customer)
-        
 
 
 class ClientBulkToCustomerSMSMessage(ClientSMSMessage):
-
     """
     A class to send several different messages to different recievers.
     """
@@ -193,7 +186,7 @@ class ClientBulkToCustomerSMSMessage(ClientSMSMessage):
     def __init__(self, sms_panel_info, customers: QuerySet, template: str):
         super().__init__(sms_panel_info, customers, template)
         self._template = template
-        self._receptors =customers
+        self._receptors = customers
         self._receptors_num = self._receptors.count()
         self._remained_receptors = self._receptors_num
         self._senders_length = send_template_page_size
@@ -211,7 +204,7 @@ class ClientBulkToCustomerSMSMessage(ClientSMSMessage):
         return [render_template_with_customer_data(self._template, c) for c in customers]
 
     def _get_phones(self, customers: list):
-        
+
         return [c.phone for c in customers]
 
     def _get_next_message_params(self):
@@ -231,13 +224,14 @@ class ClientBulkToCustomerSMSMessage(ClientSMSMessage):
 
             recievers = self._receptors.all()[self._start:]
 
-            params = {"sender": f"{self._senders[:self._remained_receptors]}", "receptor": f"{self._get_phones(recievers)}",
+            params = {"sender": f"{self._senders[:self._remained_receptors]}",
+                      "receptor": f"{self._get_phones(recievers)}",
                       "message": f"{self._render_messages(recievers)}", 'first_reciever': recievers[0]}
             self._start += len(recievers)
             self._end = self._start
 
         else:
-            
+
             self._end += self._senders_length
             recievers = self._receptors[:self._end]
             params = {"sender": f"{self._senders}", "receptor": f"{self._get_phones(recievers)}",
@@ -260,7 +254,7 @@ class ClientBulkToCustomerSMSMessage(ClientSMSMessage):
         """
 
         message_params = self._get_next_message_params()
-        
+
         if message_params is None:
             return None
 
@@ -272,8 +266,8 @@ class ClientBulkToCustomerSMSMessage(ClientSMSMessage):
         except APIException as e:
             raise SendSMSException(e.status, e.message, first_receiver, self._last_customer)
 
-class ClientBulkToAllToCustomerSMSMessage(ClientBulkToCustomerSMSMessage):
 
+class ClientBulkToAllToCustomerSMSMessage(ClientBulkToCustomerSMSMessage):
     """
     A class to send several different messages to different recievers.
     Use this class only when you want to send message to all customers of 
@@ -283,7 +277,7 @@ class ClientBulkToAllToCustomerSMSMessage(ClientBulkToCustomerSMSMessage):
     def __init__(self, businessman: Businessman, template: str):
 
         super().__init__(businessman.smspanelinfo, businessman.customers.all(), template)
-    
+
     def send_bulk(self):
 
         """
@@ -307,10 +301,7 @@ class ClientBulkToAllToCustomerSMSMessage(ClientBulkToCustomerSMSMessage):
             raise SendSMSException(e.status, e.message, first_receiver)
 
 
-
-
 def retrive_sent_messages(api_key: str, messageids: list):
-
     api = KavenegarAPI(api_key)
 
     param_value = ""
@@ -319,7 +310,6 @@ def retrive_sent_messages(api_key: str, messageids: list):
         param_value += m + ","
 
     return api.sms_select({'messageid': param_value})
-
 
 
 class ClientBulkTemplateSMSMessage(ClientSMSMessage):
@@ -338,15 +328,14 @@ class ClientBulkTemplateSMSMessage(ClientSMSMessage):
 
         self._bulk_lines = customer_bulk_lines
         self._bulk_lines_num = len(self._bulk_lines)
-        
+
         self._sender_string = ""
 
         for line in self._bulk_lines:
             self._sender_string += line + ","
-        
+
         self.start = 0
         self.end = 0
-
 
     def give_message_params(self):
 
@@ -390,7 +379,6 @@ class ClientBulkTemplateSMSMessage(ClientSMSMessage):
         params = self.give_message_params()
 
         while params is not None:
-
             self.api.sms_sendarray(params)
             params = self.give_message_params()
 
@@ -398,11 +386,8 @@ class ClientBulkTemplateSMSMessage(ClientSMSMessage):
 class BulkMessageWithAdditionalContext(ClientBulkToAllToCustomerSMSMessage):
 
     def __init__(self, businessman, template, additional_context: dict):
-
         super().__init__(businessman, template)
         self.__additional_context = additional_context
 
     def _render_messages(self, customers: list):
-
         return [render_template_with_customer_data(self._template, c, **self.__additional_context) for c in customers]
-
