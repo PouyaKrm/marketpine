@@ -9,6 +9,7 @@ zarinpal_forward_link = settings.ZARINPAL.get('FORWARD_LINK')
 activation_pay_amount = settings.ACTIVATION_COST_IN_TOMANS
 min_credit_charge = settings.SMS_PANEL['MIN_CREDIT_CHARGE']
 max_credit_charge = settings.SMS_PANEL['MAX_CREDIT_CHARGE']
+max_allowed_credit = settings.SMS_PANEL['MAX_ALLOWED_CREDIT']
 
 
 class SMSCreditPaymentCreationSerializer(serializers.ModelSerializer):
@@ -31,6 +32,11 @@ class SMSCreditPaymentCreationSerializer(serializers.ModelSerializer):
                         'description': {'required': True},
                         }
 
+    def validate_amount(self, value):
+        request = self.context['request']
+        if request.user.smspanelinfo.credit / 10 + value > max_allowed_credit:
+            raise serializers.ValidationError('امکان افزایش اعتبار با این مقدار نیست')
+        return value
 
     def get_forward_link(self, obj):
         return zarinpal_forward_link.format(obj.authority)
