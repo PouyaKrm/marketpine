@@ -56,7 +56,7 @@ REFRESH_TOKEN_EXP_DELTA = timezone.timedelta(days=1)
 
 PAGINATION_PAGE_NUM = 25
 
-FRONTEND_URL = "http://businesspine.ir"
+FRONTEND_URL = "http://panel.foroshgahino.com"
 
 ACTIVATION_ALLOW_REFRESH_DAYS_BEFORE_EXPIRE = timezone.timedelta(days=2)
 ACTIVATION_COST_IN_TOMANS = 1000
