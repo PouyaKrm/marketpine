@@ -8,6 +8,8 @@ from rest_framework.reverse import reverse
 from rest_framework import serializers
 
 from base_app.serializers import FileFieldWithLinkRepresentation
+from common.util.kavenegar_local import APIException
+from common.util.sms_panel.message import system_sms_message
 from customers.services import customer_service
 from payment.models import Payment
 from users.models import AuthStatus, Businessman, BusinessCategory
@@ -245,5 +247,10 @@ class AuthSerializer(serializers.ModelSerializer):
         user.has_sms_panel = True
 
         user.save()
+
+        try:
+            system_sms_message.send_admin_authroize_docs_uploaded(user.username)
+        except APIException:
+            pass
 
         return {**validated_data, 'password': password}

@@ -51,7 +51,7 @@ class SMSCreditPaymentCreationSerializer(serializers.ModelSerializer):
                 try:
                     system_sms_message.send_admin_low_system_credit_message()
                 except APIException as e:
-                    logging.error(e)
+                    pass
                 finally:
                     raise err
         except APIException as e:

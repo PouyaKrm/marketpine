@@ -1,3 +1,5 @@
+import logging
+
 import requests
 
 from users.models import Businessman
@@ -72,7 +74,19 @@ class SystemSMSMessage(BaseSMSMessage):
         return self._api.verify_lookup({'receptor': receptor, 'token': code, 'template': phone_change_template_name})
 
     def send_admin_low_system_credit_message(self):
-        return self.send_message(admin_phone, 'اعتبار پنل پیامک سیستم مشترینو کم است و تعدادی از مشتریان موفق به شارژ پنل نشده اند')
+        try:
+            return self.send_message(admin_phone, 'اعتبار پنل پیامک سیستم مشترینو کم است و تعدادی از مشتریان موفق به شارژ پنل نشده اند')
+        except APIException as e:
+            logging.error(e)
+            raise e
+
+    def send_admin_authroize_docs_uploaded(self, username: str):
+        try:
+            message = 'کاربر {} مدارک احراز هویت خود را آپلود کرده'.format(username)
+            return self.send_message(admin_phone, message)
+        except APIException as e:
+            logging.error(e)
+            raise e
 
 
 system_sms_message = SystemSMSMessage()
