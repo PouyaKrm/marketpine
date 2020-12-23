@@ -104,6 +104,8 @@ class SMSPanelInfo(models.Model):
             return None
         return result.api_key
 
+    def credit_in_tomans(self) -> int:
+        return self.credit / 10
 
 class AuthDoc(models.Model):
 

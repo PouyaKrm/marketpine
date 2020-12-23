@@ -9,6 +9,7 @@ from common.util.http_helpers import bad_request, created
 from common.util.kavenegar_local import APIException
 from payment.exceptions import PaymentCreationFailedException, PaymentVerificationFailedException, \
     PaymentAlreadyVerifiedException, PaymentOperationFailedException
+from smspanel.permissions import HasActiveSMSPanel
 from users.permissions import IsBusinessmanAuthorized
 from .models import PaymentTypes
 from django.http import HttpResponse
@@ -74,6 +75,7 @@ def verify(request):
 
 
 @api_view(['POST'])
+@permission_classes([permissions.IsAuthenticated, IsBusinessmanAuthorized, HasActiveSMSPanel])
 def create_payment_sms_credit(request):
     serializer = SMSCreditPaymentCreationSerializer(data=request.data, context={'request': request})
     if not serializer.is_valid():

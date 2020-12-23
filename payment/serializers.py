@@ -34,7 +34,7 @@ class SMSCreditPaymentCreationSerializer(serializers.ModelSerializer):
 
     def validate_amount(self, value):
         request = self.context['request']
-        if request.user.smspanelinfo.credit / 10 + value > max_allowed_credit:
+        if request.user.smspanelinfo.credit_in_tomans() + value > max_allowed_credit:
             raise serializers.ValidationError('امکان افزایش اعتبار با این مقدار نیست')
         return value
 
