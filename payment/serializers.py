@@ -5,6 +5,7 @@ from rest_framework import serializers
 
 from common.util.kavenegar_local import APIException
 from common.util.sms_panel.client import sms_client_management
+from common.util.sms_panel.message import system_sms_message
 from .models import Payment, PaymentTypes, PanelActivationPlans
 from django.conf import settings
 
@@ -46,8 +47,13 @@ class SMSCreditPaymentCreationSerializer(serializers.ModelSerializer):
         try:
             credit = sms_client_management.get_system_credit_in_tomans()
             available_credit = credit - system_min_credit / 10
-            if available_credit - system_min_credit / 10 < value:
-                raise err
+            if available_credit < value:
+                try:
+                    system_sms_message.send_admin_low_system_credit_message()
+                except APIException as e:
+                    logging.error(e)
+                finally:
+                    raise err
         except APIException as e:
             logging.error(e)
             raise serializers.ValidationError('خطای سیستم')

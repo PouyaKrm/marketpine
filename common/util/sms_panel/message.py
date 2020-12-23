@@ -24,6 +24,7 @@ username_prefix = sms_settings['CUSTOMER_US_PREFIX']
 customer_line = sms_settings['CUSTOMER_LINE']
 send_plain_page_size = sms_settings['SEND_PLAIN_CUSTOMERS_PAGE_SIZE']
 send_template_page_size = sms_settings['SEND_TEMPLATE_PAGE_SIZE']
+admin_phone = settings.ADMIN_PHONE
 
 
 class BaseSMSMessage():
@@ -69,6 +70,12 @@ class SystemSMSMessage(BaseSMSMessage):
 
     def send_customer_phone_change_code(self, receptor: str, code: str):
         return self._api.verify_lookup({'receptor': receptor, 'token': code, 'template': phone_change_template_name})
+
+    def send_admin_low_system_credit_message(self):
+        return self.send_message(admin_phone, 'اعتبار پنل پیامک سیستم مشترینو کم است و تعدادی از مشتریان موفق به شارژ پنل نشده اند')
+
+
+system_sms_message = SystemSMSMessage()
 
 
 class ClientSMSMessage(BaseSMSMessage):
