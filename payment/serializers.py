@@ -14,6 +14,7 @@ zarinpal_forward_link = settings.ZARINPAL.get('FORWARD_LINK')
 activation_pay_amount = settings.ACTIVATION_COST_IN_TOMANS
 min_credit_charge = settings.SMS_PANEL['MIN_CREDIT_CHARGE']
 max_allowed_credit = settings.SMS_PANEL['MAX_ALLOWED_CREDIT']
+system_min_credit = settings.SMS_PANEL['SYSTEM_MIN_CREDIT']
 
 
 
@@ -44,7 +45,8 @@ class SMSCreditPaymentCreationSerializer(serializers.ModelSerializer):
             raise err
         try:
             credit = sms_client_management.get_system_credit_in_tomans()
-            if credit < value:
+            available_credit = credit - system_min_credit / 10
+            if available_credit - system_min_credit / 10 < value:
                 raise err
         except APIException as e:
             logging.error(e)
