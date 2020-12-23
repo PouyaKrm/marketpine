@@ -76,7 +76,7 @@ SMS_PANEL = {
     'MIN_CREDIT': 100000,  # minimum credit that each user must have for sending message
     "MIN_CREDIT_CHARGE": 1000,  # min amount that user can increase their credit in Tomans
     "MAX_CREDIT_CHARGE": 30000,  # max amount that user can increase their credit in Tomans
-    "MAX_ALLOWED_CREDIT": 30000,
+    "MAX_ALLOWED_CREDIT": 30000,  # max credit that user can have in Tomans
     'MAX_MESSAGE_COST': 600,  # this is used for credit validation before sending message. must be in rials
     'ENGLISH_MAX_CHARS': 612,
     'PERSIAN_MAX_CHARS': 268,

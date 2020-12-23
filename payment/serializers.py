@@ -8,14 +8,13 @@ from .services import payment_service
 zarinpal_forward_link = settings.ZARINPAL.get('FORWARD_LINK')
 activation_pay_amount = settings.ACTIVATION_COST_IN_TOMANS
 min_credit_charge = settings.SMS_PANEL['MIN_CREDIT_CHARGE']
-max_credit_charge = settings.SMS_PANEL['MAX_CREDIT_CHARGE']
 max_allowed_credit = settings.SMS_PANEL['MAX_ALLOWED_CREDIT']
 
 
 class SMSCreditPaymentCreationSerializer(serializers.ModelSerializer):
     """erializer for payment app with geting amount"""
     forward_link = serializers.SerializerMethodField(read_only=True)
-    amount = serializers.IntegerField(min_value=min_credit_charge, max_value=max_credit_charge)
+    amount = serializers.IntegerField(min_value=min_credit_charge)
 
     class Meta:
         model = Payment
