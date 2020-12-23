@@ -2,7 +2,7 @@ from users.models import Businessman
 from django.conf import settings
 import requests
 
-from common.util.kavenegar_local import APIException
+from common.util.kavenegar_local import APIException, KavenegarAPI
 
 sms_settings = settings.SMS_PANEL
 api_key = sms_settings['API_KEY']
@@ -187,5 +187,14 @@ class ClientManagement:
         info.username = response['username']
 
         return info
+
+    def get_system_credit_in_tomans(self) -> float:
+        return self.get_system_credit_in_rials() / 10
+
+    def get_system_credit_in_rials(self) -> int:
+        api = KavenegarAPI(api_key)
+        result = api.account_info()
+        return result['remaincredit']
+
 
 sms_client_management = ClientManagement()

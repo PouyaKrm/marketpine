@@ -1,5 +1,10 @@
+import logging
+
 from django.db.models import QuerySet
 from rest_framework import serializers
+
+from common.util.kavenegar_local import APIException
+from common.util.sms_panel.client import sms_client_management
 from .models import Payment, PaymentTypes, PanelActivationPlans
 from django.conf import settings
 
@@ -9,6 +14,7 @@ zarinpal_forward_link = settings.ZARINPAL.get('FORWARD_LINK')
 activation_pay_amount = settings.ACTIVATION_COST_IN_TOMANS
 min_credit_charge = settings.SMS_PANEL['MIN_CREDIT_CHARGE']
 max_allowed_credit = settings.SMS_PANEL['MAX_ALLOWED_CREDIT']
+
 
 
 class SMSCreditPaymentCreationSerializer(serializers.ModelSerializer):
@@ -32,9 +38,17 @@ class SMSCreditPaymentCreationSerializer(serializers.ModelSerializer):
                         }
 
     def validate_amount(self, value):
+        err = serializers.ValidationError('امکان افزایش اعتبار با این مقدار نیست')
         request = self.context['request']
         if request.user.smspanelinfo.credit_in_tomans() + value > max_allowed_credit:
-            raise serializers.ValidationError('امکان افزایش اعتبار با این مقدار نیست')
+            raise err
+        try:
+            credit = sms_client_management.get_system_credit_in_tomans()
+            if credit < value:
+                raise err
+        except APIException as e:
+            logging.error(e)
+            raise serializers.ValidationError('خطای سیستم')
         return value
 
     def get_forward_link(self, obj):
