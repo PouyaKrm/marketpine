@@ -118,6 +118,15 @@ class Businessman(AbstractUser, PanelDurationBaseModel):
         if self.__is_activation_date_bigger_than_expire_date():
             raise ValidationError("expire date should be bigger than activate date")
 
+        self.__validate_page_id()
+
+    def __validate_page_id(self):
+
+        from .services import businessman_service
+
+        if not businessman_service.is_page_id_pattern_valid(self.page_id):
+            raise ValidationError('page id pattern is invalid')
+
         if businessman_service.is_page_id_predefined(self.page_id):
             raise ValidationError('page id is predefined value')
 

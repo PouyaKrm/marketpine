@@ -40,9 +40,7 @@ class BusinessmanProfileSerializer(serializers.ModelSerializer):
     category = serializers.PrimaryKeyRelatedField(write_only=True, queryset=BusinessCategory.objects.all())
     defined_groups = serializers.SerializerMethodField(read_only=True)
     logo = FileFieldWithLinkRepresentation(read_only=True)
-    page_id = serializers.CharField(required=False, allow_blank=True, min_length=6, max_length=20, validators=[
-        RegexValidator(regex=r'^\d*[a-zA-Z_-]+[a-zA-Z0-9_-]*$', message='کاراکتر غیر مجاز')
-    ])
+    page_id = serializers.CharField(required=False, allow_blank=True, min_length=6, max_length=20)
 
     customers_total = serializers.SerializerMethodField(read_only=True)
 
@@ -140,7 +138,9 @@ class BusinessmanProfileSerializer(serializers.ModelSerializer):
 
     def validate_page_id(self, value):
         user = self.context['user']
-        if not businessman_service.is_page_id_unique(user, value):
+        if not businessman_service.is_page_id_pattern_valid(value):
+            raise serializers.ValidationError('فرمت اشتباه')
+        elif not businessman_service.is_page_id_unique(user, value):
             raise serializers.ValidationError('این آیدی صفحه قبلا استفاده شده')
         elif businessman_service.is_page_id_predefined(value):
             raise serializers.ValidationError('آیدی غیر مجاز')
