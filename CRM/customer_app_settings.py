@@ -9,3 +9,11 @@ CUSTOMER_APP_PAGINATION_SETTINGS = {
 }
 
 BUSINESSMAN_PAGE_URL = 'https://moshtarino.com/{}'
+
+CUSTOMER_APP_FRONTEND_PATHS = [
+    'login',
+    'profile',
+    'markets',
+    'discounts',
+    'get-discount'
+]

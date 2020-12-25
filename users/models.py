@@ -9,6 +9,7 @@ from django.utils import timezone
 from base_app.models import PanelDurationBaseModel, PublicFileStorage
 from common.util.kavenegar_local import APIException
 
+
 categories = settings.DEFAULT_BUSINESS_CATEGORY
 days_before_expire = settings.ACTIVATION_ALLOW_REFRESH_DAYS_BEFORE_EXPIRE
 st = PublicFileStorage(subdir='logos', base_url='logo')
@@ -104,6 +105,7 @@ class Businessman(AbstractUser, PanelDurationBaseModel):
         return self.panel_expiration_date <= now or self.panel_expiration_date - now <= days_before_expire
 
     def clean(self):
+        from users.services import businessman_service
         super().clean()
         duration_type = self.duration_type
         panel_expire_date = self.panel_expiration_date
@@ -115,6 +117,9 @@ class Businessman(AbstractUser, PanelDurationBaseModel):
 
         if self.__is_activation_date_bigger_than_expire_date():
             raise ValidationError("expire date should be bigger than activate date")
+
+        if businessman_service.is_page_id_predefined(self.page_id):
+            raise ValidationError('page id is predefined value')
 
     def __is_activation_date_bigger_than_expire_date(self) -> bool:
         act = self.panel_activation_date
