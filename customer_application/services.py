@@ -245,6 +245,8 @@ class CustomerDataService:
         is_int = True
         try:
             parsed = int(page_businessman_id)
+            if parsed <= 0:
+                raise ValueError
         except ValueError:
             parsed = page_businessman_id
             is_int = False
