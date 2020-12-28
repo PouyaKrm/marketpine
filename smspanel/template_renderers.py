@@ -111,6 +111,7 @@ class FriendInvitationTemplateRenderer(BaseTemplateRenderer):
 
     def render(self, receiver: SMSMessageReceivers):
         invited_discount = self.invitation.invited_discount
+        invite_date = gregorian_to_jalali_str(self.invitation.create_date)
         if invited_discount.is_percent_discount():
             discount_amount = invited_discount.percent_off
         else:
@@ -121,14 +122,14 @@ class FriendInvitationTemplateRenderer(BaseTemplateRenderer):
             'invited_full_name': self.invitation.invited.full_name,
             'inviter_full_name': self.invitation.inviter.full_name,
             'invited_discount_code': self.invitation.inviter_discount.discount_code,
-            'invited_discount_amount': discount_amount,
-            'invite_date': self.invitation.create_date
+            'invited_discount_amount': discount_amount.__str__(),
+            'invite_date': invite_date
         }
 
         if self.invitation.invited_discount.is_percent_discount():
-            invite_context = {**invite_context, 'percent_off': self.invitation.invited_discount.percent_off}
+            invite_context = {**invite_context, 'percent_off': self.invitation.invited_discount.percent_off.__str__()}
         else:
-            invite_context = {**invite_context, 'flat_rate_off': self.invitation.inviter_discount.flat_rate_off}
+            invite_context = {**invite_context, 'flat_rate_off': self.invitation.inviter_discount.flat_rate_off.__str__()}
 
         return self._render(self._sms_message.message, {
             **invite_context,
