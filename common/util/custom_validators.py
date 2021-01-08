@@ -18,6 +18,24 @@ def phone_validator(value):
         raise ValidationError("phone number is invalid")
 
 
+def fixed_phone_line_validator(value):
+
+    result = re.match(r'^(\+98|0)\d{10}$')
+
+    if result is None:
+        raise ValidationError('phone number is invalid')
+    return result
+
+
+def fixed_phone_line_or_cell_phone_validator(value):
+
+    try:
+        return phone_validator(value)
+    except ValidationError:
+        return fixed_phone_line_validator(value)
+
+
+
 def password_validator(value):
 
     result = re.match("^(?=.*\\d)(?=.*[a-z])(?=.*[A-Z]).{8,16}$", value)
