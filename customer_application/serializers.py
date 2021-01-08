@@ -9,7 +9,8 @@ from customer_return_plan.festivals.models import Festival
 from customer_return_plan.invitation.services import invitation_service
 from customers.services import customer_service
 from mobile_app_conf.models import MobileAppPageConf, MobileAppHeader
-from mobile_app_conf.serializers import MobileAppPageConfSerializer, FileFieldWithLinkRepresentation
+from mobile_app_conf.serializers import MobileAppPageConfSerializer, FileFieldWithLinkRepresentation, \
+    ContactInfoSerializer
 from mobile_app_conf.services import mobile_page_conf_service
 from online_menu.serializers import OnlineMenuSerializer
 from users.models import Businessman, Customer
@@ -128,10 +129,12 @@ class BusinessmanMobileAppHeaderSerializer(serializers.ModelSerializer):
 
 class BusinessmanPageDataSerializer(serializers.ModelSerializer):
     headers = BusinessmanMobileAppHeaderSerializer(many=True, read_only=True)
+    contact_info = ContactInfoSerializer(many=True)
 
     class Meta:
         model = MobileAppPageConf
         fields = [
+            'contact_info',
             'description',
             'address',
             'is_address_set',
