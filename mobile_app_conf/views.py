@@ -17,15 +17,14 @@ from .services import mobile_page_conf_service
 
 class MobileAppPageConfAPIView(APIView):
 
-    def __update_page_conf_data_by_serializer(self, user, serializer: MobileAppPageConfSerializer) -> Response:
-        if not serializer.is_valid():
-            return bad_request(serializer.errors)
-        return ok(serializer.update(mobile_page_conf_service.get_businessman_conf_or_create(user),
-                                    serializer.validated_data))
-
     def put(self, request):
         serializer = MobileAppPageConfSerializer(data=request.data, context={'request': request})
-        return self.__update_page_conf_data_by_serializer(request.user, serializer)
+        if not serializer.is_valid():
+            return bad_request(serializer.errors)
+
+        conf = mobile_page_conf_service.update_page_conf(request.user, serializer.validated_data)
+        serializer = MobileAppPageConfSerializer(conf, context={'conf': conf, 'request': request})
+        return ok(serializer.data)
 
     def get(self, request):
         conf = mobile_page_conf_service.get_businessman_conf_or_create(request.user)

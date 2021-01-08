@@ -1,7 +1,7 @@
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
 
-from mobile_app_conf.models import MobileAppPageConf, MobileAppHeader
+from mobile_app_conf.models import MobileAppPageConf, MobileAppHeader, ContactInfo
 from users.models import Businessman
 
 max_allowed_headers = settings.MOBILE_APP_PAGE_CONF['MAX_ALLOWED_HEADERS']
@@ -16,6 +16,17 @@ class MobileAppPageConfService:
         header.header_image_size = image.size
         header.save()
         return header
+
+    def update_page_conf(self, businessman: Businessman, updated_data: dict) -> MobileAppPageConf:
+        conf = self.get_businessman_conf_or_create(businessman)
+        conf.address = updated_data.get('address')
+        conf.description = updated_data.get('description')
+        conf.is_location_set = updated_data.get('is_location_set')
+        conf.location_lat = updated_data.get('location_lat')
+        conf.location_lng = updated_data.get('location_lng')
+        conf.save()
+        self._update_contact_infos(conf, updated_data.get('contact_info'))
+        return conf
 
     def header_id_exists_by_user(self, user: Businessman, header_id: int) -> bool:
         conf = self.get_businessman_conf_or_create(user)
@@ -66,6 +77,13 @@ class MobileAppPageConfService:
             h = self.get_businessman_all_app_headers(user).get(id=k)
             h.show_order = v
             h.save()
+
+    def _update_contact_infos(self, page_conf: MobileAppPageConf, contact_infos: [dict]):
+        if contact_infos is None:
+            return
+        page_conf.contact_info.all().delete()
+        ContactInfo.objects.bulk_create([ContactInfo(mobile_app_page_conf=page_conf, phone=ci['phone'])
+                                         for ci in contact_infos])
 
 
 mobile_page_conf_service = MobileAppPageConfService()

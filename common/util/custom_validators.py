@@ -20,7 +20,7 @@ def phone_validator(value):
 
 def fixed_phone_line_validator(value):
 
-    result = re.match(r'^(\+98|0)\d{10}$')
+    result = re.match(r'^(\+98|0)\d{10}$', value)
 
     if result is None:
         raise ValidationError('phone number is invalid')
@@ -33,7 +33,6 @@ def fixed_phone_line_or_cell_phone_validator(value):
         return phone_validator(value)
     except ValidationError:
         return fixed_phone_line_validator(value)
-
 
 
 def password_validator(value):

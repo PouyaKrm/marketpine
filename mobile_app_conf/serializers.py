@@ -9,9 +9,9 @@ from django.conf import settings
 from base_app.serializers import BaseModelSerializerWithRequestObj, BaseSerializerWithRequestObj, \
     FileFieldWithLinkRepresentation
 from common.util import create_link, get_client_ip
-from common.util.custom_validators import file_size_validator
+from common.util.custom_validators import file_size_validator, fixed_phone_line_or_cell_phone_validator
 from common.util.gelocation import geolocation_service, LocationAPIException
-from mobile_app_conf.models import MobileAppHeader, MobileAppPageConf
+from mobile_app_conf.models import MobileAppHeader, MobileAppPageConf, ContactInfo
 from .services import mobile_page_conf_service
 
 max_header_size = settings.MOBILE_APP_PAGE_CONF['MAX_HEADER_IMAGE_SIZE']
@@ -94,8 +94,20 @@ class MobileAppHeaderSerializer(BaseModelSerializerWithRequestObj):
                 'header_image_size': app_header.header_image_size}
 
 
+class ContactInfoSerializer(BaseSerializerWithRequestObj):
+
+    phone = serializers.CharField(max_length=15, validators=[fixed_phone_line_or_cell_phone_validator])
+
+    class Meta:
+        model = ContactInfo
+        fields = [
+            'phone'
+        ]
+
+
 class MobileAppPageConfSerializer(BaseModelSerializerWithRequestObj):
     address = serializers.CharField(required=False, allow_blank=True, allow_null=True, max_length=1000)
+    contact_info = ContactInfoSerializer(required=False, many=True)
     headers = MobileAppHeaderSerializer(many=True, read_only=True)
     ip_location = serializers.SerializerMethodField(read_only=True)
 
@@ -104,6 +116,7 @@ class MobileAppPageConfSerializer(BaseModelSerializerWithRequestObj):
         fields = [
             'address',
             'is_address_set',
+            'contact_info',
             'headers',
             'description',
             'location_lat',
@@ -123,11 +136,13 @@ class MobileAppPageConfSerializer(BaseModelSerializerWithRequestObj):
         except LocationAPIException as e:
             return None
 
+    def validate_contact_info(self, value):
+        if value is not None and len(value) > 3:
+            raise serializers.ValidationError('3 contact info can be added at max')
+        return value
+
     def update(self, instance: MobileAppPageConf, validated_data: dict):
-        for k, v in validated_data.items():
-            setattr(instance, k, v)
-        instance.save()
-        return {**validated_data, 'is_address_set': instance.is_address_set()}
+        pass
 
     def create(self, validated_data):
         pass
