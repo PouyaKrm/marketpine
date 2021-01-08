@@ -42,3 +42,12 @@ class MobileAppHeader(BaseModel):
     def __str__(self):
         return self.mobile_app_page_conf.businessman.username
 
+
+class ContactInfo(BaseModel):
+
+    mobile_app_page_conf = models.ForeignKey(MobileAppPageConf,
+                                             related_name='contact_info',
+                                             related_query_name='contact_info',
+                                             on_delete=models.CASCADE)
+    phone = models.CharField(max_length=15)
+
