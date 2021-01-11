@@ -36,7 +36,12 @@ class SMSTemplate(models.Model):
 class SentSMS(BusinessmanManyToOneBaseModel):
 
     message_id = models.CharField(max_length=100)
-    receptor = models.CharField(max_length=15, null=True)
+    receptor = models.CharField(max_length=20, null=True)
+    status = models.IntegerField(null=True)
+    sender = models.TextField(null=True)
+    cost = models.IntegerField(null=True)
+    date = models.BigIntegerField(null=True)
+
 
     @staticmethod
     def get_all_businessman_sent_messages(user: Businessman):
