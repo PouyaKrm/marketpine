@@ -166,11 +166,11 @@ class SendMessageTaskQueue:
         total_cost = 0
         for c in result:
             total_cost += c['cost']
-            sms = SentSMS(businessman=businessman, message_id=c['messageid'],
+            sms = SentSMS(sms_message=sms_message, message_id=c['messageid'],
                           receptor=c['receptor'], message=c['message'],
                           sender=c['sender'], cost=c['cost'],
                           status=c['status'], status_text=c['statustext'],
-                          sms_message=sms_message, date=c['date']
+                          date=c['date']
                           )
             sent.append(sms)
         SentSMS.objects.bulk_create(sent)
