@@ -6,10 +6,8 @@ from django.db import models
 from django.db.models import QuerySet
 from django.utils import timezone
 
-
 from users.models import Businessman, Customer, BusinessmanManyToOneBaseModel, BusinessmanOneToOneBaseModel
 from django.conf import settings
-
 
 page_size = settings.PAGINATION_PAGE_NUM
 
@@ -21,84 +19,17 @@ api_key = settings.SMS_PANEL['API_KEY']
 
 
 class SMSTemplate(models.Model):
-
     title = models.CharField(max_length=40)
     create_date = models.DateTimeField(auto_now_add=True)
     update_date = models.DateTimeField(auto_now=True)
     content = models.CharField(max_length=160)
     businessman = models.ForeignKey(Businessman, on_delete=models.CASCADE)
 
-
     def __str__(self):
         return self.title
 
 
-class SentSMS(BusinessmanManyToOneBaseModel):
-
-    message_id = models.CharField(max_length=100)
-    receptor = models.CharField(max_length=20, null=True)
-    status = models.IntegerField(null=True)
-    sender = models.TextField(null=True)
-    cost = models.IntegerField(null=True)
-    date = models.BigIntegerField(null=True)
-
-
-    @staticmethod
-    def get_all_businessman_sent_messages(user: Businessman):
-        return SentSMS.objects.filter(businessman=user).order_by('-create_date').all()
-
-    @staticmethod
-    def get_sent_sms_from_kavenegar(user: Businessman, page_num, receptor: str = None) -> (int, int, bool, bool, list):
-
-        """
-        retrieve sent messages for businessman from kavenegar
-        Args:
-            user: businessman
-            page_num: number of page for pagination
-            receptor: if not None filters SentSms by receptor
-        Returns: (int: page number. this value always equal to page_num prameter,
-        int: count,
-        bool: hasNextPage,
-        bool: hasPreviousPage, list: list of sent messages from kavenegar)
-
-        """
-
-        from common.util.sms_panel.message import retrive_sent_messages
-        from panelprofile.models import SMSPanelInfo
-        query = SentSMS.get_all_businessman_sent_messages(user)
-        if receptor is not None:
-            query = query.filter(receptor=receptor)
-        p = Paginator(query, page_size)
-        pn = page_num
-        try:
-            page = p.page(page_num)
-        except (PageNotAnInteger, EmptyPage) as e:
-            pn = 1
-            page = p.page(pn)
-        message_ids = [s.message_id for s in page.object_list]
-        if len(message_ids) == 0:
-            return pn, query.count(), page.has_next(), page.has_previous(), message_ids
-        return pn, query.count(), page.has_next(), page.has_previous(), retrive_sent_messages(api_key, message_ids)
-
-
-class UnsentPlainSMS(models.Model):
-
-    message = models.CharField(max_length=max_english_chars)
-    businessman = models.ForeignKey(Businessman, on_delete=models.CASCADE)
-    create_date = models.DateTimeField(auto_now_add=True)
-    customers = models.ManyToManyField(Customer)
-
-
-class UnsentTemplateSMS(models.Model):
-
-    template = models.CharField(max_length=template_max_chars)
-    businessman = models.ForeignKey(Businessman, on_delete=models.CASCADE)
-    create_date = models.DateTimeField(auto_now_add=True)
-    customers = models.ManyToManyField(Customer)
-
-
 class SMSMessage(models.Model):
-
     TYPE_PLAIN = '0'
     TYPE_TEMPLATE = '1'
     STATUS_CANCLE = '0'
@@ -184,8 +115,71 @@ class SMSMessage(models.Model):
         self.save()
 
 
-class SMSMessageReceivers(models.Model):
+class SentSMS(BusinessmanManyToOneBaseModel):
+    sms_message = models.ForeignKey(SMSMessage, on_delete=models.PROTECT, null=True,
+                                    related_name='sent_sms', related_query_name='sent_sms')
+    message_id = models.CharField(max_length=100)
+    message = models.TextField(null=True)
+    receptor = models.CharField(max_length=20, null=True)
+    status = models.IntegerField(null=True)
+    status_text = models.TextField(null=True)
+    sender = models.TextField(null=True)
+    cost = models.IntegerField(null=True)
+    date = models.BigIntegerField(null=True)
 
+    @staticmethod
+    def get_all_businessman_sent_messages(user: Businessman):
+        return SentSMS.objects.filter(businessman=user).order_by('-create_date').all()
+
+    @staticmethod
+    def get_sent_sms_from_kavenegar(user: Businessman, page_num, receptor: str = None) -> (int, int, bool, bool, list):
+
+        """
+        retrieve sent messages for businessman from kavenegar
+        Args:
+            user: businessman
+            page_num: number of page for pagination
+            receptor: if not None filters SentSms by receptor
+        Returns: (int: page number. this value always equal to page_num prameter,
+        int: count,
+        bool: hasNextPage,
+        bool: hasPreviousPage, list: list of sent messages from kavenegar)
+
+        """
+
+        from common.util.sms_panel.message import retrive_sent_messages
+        from panelprofile.models import SMSPanelInfo
+        query = SentSMS.get_all_businessman_sent_messages(user)
+        if receptor is not None:
+            query = query.filter(receptor=receptor)
+        p = Paginator(query, page_size)
+        pn = page_num
+        try:
+            page = p.page(page_num)
+        except (PageNotAnInteger, EmptyPage) as e:
+            pn = 1
+            page = p.page(pn)
+        message_ids = [s.message_id for s in page.object_list]
+        if len(message_ids) == 0:
+            return pn, query.count(), page.has_next(), page.has_previous(), message_ids
+        return pn, query.count(), page.has_next(), page.has_previous(), retrive_sent_messages(api_key, message_ids)
+
+
+class UnsentPlainSMS(models.Model):
+    message = models.CharField(max_length=max_english_chars)
+    businessman = models.ForeignKey(Businessman, on_delete=models.CASCADE)
+    create_date = models.DateTimeField(auto_now_add=True)
+    customers = models.ManyToManyField(Customer)
+
+
+class UnsentTemplateSMS(models.Model):
+    template = models.CharField(max_length=template_max_chars)
+    businessman = models.ForeignKey(Businessman, on_delete=models.CASCADE)
+    create_date = models.DateTimeField(auto_now_add=True)
+    customers = models.ManyToManyField(Customer)
+
+
+class SMSMessageReceivers(models.Model):
     sms_message = models.ForeignKey(SMSMessage, on_delete=models.PROTECT)
     customer = models.ForeignKey(Customer, null=True, on_delete=models.SET_NULL)
     sent_date = models.DateTimeField(auto_now_add=True)
@@ -196,7 +190,5 @@ class SMSMessageReceivers(models.Model):
 
 
 class WelcomeMessage(BusinessmanOneToOneBaseModel):
-
     message = models.CharField(null=True, blank=True, max_length=max_english_chars)
     send_message = models.BooleanField(default=False)
-
