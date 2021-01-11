@@ -6,7 +6,7 @@ from django.db import models
 from django.db.models import QuerySet
 from django.utils import timezone
 
-from users.models import Businessman, Customer, BusinessmanManyToOneBaseModel, BusinessmanOneToOneBaseModel
+from users.models import Businessman, Customer, BusinessmanManyToOneBaseModel, BusinessmanOneToOneBaseModel, BaseModel
 from django.conf import settings
 
 page_size = settings.PAGINATION_PAGE_NUM
@@ -114,8 +114,11 @@ class SMSMessage(models.Model):
         self.status = SMSMessage.STATUS_FAILED
         self.save()
 
+    def __str__(self):
+        return self.businessman.username
 
-class SentSMS(BusinessmanManyToOneBaseModel):
+
+class SentSMS(BaseModel):
     sms_message = models.ForeignKey(SMSMessage, on_delete=models.PROTECT, null=True,
                                     related_name='sent_sms', related_query_name='sent_sms')
     message_id = models.CharField(max_length=100)

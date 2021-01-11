@@ -18,7 +18,7 @@ class SMSMessageAdminModel(admin.ModelAdmin):
 
 class SentSMSAdmin(admin.ModelAdmin):
 
-    list_display = ['businessman', 'message_id', 'receptor']
+    list_display = ['sms_message', 'message_id', 'receptor', 'create_date']
 
 
 class UnsentPLAINSMSAdmin(admin.ModelAdmin):
