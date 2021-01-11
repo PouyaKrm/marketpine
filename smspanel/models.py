@@ -115,7 +115,7 @@ class SMSMessage(models.Model):
         self.save()
 
     def __str__(self):
-        return self.businessman.username
+        return '{} - {}'.format(self.id, self.businessman.username)
 
 
 class SentSMS(BaseModel):
