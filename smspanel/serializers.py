@@ -184,7 +184,10 @@ class SentSMSSerializer(serializers.ModelSerializer):
         model = SentSMS
         fields = [
             'message_id',
-            'receptor'
+            'receptor',
+            'cost',
+            'date',
+            'message'
         ]
 
 class SentSMSRetrieveForCustomer(serializers.ModelSerializer):

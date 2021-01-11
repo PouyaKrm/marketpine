@@ -21,7 +21,7 @@ from users.models import Customer, Businessman
 from users.permissions import IsPanelActivePermissionPostPutMethod
 from .serializers import SMSTemplateSerializer, SendSMSSerializer, SentSMSRetrieveForCustomer, \
     SendPlainSMSToAllSerializer, SendByTemplateSerializer, SendPlainToGroup, UnsentPlainSMSListSerializer, \
-    UnsentTemplateSMSListSerializer, SMSMessageListSerializer, WelcomeMessageSerializer
+    UnsentTemplateSMSListSerializer, SMSMessageListSerializer, WelcomeMessageSerializer, SentSMSSerializer
 from .models import SMSTemplate, SentSMS, SMSMessage
 from .permissions import HasValidCreditSendSMS, HasValidCreditSendSMSToAll, HasValidCreditResendFailedSMS, \
     HasValidCreditResendTemplateSMS, HasValidCreditSendSMSToGroup, HasActiveSMSPanel
@@ -314,14 +314,14 @@ def resend_template_sms(request: Request, unsent_sms_id):
     return create_sms_sent_success_response(request.user)
 
 
-@api_view(['GET'])
-@permission_classes([permissions.IsAuthenticated, HasActiveSMSPanel])
-def get_businessman_sent_sms(request: Request):
-    retrieve_link = create_link(reverse('sent_sms_retrieve'), request)
-    page_num = get_query_param_or_default(request, 'page', 1)
-    phone = get_query_param_or_default(request, 'phone')
-    result = SentSMS.get_sent_sms_from_kavenegar(request.user, page_num, phone)
-    return create_pagination_response_body(result[4], result[1], result[0], result[2], result[3], retrieve_link)
+class SentSMSRetrieveAPIView(BaseListAPIView):
+
+    permission_classes = [permissions.IsAuthenticated, HasActiveSMSPanel]
+    serializer_class = SentSMSSerializer
+
+    def get_queryset(self):
+        phone = self.request.query_params.get('phone')
+        return sms_message_service.get_businessman_sent_sms(self.request.user, phone)
 
 
 class RetrieveUpdateWelcomeMessageApiView(APIView):
