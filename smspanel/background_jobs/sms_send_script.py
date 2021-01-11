@@ -161,16 +161,19 @@ class SendMessageTaskQueue:
             .exclude(Q(used_for=SMSMessage.USED_FOR_FRIEND_INVITATION)
                      | Q(used_for=SMSMessage.USED_FOR_WELCOME_MESSAGE)).first()
 
-    def __create_sent_messages(self, result: list, businessman: Businessman):
-
-        converted = message_id_receptor_cost_sms(result)
-        SentSMS.objects.bulk_create([
-            SentSMS(businessman=businessman, message_id=c['message_id'], receptor=c['receptor']) for c in converted
-        ])
-
+    def __create_sent_messages(self, sms_message: SMSMessage, result: list, businessman: Businessman):
+        sent = []
         total_cost = 0
-        for r in converted:
-            total_cost += r['cost']
+        for c in result:
+            total_cost += c['cost']
+            sms = SentSMS(businessman=businessman, message_id=c['messageid'],
+                          receptor=c['receptor'], message=c['message'],
+                          sender=c['sender'], cost=c['cost'],
+                          status=c['status'], status_text=c['statustext'],
+                          sms_message=sms_message, date=c['date']
+                          )
+            sent.append(sms)
+        SentSMS.objects.bulk_create(sent)
         return total_cost
 
     def _set_message_status_and_empty_threads(self, sms_message):
@@ -214,7 +217,7 @@ class SendMessageTaskQueue:
 
             SMSMessageReceivers.objects.filter(id__in=t.receiver_ids).delete()
 
-            costs += self.__create_sent_messages(t.result, sms_message.businessman)
+            costs += self.__create_sent_messages(sms_message, t.result, sms_message.businessman)
         self._set_message_status_and_empty_threads(sms_message)
         try:
             sms_message.businessman.smspanelinfo.refresh_credit()
@@ -243,8 +246,6 @@ def run_send_sms_task():
 # while True:
 #     task.run_send_threads()
 #     time.sleep(10)
-
-
 
 
 # def run_sms():
