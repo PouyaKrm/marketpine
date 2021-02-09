@@ -172,7 +172,7 @@ class DiscountService:
         # customer = customer_service.get_customer_by_id(user, customer_id)
 
         festival_discounts = Discount.objects.annotate(
-            purchase_sum_of_invited=Sum('inviter_discount__invited__purchases__amount')).filter(businessman=user) \
+            purchase_sum_of_invited=Sum('inviter_discount__invited__purchases__amount', filter=Q(inviter_discount__invited__purchases__businessman=user))).filter(businessman=user) \
  \
             .filter(Q(used_for=Discount.USED_FOR_FESTIVAL)
                     | Q(used_for=Discount.USED_FOR_INVITATION,
