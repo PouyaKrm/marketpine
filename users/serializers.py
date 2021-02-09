@@ -32,7 +32,6 @@ class BusinessmanRegisterSerializer(serializers.ModelSerializer):
             'password2',
             'first_name',
             'last_name',
-            'address',
             'phone',
             'email',
             'business_name',
