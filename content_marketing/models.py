@@ -11,10 +11,10 @@ from django.dispatch import receiver
 from common.util import get_file_extension, generate_url_safe_base64_file_name
 from common.util.kavenegar_local import APIException, HTTPException
 from smspanel.models import SMSMessage
-from smspanel.services import SendSMSMessage
+from smspanel.services import SendSMSMessage, sms_message_service
 from users.models import Businessman, Customer, BaseModel
 
-from common.util.sms_panel.message import SystemSMSMessage
+from common.util.sms_panel.message import SystemSMSMessage, system_sms_message
 from base_app.models import PublicFileStorage
 
 sub_dir = settings.CONTENT_MARKETING['SUB_DIR']
@@ -85,19 +85,18 @@ def send_message_video_is_confirmed(sender, instance: Post, *args, **kwargs):
     :param kwargs:
     :return: None
     """
-    messenger = SystemSMSMessage()
     try:
         obj = Post.objects.get(id=instance.id)
 
         if obj.confirmation_status != instance.confirmation_status:
             if instance.confirmation_status is PostConfirmationStatus.ACCEPTED:
-                messenger.send_message(instance.businessman.phone, video_confirm_message.format(title=instance.title))
+                system_sms_message.send_message(instance.businessman.phone, video_confirm_message.format(title=instance.title))
                 if instance.send_sms and not instance.sms_sent:
-                    SendSMSMessage().set_message_to_pending(instance.notif_sms)
+                    sms_message_service.set_message_to_pending(instance.notif_sms)
                     instance.sms_sent = True
                     instance.save()
             elif instance.confirmation_status is PostConfirmationStatus.REJECTED:
-                messenger.send_message(instance.businessman.phone, video_reject_message.format(title=instance.title))
+                system_sms_message.send_message(instance.businessman.phone, video_reject_message.format(title=instance.title))
 
     except ObjectDoesNotExist:
         return
