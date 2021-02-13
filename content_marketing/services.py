@@ -3,7 +3,7 @@ from rest_framework.request import Request
 
 from base_app.error_codes import ApplicationErrorCodes
 from common.util import create_link
-from content_marketing.models import Post, PostConfirmationStatus
+from content_marketing.models import Post, PostConfirmationStatus, ViewedPost
 from customers.services import customer_service
 from panelprofile.services import sms_panel_info_service
 from smspanel.models import SMSMessage
@@ -66,6 +66,20 @@ class ContentMarketingService:
         sms = sms_message_service.content_marketing_message_status_cancel(user=post.businessman,
                                                                           template=template)
         return sms
+
+    def get_all_posts(self):
+        return Post.objects.order_by('-create_date').order_by('-customers_viewed__create_date')
+
+    def retrieve_post_for_customer(self, post_id: int, customer: Customer):
+        post = Post.objects.get(id=post_id)
+        self._set_post_viewed_by_customer(post, customer)
+        return post
+
+    def _set_post_viewed_by_customer(self, post: Post, customer: Customer):
+        exist = ViewedPost.objects.filter(customer=customer, post=post).exists()
+        if exist:
+            return
+        ViewedPost.objects.create(post=post, customer=customer)
 
 
 content_marketing_service = ContentMarketingService()
