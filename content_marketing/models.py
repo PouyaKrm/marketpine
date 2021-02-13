@@ -73,8 +73,9 @@ class Post(BusinessmanManyToOneBaseModel):
     def likes_total(self) -> int:
         return self.likes.count()
 
-    def views_total(self) -> int:
-        return self.customers_viewed.count()
+    def increase_views(self):
+        self.views += 1
+        self.save()
 
 
 @receiver(pre_save, sender=Post)

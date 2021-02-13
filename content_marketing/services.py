@@ -70,10 +70,8 @@ class ContentMarketingService:
     def get_all_posts(self):
         return Post.objects.order_by('-create_date').order_by('-customers_viewed__create_date')
 
-    def retrieve_post_for_customer(self, post_id: int, customer: Customer):
-        post = Post.objects.get(id=post_id)
-        self._set_post_viewed_by_customer(post, customer)
-        return post
+    def retrieve_post(self, post_id: int):
+        return Post.objects.get(id=post_id)
 
     def _set_post_viewed_by_customer(self, post: Post, customer: Customer):
         exist = ViewedPost.objects.filter(customer=customer, post=post).exists()

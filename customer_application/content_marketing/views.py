@@ -29,7 +29,7 @@ class RetrievePost(BaseAPIView):
 
     def get(self, request: Request, post_id: int):
         try:
-            post = customer_content_service.get_post(post_id, request.user)
+            post = customer_content_service.retrieve_post_for_view(post_id, request.user)
             sr = PostRetrieveSerializer(post, request=request)
             return ok(sr.data)
         except CustomerServiceException as e:

@@ -27,6 +27,6 @@ class PostRetrieveSerializer(PostListSerializer):
             'videofile',
             'mobile_thumbnail',
             'likes_total',
-            'views_total',
+            'views',
             'description'
         ]
