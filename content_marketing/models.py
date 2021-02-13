@@ -122,6 +122,16 @@ class Like(BaseModel):
         return 'like by {}'.format(self.customer)
 
 
+class ViewedPost(BaseModel):
+    post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name='customers_viewed',
+                             related_query_name='customers_viewed')
+    customer = models.ForeignKey(Customer, on_delete=models.SET_NULL, null=True,
+                                 related_name='viewed_posts', related_query_name='viewed_posts')
+
+    class Meta:
+        unique_together = ['customer', 'post']
+
+
 class ContentMarketingSettings(models.Model):
 
     businessman = models.OneToOneField(Businessman, on_delete=models.PROTECT, related_name="content_marketing_settings")
