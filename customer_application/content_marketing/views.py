@@ -26,7 +26,7 @@ class PostsListAPIView(BaseListAPIView):
         return content_marketing_service.get_all_posts()
 
 
-class RetrievePost(BaseAPIView):
+class PostRetrieveLikeAPIView(BaseAPIView):
 
     permission_classes = [permissions.AllowAny]
 
