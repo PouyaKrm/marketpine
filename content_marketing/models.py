@@ -32,11 +32,14 @@ class PostConfirmationStatus:
 
 
 class Post(models.Model):
+    CONFIRM_STATUS_REJECTED = '0'
+    CONFIRM_STATUS_ACCEPTED = '1'
+    CONFIRM_STATUS_PENDING = '2'
 
     confirmation_choices = (
-        (PostConfirmationStatus.REJECTED, "Rejected"),
-        (PostConfirmationStatus.ACCEPTED, "Accepted"),
-        (PostConfirmationStatus.PENDING, "Pending")
+        (CONFIRM_STATUS_REJECTED, "REJECTED"),
+        (CONFIRM_STATUS_ACCEPTED, "ACCEPTED"),
+        (CONFIRM_STATUS_PENDING, "PENDING")
     )
 
     def get_upload_path(self, filename):

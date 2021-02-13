@@ -16,6 +16,7 @@ from common.util.custom_templates import get_fake_context, render_template, get_
 from django.conf import settings
 
 from common.util.custom_validators import validate_file_size
+from .services import content_marketing_service
 
 template_min_chars = settings.SMS_PANEL['TEMPLATE_MIN_CHARS']
 template_max_chars = settings.SMS_PANEL['TEMPLATE_MAX_CHARS']
@@ -140,24 +141,26 @@ class UploadListPostSerializer(BasePostSerializer):
 
     def create(self, validated_data: dict):
         request = self.context['request']
-        send_sms = validated_data.get('send_sms')
-        send_pwa = validated_data.get('send_pwa')
-        template = None
-        if send_sms:
-            template = validated_data.pop('notif_sms_template')
-
-        post = Post.objects.create(businessman=request.user, **validated_data)
-
-        if send_sms:
-            messenger = SendSMSMessage()
-            post.notif_sms = messenger.content_marketing_message_status_cancel(user=request.user, template=template)
-        if send_pwa:
-            post.send_pwa = True
-            c = customer_service.get_businessman_customers(request.user)
-            post.remaining_pwa_notif_customers.set(c)
-        post.video_url = create_link(post.videofile.url, request)
-        post.save()
-        return post
+        p = content_marketing_service.create_post(request, validated_data)
+        return p
+        # send_sms = validated_data.get('send_sms')
+        # send_pwa = validated_data.get('send_pwa')
+        # template = None
+        # if send_sms:
+        #     template = validated_data.pop('notif_sms_template')
+        #
+        # post = Post.objects.create(businessman=request.user, **validated_data)
+        #
+        # if send_sms:
+        #     messenger = SendSMSMessage()
+        #     post.notif_sms = messenger.content_marketing_message_status_cancel(user=request.user, template=template)
+        # if send_pwa:
+        #     post.send_pwa = True
+        #     c = customer_service.get_businessman_customers(request.user)
+        #     post.remaining_pwa_notif_customers.set(c)
+        # post.video_url = create_link(post.videofile.url, request)
+        # post.save()
+        # return post
 
 
 

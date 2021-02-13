@@ -4,7 +4,7 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework.views import APIView
 
 from base_app.views import BaseListAPIView
-from common.util.http_helpers import ok
+from common.util.http_helpers import ok, no_content
 from users.permissions import IsPanelActivePermissionPostPutMethod
 from .models import Post
 from django.conf import settings
@@ -79,7 +79,7 @@ class PostCreateListAPIView(CreateAPIView, ListModelMixin):
     pagination_class.page_size = video_page_size
 
     def get_queryset(self):
-        return self.request.user.post_set.order_by('-creation_date').all()
+        return content_marketing_service.get_businessman_all_posts(self.request.user)
 
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
@@ -91,20 +91,14 @@ class PostCreateListAPIView(CreateAPIView, ListModelMixin):
 class PostRetrieveDeleteAPIView(APIView):
 
     def get(self, request, post_id):
-        try:
-            post = request.user.post_set.get(id=post_id)
-        except ObjectDoesNotExist:
-            return Response(status=status.HTTP_404_NOT_FOUND)
+        post = content_marketing_service.get_post_by_id_or_404(request.user, post_id)
         serializer = DetailPostSerializer(post, context={'request': request})
-        return Response(serializer.data, status=status.HTTP_200_OK)
-
+        return ok(serializer.data)
 
     def delete(self, request, post_id):
-        try:
-            request.user.post_set.get(id=post_id).delete()
-            return Response(status=status.HTTP_204_NO_CONTENT)
-        except ObjectDoesNotExist:
-            return Response(status=status.HTTP_404_NOT_FOUND)
+        post = content_marketing_service.get_post_by_id_or_404(request.user, post_id)
+        post.delete()
+        return no_content()
 
 
 class PostCommentListApiView(BaseListAPIView):

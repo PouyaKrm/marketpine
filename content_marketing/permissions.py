@@ -4,6 +4,7 @@ from rest_framework.request import Request
 from smspanel.permissions import HasValidCreditSendSMSToAll
 
 from .models import PostConfirmationStatus
+from .services import content_marketing_service
 
 
 class DoesNotHavePendingPostForUpload(permissions.BasePermission):
@@ -11,9 +12,9 @@ class DoesNotHavePendingPostForUpload(permissions.BasePermission):
     message = 'شما یک محتوای منتظر تایید دارید و نمی توانید محتوای دیگری ارسال کنید'
 
     def has_permission(self, request: Request, view: View):
-        # if request.method != 'POST':
-        return True
-        return not request.user.post_set.filter(confirmation_status=PostConfirmationStatus.PENDING).exists()
+        if request.method != 'POST':
+            return True
+        return not content_marketing_service.has_businessman_any_pending_post(request.user)
 
 
 class HasValidCreditForVideoUploadMessage(permissions.BasePermission):
