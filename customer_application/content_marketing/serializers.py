@@ -1,5 +1,8 @@
+from rest_framework import serializers
+
 from base_app.serializers import BaseModelSerializerWithRequestObj, FileFieldWithLinkRepresentation
 from content_marketing.models import Post
+from content_marketing.services import content_marketing_service
 
 
 class PostListSerializer(BaseModelSerializerWithRequestObj):
@@ -20,6 +23,8 @@ class PostListSerializer(BaseModelSerializerWithRequestObj):
 
 class PostRetrieveSerializer(PostListSerializer):
 
+    is_liked = serializers.SerializerMethodField(read_only=True)
+
     class Meta:
         model = Post
         fields = [
@@ -27,6 +32,10 @@ class PostRetrieveSerializer(PostListSerializer):
             'videofile',
             'mobile_thumbnail',
             'likes_total',
+            'is_liked',
             'views',
-            'description'
+            'description',
         ]
+
+    def get_is_liked(self, post: Post):
+        return content_marketing_service.is_post_liked_by_customer(post, self.request.user)

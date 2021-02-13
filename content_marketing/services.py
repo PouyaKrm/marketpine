@@ -88,5 +88,8 @@ class ContentMarketingService:
         except ObjectDoesNotExist:
             return Like.objects.create(post=post, customer=customer)
 
+    def is_post_liked_by_customer(self, post: Post, customer: Customer) -> bool:
+        return Like.objects.filter(post=post, customer=customer).exists()
+
 
 content_marketing_service = ContentMarketingService()
