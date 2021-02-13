@@ -12,7 +12,7 @@ from common.util import get_file_extension, generate_url_safe_base64_file_name
 from common.util.kavenegar_local import APIException, HTTPException
 from smspanel.models import SMSMessage
 from smspanel.services import SendSMSMessage
-from users.models import Businessman,Customer
+from users.models import Businessman, Customer, BaseModel
 
 from common.util.sms_panel.message import SystemSMSMessage
 from base_app.models import PublicFileStorage
@@ -102,27 +102,21 @@ def send_message_video_is_confirmed(sender, instance: Post, *args, **kwargs):
         return
 
 
-class Comment(models.Model):
-    post = models.ForeignKey(Post,on_delete=models.CASCADE, related_name='comments')
+class Comment(BaseModel):
+    post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name='comments')
     customer = models.ForeignKey(Customer, on_delete=models.CASCADE)
     body = models.TextField()
-    creation_date = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        ordering = ['creation_date']
 
     def __str__(self):
         return 'Comment {} by {}'.format(self.body, self.customer)
 
 
-class Like(models.Model):
+class Like(BaseModel):
     post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name='likes')
     customer = models.ForeignKey(Customer,on_delete=models.CASCADE)
-    creation_date = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         unique_together = ('customer', 'post',)
-        ordering = ['creation_date']
 
     def __str__(self):
         return 'like by {}'.format(self.customer)
