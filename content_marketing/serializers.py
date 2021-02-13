@@ -9,6 +9,7 @@ from rest_framework.exceptions import ValidationError
 from common.util import create_link, create_field_error, create_detail_error
 from common.util.custom_validators import sms_not_contains_link
 from customers.services import customer_service
+from panelprofile.services import sms_panel_info_service
 from smspanel.models import SMSMessage, SMSMessageReceivers
 from smspanel.services import SendSMSMessage
 from .models import Post, Comment, Like, ContentMarketingSettings
@@ -127,7 +128,7 @@ class UploadListPostSerializer(BasePostSerializer):
         if not sms_notif:
             return attrs
 
-        if not request.user.smspanelinfo.has_remained_credit_for_new_message_to_all():
+        if not sms_panel_info_service.has_valid_credit_to_send_to_all(request.user):
             raise ValidationError({'notif_sms_template': 'اعتبار کافی برای ارسال پیامک موجود نیست'})
         if template is None:
             raise serializers.ValidationError(create_field_error('notif_sms_template is required', ['template is required']))

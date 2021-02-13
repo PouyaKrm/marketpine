@@ -35,9 +35,8 @@ class SMSPanelInfoService:
         sms_panel_info.credit = new_credit
         sms_panel_info.save()
 
-    def set_wait_for_charge_to_pending(self):
-        SMSMessage.objects.filter(status=SMSMessage.STATUS_WAIT_FOR_CREDIT_RECHARGE).update(
-            status=SMSMessage.STATUS_PENDING)
+    def has_valid_credit_to_send_to_all(self, user: Businessman) -> bool:
+        return user.has_sms_panel and user.smspanelinfo.has_valid_credit_to_send_message_to_all()
 
 
 sms_panel_info_service = SMSPanelInfoService()

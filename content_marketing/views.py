@@ -1,10 +1,12 @@
 from django.core.exceptions import ObjectDoesNotExist
 from rest_framework.exceptions import NotFound
 from rest_framework.pagination import PageNumberPagination
+from rest_framework.request import Request
 from rest_framework.views import APIView
 
+from base_app.error_codes import ApplicationErrorException
 from base_app.views import BaseListAPIView
-from common.util.http_helpers import ok, no_content
+from common.util.http_helpers import ok, no_content, bad_request
 from users.permissions import IsPanelActivePermissionPostPutMethod
 from .models import Post
 from django.conf import settings
@@ -86,6 +88,14 @@ class PostCreateListAPIView(CreateAPIView, ListModelMixin):
 
     def get_serializer_context(self):
         return {'request': self.request}
+
+    def create(self, request: Request, *args, **kwargs) -> Response:
+
+        try:
+            return super().create(request, *args, **kwargs)
+        except ApplicationErrorException as e:
+            print(e.http_message)
+            return bad_request(e.http_message)
 
 
 class PostRetrieveDeleteAPIView(APIView):

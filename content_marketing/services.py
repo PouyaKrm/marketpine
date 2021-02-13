@@ -1,9 +1,12 @@
 from django.shortcuts import get_object_or_404
 from rest_framework.request import Request
 
+from base_app.error_codes import ApplicationErrorCodes
 from common.util import create_link
 from content_marketing.models import Post, PostConfirmationStatus
 from customers.services import customer_service
+from panelprofile.services import sms_panel_info_service
+from smspanel.models import SMSMessage
 from smspanel.services import sms_message_service
 from users.models import Customer, Businessman
 
@@ -20,10 +23,9 @@ class ContentMarketingService:
         post = Post.objects.create(businessman=request.user, **post_data)
 
         if send_sms:
-            post.notif_sms = sms_message_service.content_marketing_message_status_cancel(user=request.user,
-                                                                                         template=template)
+            post.notif_sms = self._send_notif_sms(post, template)
         if send_pwa:
-            self.send_post_pwa_notif(post)
+            self._send_post_pwa_notif(post)
 
         post.video_url = create_link(post.videofile.url, request)
         post.save()
@@ -37,8 +39,8 @@ class ContentMarketingService:
 
     def get_oldest_post_for_notification(self, customer: Customer) -> Post:
         p = Post.objects.filter(confirmation_status=PostConfirmationStatus.ACCEPTED,
-                                   send_pwa=True,
-                                   remaining_pwa_notif_customers=customer).order_by('creation_date').first()
+                                send_pwa=True,
+                                remaining_pwa_notif_customers=customer).order_by('creation_date').first()
 
         if p is not None:
             p.remaining_pwa_notif_customers.remove(customer)
@@ -51,10 +53,19 @@ class ContentMarketingService:
         post = self.get_post_by_id_or_404(user, post_id)
         return post.comments.order_by('-create_date')
 
-    def send_post_pwa_notif(self, post: Post):
+    def _send_post_pwa_notif(self, post: Post):
         return
         post.send_pwa = True
         c = customer_service.get_businessman_customers(request.user)
         post.remaining_pwa_notif_customers.set(c)
+
+    def _send_notif_sms(self, post: Post, template: str) -> SMSMessage:
+        has_credit = sms_panel_info_service.has_valid_credit_to_send_to_all(post.businessman)
+        if not has_credit:
+            raise ApplicationErrorCodes.get_exception(ApplicationErrorCodes.NOT_ENOUGH_SMS_CREDIT)
+        sms = sms_message_service.content_marketing_message_status_cancel(user=post.businessman,
+                                                                          template=template)
+        return sms
+
 
 content_marketing_service = ContentMarketingService()

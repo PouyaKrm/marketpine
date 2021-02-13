@@ -15,6 +15,7 @@ from django.conf import settings
 from base_app.models import PrivateFileStorage, PublicFileStorage
 
 max_message_cost = settings.SMS_PANEL['MAX_MESSAGE_COST']
+min_credit = settings.SMS_PANEL['MIN_CREDIT']
 
 fs = PublicFileStorage('commit_form/', '/commit-form/')
 auth_fs = PrivateFileStorage('auth-docs/', '/auth-docs/')
@@ -90,8 +91,14 @@ class SMSPanelInfo(models.Model):
             reserved_credit += m.reserved_credit
         return self.credit - reserved_credit
 
+    def has_min_credit(self) -> bool:
+        return self.credit >= min_credit
+
     def has_remained_credit_for_new_message_to_all(self):
         return self.remained_credit_for_new_message() > max_message_cost * self.businessman.customers.count()
+
+    def has_valid_credit_to_send_message_to_all(self) -> bool:
+        return self.has_min_credit() and self.has_remained_credit_for_new_message_to_all()
 
     def reduce_credit_local(self, costs):
         self.credit -= costs
