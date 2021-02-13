@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Post, Comment, Like, ContentMarketingSettings
+from .models import Post, Comment, Like, ContentMarketingSettings, ViewedPost
 
 
 class PostAdmin(admin.ModelAdmin):
@@ -38,3 +38,13 @@ class ContentSettingAdminModel(admin.ModelAdmin):
 
 
 admin.site.register(ContentMarketingSettings, ContentSettingAdminModel)
+
+
+class ViewedPostAdminModel(admin.ModelAdmin):
+
+    list_display = ['post', 'customer', 'create_date']
+
+
+admin.site.register(ViewedPost, ViewedPostAdminModel)
+
+

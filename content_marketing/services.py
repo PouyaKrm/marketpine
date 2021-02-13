@@ -73,7 +73,7 @@ class ContentMarketingService:
     def retrieve_post(self, post_id: int):
         return Post.objects.get(id=post_id)
 
-    def _set_post_viewed_by_customer(self, post: Post, customer: Customer):
+    def set_post_viewed_by_customer(self, post: Post, customer: Customer):
         exist = ViewedPost.objects.filter(customer=customer, post=post).exists()
         if exist:
             return

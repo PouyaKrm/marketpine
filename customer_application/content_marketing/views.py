@@ -1,3 +1,4 @@
+from rest_framework import permissions
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.request import Request
 
@@ -27,6 +28,8 @@ class PostsListAPIView(BaseListAPIView):
 
 class RetrievePost(BaseAPIView):
 
+    permission_classes = [permissions.AllowAny]
+
     def get(self, request: Request, post_id: int):
         try:
             post = customer_content_service.retrieve_post_for_view(post_id, request.user)
@@ -34,4 +37,5 @@ class RetrievePost(BaseAPIView):
             return ok(sr.data)
         except CustomerServiceException as e:
             return bad_request(e.http_message)
+
 
