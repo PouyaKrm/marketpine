@@ -12,7 +12,7 @@ from common.util import get_file_extension, generate_url_safe_base64_file_name
 from common.util.kavenegar_local import APIException, HTTPException
 from smspanel.models import SMSMessage
 from smspanel.services import SendSMSMessage, sms_message_service
-from users.models import Businessman, Customer, BaseModel
+from users.models import Businessman, Customer, BaseModel, BusinessmanManyToOneBaseModel
 
 from common.util.sms_panel.message import SystemSMSMessage, system_sms_message
 from base_app.models import PublicFileStorage
@@ -31,7 +31,7 @@ class PostConfirmationStatus:
     PENDING = '2'
 
 
-class Post(models.Model):
+class Post(BusinessmanManyToOneBaseModel):
     CONFIRM_STATUS_REJECTED = '0'
     CONFIRM_STATUS_ACCEPTED = '1'
     CONFIRM_STATUS_PENDING = '2'
@@ -49,14 +49,11 @@ class Post(models.Model):
         return f"{self.businessman.id}/{now.strftime('%Y')}/{now.strftime('%m')}/" \
             f"{generate_url_safe_base64_file_name(filename)}"
 
-    businessman = models.ForeignKey(Businessman, on_delete=models.CASCADE)
     videofile = models.FileField(storage=video_storage, upload_to=get_upload_path, null=False, blank=False, max_length=254)
     mobile_thumbnail = models.ImageField(storage=video_storage, upload_to=get_upload_path, null=True, max_length=254)
     video_url = models.URLField(null=True)
     title = models.CharField(max_length=255, blank=False, null=False)
     description = models.TextField(blank=True, null=True)
-    creation_date = models.DateTimeField(auto_now_add=True)
-    modification_date = models.DateTimeField(auto_now=True)
     confirmation_status = models.CharField(max_length=1, choices=confirmation_choices, default=PostConfirmationStatus.PENDING)
     notif_sms = models.OneToOneField(SMSMessage, null=True, blank=True, on_delete=models.SET_NULL)
     send_sms = models.BooleanField(default=False)

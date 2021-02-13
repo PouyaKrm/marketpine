@@ -3,7 +3,7 @@ from .models import Post, Comment, Like, ContentMarketingSettings
 
 
 class PostAdmin(admin.ModelAdmin):
-    list_display = ('title', 'id', 'videofile', 'creation_date', 'businessman', 'confirmation_status')
+    list_display = ('title', 'id', 'videofile', 'create_date', 'businessman', 'confirmation_status')
     list_filter = ('businessman',)
     search_fields = ('id', 'title')
 
