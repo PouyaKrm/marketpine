@@ -11,6 +11,7 @@ class CustomerAppErrors:
     USER_SHOULD_LOGIN = '8'
     PHONE_NUMBER_ALREADY_TAKEN = '9'
     FULL_NAME_MUST_BE_SET = '10'
+    RECORD_NOT_FOUND = '11'
 
     @staticmethod
     def error_dict(code, error: dict = None):

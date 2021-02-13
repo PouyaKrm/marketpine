@@ -69,6 +69,12 @@ class Post(BusinessmanManyToOneBaseModel):
     #     self.is_active = True
     #     self.save()
 
+    def likes_total(self) -> int:
+        return self.likes.count()
+
+    def views_total(self) -> int:
+        return self.customers_viewed.count()
+
 
 @receiver(pre_save, sender=Post)
 def send_message_video_is_confirmed(sender, instance: Post, *args, **kwargs):

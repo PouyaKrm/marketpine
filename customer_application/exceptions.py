@@ -45,3 +45,8 @@ class CustomerServiceException(Exception):
     @staticmethod
     def for_full_name_should_set():
         raise CustomerServiceException(CustomerAppErrors.error_dict(CustomerAppErrors.FULL_NAME_MUST_BE_SET))
+
+    @staticmethod
+    def for_record_not_found():
+        raise CustomerServiceException(CustomerAppErrors.error_dict(CustomerAppErrors.RECORD_NOT_FOUND))
+
