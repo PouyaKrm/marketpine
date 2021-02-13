@@ -1,9 +1,10 @@
+from django.core.exceptions import ObjectDoesNotExist
 from django.shortcuts import get_object_or_404
 from rest_framework.request import Request
 
 from base_app.error_codes import ApplicationErrorCodes
 from common.util import create_link
-from content_marketing.models import Post, PostConfirmationStatus, ViewedPost
+from content_marketing.models import Post, PostConfirmationStatus, ViewedPost, Like
 from customers.services import customer_service
 from panelprofile.services import sms_panel_info_service
 from smspanel.models import SMSMessage
@@ -78,6 +79,14 @@ class ContentMarketingService:
         if exist:
             return
         ViewedPost.objects.create(post=post, customer=customer)
+
+    def toggle_like(self, post: Post, customer: Customer) -> Like:
+        try:
+            like = Like.objects.get(post=post, customer=customer)
+            like.delete()
+            return like
+        except ObjectDoesNotExist:
+            return Like.objects.create(post=post, customer=customer)
 
 
 content_marketing_service = ContentMarketingService()
