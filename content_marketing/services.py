@@ -32,7 +32,7 @@ class ContentMarketingService:
         return post
 
     def get_businessman_all_posts(self, user: Businessman):
-        return Post.objects.filter(businessman=user).all()
+        return Post.objects.filter(businessman=user).order_by('-create_date').all()
 
     def has_businessman_any_pending_post(self, user: Businessman) -> bool:
         return Post.objects.filter(businessman=user, confirmation_status=Post.CONFIRM_STATUS_PENDING).exists()

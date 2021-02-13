@@ -111,7 +111,8 @@ class UploadListPostSerializer(BasePostSerializer):
             'mobile_thumbnail',
             'notif_sms_template',
             'send_sms',
-            'send_pwa'
+            'send_pwa',
+            'create_date'
         ]
         extra_kwargs = {'id': {'read_only': True},
                         'videofile': {'required': True},
