@@ -180,7 +180,8 @@ class CommentSerializer(serializers.ModelSerializer):
         fields = [
             'id',
             'body',
-            'creation_date',
+            'create_date',
+            'update_date',
             'customer'
         ]
         extra_kwargs = {'id': {'read_only': True}}

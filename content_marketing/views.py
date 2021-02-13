@@ -4,6 +4,7 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework.views import APIView
 
 from base_app.views import BaseListAPIView
+from common.util.http_helpers import ok
 from users.permissions import IsPanelActivePermissionPostPutMethod
 from .models import Post
 from django.conf import settings
@@ -22,6 +23,7 @@ from .serializers import (UploadListPostSerializer, DetailPostSerializer,
                           ContentMarketingCreateRetrieveSerializer
                           )
 from .permissions import DoesNotHavePendingPostForUpload, HasValidCreditForVideoUploadMessage
+from .services import content_marketing_service
 
 video_page_size = settings.CONTENT_MARKETING['VIDEO_PAGINATION_PAGE_SIZE']
 
@@ -51,18 +53,18 @@ def set_like_post(request, post_id):
 
 @api_view(['GET'])
 def detail_comment_post(request, post_id):
-    post = get_object_or_404(Post,pk=post_id)
+    post = content_marketing_service.get_post_by_id_or_404(request.user, post_id)
     comments = post.comments.all()
     serializer = CommentSerializer(comments, many=True)
-    return Response(serializer.data, status=status.HTTP_200_OK)
+    return ok(serializer.data)
 
 
 @api_view(['GET'])
 def detail_like_post(request, post_id):
-    post = get_object_or_404(Post,pk=post_id)
+    post = content_marketing_service.get_post_by_id_or_404(request.user, post_id)
     likes = post.likes.all()
     serializer = DetailLikeSerializer(likes, many=True)
-    return Response(serializer.data, status=status.HTTP_200_OK)
+    return ok(serializer.data)
 
 
 class PostCreateListAPIView(CreateAPIView, ListModelMixin):
@@ -111,11 +113,7 @@ class PostCommentListApiView(BaseListAPIView):
 
     def get_queryset(self):
         post_id = self.kwargs.get('post_id')
-        try:
-            post = Post.objects.get(id=post_id, businessman=self.request.user)
-            return post.comments.all()
-        except ObjectDoesNotExist:
-            raise NotFound()
+        return content_marketing_service.get_post_comments_by_post_id_or_404(self.request.user, post_id)
 
 
 class ContentMarketingSettingsCreateUpdateRetrieveAPIView(RetrieveAPIView, UpdateModelMixin):
