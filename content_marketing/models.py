@@ -59,6 +59,7 @@ class Post(BusinessmanManyToOneBaseModel):
     send_sms = models.BooleanField(default=False)
     sms_sent = models.BooleanField(default=False)
     send_pwa = models.BooleanField(default=False)
+    views = models.PositiveIntegerField(default=0)
     remaining_pwa_notif_customers = models.ManyToManyField(Customer, blank=True)
     # is_active = models.BooleanField(default=False)
 
