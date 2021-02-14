@@ -3,10 +3,18 @@ from django.core.exceptions import ObjectDoesNotExist
 from content_marketing.models import Post, Comment
 from content_marketing.services import content_marketing_service
 from customer_application.exceptions import CustomerServiceException
+from customer_application.services import customer_data_service
 from users.models import Customer
 
 
 class CustomerAppContentMarketingService:
+
+    def get_all_posts(self, businessman_id_page_id: str):
+
+        if businessman_id_page_id is not None:
+            b = customer_data_service.get_businessman_by_id_or_page_id(businessman_id_page_id)
+            return content_marketing_service.get_businessman_all_posts(b)
+        return content_marketing_service.get_all_posts()
 
     def retrieve_post_for_view(self, post_id: int, customer: Customer):
 
@@ -22,6 +30,7 @@ class CustomerAppContentMarketingService:
         p = self._get_post(post_id)
         content_marketing_service.toggle_like(p, customer)
         return p
+
 
     def get_post_comments(self, post_id: int):
         try:

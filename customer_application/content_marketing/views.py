@@ -25,7 +25,14 @@ class PostsListAPIView(BaseListAPIView):
     serializer_class = PostListSerializer
 
     def get_queryset(self):
-        return content_marketing_service.get_all_posts()
+        businessman_id = self.request.query_params.get('businessman_id')
+        return customer_content_service.get_all_posts(businessman_id)
+
+    def get(self, request, *args, **kwargs):
+        try:
+            return super().get(request, *args, **kwargs)
+        except CustomerServiceException as e:
+            return bad_request(e.http_message)
 
     def get_serializer_context(self):
         return {'request': self.request}
