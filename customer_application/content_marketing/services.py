@@ -23,6 +23,12 @@ class CustomerAppContentMarketingService:
         content_marketing_service.toggle_like(p, customer)
         return p
 
+    def get_post_comments(self, post_id: int):
+        try:
+            return content_marketing_service.get_post_comments_by_post_id(post_id)
+        except ObjectDoesNotExist:
+            CustomerServiceException.for_record_not_found()
+
     def _set_views_for_post(self, post: Post, customer: Customer):
         post.increase_views()
         if not customer.is_anonymous:
@@ -30,7 +36,7 @@ class CustomerAppContentMarketingService:
 
     def _get_post(self, post_id: int) -> Post:
         try:
-            return content_marketing_service.retrieve_post(post_id)
+            return content_marketing_service.get_post_by_post_id(post_id)
         except ObjectDoesNotExist:
             CustomerServiceException.for_record_not_found()
 

@@ -54,6 +54,10 @@ class ContentMarketingService:
         post = self.get_post_by_id_or_404(user, post_id)
         return post.comments.order_by('-create_date')
 
+    def get_post_comments_by_post_id(self, post_id: int):
+        post = self.get_post_by_post_id(post_id)
+        return post.comments.order_by('-create_date')
+
     def _send_post_pwa_notif(self, post: Post):
         return
         post.send_pwa = True
@@ -71,7 +75,7 @@ class ContentMarketingService:
     def get_all_posts(self):
         return Post.objects.order_by('-create_date').order_by('-customers_viewed__create_date')
 
-    def retrieve_post(self, post_id: int):
+    def get_post_by_post_id(self, post_id: int):
         return Post.objects.get(id=post_id)
 
     def set_post_viewed_by_customer(self, post: Post, customer: Customer):
