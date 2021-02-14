@@ -111,7 +111,8 @@ def send_message_video_is_confirmed(sender, instance: Post, *args, **kwargs):
 
 class Comment(BaseModel):
     post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name='comments')
-    customer = models.ForeignKey(Customer, on_delete=models.CASCADE)
+    customer = models.ForeignKey(Customer, on_delete=models.CASCADE, related_name='post_comments',
+                                 related_query_name='post_comments')
     body = models.TextField()
 
     def __str__(self):
