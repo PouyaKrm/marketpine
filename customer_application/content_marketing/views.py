@@ -2,10 +2,12 @@ from rest_framework import permissions
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.request import Request
 
+from base_app.permissions import AllowAnyOnGet
 from common.util.http_helpers import ok, bad_request, no_content
 from content_marketing.services import content_marketing_service
 from customer_application.base_views import BaseListAPIView, BaseAPIView
-from customer_application.content_marketing.serializers import PostListSerializer, PostRetrieveSerializer
+from customer_application.content_marketing.serializers import PostListSerializer, PostRetrieveSerializer, \
+    CommentSerializer
 from customer_application.content_marketing.services import customer_content_service
 from customer_application.exceptions import CustomerServiceException
 from customer_application.pagination import CustomerAppListPaginator
@@ -49,3 +51,17 @@ class PostLike(BaseAPIView):
         except CustomerServiceException as e:
             return bad_request(e.http_message)
 
+
+class CommentsListCreateAPIView(BaseAPIView):
+
+    permission_classes = [AllowAnyOnGet]
+
+    def get(self, request, post_id: int):
+        try:
+            c = customer_content_service.get_post_comments(post_id)
+            paginator = CustomerAppListPaginator()
+            page = paginator.paginate_queryset(c, request)
+            sr = CommentSerializer(page, many=True)
+            return paginator.get_paginated_response(sr.data)
+        except CustomerServiceException as e:
+            return bad_request(e.http_message)

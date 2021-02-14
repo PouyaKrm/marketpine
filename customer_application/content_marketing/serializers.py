@@ -1,7 +1,7 @@
 from rest_framework import serializers
 
 from base_app.serializers import BaseModelSerializerWithRequestObj, FileFieldWithLinkRepresentation
-from content_marketing.models import Post
+from content_marketing.models import Post, Comment
 from content_marketing.services import content_marketing_service
 
 
@@ -39,3 +39,14 @@ class PostRetrieveSerializer(PostListSerializer):
 
     def get_is_liked(self, post: Post):
         return content_marketing_service.is_post_liked_by_customer(post, self.request.user)
+
+
+class CommentSerializer(BaseModelSerializerWithRequestObj):
+
+    class Meta:
+        model = Comment
+        fields = [
+            'id',
+            'body',
+            'create_date'
+        ]
