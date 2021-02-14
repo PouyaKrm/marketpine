@@ -41,7 +41,9 @@ class PostRetrieveSerializer(PostListSerializer):
         return content_marketing_service.is_post_liked_by_customer(post, self.request.user)
 
 
-class CommentSerializer(BaseModelSerializerWithRequestObj):
+class CommentListCreateSerializer(BaseModelSerializerWithRequestObj):
+
+    body = serializers.CharField(max_length=150)
 
     class Meta:
         model = Comment

@@ -4,7 +4,7 @@ from rest_framework.request import Request
 
 from base_app.error_codes import ApplicationErrorCodes
 from common.util import create_link
-from content_marketing.models import Post, PostConfirmationStatus, ViewedPost, Like
+from content_marketing.models import Post, PostConfirmationStatus, ViewedPost, Like, Comment
 from customers.services import customer_service
 from panelprofile.services import sms_panel_info_service
 from smspanel.models import SMSMessage
@@ -57,6 +57,10 @@ class ContentMarketingService:
     def get_post_comments_by_post_id(self, post_id: int):
         post = self.get_post_by_post_id(post_id)
         return post.comments.order_by('-create_date')
+
+    def add_comment(self, customer: Customer, post_id, body: str) -> Comment:
+        p = self.get_post_by_post_id(post_id)
+        return Comment.objects.create(customer=customer, post=p, body=body)
 
     def _send_post_pwa_notif(self, post: Post):
         return

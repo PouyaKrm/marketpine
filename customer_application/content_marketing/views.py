@@ -7,7 +7,7 @@ from common.util.http_helpers import ok, bad_request, no_content
 from content_marketing.services import content_marketing_service
 from customer_application.base_views import BaseListAPIView, BaseAPIView
 from customer_application.content_marketing.serializers import PostListSerializer, PostRetrieveSerializer, \
-    CommentSerializer
+    CommentListCreateSerializer
 from customer_application.content_marketing.services import customer_content_service
 from customer_application.exceptions import CustomerServiceException
 from customer_application.pagination import CustomerAppListPaginator
@@ -61,7 +61,19 @@ class CommentsListCreateAPIView(BaseAPIView):
             c = customer_content_service.get_post_comments(post_id)
             paginator = CustomerAppListPaginator()
             page = paginator.paginate_queryset(c, request)
-            sr = CommentSerializer(page, many=True)
+            sr = CommentListCreateSerializer(page, many=True)
             return paginator.get_paginated_response(sr.data)
+        except CustomerServiceException as e:
+            return bad_request(e.http_message)
+
+    def post(self, request, post_id: int):
+        sr = CommentListCreateSerializer(data=request.data)
+        if not sr.is_valid():
+            return bad_request(sr.errors)
+        try:
+            body = sr.validated_data.get('body')
+            c = customer_content_service.add_comment(request.user, post_id, body)
+            sr = CommentListCreateSerializer(c)
+            return ok(sr.data)
         except CustomerServiceException as e:
             return bad_request(e.http_message)

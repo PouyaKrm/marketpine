@@ -8,4 +8,4 @@ class AllowAnyOnGet(BasePermission):
     def has_permission(self, request: Request, view: View) -> bool:
         if request.method == 'GET':
             return True
-        return request.user.is_authenticated()
+        return request.user.is_authenticated
