@@ -114,9 +114,6 @@ class Comment(BaseModel):
     customer = models.ForeignKey(Customer, on_delete=models.CASCADE)
     body = models.TextField()
 
-    class Meta:
-        unique_together = ['customer', 'post']
-
     def __str__(self):
         return 'Comment {} by {}'.format(self.body, self.customer)
 
