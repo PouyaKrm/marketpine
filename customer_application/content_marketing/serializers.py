@@ -3,12 +3,14 @@ from rest_framework import serializers
 from base_app.serializers import BaseModelSerializerWithRequestObj, FileFieldWithLinkRepresentation
 from content_marketing.models import Post, Comment
 from content_marketing.services import content_marketing_service
+from customer_application.serializers import BaseBusinessmanSerializer
 
 
 class PostListSerializer(BaseModelSerializerWithRequestObj):
 
     videofile = FileFieldWithLinkRepresentation(read_only=True)
     mobile_thumbnail = FileFieldWithLinkRepresentation(read_only=True)
+    businessman = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = Post
@@ -17,8 +19,12 @@ class PostListSerializer(BaseModelSerializerWithRequestObj):
             'videofile',
             'mobile_thumbnail',
             'likes_total',
-            'views_total'
+            'views',
+            'businessman',
         ]
+
+    def get_businessman(self, post: Post):
+        return BaseBusinessmanSerializer(post.businessman, request=self.request).data
 
 
 class PostRetrieveSerializer(PostListSerializer):
@@ -34,6 +40,7 @@ class PostRetrieveSerializer(PostListSerializer):
             'likes_total',
             'is_liked',
             'views',
+            'businessman',
             'description',
         ]
 

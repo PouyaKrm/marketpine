@@ -27,6 +27,9 @@ class PostsListAPIView(BaseListAPIView):
     def get_queryset(self):
         return content_marketing_service.get_all_posts()
 
+    def get_serializer_context(self):
+        return {'request': self.request}
+
 
 class PostRetrieveLikeAPIView(BaseAPIView):
 

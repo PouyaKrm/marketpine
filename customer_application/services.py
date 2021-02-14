@@ -13,7 +13,6 @@ from online_menu.services import online_menu_service
 from smspanel.services import sms_message_service
 from users.models import Customer, Businessman, BusinessmanCustomer
 from users.services import businessman_service
-from .customer_content_marketing.services import customer_app_content_marketing_service
 from .models import CustomerVerificationCode, CustomerLoginTokens, CustomerUpdatePhoneModel
 import secrets
 import logging
@@ -221,8 +220,8 @@ class CustomerDataService:
         return customer.businessmans.filter(id=businessman_id).exists()
 
     def get_notifications(self, customer: Customer) -> dict:
+        return {}
         f = festival_service.get_customer_latest_festival_for_notif(customer)
-        p = customer_app_content_marketing_service.get_post_for_notif(customer)
         return {'festival': f, 'post': p}
 
     def get_online_menus_by_businessman_id(self, businessman_id: int):
