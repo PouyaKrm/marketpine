@@ -61,13 +61,13 @@ class CommentsListCreateAPIView(BaseAPIView):
             c = customer_content_service.get_post_comments(post_id)
             paginator = CustomerAppListPaginator()
             page = paginator.paginate_queryset(c, request)
-            sr = CommentListCreateSerializer(page, many=True)
+            sr = CommentListCreateSerializer(page, many=True, request=request)
             return paginator.get_paginated_response(sr.data)
         except CustomerServiceException as e:
             return bad_request(e.http_message)
 
     def post(self, request, post_id: int):
-        sr = CommentListCreateSerializer(data=request.data)
+        sr = CommentListCreateSerializer(data=request.data, request=request)
         if not sr.is_valid():
             return bad_request(sr.errors)
         try:

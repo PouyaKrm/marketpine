@@ -44,11 +44,16 @@ class PostRetrieveSerializer(PostListSerializer):
 class CommentListCreateSerializer(BaseModelSerializerWithRequestObj):
 
     body = serializers.CharField(max_length=150)
+    belongs_to = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = Comment
         fields = [
             'id',
             'body',
-            'create_date'
+            'belongs_to',
+            'create_date',
         ]
+
+    def get_belongs_to(self, comment: Comment):
+        return comment.customer == self.request.user
