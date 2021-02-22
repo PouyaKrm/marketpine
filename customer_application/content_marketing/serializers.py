@@ -51,7 +51,9 @@ class PostRetrieveSerializer(PostListSerializer):
         ]
 
     def get_is_liked(self, post: Post):
-        return content_marketing_service.is_post_liked_by_customer(post, self.request.user)
+        if not self.request.user.is_anonymous:
+            return content_marketing_service.is_post_liked_by_customer(post, self.request.user)
+        return False
 
 
 class CommentListCreateSerializer(BaseModelSerializerWithRequestObj):
