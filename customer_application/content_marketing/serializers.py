@@ -15,6 +15,7 @@ class PostListSerializer(BaseModelSerializerWithRequestObj):
     class Meta:
         model = Post
         fields = [
+            'id',
             'title',
             'videofile',
             'mobile_thumbnail',
@@ -34,6 +35,7 @@ class PostRetrieveSerializer(PostListSerializer):
     class Meta:
         model = Post
         fields = [
+            'id',
             'title',
             'videofile',
             'mobile_thumbnail',
