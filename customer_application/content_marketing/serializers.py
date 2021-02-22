@@ -17,6 +17,8 @@ class PostListSerializer(BaseModelSerializerWithRequestObj):
         fields = [
             'id',
             'title',
+            'create_date',
+            'update_date',
             'videofile',
             'mobile_thumbnail',
             'likes_total',
@@ -37,6 +39,8 @@ class PostRetrieveSerializer(PostListSerializer):
         fields = [
             'id',
             'title',
+            'create_date',
+            'update_date',
             'videofile',
             'mobile_thumbnail',
             'likes_total',
@@ -59,6 +63,8 @@ class CommentListCreateSerializer(BaseModelSerializerWithRequestObj):
         model = Comment
         fields = [
             'id',
+            'create_date',
+            'update_date',
             'body',
             'belongs_to',
             'create_date',
