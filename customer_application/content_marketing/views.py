@@ -29,6 +29,7 @@ class PostsListAPIView(BaseListAPIView):
 
     pagination_class = ContentMarketingPagination
     serializer_class = PostListSerializer
+    permission_classes = [permissions.AllowAny]
 
     def get_queryset(self):
         businessman_id = self.request.query_params.get('businessman_id')
