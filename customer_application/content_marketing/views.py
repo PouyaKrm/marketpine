@@ -89,7 +89,7 @@ class CommentsListCreateAPIView(BaseAPIView):
         try:
             body = sr.validated_data.get('body')
             c = customer_content_service.add_comment(request.user, post_id, body)
-            sr = CommentListCreateSerializer(c)
+            sr = CommentListCreateSerializer(c, request=request)
             return ok(sr.data)
         except CustomerServiceException as e:
             return bad_request(e.http_message)
