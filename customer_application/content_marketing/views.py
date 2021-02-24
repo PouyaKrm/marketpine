@@ -11,6 +11,9 @@ from customer_application.content_marketing.serializers import PostListSerialize
 from customer_application.content_marketing.services import customer_content_service
 from customer_application.exceptions import CustomerServiceException
 from customer_application.pagination import CustomerAppListPaginator
+from django.conf import settings
+
+commentsPageSize = settings.CUSTOMER_APP_PAGINATION_SETTINGS['POST_COMMENTS_PAGE_SIZE']
 
 
 class ContentMarketingPagination(CustomerAppListPaginator):
@@ -70,6 +73,7 @@ class CommentsListCreateAPIView(BaseAPIView):
         try:
             c = customer_content_service.get_post_comments(post_id)
             paginator = CustomerAppListPaginator()
+            paginator.page_size = commentsPageSize
             page = paginator.paginate_queryset(c, request)
             sr = CommentListCreateSerializer(page, many=True, request=request)
             return paginator.get_paginated_response(sr.data)
