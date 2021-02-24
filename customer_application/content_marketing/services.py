@@ -13,8 +13,10 @@ class CustomerAppContentMarketingService:
 
         if businessman_id_page_id is not None:
             b = customer_data_service.get_businessman_by_id_or_page_id(businessman_id_page_id)
-            return content_marketing_service.get_businessman_all_posts(b)
-        return content_marketing_service.get_all_posts()
+            q = content_marketing_service.get_businessman_all_posts(b)
+        else:
+            q = content_marketing_service.get_all_posts()
+        return q.filter(confirmation_status=Post.CONFIRM_STATUS_ACCEPTED)
 
     def retrieve_post_for_view(self, post_id: int, customer: Customer):
 
@@ -31,10 +33,10 @@ class CustomerAppContentMarketingService:
         content_marketing_service.toggle_like(p, customer)
         return p
 
-
     def get_post_comments(self, post_id: int):
         try:
-            return content_marketing_service.get_post_comments_by_post_id(post_id)
+            p = self._get_post(post_id)
+            return p.comments.order_by('-create_date')
         except ObjectDoesNotExist:
             CustomerServiceException.for_record_not_found()
 
@@ -51,7 +53,7 @@ class CustomerAppContentMarketingService:
 
     def _get_post(self, post_id: int) -> Post:
         try:
-            return content_marketing_service.get_post_by_post_id(post_id)
+            return content_marketing_service.get_accepted_post_by_post_id(post_id)
         except ObjectDoesNotExist:
             CustomerServiceException.for_record_not_found()
 

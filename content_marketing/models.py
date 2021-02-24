@@ -25,12 +25,6 @@ video_base_url = settings.CONTENT_MARKETING['BASE_URL']
 video_storage = PublicFileStorage(subdir=sub_dir, base_url=video_base_url)
 
 
-class PostConfirmationStatus:
-    REJECTED = '0'
-    ACCEPTED = '1'
-    PENDING = '2'
-
-
 class Post(BusinessmanManyToOneBaseModel):
     CONFIRM_STATUS_REJECTED = '0'
     CONFIRM_STATUS_ACCEPTED = '1'
@@ -54,7 +48,7 @@ class Post(BusinessmanManyToOneBaseModel):
     video_url = models.URLField(null=True)
     title = models.CharField(max_length=255, blank=False, null=False)
     description = models.TextField(blank=True, null=True)
-    confirmation_status = models.CharField(max_length=1, choices=confirmation_choices, default=PostConfirmationStatus.PENDING)
+    confirmation_status = models.CharField(max_length=1, choices=confirmation_choices, default=CONFIRM_STATUS_PENDING)
     notif_sms = models.OneToOneField(SMSMessage, null=True, blank=True, on_delete=models.SET_NULL)
     send_sms = models.BooleanField(default=False)
     sms_sent = models.BooleanField(default=False)
@@ -97,13 +91,13 @@ def send_message_video_is_confirmed(sender, instance: Post, *args, **kwargs):
         obj = Post.objects.get(id=instance.id)
 
         if obj.confirmation_status != instance.confirmation_status:
-            if instance.confirmation_status is PostConfirmationStatus.ACCEPTED:
+            if instance.confirmation_status is Post.CONFIRM_STATUS_ACCEPTED:
                 system_sms_message.send_message(instance.businessman.phone, video_confirm_message.format(title=instance.title))
                 if instance.send_sms and not instance.sms_sent:
                     sms_message_service.set_message_to_pending(instance.notif_sms)
                     instance.sms_sent = True
                     instance.save()
-            elif instance.confirmation_status is PostConfirmationStatus.REJECTED:
+            elif instance.confirmation_status is Post.CONFIRM_STATUS_REJECTED:
                 system_sms_message.send_message(instance.businessman.phone, video_reject_message.format(title=instance.title))
 
     except ObjectDoesNotExist:

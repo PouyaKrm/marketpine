@@ -1,9 +1,7 @@
 from django.views.generic.base import View
 from rest_framework import permissions
 from rest_framework.request import Request
-from smspanel.permissions import HasValidCreditSendSMSToAll
 
-from .models import PostConfirmationStatus
 from .services import content_marketing_service
 
 

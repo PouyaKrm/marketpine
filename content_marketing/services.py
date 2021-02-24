@@ -4,7 +4,7 @@ from rest_framework.request import Request
 
 from base_app.error_codes import ApplicationErrorCodes
 from common.util import create_link
-from content_marketing.models import Post, PostConfirmationStatus, ViewedPost, Like, Comment
+from content_marketing.models import Post, ViewedPost, Like, Comment
 from customers.services import customer_service
 from panelprofile.services import sms_panel_info_service
 from smspanel.models import SMSMessage
@@ -39,7 +39,7 @@ class ContentMarketingService:
         return Post.objects.filter(businessman=user, confirmation_status=Post.CONFIRM_STATUS_PENDING).exists()
 
     def get_oldest_post_for_notification(self, customer: Customer) -> Post:
-        p = Post.objects.filter(confirmation_status=PostConfirmationStatus.ACCEPTED,
+        p = Post.objects.filter(confirmation_status=Post.CONFIRM_STATUS_ACCEPTED,
                                 send_pwa=True,
                                 remaining_pwa_notif_customers=customer).order_by('create_date').first()
 
@@ -81,6 +81,9 @@ class ContentMarketingService:
 
     def get_post_by_post_id(self, post_id: int):
         return Post.objects.get(id=post_id)
+
+    def get_accepted_post_by_post_id(self, post_id):
+        return Post.objects.get(id=post_id, confirmation_status=Post.CONFIRM_STATUS_ACCEPTED)
 
     def set_post_viewed_by_customer(self, post: Post, customer: Customer):
         exist = ViewedPost.objects.filter(customer=customer, post=post).exists()
