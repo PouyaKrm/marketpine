@@ -22,6 +22,7 @@ class PostListSerializer(BaseModelSerializerWithRequestObj):
             'videofile',
             'mobile_thumbnail',
             'likes_total',
+            'comments_total',
             'views',
             'businessman',
         ]
@@ -44,6 +45,7 @@ class PostRetrieveSerializer(PostListSerializer):
             'videofile',
             'mobile_thumbnail',
             'likes_total',
+            'comments_total',
             'is_liked',
             'views',
             'businessman',

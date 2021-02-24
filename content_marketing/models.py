@@ -73,6 +73,9 @@ class Post(BusinessmanManyToOneBaseModel):
     def likes_total(self) -> int:
         return self.likes.count()
 
+    def comments_total(self) -> int:
+        return self.comments.count()
+
     def increase_views(self):
         self.views += 1
         self.save()
