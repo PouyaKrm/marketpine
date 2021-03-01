@@ -9,6 +9,7 @@ CUSTOMER_APP_PAGINATION_SETTINGS = {
 }
 
 BUSINESSMAN_PAGE_URL = 'https://moshtarino.com/{}'
+VIDEO_PAGE_URL = 'https://moshtarino.com/v/{}'
 
 CUSTOMER_APP_FRONTEND_PATHS = [
     'login',

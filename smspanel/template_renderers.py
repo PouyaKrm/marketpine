@@ -6,12 +6,12 @@ from content_marketing.models import Post
 from customer_return_plan.festivals.models import Festival
 from customer_return_plan.invitation.models import FriendInvitation
 from smspanel.models import SMSMessage, SMSMessageReceivers
+from users.models import Customer
 import re
 import jdatetime
 
 page_url = settings.BUSINESSMAN_PAGE_URL
-
-from users.models import Customer
+video_page_url = settings.VIDEO_PAGE_URL
 
 
 class BaseTemplateRenderer:
@@ -66,11 +66,12 @@ class ContentMarketingTemplateRenderer(BaseTemplateRenderer):
 
     def render(self, receiver: SMSMessageReceivers):
 
-        return self._render(self._sms_message.message,
-                            {'video_link': self.__post.video_url,
-                             **self._businessman_key_value(),
-                             **self._customer_key_value(receiver.customer)
-                             })
+        return self._render(
+            self._sms_message.message,
+            {'video_link': video_page_url.format(self.__post.id.__str__()),
+             **self._businessman_key_value(),
+             **self._customer_key_value(receiver.customer)
+             })
 
 
 class FestivalTemplateRenderer(BaseTemplateRenderer):
@@ -129,7 +130,8 @@ class FriendInvitationTemplateRenderer(BaseTemplateRenderer):
         if self.invitation.invited_discount.is_percent_discount():
             invite_context = {**invite_context, 'percent_off': self.invitation.invited_discount.percent_off.__str__()}
         else:
-            invite_context = {**invite_context, 'flat_rate_off': self.invitation.inviter_discount.flat_rate_off.__str__()}
+            invite_context = {**invite_context,
+                              'flat_rate_off': self.invitation.inviter_discount.flat_rate_off.__str__()}
 
         return self._render(self._sms_message.message, {
             **invite_context,
