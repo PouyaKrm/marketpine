@@ -16,7 +16,7 @@ class CustomerAppContentMarketingService:
             q = content_marketing_service.get_businessman_all_posts(b)
         else:
             q = content_marketing_service.get_all_posts()
-        return q.filter(confirmation_status=Post.CONFIRM_STATUS_ACCEPTED)
+        return q.filter(confirmation_status=Post.CONFIRM_STATUS_ACCEPTED).order_by('-create_date')
 
     def retrieve_post_for_view(self, post_id: int, customer: Customer):
 
