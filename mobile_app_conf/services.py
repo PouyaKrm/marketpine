@@ -28,6 +28,8 @@ class MobileAppPageConfService:
         conf.location_lng = updated_data.get('location_lng')
         conf.page_id = updated_data.get('page_id')
         conf.instagram_page_url = updated_data.get('instagram_page_url')
+        conf.working_time_from = updated_data.get('working_time_from')
+        conf.working_time_to = updated_data.get('working_time_to')
         conf.save()
         self._update_contact_infos(conf, updated_data.get('contact_info'))
         return conf

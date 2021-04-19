@@ -8,7 +8,7 @@ from django.conf import settings
 
 from base_app.serializers import BaseModelSerializerWithRequestObj, BaseSerializerWithRequestObj, \
     FileFieldWithLinkRepresentation
-from common.util import create_link, get_client_ip
+from common.util import create_link, get_client_ip, create_field_error
 from common.util.custom_validators import file_size_validator, fixed_phone_line_or_cell_phone_validator
 from common.util.gelocation import geolocation_service, LocationAPIException
 from mobile_app_conf.models import MobileAppHeader, MobileAppPageConf, ContactInfo
@@ -127,6 +127,8 @@ class MobileAppPageConfSerializer(BaseModelSerializerWithRequestObj):
             'ip_location',
             'page_id',
             'instagram_page_url',
+            'working_time_from',
+            'working_time_to',
         ]
 
         extra_kwargs = {'is_address_set': {'read_only': True}}
@@ -158,6 +160,17 @@ class MobileAppPageConfSerializer(BaseModelSerializerWithRequestObj):
     def validate_instagram_page_url(self, value):
         mobile_page_conf_service.check_instagram_page_url_is_valid(value)
         return value
+
+    def validate(self, attrs):
+
+        working_from = attrs.get('working_time_from')
+        working_to = attrs.get('working_time_to')
+
+        if working_from is not None and working_to is not None and working_to <= working_from:
+            raise serializers.ValidationError(create_field_error('working_time_to', ['ساعت کاری وارد شده اشتباه است']))
+        return attrs
+
+
 
     def update(self, instance: MobileAppPageConf, validated_data: dict):
         pass

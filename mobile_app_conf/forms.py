@@ -11,6 +11,14 @@ class MobileAppPageConfForm(forms.ModelForm):
         model = MobileAppPageConf
         fields = '__all__'
 
+    def clean_working_time_to(self):
+        working_from = self.cleaned_data.get('working_time_from')
+        working_to = self.cleaned_data.get('working_time_to')
+
+        if working_from is not None and working_to is not None and working_to <= working_from:
+            raise ValidationError('ساعت پایان کار وارد شده اشتباه و باید بزرگتر از ساعت شروع به کار باشد')
+        return self.cleaned_data
+
     def clean_page_id(self):
         page_id = self.cleaned_data.get('page_id')
         user = self.cleaned_data.get('businessman')

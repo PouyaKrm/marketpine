@@ -21,6 +21,8 @@ class MobileAppPageConf(BusinessmanOneToOneBaseModel):
     is_location_set = models.BooleanField(default=False)
     page_id = models.CharField(max_length=40, unique=True, blank=True, null=True)
     instagram_page_url = models.URLField(max_length=100, blank=True, null=True)
+    working_time_from = models.TimeField(null=True, blank=True)
+    working_time_to = models.TimeField(null=True, blank=True)
 
     def __str__(self):
         return self.businessman.username
