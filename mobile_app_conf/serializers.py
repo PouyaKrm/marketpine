@@ -110,6 +110,7 @@ class MobileAppPageConfSerializer(BaseModelSerializerWithRequestObj):
     contact_info = ContactInfoSerializer(required=False, many=True)
     headers = MobileAppHeaderSerializer(many=True, read_only=True)
     ip_location = serializers.SerializerMethodField(read_only=True)
+    page_id = serializers.CharField(max_length=40)
 
     class Meta:
         model = MobileAppPageConf
@@ -122,7 +123,8 @@ class MobileAppPageConfSerializer(BaseModelSerializerWithRequestObj):
             'location_lat',
             'location_lng',
             'is_location_set',
-            'ip_location'
+            'ip_location',
+            'page_id'
         ]
 
         extra_kwargs = {'is_address_set': {'read_only': True}}
@@ -139,6 +141,16 @@ class MobileAppPageConfSerializer(BaseModelSerializerWithRequestObj):
     def validate_contact_info(self, value):
         if value is not None and len(value) > 3:
             raise serializers.ValidationError('3 contact info can be added at max')
+        return value
+
+    def validate_page_id(self, value):
+        user = self.request.user
+        if not mobile_page_conf_service.is_page_id_pattern_valid(value):
+            raise serializers.ValidationError('فرمت اشتباه')
+        elif not mobile_page_conf_service.is_page_id_unique(user, value):
+            raise serializers.ValidationError('این آیدی صفحه قبلا استفاده شده')
+        elif mobile_page_conf_service.is_page_id_predefined(value):
+            raise serializers.ValidationError('آیدی غیر مجاز')
         return value
 
     def update(self, instance: MobileAppPageConf, validated_data: dict):

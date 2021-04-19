@@ -19,12 +19,14 @@ class MobileAppPageConf(BusinessmanOneToOneBaseModel):
     location_lat = models.FloatField(null=True, blank=True)
     location_lng = models.FloatField(null=True, blank=True)
     is_location_set = models.BooleanField(default=False)
+    page_id = models.CharField(max_length=40, unique=True, blank=True, null=True)
 
     def __str__(self):
         return self.businessman.username
 
     def is_address_set(self) -> bool:
         return self.address is not None and len(self.address.strip()) != 0
+
 
 
 def mobile_app_header_upload_path(instance, filename):

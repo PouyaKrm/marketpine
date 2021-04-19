@@ -1,3 +1,5 @@
+import re
+
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
 
@@ -5,7 +7,7 @@ from mobile_app_conf.models import MobileAppPageConf, MobileAppHeader, ContactIn
 from users.models import Businessman
 
 max_allowed_headers = settings.MOBILE_APP_PAGE_CONF['MAX_ALLOWED_HEADERS']
-
+customer_app_paths = settings.CUSTOMER_APP_FRONTEND_PATHS
 
 class MobileAppPageConfService:
 
@@ -24,6 +26,7 @@ class MobileAppPageConfService:
         conf.is_location_set = updated_data.get('is_location_set')
         conf.location_lat = updated_data.get('location_lat')
         conf.location_lng = updated_data.get('location_lng')
+        conf.page_id = updated_data.get('page_id')
         conf.save()
         self._update_contact_infos(conf, updated_data.get('contact_info'))
         return conf
@@ -77,6 +80,16 @@ class MobileAppPageConfService:
             h = self.get_businessman_all_app_headers(user).get(id=k)
             h.show_order = v
             h.save()
+
+    def is_page_id_pattern_valid(self, page_id) -> bool:
+        match = re.search(r'^\d*[a-zA-Z_-]+[a-zA-Z0-9_-]*$', page_id)
+        return match is not None
+
+    def is_page_id_predefined(self, page_id: str) -> bool:
+        return page_id in customer_app_paths
+
+    def is_page_id_unique(self, user: Businessman, page_id: str) -> bool:
+        return not MobileAppPageConf.objects.filter(page_id=page_id.lower()).exclude(businessman=user).exists()
 
     def _update_contact_infos(self, page_conf: MobileAppPageConf, contact_infos: [dict]):
         if contact_infos is None:
