@@ -91,6 +91,7 @@ class MobileAppPageConfService:
     def is_page_id_unique(self, user: Businessman, page_id: str) -> bool:
         return not MobileAppPageConf.objects.filter(page_id=page_id.lower()).exclude(businessman=user).exists()
 
+
     def _update_contact_infos(self, page_conf: MobileAppPageConf, contact_infos: [dict]):
         if contact_infos is None:
             return
