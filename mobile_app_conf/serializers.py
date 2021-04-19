@@ -111,6 +111,7 @@ class MobileAppPageConfSerializer(BaseModelSerializerWithRequestObj):
     headers = MobileAppHeaderSerializer(many=True, read_only=True)
     ip_location = serializers.SerializerMethodField(read_only=True)
     page_id = serializers.CharField(required=False, allow_blank=True, min_length=6, max_length=20)
+    instagram_page_url = serializers.URLField(required=False, allow_blank=True, max_length=200)
 
     class Meta:
         model = MobileAppPageConf
@@ -124,7 +125,8 @@ class MobileAppPageConfSerializer(BaseModelSerializerWithRequestObj):
             'location_lng',
             'is_location_set',
             'ip_location',
-            'page_id'
+            'page_id',
+            'instagram_page_url',
         ]
 
         extra_kwargs = {'is_address_set': {'read_only': True}}
@@ -151,6 +153,10 @@ class MobileAppPageConfSerializer(BaseModelSerializerWithRequestObj):
             raise serializers.ValidationError('این آیدی صفحه قبلا استفاده شده')
         elif mobile_page_conf_service.is_page_id_predefined(value):
             raise serializers.ValidationError('آیدی غیر مجاز')
+        return value
+
+    def validate_instagram_page_url(self, value):
+        mobile_page_conf_service.check_instagram_page_url_is_valid(value)
         return value
 
     def update(self, instance: MobileAppPageConf, validated_data: dict):

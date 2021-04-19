@@ -21,3 +21,9 @@ class MobileAppPageConfForm(forms.ModelForm):
         elif mobile_page_conf_service.is_page_id_predefined(page_id):
             raise ValidationError('آیدی غیر مجاز')
         return page_id
+
+    def clean_instagram_page_url(self):
+        url = self.cleaned_data.get('instagram_page_url')
+        mobile_page_conf_service.check_instagram_page_url_is_valid(url)
+        return url
+

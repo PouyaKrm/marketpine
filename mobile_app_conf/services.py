@@ -1,7 +1,7 @@
 import re
 
 from django.conf import settings
-from django.core.exceptions import ObjectDoesNotExist
+from django.core.exceptions import ObjectDoesNotExist, ValidationError
 
 from mobile_app_conf.models import MobileAppPageConf, MobileAppHeader, ContactInfo
 from users.models import Businessman
@@ -27,6 +27,7 @@ class MobileAppPageConfService:
         conf.location_lat = updated_data.get('location_lat')
         conf.location_lng = updated_data.get('location_lng')
         conf.page_id = updated_data.get('page_id')
+        conf.instagram_page_url = updated_data.get('instagram_page_url')
         conf.save()
         self._update_contact_infos(conf, updated_data.get('contact_info'))
         return conf
@@ -91,6 +92,10 @@ class MobileAppPageConfService:
     def is_page_id_unique(self, user: Businessman, page_id: str) -> bool:
         return not MobileAppPageConf.objects.filter(page_id=page_id.lower()).exclude(businessman=user).exists()
 
+    def check_instagram_page_url_is_valid(self, instagram_page: str):
+        match = re.search(r'^https://(www\.)?instagram.com/.{3,}$', instagram_page)
+        if match is None:
+            raise ValidationError('آیدی پیج اینستاگرام صحیح نیست')
 
     def _update_contact_infos(self, page_conf: MobileAppPageConf, contact_infos: [dict]):
         if contact_infos is None:
