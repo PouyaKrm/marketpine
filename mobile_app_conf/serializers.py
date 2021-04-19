@@ -110,7 +110,7 @@ class MobileAppPageConfSerializer(BaseModelSerializerWithRequestObj):
     contact_info = ContactInfoSerializer(required=False, many=True)
     headers = MobileAppHeaderSerializer(many=True, read_only=True)
     ip_location = serializers.SerializerMethodField(read_only=True)
-    page_id = serializers.CharField(max_length=40)
+    page_id = serializers.CharField(required=False, allow_blank=True, min_length=6, max_length=20)
 
     class Meta:
         model = MobileAppPageConf

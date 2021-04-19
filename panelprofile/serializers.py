@@ -40,7 +40,6 @@ class BusinessmanProfileSerializer(serializers.ModelSerializer):
     category = serializers.PrimaryKeyRelatedField(write_only=True, queryset=BusinessCategory.objects.all())
     defined_groups = serializers.SerializerMethodField(read_only=True)
     logo = FileFieldWithLinkRepresentation(read_only=True)
-    page_id = serializers.CharField(required=False, allow_blank=True, min_length=6, max_length=20)
 
     customers_total = serializers.SerializerMethodField(read_only=True)
 
@@ -51,7 +50,6 @@ class BusinessmanProfileSerializer(serializers.ModelSerializer):
             'id',
             'username',
             'is_page_id_set',
-            'page_id',
             'first_name',
             'last_name',
             'phone',
@@ -134,16 +132,6 @@ class BusinessmanProfileSerializer(serializers.ModelSerializer):
         if users_num is not 0:
             raise serializers.ValidationError('this email address is already taken')
 
-        return value
-
-    def validate_page_id(self, value):
-        user = self.context['user']
-        if not businessman_service.is_page_id_pattern_valid(value):
-            raise serializers.ValidationError('فرمت اشتباه')
-        elif not businessman_service.is_page_id_unique(user, value):
-            raise serializers.ValidationError('این آیدی صفحه قبلا استفاده شده')
-        elif businessman_service.is_page_id_predefined(value):
-            raise serializers.ValidationError('آیدی غیر مجاز')
         return value
 
     def update(self, instance: Businessman, validated_data):
