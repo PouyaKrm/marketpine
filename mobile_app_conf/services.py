@@ -31,6 +31,7 @@ class MobileAppPageConfService:
         conf.telegram_url = updated_data.get('telegram_url')
         conf.working_time_from = updated_data.get('working_time_from')
         conf.working_time_to = updated_data.get('working_time_to')
+        conf.show_working_time = updated_data.get('show_working_time')
         conf.save()
         self._update_contact_infos(conf, updated_data.get('contact_info'))
         return conf

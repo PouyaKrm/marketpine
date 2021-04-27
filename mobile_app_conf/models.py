@@ -22,6 +22,7 @@ class MobileAppPageConf(BusinessmanOneToOneBaseModel):
     page_id = models.CharField(max_length=40, unique=True, blank=True, null=True)
     instagram_page_url = models.URLField(max_length=200, blank=True, null=True)
     telegram_url = models.URLField(max_length=200, blank=True, null=True)
+    show_working_time = models.BooleanField(default=False)
     working_time_from = models.TimeField(null=True, blank=True)
     working_time_to = models.TimeField(null=True, blank=True)
 

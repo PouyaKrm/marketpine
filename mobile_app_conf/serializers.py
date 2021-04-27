@@ -113,6 +113,7 @@ class MobileAppPageConfSerializer(BaseModelSerializerWithRequestObj):
     page_id = serializers.CharField(required=False, allow_blank=True, min_length=6, max_length=20)
     instagram_page_url = serializers.URLField(required=False, allow_blank=True, max_length=200)
     telegram_url = serializers.URLField(required=False, max_length=200, allow_blank=True)
+    show_working_time = serializers.BooleanField(required=True)
 
     class Meta:
         model = MobileAppPageConf
@@ -129,6 +130,7 @@ class MobileAppPageConfSerializer(BaseModelSerializerWithRequestObj):
             'page_id',
             'instagram_page_url',
             'telegram_url',
+            'show_working_time',
             'working_time_from',
             'working_time_to',
         ]
@@ -166,6 +168,17 @@ class MobileAppPageConfSerializer(BaseModelSerializerWithRequestObj):
     def validate_telegram_url(self, value):
         mobile_page_conf_service.check_telegram_url_is_valid(value)
         return value
+
+    def validate(self, attrs):
+
+        show = attrs.get('show_working_time')
+        time_from = attrs.get('working_time_from')
+        time_to = attrs.get('working_time_to')
+
+        if show and (time_from is None) or (time_to is None):
+            raise serializers.ValidationError('when show is True both working_time_from and working_time_to should be provided')
+        return attrs
+
 
     def update(self, instance: MobileAppPageConf, validated_data: dict):
         pass
