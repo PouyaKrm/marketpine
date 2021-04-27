@@ -161,17 +161,6 @@ class MobileAppPageConfSerializer(BaseModelSerializerWithRequestObj):
         mobile_page_conf_service.check_instagram_page_url_is_valid(value)
         return value
 
-    def validate(self, attrs):
-
-        working_from = attrs.get('working_time_from')
-        working_to = attrs.get('working_time_to')
-
-        if working_from is not None and working_to is not None and working_to <= working_from:
-            raise serializers.ValidationError(create_field_error('working_time_to', ['ساعت کاری وارد شده اشتباه است']))
-        return attrs
-
-
-
     def update(self, instance: MobileAppPageConf, validated_data: dict):
         pass
 
