@@ -76,6 +76,8 @@ class BaseBusinessmanSerializer(BaseModelSerializerWithRequestObj):
     invitation_discount = serializers.SerializerMethodField(read_only=True)
     logo = FileFieldWithLinkRepresentation()
     is_member = serializers.SerializerMethodField(read_only=True)
+    page_id = serializers.SerializerMethodField(read_only=True)
+    is_page_id_set = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = Businessman
@@ -115,6 +117,13 @@ class BaseBusinessmanSerializer(BaseModelSerializerWithRequestObj):
         return {'disabled': setting.disabled, 'percent_off': setting.percent_off,
                 'flat_rate_off': setting.flat_rate_off, 'discount_type': setting.discount_type}
 
+    def get_page_id(self, obj: Businessman):
+        return mobile_page_conf_service.get_businessman_conf_or_create(obj).page_id
+
+    def get_is_page_id_set(self, obj: Businessman):
+        page_id = mobile_page_conf_service.get_businessman_conf_or_create(obj).page_id
+        return page_id is not None and page_id != ""
+
 
 class BusinessmanMobileAppHeaderSerializer(serializers.ModelSerializer):
     header_image = FileFieldWithLinkRepresentation()
@@ -141,6 +150,12 @@ class BusinessmanPageDataSerializer(serializers.ModelSerializer):
             'is_location_set',
             'location_lat',
             'location_lng',
+            'page_id',
+            'instagram_page_url',
+            'telegram_url',
+            'show_working_time',
+            'working_time_from',
+            'working_time_to',
             'headers',
         ]
 

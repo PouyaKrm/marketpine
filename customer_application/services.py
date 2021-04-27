@@ -255,6 +255,9 @@ class CustomerDataService:
         else:
             return customer_data_service.get_businessman_by_page_id(parsed)
 
+    def get_businessman_page_id(self, buisnessman: Businessman):
+        return m
+
     def get_businessman_by_id(self, businessman_id: int) -> Businessman:
         try:
             return Businessman.objects.get(id=businessman_id)
