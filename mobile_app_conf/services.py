@@ -28,6 +28,7 @@ class MobileAppPageConfService:
         conf.location_lng = updated_data.get('location_lng')
         conf.page_id = updated_data.get('page_id')
         conf.instagram_page_url = updated_data.get('instagram_page_url')
+        conf.telegram_url = updated_data.get('telegram_url')
         conf.working_time_from = updated_data.get('working_time_from')
         conf.working_time_to = updated_data.get('working_time_to')
         conf.save()
@@ -97,7 +98,12 @@ class MobileAppPageConfService:
     def check_instagram_page_url_is_valid(self, instagram_page: str):
         match = re.search(r'^https://(www\.)?instagram.com/.{3,}$', instagram_page)
         if match is None:
-            raise ValidationError('آیدی پیج اینستاگرام صحیح نیست')
+            raise ValidationError('لینک پیج اینستاگرام صحیح نیست')
+
+    def check_telegram_url_is_valid(self, telegram_url: str):
+        match = re.search(r'^https://t.me/.{3,}$', telegram_url)
+        if match is None:
+            raise ValidationError('لینک تلگرام صحیح نیست')
 
     def _update_contact_infos(self, page_conf: MobileAppPageConf, contact_infos: [dict]):
         if contact_infos is None:

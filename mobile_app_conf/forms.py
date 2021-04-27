@@ -26,6 +26,13 @@ class MobileAppPageConfForm(forms.ModelForm):
 
     def clean_instagram_page_url(self):
         url = self.cleaned_data.get('instagram_page_url')
-        mobile_page_conf_service.check_instagram_page_url_is_valid(url)
+        if url is not None:
+            mobile_page_conf_service.check_instagram_page_url_is_valid(url)
+        return url
+
+    def clean_telegram_url(self):
+        url = self.cleaned_data.get('telegram_url')
+        if url is not None:
+            mobile_page_conf_service.check_telegram_url_is_valid(url)
         return url
 

@@ -112,6 +112,7 @@ class MobileAppPageConfSerializer(BaseModelSerializerWithRequestObj):
     ip_location = serializers.SerializerMethodField(read_only=True)
     page_id = serializers.CharField(required=False, allow_blank=True, min_length=6, max_length=20)
     instagram_page_url = serializers.URLField(required=False, allow_blank=True, max_length=200)
+    telegram_url = serializers.URLField(required=False, max_length=200, allow_blank=True)
 
     class Meta:
         model = MobileAppPageConf
@@ -127,6 +128,7 @@ class MobileAppPageConfSerializer(BaseModelSerializerWithRequestObj):
             'ip_location',
             'page_id',
             'instagram_page_url',
+            'telegram_url',
             'working_time_from',
             'working_time_to',
         ]
@@ -159,6 +161,10 @@ class MobileAppPageConfSerializer(BaseModelSerializerWithRequestObj):
 
     def validate_instagram_page_url(self, value):
         mobile_page_conf_service.check_instagram_page_url_is_valid(value)
+        return value
+
+    def validate_telegram_url(self, value):
+        mobile_page_conf_service.check_telegram_url_is_valid(value)
         return value
 
     def update(self, instance: MobileAppPageConf, validated_data: dict):
