@@ -171,6 +171,7 @@ class UploadImageSerializer(serializers.ModelSerializer):
 class AuthSerializer(serializers.ModelSerializer):
 
     password = serializers.CharField(min_length=8, max_length=16, required=True, write_only=True)
+    form = serializers.ImageField(max_length=300, required=True, write_only=True)
 
     class Meta:
 
@@ -199,8 +200,6 @@ class AuthSerializer(serializers.ModelSerializer):
 
         if value.size > settings.AUTH_DOC['MAX_FORM_SIZE']:
             raise ValidationError('اندازه فایل بیش از حد مجاز است')
-
-        pdf_file_validator(value)
 
         return value
 

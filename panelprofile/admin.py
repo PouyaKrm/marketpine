@@ -185,10 +185,8 @@ class BusinessmanAuthDocsAdmin(admin.ModelAdmin):
         type = 'image/png'
         if file_type == 'form':
             file = qs.form.file
-            type = 'application/pdf'
         elif file_type == 'card':
             file = qs.national_card.file
-
         elif file_type == 'certificate':
             file = qs.birth_certificate.file
         else:
@@ -207,3 +205,4 @@ class BusinessmanAuthDocsAdmin(admin.ModelAdmin):
 
 
 admin.site.register(BusinessmanAuthDocs, BusinessmanAuthDocsAdmin)
+
