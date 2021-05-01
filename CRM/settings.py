@@ -257,7 +257,7 @@ logging.config.dictConfig({
     },
 })
 
-MAX_LOGO_SIZE = 200000
+MAX_LOGO_SIZE = 10000000
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, '..', 'uploaded_media/')
 
