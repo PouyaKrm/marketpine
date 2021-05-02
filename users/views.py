@@ -9,7 +9,7 @@ from rest_framework.request import Request
 from django.contrib.auth import authenticate
 
 from base_app.error_codes import ApplicationErrorException
-from common.util import  get_client_ip, custom_login_payload
+from common.util import get_client_ip, custom_login_payload
 from common.util.http_helpers import ok, not_found, dependency_failed, no_content, bad_request
 from users.models import BusinessmanRefreshTokens
 from .serializers import *
@@ -24,7 +24,6 @@ from .services import businessman_service
 
 
 class RegisterSalesmanView(generics.CreateAPIView):
-
     permission_classes = []
     authentication_classes = []
     serializer_class = BusinessmanRegisterSerializer
@@ -34,7 +33,6 @@ class RegisterSalesmanView(generics.CreateAPIView):
 @api_view(['POST'])
 @permission_classes([])
 def create_user(request):
-
     """
     Registers new users or salesman. It Needs to be activated by the admin to be able to login
     """
@@ -42,19 +40,19 @@ def create_user(request):
     serializer = BusinessmanRegisterSerializer(data=request.data)
 
     if not serializer.is_valid():
-
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    try:
-        user = serializer.save()
-    except ApplicationErrorException as e:
-        return bad_request(e.http_message)
-    return Response(data={'id': user.id}, status=status.HTTP_201_CREATED)
+
+    user = serializer.save()
+
+    auth_result = businessman_service.authenticate_user(user.username,
+                                                        serializer.validated_data.get('password'),
+                                                        request)
+    return ok(auth_result)
 
 
 @api_view(['GET'])
 @permission_classes([])
 def resend_verification_code(request, user_id):
-
     # try:
     #
     #     user = Businessman.objects.get(id=user_id)
@@ -89,7 +87,6 @@ def resend_verification_code(request, user_id):
 @api_view(['POST'])
 @permission_classes([])
 def login_api_view(request):
-
     """
     Creates a refresh token for a user.
     :param request:
@@ -103,35 +100,17 @@ def login_api_view(request):
     if not serializer.is_valid():
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    user = authenticate(username=request.data.get('username'), password=request.data.get('password'))
+    result = businessman_service.authenticate_user(serializer.validated_data.get('username'),
+                                                   serializer.validated_data.get('password'), request)
 
-    if user is None or user.is_verified is False:
+    if result is None:
         return Response({'details': ['username or password is wrong']}, status=status.HTTP_401_UNAUTHORIZED)
-
-    expire_time = timezone.now() + settings.REFRESH_TOKEN_EXP_DELTA
-
-    obj = BusinessmanRefreshTokens.objects.create(username=user.get_username(), expire_at=expire_time,
-                                            ip=get_client_ip(request))
-
-    payload = {'exp': expire_time, "iss": user.get_username(), "iat": timezone.now(), 'id': obj.id}
-
-    token = jwt.encode(payload, settings.REFRESH_KEY_PR, algorithm='RS256')
-
-    response = {'refresh_token': token}
-    response['exp'] = expire_time
-    response['id'] = user.id
-    response['username'] = user.get_username()
-    response['business_name'] = user.business_name
-    response['exp_duration'] = settings.REFRESH_TOKEN_EXP_DELTA
-
-
-    return Response(response, status=status.HTTP_200_OK)
+    return ok(result)
 
 
 @api_view(['POST'])
 @permission_classes([HasValidRefreshToken])
 def get_access_token(request):
-
     """
     NEW
     Generates access token for the user that has refresh token. Every time an access token is needed like when token is
@@ -152,11 +131,9 @@ def get_access_token(request):
     return Response(payload, status=status.HTTP_200_OK)
 
 
-
 @api_view(['PUT'])
 @permission_classes([])
 def verify_user(request, businessman_id, code):
-
     try:
         businessman_service.verify_businessman_phone(businessman_id, code)
 
@@ -168,7 +145,6 @@ def verify_user(request, businessman_id, code):
 
 @api_view(['PUT'])
 def reset_user_password(request):
-
     """
     Resets the password of the user. Needs JWT token
     """
@@ -190,11 +166,9 @@ def reset_user_password(request):
 @api_view(['PUT'])
 @permission_classes([])
 def user_forget_password(request):
-
     serializer = BusinessmanForgetPasswordSerializer(data=request.data)
 
     if not serializer.is_valid():
-
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     try:
@@ -221,7 +195,6 @@ def get_top5_categories_and_username_phone_email_exists(request):
 @api_view(['GET'])
 @permission_classes([])
 def exists(request: Request):
-
     email = request.query_params.get('email')
     uname = request.query_params.get('uname')
     phone = request.query_params.get('phone')

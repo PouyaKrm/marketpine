@@ -1,14 +1,18 @@
 import re
 import secrets
 
+import jwt
 from django.conf import settings
+from django.contrib.auth import authenticate
 from django.core.exceptions import ObjectDoesNotExist
 from django.utils import timezone
+from rest_framework.request import Request
 
 from base_app.error_codes import ApplicationErrorCodes
+from common.util import get_client_ip
 from common.util.kavenegar_local import APIException
 from common.util.sms_panel.message import system_sms_message
-from users.models import Businessman, VerificationCodes
+from users.models import Businessman, VerificationCodes, BusinessmanRefreshTokens
 
 customer_frontend_paths = settings.CUSTOMER_APP_FRONTEND_PATHS
 
@@ -37,6 +41,31 @@ class BusinessmanService:
         verification_service.check_phone_confirm_code_is_valid_and_delete(businessman, verification_code)
         businessman.is_phone_verified = True
         businessman.save()
+
+    def authenticate_user(self, username: str, password: str, request: Request) -> dict:
+
+        user = authenticate(username=username, password=password)
+
+        if user is None:
+            return None
+
+        expire_time = timezone.now() + settings.REFRESH_TOKEN_EXP_DELTA
+        obj = BusinessmanRefreshTokens.objects.create(username=user.get_username(), expire_at=expire_time,
+                                                      ip=get_client_ip(request))
+
+        payload = {'exp': expire_time, "iss": user.get_username(), "iat": timezone.now(), 'id': obj.id}
+
+        token = jwt.encode(payload, settings.REFRESH_KEY_PR, algorithm='RS256')
+
+        data = {'refresh_token': token,
+                'exp': expire_time,
+                'id': user.id,
+                'username': user.get_username(),
+                'business_name': user.business_name,
+                'exp_duration': settings.REFRESH_TOKEN_EXP_DELTA
+                }
+
+        return data
 
 
 class VerificationService:

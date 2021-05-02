@@ -76,7 +76,7 @@ class BusinessmanRegisterSerializer(serializers.ModelSerializer):
         #
         # SystemSMSMessage().send_verification_code(receptor=user.phone, code=code)
 
-        verification_service.create_send_phone_confirm_verification_code(user)
+        # verification_service.create_send_phone_confirm_verification_code(user)
 
         return user
         
