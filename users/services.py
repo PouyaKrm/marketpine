@@ -1,14 +1,21 @@
 import re
+import secrets
 
 from django.conf import settings
-from users.models import Businessman
+from django.core.exceptions import ObjectDoesNotExist
+from django.utils import timezone
+
+from base_app.error_codes import ApplicationErrorCodes
+from common.util.kavenegar_local import APIException
+from common.util.sms_panel.message import system_sms_message
+from users.models import Businessman, VerificationCodes
 
 customer_frontend_paths = settings.CUSTOMER_APP_FRONTEND_PATHS
 
 
 class BusinessmanService:
 
-    def is_page_id_unique(self, user: Businessman, page_id: str) -> bool:
+    def is_page_id_unique(self, user: object, page_id: object) -> object:
         return not Businessman.objects.filter(page_id=page_id.lower()).exclude(id=user.id).exists()
 
     def get_businessman_by_page_id(self, page_id: str) -> Businessman:
@@ -21,5 +28,80 @@ class BusinessmanService:
         match = re.search(r'^\d*[a-zA-Z_-]+[a-zA-Z0-9_-]*$', page_id)
         return match is not None
 
+    def verify_businessman_phone(self, businessman_id: int, verification_code: str):
+        try:
+            businessman = Businessman.objects.get(id=businessman_id)
+        except ObjectDoesNotExist:
+            raise ApplicationErrorCodes.get_exception(ApplicationErrorCodes.RECORD_NOT_FOUND)
 
+        verification_service.check_code_is_valid_and_delete(businessman, verification_code)
+        businessman.is_verified = True
+        businessman.save()
+
+
+class VerificationService:
+
+    def create_send_phone_confirm_verification_code(self, user: Businessman):
+        vcode = self._create_verification_code_for_user(user, VerificationCodes.USED_FOR_PHONE_VERIFICATION)
+        self._send_verification_code_phone(user.phone, vcode)
+
+    def resend_phone_confirm_code(self, user: Businessman, verification_code_id: int):
+
+        try:
+            vcode = VerificationCodes.objects.get(businessman=user, id=verification_code_id)
+        except ObjectDoesNotExist:
+            raise ApplicationErrorCodes.get_exception(ApplicationErrorCodes.VERIFICATION_DOES_NOT_EXIST_OR_EXPIRED)
+        self._check_can_resend_verification_code(vcode)
+        self._send_verification_code_phone(user.phone, vcode)
+        vcode.num_requested += 1
+        vcode.save()
+
+    def check_code_is_valid_and_delete(self, user: Businessman, code: str):
+        try:
+            vcode = VerificationCodes.objects.get(businessman=user, code=code, expiration_time__gt=timezone.now())
+            vcode.delete()
+        except ObjectDoesNotExist as e:
+            raise ApplicationErrorCodes.get_exception(ApplicationErrorCodes.VERIFICATION_DOES_NOT_EXIST_OR_EXPIRED)
+
+    def _check_can_resend_verification_code(self, vcode: VerificationCodes):
+        expired = vcode.expiration_time < timezone.now()
+        max_request = vcode.num_requested >= 2
+        last_send_delta_small = vcode.update_date > (timezone.now() - timezone.timedelta(minutes=1))
+
+        if expired or max_request or last_send_delta_small:
+            raise ApplicationErrorCodes.get_exception(ApplicationErrorCodes.VERIFICATION_DOES_NOT_EXIST_OR_EXPIRED)
+
+    def _send_verification_code_phone(self, phone: str, vcode: VerificationCodes):
+        try:
+            system_sms_message.send_verification_code(phone, vcode.code)
+        except APIException as e:
+            raise ApplicationErrorCodes.get_exception(ApplicationErrorCodes.VERIFICATION_CODE_SEND_ERROR)
+
+    def _create_verification_code_for_user(self, user: Businessman, used_for: str) -> VerificationCodes:
+        code = self._create_unique_code_for_user(user)
+        expire_time = timezone.now() + timezone.timedelta(minutes=10)
+        vcode = VerificationCodes.objects.create(businessman=user, code=code, num_requested=1,
+                                                 expiration_time=expire_time, used_for=used_for)
+        return vcode
+
+    def _create_unique_code_for_user(self, user: Businessman) -> str:
+
+        def create_code() -> str:
+            c = secrets.randbelow(10000)
+
+            if c < 10000:
+                c += 10000
+
+            return c
+
+        code = create_code()
+        exist = VerificationCodes.objects.filter(businessman=user, code=code).exists()
+        while exist:
+            code = create_code()
+            exist = VerificationCodes.objects.filter(code=code).exists()
+
+        return code
+
+
+verification_service = VerificationService()
 businessman_service = BusinessmanService()

@@ -9,7 +9,6 @@ from django.utils import timezone
 from base_app.models import PanelDurationBaseModel, PublicFileStorage
 from common.util.kavenegar_local import APIException
 
-
 categories = settings.DEFAULT_BUSINESS_CATEGORY
 days_before_expire = settings.ACTIVATION_ALLOW_REFRESH_DAYS_BEFORE_EXPIRE
 st = PublicFileStorage(subdir='logos', base_url='logo')
@@ -127,7 +126,8 @@ class Businessman(AbstractUser, PanelDurationBaseModel):
         return self.page_id is not None and len(self.page_id.strip()) != 0
 
     def is_panel_active(self) -> bool:
-        return self.is_duration_permanent() or (self.panel_expiration_date is not None and self.panel_expiration_date > timezone.now())
+        return self.is_duration_permanent() or (
+                    self.panel_expiration_date is not None and self.panel_expiration_date > timezone.now())
 
     def is_authorized(self) -> bool:
         return self.authorized == Businessman.AUTHORIZATION_AUTHORIZED
@@ -156,9 +156,18 @@ def businessman_post_save(sender, instance: Businessman, created: bool, **kwargs
 
 
 class VerificationCodes(BusinessmanManyToOneBaseModel):
+    USED_FOR_PHONE_VERIFICATION = '0'
+    USED_FOR_PHONE_CHANGE = '2'
+
+    used_for_choices = [
+        (USED_FOR_PHONE_VERIFICATION, 'Phone verification'),
+        (USED_FOR_PHONE_CHANGE, 'Phone change')
+    ]
+
     expiration_time = models.DateTimeField()
     num_requested = models.IntegerField(default=1)
     code = models.CharField(max_length=8, unique=True)
+    used_for = models.CharField(choices=used_for_choices, default=USED_FOR_PHONE_VERIFICATION, max_length=2)
 
     def __str__(self):
         return self.code
@@ -183,6 +192,12 @@ class VerificationCodes(BusinessmanManyToOneBaseModel):
         vcode.num_requested += 1
         vcode.save()
         return True, True, True
+
+
+# class PhoneChangeVerification(BusinessmanManyToOneBaseModel):
+#     previous_phone_verification_code = models.ForeignKey(VerificationCodes, on_delete=models.CASCADE)
+#     new_phone_verification_code = models.ForeignKey(VerificationCodes, on_delete=models.CASCADE)
+#     new_phone = models.CharField(max_length=20)
 
 
 class CustomerManager(BaseUserManager):
@@ -250,7 +265,6 @@ class BusinessmanRefreshTokens(models.Model):
 
 
 class BusinessmanCustomer(BaseModel):
-
     JOINED_BY_PANEL = '0'
     JOINED_BY_CUSTOMER_APP = '1'
     joined_by_choices = [

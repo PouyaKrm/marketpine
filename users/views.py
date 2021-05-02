@@ -8,8 +8,9 @@ from rest_framework.response import Response
 from rest_framework.request import Request
 from django.contrib.auth import authenticate
 
+from base_app.error_codes import ApplicationErrorException
 from common.util import  get_client_ip, custom_login_payload
-from common.util.http_helpers import ok, not_found, dependency_failed, no_content
+from common.util.http_helpers import ok, not_found, dependency_failed, no_content, bad_request
 from users.models import BusinessmanRefreshTokens
 from .serializers import *
 # Create your views here.
@@ -19,6 +20,7 @@ from django.conf import settings
 from django.http.response import HttpResponse
 from wsgiref.util import FileWrapper
 from .permissions import HasValidRefreshToken
+from .services import businessman_service
 
 
 class RegisterSalesmanView(generics.CreateAPIView):
@@ -42,9 +44,10 @@ def create_user(request):
     if not serializer.is_valid():
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-    user = serializer.save()
-
+    try:
+        user = serializer.save()
+    except ApplicationErrorException as e:
+        return bad_request(e.http_message)
     return Response(data={'id': user.id}, status=status.HTTP_201_CREATED)
 
 
@@ -152,24 +155,15 @@ def get_access_token(request):
 
 @api_view(['PUT'])
 @permission_classes([])
-def verify_user(request, code):
+def verify_user(request, businessman_id, code):
 
     try:
-        verify_code = VerificationCodes.objects.get(code=code)
+        businessman_service.verify_businessman_phone(businessman_id, code)
 
-    except ObjectDoesNotExist:
-        return Response(status=status.HTTP_404_NOT_FOUND)
-
-    verify_code.businessman.is_verified = True
-
-    verify_code.businessman.save()
-
-    verify_code.delete()
+    except ApplicationErrorException as e:
+        return bad_request(e.http_message)
 
     return Response(status=status.HTTP_204_NO_CONTENT)
-
-
-
 
 
 @api_view(['PUT'])

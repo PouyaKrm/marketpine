@@ -7,6 +7,7 @@ import secrets, datetime
 from django.conf import settings
 import os
 from common.util.custom_validators import validate_logo_size, password_validator, phone_validator
+from .services import verification_service
 
 PhonenumberValidator = RegexValidator(regex=r'^\+?1?\d{11, 12}$',
                                       message="Phone number must be entered in the format: '+999999999'."
@@ -57,23 +58,25 @@ class BusinessmanRegisterSerializer(serializers.ModelSerializer):
         user.is_active = True
         user.save()
 
-        code = secrets.randbelow(10000)
+        # code = secrets.randbelow(10000)
+        #
+        # if code < 10000:
+        #     code += 10000
+        #
+        # while VerificationCodes.objects.filter(code=code).count() > 0:
+        #
+        #     code = secrets.randbelow(10000)
+        #
+        #     if code < 10000:
+        #         code += 10000
+        #
+        # expire_time = datetime.datetime.now() + datetime.timedelta(hours=24)
+        #
+        # VerificationCodes.objects.create(businessman=user, code=code, expiration_time=expire_time)
+        #
+        # SystemSMSMessage().send_verification_code(receptor=user.phone, code=code)
 
-        if code < 10000:
-            code += 10000
-
-        while VerificationCodes.objects.filter(code=code).count() > 0:
-
-            code = secrets.randbelow(10000)
-
-            if code < 10000:
-                code += 10000
-
-        expire_time = datetime.datetime.now() + datetime.timedelta(hours=24)
-
-        VerificationCodes.objects.create(businessman=user, code=code, expiration_time=expire_time)
-
-        SystemSMSMessage().send_verification_code(receptor=user.phone, code=code)
+        verification_service.create_send_phone_confirm_verification_code(user)
 
         return user
         

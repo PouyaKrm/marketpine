@@ -6,7 +6,10 @@ class ApplicationErrorException(Exception):
 
 class ApplicationErrorCodes:
 
+    RECORD_NOT_FOUND = {'code': '900', 'message': 'رکورد موردنظر پیدا نشد'}
     NOT_ENOUGH_SMS_CREDIT = {'code': '1000', 'message': 'اعتبار کافی برای ارسال پیامک ندارید'}
+    VERIFICATION_CODE_SEND_ERROR = {'code': '1001', 'message': 'خطا در ارسال کد احراز هویت'}
+    VERIFICATION_DOES_NOT_EXIST_OR_EXPIRED = {'code': '1001', 'message': 'کد وجود ندارد یا منقضی شده'}
 
     @staticmethod
     def get_exception(code: dict) -> ApplicationErrorException:
