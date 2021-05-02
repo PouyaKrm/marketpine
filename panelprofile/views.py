@@ -17,15 +17,17 @@ from rest_framework.response import Response
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from common.util.http_helpers import ok
+from base_app.error_codes import ApplicationErrorException
+from common.util.http_helpers import ok, bad_request, no_content
 from panelprofile.models import AuthDoc
-from panelprofile.permissions import AuthDocsNotUploaded
+from panelprofile.permissions import AuthDocsNotUploaded, IsPhoneNotVerified
 from panelprofile.serializers import AuthSerializer, BusinessmanProfileSerializer, UploadImageSerializer,\
     SMSPanelInfoSerializer
 from panelprofile.services import sms_panel_info_service
 from users.models import Businessman
 
 from common.util.custom_permission import HasUploadedAuthDocsAndAuthenticated
+from users.services import verification_service
 
 
 class BusinessmanRetrieveUpdateProfileAPIView(APIView):
@@ -102,6 +104,45 @@ class UploadRetrieveProfileImage(APIView):
     #         return Response(status=status.HTTP_404_NOT_FOUND)
     #
     #     return HttpResponse(FileWrapper(logo.file), content_type="image/png")
+
+
+class SendPhoneVerificationCode(APIView):
+
+    permission_classes = [IsPhoneNotVerified]
+
+    def post(self, request: Request):
+        try:
+            vcode = verification_service.create_send_phone_confirm_verification_code(request.user)
+            data = {'verification_code_id': vcode.id}
+            return ok(data)
+        except ApplicationErrorException as e:
+            return bad_request(e.http_message)
+
+
+class ResendVerificationCode(APIView):
+
+    permission_classes = [IsPhoneNotVerified]
+
+    def post(self, request: Request, verification_code_id: int):
+
+        try:
+            verification_service.resend_phone_confirm_code(request.user, verification_code_id)
+        except ApplicationErrorException as e:
+            return bad_request(e.http_message)
+        return no_content()
+
+class VerifyPhone(APIView):
+
+    permission_classes = [IsPhoneNotVerified]
+
+    def post(self, request: Request, verification_code_id: int, code: str):
+
+        try:
+            verification_service.check_phone_confirm_code_is_valid_and_delete(request.user, verification_code_id, code)
+        except ApplicationErrorException as e:
+            return bad_request(e.http_message)
+        serializer = BusinessmanProfileSerializer(request.user, context={'user': request.user, 'request': request})
+        return ok(serializer.data)
 
 
 @api_view(['GET'])

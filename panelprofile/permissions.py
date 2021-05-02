@@ -25,3 +25,12 @@ class IsAuthDocsUploaded(BasePermission):
         auth_doc = request.user.businessmanauthdocs
 
         return auth_doc.form.name and auth_doc.national_card.name and auth_doc.birth_certificate.name
+
+
+class IsPhoneNotVerified(BasePermission):
+
+    message = 'شماره تلفن قبلا تایید شده'
+
+    def has_permission(self, request: Request, view: View) -> bool:
+
+        return not request.user.is_phone_verified

@@ -64,7 +64,7 @@ class Businessman(AbstractUser, PanelDurationBaseModel):
     instagram_id = models.CharField(max_length=20, blank=True, null=True)
     page_id = models.CharField(max_length=40, unique=True, blank=True, null=True)
     business_category = models.ForeignKey(BusinessCategory, on_delete=models.PROTECT, null=True)
-    is_verified = models.BooleanField(default=False)
+    is_phone_verified = models.BooleanField(default=False)
     AUTHORIZE_CHOICES = [(AUTHORIZATION_UNAUTHORIZED, 'UNAUTHORIZED'),
                          (AUTHORIZATION_PENDING, 'PENDING'),
                          (AUTHORIZATION_AUTHORIZED, 'AUTHORIZED')]

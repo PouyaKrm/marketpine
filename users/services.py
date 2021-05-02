@@ -34,21 +34,23 @@ class BusinessmanService:
         except ObjectDoesNotExist:
             raise ApplicationErrorCodes.get_exception(ApplicationErrorCodes.RECORD_NOT_FOUND)
 
-        verification_service.check_code_is_valid_and_delete(businessman, verification_code)
-        businessman.is_verified = True
+        verification_service.check_phone_confirm_code_is_valid_and_delete(businessman, verification_code)
+        businessman.is_phone_verified = True
         businessman.save()
 
 
 class VerificationService:
 
-    def create_send_phone_confirm_verification_code(self, user: Businessman):
+    def create_send_phone_confirm_verification_code(self, user: Businessman) -> VerificationCodes:
         vcode = self._create_verification_code_for_user(user, VerificationCodes.USED_FOR_PHONE_VERIFICATION)
         self._send_verification_code_phone(user.phone, vcode)
+        return vcode
 
     def resend_phone_confirm_code(self, user: Businessman, verification_code_id: int):
 
         try:
-            vcode = VerificationCodes.objects.get(businessman=user, id=verification_code_id)
+            vcode = VerificationCodes.objects.get(businessman=user, id=verification_code_id,
+                                                  used_for=VerificationCodes.USED_FOR_PHONE_VERIFICATION)
         except ObjectDoesNotExist:
             raise ApplicationErrorCodes.get_exception(ApplicationErrorCodes.VERIFICATION_DOES_NOT_EXIST_OR_EXPIRED)
         self._check_can_resend_verification_code(vcode)
@@ -56,9 +58,11 @@ class VerificationService:
         vcode.num_requested += 1
         vcode.save()
 
-    def check_code_is_valid_and_delete(self, user: Businessman, code: str):
+    def check_phone_confirm_code_is_valid_and_delete(self, user: Businessman, verification_code_id: int, code: str):
         try:
-            vcode = VerificationCodes.objects.get(businessman=user, code=code, expiration_time__gt=timezone.now())
+            vcode = VerificationCodes.objects.get(id=verification_code_id, businessman=user, code=code,
+                                                  expiration_time__gt=timezone.now(),
+                                                  used_for=VerificationCodes.USED_FOR_PHONE_VERIFICATION)
             vcode.delete()
         except ObjectDoesNotExist as e:
             raise ApplicationErrorCodes.get_exception(ApplicationErrorCodes.VERIFICATION_DOES_NOT_EXIST_OR_EXPIRED)
@@ -66,7 +70,7 @@ class VerificationService:
     def _check_can_resend_verification_code(self, vcode: VerificationCodes):
         expired = vcode.expiration_time < timezone.now()
         max_request = vcode.num_requested >= 2
-        last_send_delta_small = vcode.update_date > (timezone.now() - timezone.timedelta(minutes=1))
+        last_send_delta_small = vcode.update_date < (timezone.now() - timezone.timedelta(minutes=1))
 
         if expired or max_request or last_send_delta_small:
             raise ApplicationErrorCodes.get_exception(ApplicationErrorCodes.VERIFICATION_DOES_NOT_EXIST_OR_EXPIRED)

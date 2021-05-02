@@ -24,7 +24,7 @@ class BusinessmanChangeForm(UserChangeForm):
                   'phone',
                   'business_name',
                   'logo',
-                  'is_verified',
+                  'is_phone_verified',
                   'has_sms_panel',
                   'panel_expiration_date',
                   'panel_activation_date',
