@@ -71,6 +71,12 @@ class BusinessmanService:
 class VerificationService:
 
     def create_send_phone_confirm_verification_code(self, user: Businessman) -> VerificationCodes:
+        exist = VerificationCodes.objects.filter(businessman=user, expiration_time__gt=timezone.now(),
+                                                 used_for=VerificationCodes.USED_FOR_PHONE_VERIFICATION).exists()
+
+        if exist:
+            raise ApplicationErrorCodes.get_exception(ApplicationErrorCodes.VERIFICATION_CODE_ALREADY_SENT)
+
         vcode = self._create_verification_code_for_user(user, VerificationCodes.USED_FOR_PHONE_VERIFICATION)
         self._send_verification_code_phone(user.phone, vcode)
         return vcode

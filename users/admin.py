@@ -31,14 +31,14 @@ class BusinessmanAdminModel(UserAdmin):
         ('General Info', {'fields': ('business_name', 'phone', 'logo', 'email', 'business_category')}),
         ('Permissions', {
             'fields': [
-                'is_verified', 'authorized', 'has_sms_panel', 'panel_activation_date', 'panel_expiration_date',
+                'is_phone_verified', 'authorized', 'has_sms_panel', 'panel_activation_date', 'panel_expiration_date',
                 'duration_type'
             ]}),
     )
     add_fieldsets = (
         (None, {'fields': ('username', 'password1', 'password2')}),
         ('General Info', {'fields': ('business_name', 'business_category', 'phone')}),
-        ('Permissions', {'fields': ('is_verified', 'panel_activation_date', 'panel_expiration_date',
+        ('Permissions', {'fields': ('is_phone_verified', 'panel_activation_date', 'panel_expiration_date',
                 'duration_type')}),
     )
 
