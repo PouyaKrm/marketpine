@@ -53,15 +53,10 @@ class BusinessmanService:
         user.save()
         return user
 
-    def verify_businessman_phone(self, businessman_id: int, verification_code: str):
-        try:
-            businessman = Businessman.objects.get(id=businessman_id)
-        except ObjectDoesNotExist:
-            raise ApplicationErrorCodes.get_exception(ApplicationErrorCodes.RECORD_NOT_FOUND)
-
-        verification_service.check_phone_confirm_code_is_valid_and_delete(businessman, verification_code)
-        businessman.is_phone_verified = True
-        businessman.save()
+    def verify_businessman_phone(self, user: Businessman, verification_code_id: int, code: str):
+        verification_service.check_phone_confirm_code_is_valid_and_delete(user, verification_code_id, code)
+        user.is_phone_verified = True
+        user.save()
 
     def authenticate_user(self, username: str, password: str, request: Request) -> dict:
 

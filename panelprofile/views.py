@@ -142,7 +142,7 @@ class VerifyPhone(APIView):
     def post(self, request: Request, verification_code_id: int, code: str):
 
         try:
-            verification_service.check_phone_confirm_code_is_valid_and_delete(request.user, verification_code_id, code)
+            businessman_service.verify_businessman_phone(request.user, verification_code_id, code)
         except ApplicationErrorException as e:
             return bad_request(e.http_message)
         serializer = BusinessmanProfileSerializer(request.user, context={'user': request.user, 'request': request})
