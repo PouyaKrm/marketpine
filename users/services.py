@@ -12,7 +12,7 @@ from base_app.error_codes import ApplicationErrorCodes
 from common.util import get_client_ip
 from common.util.kavenegar_local import APIException
 from common.util.sms_panel.message import system_sms_message
-from users.models import Businessman, VerificationCodes, BusinessmanRefreshTokens
+from users.models import Businessman, VerificationCodes, BusinessmanRefreshTokens, BusinessCategory
 
 customer_frontend_paths = settings.CUSTOMER_APP_FRONTEND_PATHS
 
@@ -31,6 +31,27 @@ class BusinessmanService:
     def is_page_id_pattern_valid(self, page_id) -> bool:
         match = re.search(r'^\d*[a-zA-Z_-]+[a-zA-Z0-9_-]*$', page_id)
         return match is not None
+
+    def is_phone_unique_for_update(self, user: Businessman, new_phone: str) -> bool:
+        return not Businessman.objects.filter(phone=new_phone).exclude(id=user.id).exists()
+
+    def update_businessman_profile(self, user: Businessman, first_name: str, last_name: str,
+                                   business_name: str,
+                                   category: BusinessCategory, phone: str = None, email: str = None) -> Businessman:
+        user.first_name = first_name
+        user.last_name = last_name
+        user.business_name = business_name
+        is_unique = self.is_phone_unique_for_update(user, phone)
+        if phone is not None and not user.is_phone_verified and not is_unique:
+            raise ApplicationErrorCodes.get_exception(ApplicationErrorCodes.PHONE_NUMBER_IS_NOT_UNIQUE)
+        elif phone is not None and not user.is_phone_verified and is_unique:
+            user.phone = phone
+
+        if category is not None:
+            user.business_category = category
+
+        user.save()
+        return user
 
     def verify_businessman_phone(self, businessman_id: int, verification_code: str):
         try:
@@ -105,7 +126,7 @@ class VerificationService:
     def _check_can_resend_verification_code(self, vcode: VerificationCodes):
         expired = vcode.expiration_time < timezone.now()
         max_request = vcode.num_requested >= 2
-        last_send_delta_small = vcode.update_date < (timezone.now() - timezone.timedelta(minutes=1))
+        last_send_delta_small = vcode.update_date > (timezone.now() - timezone.timedelta(minutes=1))
 
         if expired or max_request or last_send_delta_small:
             raise ApplicationErrorCodes.get_exception(ApplicationErrorCodes.VERIFICATION_DOES_NOT_EXIST_OR_EXPIRED)

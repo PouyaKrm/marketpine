@@ -27,7 +27,7 @@ from panelprofile.services import sms_panel_info_service
 from users.models import Businessman
 
 from common.util.custom_permission import HasUploadedAuthDocsAndAuthenticated
-from users.services import verification_service
+from users.services import verification_service, businessman_service
 
 
 class BusinessmanRetrieveUpdateProfileAPIView(APIView):
@@ -44,18 +44,22 @@ class BusinessmanRetrieveUpdateProfileAPIView(APIView):
     def put(self, request, *args, **kwargs):
         serializer = BusinessmanProfileSerializer(data=request.data, context={'user': request.user, 'request': request})
 
-        # serializer._context = {'user': self.request.user}
-
         if not serializer.is_valid():
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            return bad_request(serializer.errors)
 
-        user = Businessman.objects.get(id=self.request.user.id)
+        businessman_service.update_businessman_profile(
+            request.user,
+            serializer.validated_data.get('first_name'),
+            serializer.validated_data.get('last_name'),
+            serializer.validated_data.get('business_name'),
+            serializer.validated_data.get('category'),
+            serializer.validated_data.get('phone'),
+            serializer.validated_data.get('email')
+        )
 
-        serializer.update(user, serializer.validated_data)
+        serializer = BusinessmanProfileSerializer(request.user, request=request)
 
-        serializer.instance = user
-
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        return ok(serializer.data)
 
     def get(self, request, *args, **kwargs):
         serializer = BusinessmanProfileSerializer(request.user, context={'user': request.user, 'request': request})

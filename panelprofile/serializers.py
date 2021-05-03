@@ -7,7 +7,7 @@ from rest_framework.request import Request
 from rest_framework.reverse import reverse
 from rest_framework import serializers
 
-from base_app.serializers import FileFieldWithLinkRepresentation
+from base_app.serializers import FileFieldWithLinkRepresentation, BaseModelSerializerWithRequestObj
 from common.util.kavenegar_local import APIException
 from common.util.sms_panel.message import system_sms_message
 from customers.services import customer_service
@@ -17,12 +17,11 @@ from users.serializers import CategorySerializer
 from users.services import businessman_service
 from .models import SMSPanelInfo, BusinessmanAuthDocs
 from django.conf import settings
-from common.util.custom_validators import pdf_file_validator, validate_logo_size
+from common.util.custom_validators import pdf_file_validator, validate_logo_size, phone_validator
 from common.util.sms_panel.client import ClientManagement
 
 
 class SMSPanelInfoSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = SMSPanelInfo
         fields = [
@@ -32,13 +31,13 @@ class SMSPanelInfoSerializer(serializers.ModelSerializer):
         ]
 
 
-class BusinessmanProfileSerializer(serializers.ModelSerializer):
-
+class BusinessmanProfileSerializer(BaseModelSerializerWithRequestObj):
     auth_documents = serializers.SerializerMethodField(read_only=True)
     sms_panel_details = serializers.SerializerMethodField(read_only=True)
     business_category = CategorySerializer(read_only=True)
     category = serializers.PrimaryKeyRelatedField(write_only=True, queryset=BusinessCategory.objects.all())
     defined_groups = serializers.SerializerMethodField(read_only=True)
+    phone = serializers.CharField(max_length=20, validators=[phone_validator], required=False)
     logo = FileFieldWithLinkRepresentation(read_only=True)
 
     customers_total = serializers.SerializerMethodField(read_only=True)
@@ -49,7 +48,6 @@ class BusinessmanProfileSerializer(serializers.ModelSerializer):
         fields = [
             'id',
             'username',
-            'is_page_id_set',
             'first_name',
             'last_name',
             'phone',
@@ -71,7 +69,10 @@ class BusinessmanProfileSerializer(serializers.ModelSerializer):
             'customers_total'
         ]
 
-        extra_kwargs = {'username': {'read_only': True}, 'phone': {'read_only': True},
+        extra_kwargs = {'username': {'read_only': True},
+                        'first_name': {'required': True},
+                        'last_name': {'required': True},
+                        # 'phone': {'read_only': True},
                         'email': {'read_only': True},
                         'authorized': {'read_only': True},
                         'date_joined': {'read_only': True},
@@ -106,7 +107,6 @@ class BusinessmanProfileSerializer(serializers.ModelSerializer):
         return {'commitment_form': commitment_form_link, 'form': form_link,
                 'national_card': national_card_link, 'birth_certificate': birth_certificate_link}
 
-
     def get_sms_panel_details(self, obj: Businessman):
 
         if not obj.has_sms_panel:
@@ -120,12 +120,12 @@ class BusinessmanProfileSerializer(serializers.ModelSerializer):
         return BusinessmanGroups.defined_groups_num(obj)
 
     def get_customers_total(self, obj: Businessman):
-        user = self.context['user']
+        user = self.request.user
         return customer_service.get_businessman_customers(user).count()
 
     def validate_email(self, value):
 
-        user = self.context['user']
+        user = self.request.user
 
         users_num = Businessman.objects.all().exclude(id=user.id).filter(email=value).count()
 
@@ -134,32 +134,41 @@ class BusinessmanProfileSerializer(serializers.ModelSerializer):
 
         return value
 
+    def validate_phone(self, value):
+
+        user = self.request.user
+        if user.is_phone_verified:
+            return None
+
+        is_unique = businessman_service.is_phone_unique_for_update(user, value)
+        if not is_unique:
+            raise serializers.ValidationError('شماره تلفن یکتا نیست')
+        return value
+
     def update(self, instance: Businessman, validated_data):
 
-        for key, value in validated_data.items():
-
-            setattr(instance, key, value)
-
-        category = validated_data.get('category')
-        if category is not None:
-            instance.business_category = category
-
-        instance.save()
-
-        return instance
+        pass
+        # for key, value in validated_data.items():
+        #
+        #     setattr(instance, key, value)
+        #
+        # category = validated_data.get('category')
+        # if category is not None:
+        #     instance.business_category = category
+        #
+        # instance.save()
+        #
+        # return instance
 
 
 class UploadImageSerializer(serializers.ModelSerializer):
-
     logo = serializers.ImageField(max_length=254, validators=[validate_logo_size])
 
     class Meta:
-
         model = Businessman
         fields = ['logo']
 
     def update(self, instance: Businessman, validated_data):
-
         logo = validated_data['logo']
 
         instance.logo = logo
@@ -169,7 +178,6 @@ class UploadImageSerializer(serializers.ModelSerializer):
 
 
 class AuthSerializer(serializers.ModelSerializer):
-
     password = serializers.CharField(min_length=8, max_length=16, required=True, write_only=True)
     form = serializers.ImageField(max_length=300, required=True, write_only=True)
 
@@ -185,7 +193,6 @@ class AuthSerializer(serializers.ModelSerializer):
 
         extra_kwargs = {'national_card': {'required': True}, 'birth_certificate': {'required': True},
                         'form': {'required': True}}
-
 
     def validate_password(self, value):
 
