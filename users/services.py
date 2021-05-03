@@ -5,6 +5,7 @@ import jwt
 from django.conf import settings
 from django.contrib.auth import authenticate
 from django.core.exceptions import ObjectDoesNotExist
+from django.db import transaction
 from django.utils import timezone
 from rest_framework.request import Request
 
@@ -12,7 +13,8 @@ from base_app.error_codes import ApplicationErrorCodes
 from common.util import get_client_ip
 from common.util.kavenegar_local import APIException
 from common.util.sms_panel.message import system_sms_message
-from users.models import Businessman, VerificationCodes, BusinessmanRefreshTokens, BusinessCategory
+from users.models import Businessman, VerificationCodes, BusinessmanRefreshTokens, BusinessCategory, \
+    PhoneChangeVerification
 
 customer_frontend_paths = settings.CUSTOMER_APP_FRONTEND_PATHS
 
@@ -83,6 +85,27 @@ class BusinessmanService:
 
         return data
 
+    def send_phone_change_verification(self, user: Businessman, new_phone: str) -> PhoneChangeVerification:
+
+        is_unique = businessman_service.is_phone_unique_for_update(user, new_phone)
+        if not is_unique:
+            raise ApplicationErrorCodes.get_exception(ApplicationErrorCodes.PHONE_NUMBER_IS_NOT_UNIQUE)
+
+        return verification_service.create_send_phone_change_verification_codes(user, new_phone)
+
+    def change_phone_number(self, user: Businessman, phone_change_verification_id: int,
+                            previous_phone_code: str,
+                            new_phone_code: str) -> Businessman:
+
+        vcode = verification_service.check_phone_change_verification_codes_and_delete(user,
+                                                                                      phone_change_verification_id,
+                                                                                      previous_phone_code,
+                                                                                      new_phone_code)
+
+        user.phone = vcode.new_phone
+        user.save()
+        return user
+
 
 class VerificationService:
 
@@ -97,6 +120,26 @@ class VerificationService:
         self._send_verification_code_phone(user.phone, vcode)
         return vcode
 
+    def create_send_phone_change_verification_codes(self, user: Businessman, new_phone: str) -> PhoneChangeVerification:
+        exist = PhoneChangeVerification.objects.filter(businessman=user,
+                                                       previous_phone_verification__expiration_time__gt=timezone.now(),
+                                                       new_phone_verification__expiration_time__gt=timezone.now()).exists()
+        if exist:
+            raise ApplicationErrorCodes.get_exception(ApplicationErrorCodes.VERIFICATION_CODE_ALREADY_SENT)
+        with transaction.atomic():
+            PhoneChangeVerification.objects.filter(businessman=user).delete()
+            previous_verification = self._create_verification_code_for_user(user,
+                                                                            VerificationCodes.USED_FOR_PHONE_CHANGE)
+            new_verification = self._create_verification_code_for_user(user, VerificationCodes.USED_FOR_PHONE_CHANGE)
+            result = PhoneChangeVerification.objects.create(
+                businessman=user,
+                previous_phone_verification=previous_verification,
+                new_phone_verification=new_verification,
+                new_phone=new_phone)
+            self._send_verification_code_phone(user.phone, previous_verification)
+            self._send_verification_code_phone(new_phone, new_verification)
+            return result
+
     def resend_phone_confirm_code(self, user: Businessman, verification_code_id: int):
 
         try:
@@ -104,10 +147,16 @@ class VerificationService:
                                                   used_for=VerificationCodes.USED_FOR_PHONE_VERIFICATION)
         except ObjectDoesNotExist:
             raise ApplicationErrorCodes.get_exception(ApplicationErrorCodes.VERIFICATION_DOES_NOT_EXIST_OR_EXPIRED)
-        self._check_can_resend_verification_code(vcode)
-        self._send_verification_code_phone(user.phone, vcode)
-        vcode.num_requested += 1
-        vcode.save()
+        self._resend_verification_code(user.phone, vcode)
+
+    def resend_phone_change_code(self, user: Businessman, phone_change_verification_id: int):
+        try:
+            vcode = PhoneChangeVerification.objects.get(businessman=user, id=phone_change_verification_id)
+
+            self._resend_verification_code(user.phone, vcode.previous_phone_verification)
+            self._resend_verification_code(vcode.new_phone, vcode.new_phone_verification)
+        except ObjectDoesNotExist:
+            raise ApplicationErrorCodes.get_exception(ApplicationErrorCodes.VERIFICATION_DOES_NOT_EXIST_OR_EXPIRED)
 
     def check_phone_confirm_code_is_valid_and_delete(self, user: Businessman, verification_code_id: int, code: str):
         try:
@@ -117,6 +166,30 @@ class VerificationService:
             vcode.delete()
         except ObjectDoesNotExist as e:
             raise ApplicationErrorCodes.get_exception(ApplicationErrorCodes.VERIFICATION_DOES_NOT_EXIST_OR_EXPIRED)
+
+    def check_phone_change_verification_codes_and_delete(self, user: Businessman,
+                                                         phone_change_verification_id: int,
+                                                         previous_phone_code: str,
+                                                         new_phone_code: str) -> PhoneChangeVerification:
+        try:
+            result = PhoneChangeVerification.objects.get(businessman=user,
+                                                         id=phone_change_verification_id,
+                                                         previous_phone_verification__code=previous_phone_code,
+                                                         new_phone_verification__code=new_phone_code,
+                                                         previous_phone_verification__expiration_time__gt=timezone.now(),
+                                                         new_phone_verification__expiration_time__gt=timezone.now())
+            result.delete()
+            result.previous_phone_verification.delete()
+            result.new_phone_verification.delete()
+            return result
+        except ObjectDoesNotExist:
+            raise ApplicationErrorCodes.get_exception(ApplicationErrorCodes.VERIFICATION_DOES_NOT_EXIST_OR_EXPIRED)
+
+    def _resend_verification_code(self, phone: str, vcode: VerificationCodes):
+        self._check_can_resend_verification_code(vcode)
+        self._send_verification_code_phone(phone, vcode)
+        vcode.num_requested += 1
+        vcode.save()
 
     def _check_can_resend_verification_code(self, vcode: VerificationCodes):
         expired = vcode.expiration_time < timezone.now()
@@ -128,7 +201,10 @@ class VerificationService:
 
     def _send_verification_code_phone(self, phone: str, vcode: VerificationCodes):
         try:
-            system_sms_message.send_verification_code(phone, vcode.code)
+            if vcode.used_for == VerificationCodes.USED_FOR_PHONE_VERIFICATION:
+                system_sms_message.send_verification_code(phone, vcode.code)
+            if vcode.used_for == VerificationCodes.USED_FOR_PHONE_CHANGE:
+                system_sms_message.send_businessman_phone_change_code(phone, vcode.code)
         except APIException as e:
             raise ApplicationErrorCodes.get_exception(ApplicationErrorCodes.VERIFICATION_CODE_SEND_ERROR)
 

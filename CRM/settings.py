@@ -71,6 +71,7 @@ SMS_PANEL = {
     'BUSINESSMAN_NEW_PASSWORD_FORGET_TEMPLATE_NAME': 'BusinessmanForgetPasswordChange',
     'CUSTOMER_ONE_TIME_PASSWORD_TEMPLATE_NAME': 'CustomerOneTimePassword',
     'CUSTOMER_PHONE_CHANGE_TEMPLATE_NAME': 'CustomerPhoneChange',
+    'BUSINESSMAN_PHONE_CHANGE_TEMPLATE_NAME': 'BusinessmanPhoneChange',
     'INIT_CREDIT': 150000,
     'API_KEY': '4D4C324E43416D726C65446D7258566A4F59697153444355734E4F4D6B382B57',
     'CUSTOMER_US_PREFIX': 'bp',
@@ -256,6 +257,7 @@ logging.config.dictConfig({
         'django.server': DEFAULT_LOGGING['loggers']['django.server'],
     },
 })
+
 
 MAX_LOGO_SIZE = 10000000
 MEDIA_URL = '/media/'

@@ -8,7 +8,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from wsgiref.util import FileWrapper
 
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.generics import CreateAPIView, RetrieveAPIView, GenericAPIView,  UpdateAPIView
+from rest_framework.generics import CreateAPIView, RetrieveAPIView, GenericAPIView, UpdateAPIView
 from rest_framework import mixins, status
 
 from rest_framework import permissions
@@ -21,8 +21,8 @@ from base_app.error_codes import ApplicationErrorException
 from common.util.http_helpers import ok, bad_request, no_content
 from panelprofile.models import AuthDoc
 from panelprofile.permissions import AuthDocsNotUploaded, IsPhoneNotVerified
-from panelprofile.serializers import AuthSerializer, BusinessmanProfileSerializer, UploadImageSerializer,\
-    SMSPanelInfoSerializer
+from panelprofile.serializers import AuthSerializer, BusinessmanProfileSerializer, UploadImageSerializer, \
+    SMSPanelInfoSerializer, PhoneChangeSerializer
 from panelprofile.services import sms_panel_info_service
 from users.models import Businessman
 
@@ -31,7 +31,6 @@ from users.services import verification_service, businessman_service
 
 
 class BusinessmanRetrieveUpdateProfileAPIView(APIView):
-
     """
     put:
     Updates the profile of the user. Needs JWT token
@@ -70,7 +69,6 @@ class BusinessmanRetrieveUpdateProfileAPIView(APIView):
 class UploadRetrieveProfileImage(APIView):
 
     def put(self, request: Request):
-
         """
         NEW
         content-type : multipart/form-data
@@ -111,7 +109,6 @@ class UploadRetrieveProfileImage(APIView):
 
 
 class SendPhoneVerificationCode(APIView):
-
     permission_classes = [IsPhoneNotVerified]
 
     def post(self, request: Request):
@@ -124,7 +121,6 @@ class SendPhoneVerificationCode(APIView):
 
 
 class ResendVerificationCode(APIView):
-
     permission_classes = [IsPhoneNotVerified]
 
     def post(self, request: Request, verification_code_id: int):
@@ -135,8 +131,8 @@ class ResendVerificationCode(APIView):
             return bad_request(e.http_message)
         return no_content()
 
-class VerifyPhone(APIView):
 
+class VerifyPhone(APIView):
     permission_classes = [IsPhoneNotVerified]
 
     def post(self, request: Request, verification_code_id: int, code: str):
@@ -149,10 +145,50 @@ class VerifyPhone(APIView):
         return ok(serializer.data)
 
 
+class PhoneChangeSendVerification(APIView):
+
+    def post(self, request: Request):
+        sr = PhoneChangeSerializer(data=request.data, request=request)
+        if not sr.is_valid():
+            return bad_request(sr.errors)
+        try:
+            phone_change_code = businessman_service.send_phone_change_verification(request.user,
+                                                                                   sr.validated_data.get('new_phone'))
+            result = {
+                'phone_change_verification_id': phone_change_code.id
+            }
+
+            return ok(result)
+        except ApplicationErrorException as ex:
+            return bad_request(ex.http_message)
+
+
+class PhoneChangeResend(APIView):
+
+    def post(self, request: Request, phone_chane_verification_id):
+
+        try:
+            verification_service.resend_phone_change_code(request.user, phone_chane_verification_id)
+            return no_content()
+        except ApplicationErrorException as ex:
+            return bad_request(ex.http_message)
+
+
+class PhoneChangeVerify(APIView):
+
+    def post(self, request: Request, phone_change_verification_id: int, previous_phone_code: str, new_phone_code: str):
+        try:
+            user = businessman_service.change_phone_number(request.user, phone_change_verification_id,
+                                                           previous_phone_code, new_phone_code)
+            sr = BusinessmanProfileSerializer(user, request=request)
+            return ok(sr.data)
+        except ApplicationErrorException as ex:
+            return bad_request(ex.http_message)
+
+
 @api_view(['GET'])
 @permission_classes([])
 def get_user_logo(request: Request, businessman_id):
-
     """
     NEW
     Gives the logo image that is uploaded by put request
@@ -164,7 +200,7 @@ def get_user_logo(request: Request, businessman_id):
     try:
         user = Businessman.objects.get(id=businessman_id)
     except ObjectDoesNotExist:
-        return Response({'details': 'کاربری یافت نشد'},status=status.HTTP_404_NOT_FOUND)
+        return Response({'details': 'کاربری یافت نشد'}, status=status.HTTP_404_NOT_FOUND)
 
     logo = user.logo
     if not logo:
@@ -173,10 +209,7 @@ def get_user_logo(request: Request, businessman_id):
     return HttpResponse(FileWrapper(logo.file), content_type="image/png")
 
 
-
-
 class UploadBusinessmanDocs(CreateAPIView):
-
     """
     handles upload of authorization documents that is needed to authorize user
     """

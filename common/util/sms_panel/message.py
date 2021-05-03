@@ -18,7 +18,8 @@ system_line = sms_settings['SYSTEM_LINE']
 verification_template_name = sms_settings['VERIFICATION_TEMPLATE_NAME']
 new_password_forget_template_name = sms_settings['BUSINESSMAN_NEW_PASSWORD_FORGET_TEMPLATE_NAME']
 one_time_password_template_name = sms_settings['CUSTOMER_ONE_TIME_PASSWORD_TEMPLATE_NAME']
-phone_change_template_name = sms_settings['CUSTOMER_PHONE_CHANGE_TEMPLATE_NAME']
+customer_phone_change_template_name = sms_settings['CUSTOMER_PHONE_CHANGE_TEMPLATE_NAME']
+businessman_phone_change_template_name = sms_settings['BUSINESSMAN_PHONE_CHANGE_TEMPLATE_NAME']
 min_credit = sms_settings['MIN_CREDIT']
 init_credit = sms_settings['INIT_CREDIT']
 pid = sms_settings['PID']
@@ -71,11 +72,16 @@ class SystemSMSMessage(BaseSMSMessage):
             {'receptor': receptor, 'token': code, 'template': one_time_password_template_name})
 
     def send_customer_phone_change_code(self, receptor: str, code: str):
-        return self._api.verify_lookup({'receptor': receptor, 'token': code, 'template': phone_change_template_name})
+        return self._api.verify_lookup({'receptor': receptor, 'token': code, 'template': customer_phone_change_template_name})
+
+    def send_businessman_phone_change_code(self, receptor: str, code: str):
+        return self._api.verify_lookup(
+            {'receptor': receptor, 'token': code, 'template': businessman_phone_change_template_name})
 
     def send_admin_low_system_credit_message(self):
         try:
-            return self.send_message(admin_phone, 'اعتبار پنل پیامک سیستم مشترینو کم است و تعدادی از مشتریان موفق به شارژ پنل نشده اند')
+            return self.send_message(admin_phone,
+                                     'اعتبار پنل پیامک سیستم مشترینو کم است و تعدادی از مشتریان موفق به شارژ پنل نشده اند')
         except APIException as e:
             logging.error(e)
             raise e

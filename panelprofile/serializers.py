@@ -7,7 +7,8 @@ from rest_framework.request import Request
 from rest_framework.reverse import reverse
 from rest_framework import serializers
 
-from base_app.serializers import FileFieldWithLinkRepresentation, BaseModelSerializerWithRequestObj
+from base_app.serializers import FileFieldWithLinkRepresentation, BaseModelSerializerWithRequestObj, \
+    BaseSerializerWithRequestObj
 from common.util.kavenegar_local import APIException
 from common.util.sms_panel.message import system_sms_message
 from customers.services import customer_service
@@ -249,3 +250,17 @@ class AuthSerializer(serializers.ModelSerializer):
             pass
 
         return {**validated_data, 'password': password}
+
+
+class PhoneChangeSerializer(BaseSerializerWithRequestObj):
+
+    new_phone = serializers.CharField(max_length=20, validators=[phone_validator])
+
+    class Meta:
+        fields = '__all__'
+
+    def validate_new_phone(self, value):
+        is_unique = businessman_service.is_phone_unique_for_update(self.request.user, value)
+        if not is_unique:
+            raise serializers.ValidationError('شماره تلفن یکتا نیست')
+        return value
