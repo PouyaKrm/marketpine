@@ -127,7 +127,7 @@ class Businessman(AbstractUser, PanelDurationBaseModel):
 
     def is_panel_active(self) -> bool:
         return self.is_duration_permanent() or (
-                    self.panel_expiration_date is not None and self.panel_expiration_date > timezone.now())
+                self.panel_expiration_date is not None and self.panel_expiration_date > timezone.now())
 
     def is_authorized(self) -> bool:
         return self.authorized == Businessman.AUTHORIZATION_AUTHORIZED
@@ -194,10 +194,16 @@ class VerificationCodes(BusinessmanManyToOneBaseModel):
         return True, True, True
 
 
-# class PhoneChangeVerification(BusinessmanManyToOneBaseModel):
-#     previous_phone_verification_code = models.ForeignKey(VerificationCodes, on_delete=models.CASCADE)
-#     new_phone_verification_code = models.ForeignKey(VerificationCodes, on_delete=models.CASCADE)
-#     new_phone = models.CharField(max_length=20)
+class PhoneChangeVerification(BusinessmanManyToOneBaseModel):
+    previous_phone_verification = models.ForeignKey(VerificationCodes,
+                                                    on_delete=models.CASCADE,
+                                                    related_query_name='phone_change_previous',
+                                                    related_name='phone_change_previous')
+    new_phone_verification = models.ForeignKey(VerificationCodes,
+                                               on_delete=models.CASCADE,
+                                               related_name='phone_change_new',
+                                               related_query_name='phone_change_new')
+    new_phone = models.CharField(max_length=20)
 
 
 class CustomerManager(BaseUserManager):
