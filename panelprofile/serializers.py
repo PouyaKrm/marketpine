@@ -57,6 +57,7 @@ class BusinessmanProfileSerializer(BaseModelSerializerWithRequestObj):
             'business_category',
             'business_name',
             'date_joined',
+            'is_phone_verified',
             'authorized',
             'has_sms_panel',
             'panel_activation_date',
