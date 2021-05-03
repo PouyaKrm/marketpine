@@ -70,3 +70,9 @@ class IsPanelActivePermissionPostPutMethod(IsPanelActive):
             return True
 
         return super().has_permission(request, view)
+
+
+class IsPhoneVerified(permissions.BasePermission):
+
+    def has_permission(self, request: Request, view: View) -> bool:
+        return request.user.is_phone_verified
