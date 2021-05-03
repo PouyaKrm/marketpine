@@ -40,8 +40,9 @@ class BusinessmanService:
     def update_businessman_profile(self, user: Businessman, first_name: str, last_name: str,
                                    business_name: str,
                                    category: BusinessCategory, phone: str = None, email: str = None) -> Businessman:
-        user.first_name = first_name
-        user.last_name = last_name
+        if user.authorized == Businessman.AUTHORIZATION_UNAUTHORIZED:
+            user.first_name = first_name
+            user.last_name = last_name
         user.business_name = business_name
         is_unique = self.is_phone_unique_for_update(user, phone)
         if phone is not None and not user.is_phone_verified and not is_unique:
