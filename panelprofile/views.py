@@ -54,7 +54,8 @@ class BusinessmanRetrieveUpdateProfileAPIView(APIView):
             serializer.validated_data.get('business_name'),
             serializer.validated_data.get('category'),
             serializer.validated_data.get('phone'),
-            serializer.validated_data.get('email')
+            serializer.validated_data.get('email'),
+            serializer.validated_data.get('viewed_intro')
         )
 
         serializer = BusinessmanProfileSerializer(request.user, request=request)
@@ -110,7 +111,8 @@ class UploadRetrieveProfileImage(APIView):
 
 
 class SendPhoneVerificationCode(APIView):
-    permission_classes = [IsPhoneNotVerified]
+
+    permission_classes = [permissions.IsAuthenticated, IsPhoneNotVerified]
 
     def post(self, request: Request):
 
@@ -136,7 +138,8 @@ class SendPhoneVerificationCode(APIView):
 
 
 class VerifyPhone(APIView):
-    permission_classes = [IsPhoneNotVerified]
+
+    permission_classes = [permissions.IsAuthenticated, IsPhoneNotVerified]
 
     def post(self, request: Request, code: str):
 
@@ -149,6 +152,8 @@ class VerifyPhone(APIView):
 
 
 class PhoneChangeSendVerification(APIView):
+
+    permission_classes = [permissions.IsAuthenticated, IsPhoneVerified]
 
     def post(self, request: Request):
 
@@ -174,6 +179,8 @@ class PhoneChangeSendVerification(APIView):
 
 
 class PhoneChangeVerify(APIView):
+
+    permission_classes = [permissions.IsAuthenticated, IsPhoneVerified]
 
     def post(self, request: Request, previous_phone_code: str, new_phone_code: str):
         try:

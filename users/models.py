@@ -65,6 +65,7 @@ class Businessman(AbstractUser, PanelDurationBaseModel):
     page_id = models.CharField(max_length=40, unique=True, blank=True, null=True)
     business_category = models.ForeignKey(BusinessCategory, on_delete=models.PROTECT, null=True)
     is_phone_verified = models.BooleanField(default=False)
+    viewed_intro = models.BooleanField(default=False)
     AUTHORIZE_CHOICES = [(AUTHORIZATION_UNAUTHORIZED, 'UNAUTHORIZED'),
                          (AUTHORIZATION_PENDING, 'PENDING'),
                          (AUTHORIZATION_AUTHORIZED, 'AUTHORIZED')]

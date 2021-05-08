@@ -39,7 +39,8 @@ class BusinessmanService:
 
     def update_businessman_profile(self, user: Businessman, first_name: str, last_name: str,
                                    business_name: str,
-                                   category: BusinessCategory, phone: str = None, email: str = None) -> Businessman:
+                                   category: BusinessCategory, phone: str = None, email: str = None,
+                                   viewed_intro: bool = None) -> Businessman:
         if user.authorized == Businessman.AUTHORIZATION_UNAUTHORIZED:
             user.first_name = first_name
             user.last_name = last_name
@@ -53,8 +54,12 @@ class BusinessmanService:
         if category is not None:
             user.business_category = category
 
+        if viewed_intro is not None:
+            user.viewed_intro = viewed_intro
+
         user.save()
         return user
+
 
     def send_businessman_phone_verification(self, user: Businessman, new_phone: str = None):
         if new_phone is not None:
