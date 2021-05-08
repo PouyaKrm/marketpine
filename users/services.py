@@ -56,8 +56,18 @@ class BusinessmanService:
         user.save()
         return user
 
-    def verify_businessman_phone(self, user: Businessman, verification_code_id: int, code: str):
-        verification_service.check_phone_confirm_code_is_valid_and_delete(user, verification_code_id, code)
+    def send_businessman_phone_verification(self, user: Businessman, new_phone: str = None):
+        if new_phone is not None:
+            self._check_phone_is_unique_for_update(user, new_phone)
+            user.phone = new_phone
+            user.save()
+            verification_service.delete_all_phone_confirm_code_for_user(user)
+            verification_service.create_send_phone_confirm_verification_code(user)
+        else:
+            verification_service.create_send_phone_confirm_verification_code(user)
+
+    def verify_businessman_phone(self, user: Businessman, code: str):
+        verification_service.check_phone_confirm_code_is_valid_and_delete(user, code)
         user.is_phone_verified = True
         user.save()
 
@@ -89,17 +99,16 @@ class BusinessmanService:
     def send_phone_change_verification(self, user: Businessman, new_phone: str) -> PhoneChangeVerification:
 
         is_unique = businessman_service.is_phone_unique_for_update(user, new_phone)
-        if not is_unique:
+        if not is_unique or user.phone == new_phone:
             raise ApplicationErrorCodes.get_exception(ApplicationErrorCodes.PHONE_NUMBER_IS_NOT_UNIQUE)
-
+        verification_service.delete_all_phone_change_codes(user)
         return verification_service.create_send_phone_change_verification_codes(user, new_phone)
 
-    def change_phone_number(self, user: Businessman, phone_change_verification_id: int,
+    def change_phone_number(self, user: Businessman,
                             previous_phone_code: str,
                             new_phone_code: str) -> Businessman:
 
         vcode = verification_service.check_phone_change_verification_codes_and_delete(user,
-                                                                                      phone_change_verification_id,
                                                                                       previous_phone_code,
                                                                                       new_phone_code)
 
@@ -107,8 +116,20 @@ class BusinessmanService:
         user.save()
         return user
 
+    def _check_phone_is_unique_for_update(self, user: Businessman, new_phone: str):
+        is_unique = self.is_phone_unique_for_update(user, new_phone)
+        if not is_unique:
+            raise ApplicationErrorCodes.get_exception(ApplicationErrorCodes.PHONE_NUMBER_IS_NOT_UNIQUE)
+
 
 class VerificationService:
+
+    def delete_all_phone_confirm_code_for_user(self, user: Businessman):
+        VerificationCodes.objects.filter(businessman=user,
+                                         used_for=VerificationCodes.USED_FOR_PHONE_VERIFICATION).delete()
+
+    def delete_all_phone_change_codes(self, user: Businessman):
+        VerificationCodes.objects.filter(businessman=user, used_for=VerificationCodes.USED_FOR_PHONE_CHANGE).delete()
 
     def create_send_phone_confirm_verification_code(self, user: Businessman) -> VerificationCodes:
         exist = VerificationCodes.objects.filter(businessman=user, expiration_time__gt=timezone.now(),
@@ -141,27 +162,29 @@ class VerificationService:
             self._send_verification_code_phone(new_phone, new_verification)
             return result
 
-    def resend_phone_confirm_code(self, user: Businessman, verification_code_id: int):
+    def resend_phone_confirm_code(self, user: Businessman):
 
-        try:
-            vcode = VerificationCodes.objects.get(businessman=user, id=verification_code_id,
-                                                  used_for=VerificationCodes.USED_FOR_PHONE_VERIFICATION)
-        except ObjectDoesNotExist:
+        vcode = VerificationCodes.objects.filter(
+            businessman=user,
+            used_for=VerificationCodes.USED_FOR_PHONE_VERIFICATION).order_by('-create_date').first()
+
+        if vcode is None:
             raise ApplicationErrorCodes.get_exception(ApplicationErrorCodes.VERIFICATION_DOES_NOT_EXIST_OR_EXPIRED)
+
         self._resend_verification_code(user.phone, vcode)
 
-    def resend_phone_change_code(self, user: Businessman, phone_change_verification_id: int):
-        try:
-            vcode = PhoneChangeVerification.objects.get(businessman=user, id=phone_change_verification_id)
+    def resend_phone_change_code(self, user: Businessman):
+        vcode = PhoneChangeVerification.objects.filter(businessman=user).order_by('-create_date').first()
 
-            self._resend_verification_code(user.phone, vcode.previous_phone_verification)
-            self._resend_verification_code(vcode.new_phone, vcode.new_phone_verification)
-        except ObjectDoesNotExist:
+        if vcode is None:
             raise ApplicationErrorCodes.get_exception(ApplicationErrorCodes.VERIFICATION_DOES_NOT_EXIST_OR_EXPIRED)
 
-    def check_phone_confirm_code_is_valid_and_delete(self, user: Businessman, verification_code_id: int, code: str):
+        self._resend_verification_code(user.phone, vcode.previous_phone_verification)
+        self._resend_verification_code(vcode.new_phone, vcode.new_phone_verification)
+
+    def check_phone_confirm_code_is_valid_and_delete(self, user: Businessman, code: str):
         try:
-            vcode = VerificationCodes.objects.get(id=verification_code_id, businessman=user, code=code,
+            vcode = VerificationCodes.objects.get(businessman=user, code=code,
                                                   expiration_time__gt=timezone.now(),
                                                   used_for=VerificationCodes.USED_FOR_PHONE_VERIFICATION)
             vcode.delete()
@@ -169,13 +192,13 @@ class VerificationService:
             raise ApplicationErrorCodes.get_exception(ApplicationErrorCodes.VERIFICATION_DOES_NOT_EXIST_OR_EXPIRED)
 
     def check_phone_change_verification_codes_and_delete(self, user: Businessman,
-                                                         phone_change_verification_id: int,
                                                          previous_phone_code: str,
                                                          new_phone_code: str) -> PhoneChangeVerification:
         try:
             result = PhoneChangeVerification.objects.get(businessman=user,
-                                                         id=phone_change_verification_id,
+                                                         previous_phone_verification__businessman=user,
                                                          previous_phone_verification__code=previous_phone_code,
+                                                         new_phone_verification__businessman=user,
                                                          new_phone_verification__code=new_phone_code,
                                                          previous_phone_verification__expiration_time__gt=timezone.now(),
                                                          new_phone_verification__expiration_time__gt=timezone.now())

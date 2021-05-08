@@ -255,12 +255,16 @@ class AuthSerializer(serializers.ModelSerializer):
 
 class PhoneChangeSerializer(BaseSerializerWithRequestObj):
 
-    new_phone = serializers.CharField(max_length=20, validators=[phone_validator])
+    phone = serializers.CharField(max_length=20, validators=[phone_validator], required=False)
+
+    def __init__(self, is_phone_required: bool = False, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['phone'].required = is_phone_required
 
     class Meta:
         fields = '__all__'
 
-    def validate_new_phone(self, value):
+    def validate_phone(self, value):
         is_unique = businessman_service.is_phone_unique_for_update(self.request.user, value)
         if not is_unique:
             raise serializers.ValidationError('شماره تلفن یکتا نیست')

@@ -113,33 +113,35 @@ class SendPhoneVerificationCode(APIView):
     permission_classes = [IsPhoneNotVerified]
 
     def post(self, request: Request):
+
+        resend = request.query_params.get('resend')
+
+        if resend is not None and resend.lower().strip() == 'true':
+            try:
+                verification_service.resend_phone_confirm_code(request.user)
+                return no_content()
+            except ApplicationErrorException as ex:
+                return bad_request(ex.http_message)
+
+        sr = PhoneChangeSerializer(data=request.data, request=request)
+
+        if not sr.is_valid():
+            return bad_request(sr.errors)
+
         try:
-            vcode = verification_service.create_send_phone_confirm_verification_code(request.user)
-            data = {'verification_code_id': vcode.id}
-            return ok(data)
+            businessman_service.send_businessman_phone_verification(request.user, sr.validated_data.get('phone'))
+            return no_content()
         except ApplicationErrorException as e:
             return bad_request(e.http_message)
-
-
-class ResendVerificationCode(APIView):
-    permission_classes = [IsPhoneNotVerified]
-
-    def post(self, request: Request, verification_code_id: int):
-
-        try:
-            verification_service.resend_phone_confirm_code(request.user, verification_code_id)
-        except ApplicationErrorException as e:
-            return bad_request(e.http_message)
-        return no_content()
 
 
 class VerifyPhone(APIView):
     permission_classes = [IsPhoneNotVerified]
 
-    def post(self, request: Request, verification_code_id: int, code: str):
+    def post(self, request: Request, code: str):
 
         try:
-            businessman_service.verify_businessman_phone(request.user, verification_code_id, code)
+            businessman_service.verify_businessman_phone(request.user, code)
         except ApplicationErrorException as e:
             return bad_request(e.http_message)
         serializer = BusinessmanProfileSerializer(request.user, context={'user': request.user, 'request': request})
@@ -149,27 +151,23 @@ class VerifyPhone(APIView):
 class PhoneChangeSendVerification(APIView):
 
     def post(self, request: Request):
-        sr = PhoneChangeSerializer(data=request.data, request=request)
+
+        resend = request.query_params.get('resend')
+
+        if resend is not None and resend.lower().strip() == 'true':
+            try:
+                verification_service.resend_phone_change_code(request.user)
+                return no_content()
+            except ApplicationErrorException as ex:
+                return bad_request(ex.http_message)
+
+        sr = PhoneChangeSerializer(is_phone_required=True, data=request.data, request=request)
         if not sr.is_valid():
             return bad_request(sr.errors)
         try:
-            phone_change_code = businessman_service.send_phone_change_verification(request.user,
-                                                                                   sr.validated_data.get('new_phone'))
-            result = {
-                'phone_change_verification_id': phone_change_code.id
-            }
+            businessman_service.send_phone_change_verification(request.user,
+                                                               sr.validated_data.get('phone'))
 
-            return ok(result)
-        except ApplicationErrorException as ex:
-            return bad_request(ex.http_message)
-
-
-class PhoneChangeResend(APIView):
-
-    def post(self, request: Request, phone_chane_verification_id):
-
-        try:
-            verification_service.resend_phone_change_code(request.user, phone_chane_verification_id)
             return no_content()
         except ApplicationErrorException as ex:
             return bad_request(ex.http_message)
@@ -177,10 +175,11 @@ class PhoneChangeResend(APIView):
 
 class PhoneChangeVerify(APIView):
 
-    def post(self, request: Request, phone_change_verification_id: int, previous_phone_code: str, new_phone_code: str):
+    def post(self, request: Request, previous_phone_code: str, new_phone_code: str):
         try:
-            user = businessman_service.change_phone_number(request.user, phone_change_verification_id,
-                                                           previous_phone_code, new_phone_code)
+            user = businessman_service.change_phone_number(request.user,
+                                                           previous_phone_code,
+                                                           new_phone_code)
             sr = BusinessmanProfileSerializer(user, request=request)
             return ok(sr.data)
         except ApplicationErrorException as ex:
