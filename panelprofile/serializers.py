@@ -8,7 +8,7 @@ from rest_framework.reverse import reverse
 from rest_framework import serializers
 
 from base_app.serializers import FileFieldWithLinkRepresentation, BaseModelSerializerWithRequestObj, \
-    BaseSerializerWithRequestObj
+    BaseSerializerWithRequestObj, ImageFiledWithLinkRepresentation
 from common.util.kavenegar_local import APIException
 from common.util.sms_panel.message import system_sms_message
 from customers.services import customer_service
@@ -163,8 +163,8 @@ class BusinessmanProfileSerializer(BaseModelSerializerWithRequestObj):
         # return instance
 
 
-class UploadImageSerializer(serializers.ModelSerializer):
-    logo = serializers.ImageField(max_length=254, validators=[validate_logo_size])
+class UploadImageSerializer(BaseModelSerializerWithRequestObj):
+    logo = ImageFiledWithLinkRepresentation(max_length=254, validators=[validate_logo_size])
 
     class Meta:
         model = Businessman

@@ -83,31 +83,16 @@ class UploadRetrieveProfileImage(APIView):
 
         """
 
-        serializer = UploadImageSerializer(data=request.data)
-
-        serializer._context = {'user': request.user}
+        serializer = UploadImageSerializer(data=request.data, request=request)
 
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        serializer.update(request.user, serializer.validated_data)
+        user = serializer.update(request.user, serializer.validated_data)
 
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        serializer = UploadImageSerializer(user, request=request)
 
-    # def get(self, request: Request):
-    #
-    #     """
-    #     NEW
-    #     Gives the logo image that is uploaded by put request
-    #     :param request:
-    #     :return: If an logo file is uploaded before returns Response with file and 200 status code, else 404 status code
-    #     """
-    #
-    #     logo = request.user.logo
-    #     if not logo:
-    #         return Response(status=status.HTTP_404_NOT_FOUND)
-    #
-    #     return HttpResponse(FileWrapper(logo.file), content_type="image/png")
+        return ok(serializer.data)
 
 
 class SendPhoneVerificationCode(APIView):
