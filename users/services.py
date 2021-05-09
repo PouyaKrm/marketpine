@@ -113,6 +113,15 @@ class BusinessmanService:
         }
         return data
 
+    def get_access_token_by_username(self, username: str) -> dict:
+
+        try:
+            user = Businessman.objects.get(username=username)
+            return self._create_access_token(user)
+        except ObjectDoesNotExist:
+            raise ApplicationErrorCodes.get_exception(ApplicationErrorCodes.RECORD_NOT_FOUND)
+
+
     def send_phone_change_verification(self, user: Businessman, new_phone: str) -> PhoneChangeVerification:
 
         is_unique = businessman_service.is_phone_unique_for_update(user, new_phone)

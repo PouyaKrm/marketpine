@@ -123,12 +123,10 @@ def get_access_token(request):
     username = request.data['username']
 
     try:
-        user = Businessman.objects.get(username=username, is_verified=True)
-    except ObjectDoesNotExist:
-        return Response({'details': ['provided data is invalid']}, status=status.HTTP_401_UNAUTHORIZED)
-    payload = custom_login_payload(user)
-
-    return Response(payload, status=status.HTTP_200_OK)
+        result = businessman_service.get_access_token_by_username(username)
+        return ok(result)
+    except ApplicationErrorException as ex:
+        return bad_request(ex.http_message)
 
 
 @api_view(['PUT'])
