@@ -22,7 +22,7 @@ class BusinessmanRegisterSerializer(serializers.ModelSerializer):
     email = serializers.EmailField(validators=[
         validators.UniqueValidator(queryset=Businessman.objects.all(), message="this email address is already taken")])
     phone = serializers.CharField(max_length=15, validators=[validators.UniqueValidator(queryset=Businessman.objects.all(), message="phone number must be unique")])
-    business_category = serializers.PrimaryKeyRelatedField(required=True, queryset=BusinessCategory.objects.all())
+
 
     class Meta:
         model = Businessman
@@ -34,9 +34,7 @@ class BusinessmanRegisterSerializer(serializers.ModelSerializer):
             'first_name',
             'last_name',
             'phone',
-            'email',
-            'business_name',
-            'business_category'
+            'email'
         ]
 
     def validate(self, attrs):
