@@ -44,9 +44,9 @@ def create_user(request):
 
     user = serializer.save()
 
-    auth_result = businessman_service.authenticate_user(user.username,
-                                                        serializer.validated_data.get('password'),
-                                                        request)
+    auth_result = businessman_service.login_user(user.username,
+                                                 serializer.validated_data.get('password'),
+                                                 request)
     return ok(auth_result)
 
 
@@ -100,8 +100,8 @@ def login_api_view(request):
     if not serializer.is_valid():
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    result = businessman_service.authenticate_user(serializer.validated_data.get('username'),
-                                                   serializer.validated_data.get('password'), request)
+    result = businessman_service.login_user(serializer.validated_data.get('username'),
+                                            serializer.validated_data.get('password'), request)
 
     if result is None:
         return Response({'details': ['username or password is wrong']}, status=status.HTTP_401_UNAUTHORIZED)

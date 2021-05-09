@@ -9,6 +9,8 @@ from django.db import transaction
 from django.utils import timezone
 from rest_framework.request import Request
 
+from rest_framework_jwt.settings import api_settings
+
 from base_app.error_codes import ApplicationErrorCodes
 from common.util import get_client_ip
 from common.util.kavenegar_local import APIException
@@ -17,6 +19,9 @@ from users.models import Businessman, VerificationCodes, BusinessmanRefreshToken
     PhoneChangeVerification
 
 customer_frontend_paths = settings.CUSTOMER_APP_FRONTEND_PATHS
+
+jwt_payload_handler = api_settings.JWT_PAYLOAD_HANDLER
+jwt_encode_handler = api_settings.JWT_ENCODE_HANDLER
 
 
 class BusinessmanService:
@@ -77,7 +82,7 @@ class BusinessmanService:
         user.is_phone_verified = True
         user.save()
 
-    def authenticate_user(self, username: str, password: str, request: Request) -> dict:
+    def login_user(self, username: str, password: str, request: Request) -> dict:
 
         user = authenticate(username=username, password=password)
 
@@ -92,14 +97,20 @@ class BusinessmanService:
 
         token = jwt.encode(payload, settings.REFRESH_KEY_PR, algorithm='RS256')
 
-        data = {'refresh_token': token,
-                'exp': expire_time,
-                'id': user.id,
-                'username': user.get_username(),
-                'business_name': user.business_name,
-                'exp_duration': settings.REFRESH_TOKEN_EXP_DELTA
-                }
+        refresh_token = {
+            'token': token,
+            'exp': expire_time,
+            'id': user.id,
+            'username': user.get_username(),
+            'business_name': user.business_name,
+            'exp_duration': settings.REFRESH_TOKEN_EXP_DELTA
+        }
 
+        access_token = self._create_access_token(user)
+        data = {
+            'refresh_token': refresh_token,
+            'access_token': access_token
+        }
         return data
 
     def send_phone_change_verification(self, user: Businessman, new_phone: str) -> PhoneChangeVerification:
@@ -126,6 +137,20 @@ class BusinessmanService:
         is_unique = self.is_phone_unique_for_update(user, new_phone)
         if not is_unique:
             raise ApplicationErrorCodes.get_exception(ApplicationErrorCodes.PHONE_NUMBER_IS_NOT_UNIQUE)
+
+    def _create_access_token(self, user: Businessman) -> dict:
+
+        payload = jwt_payload_handler(user)
+
+        token = jwt_encode_handler(payload)
+
+        expirationTime = jwt.decode(token, verify=False)['exp']
+        result = {
+            'token': token,
+            'exp': expirationTime,
+            'exp_duration': api_settings.JWT_EXPIRATION_DELTA
+        }
+        return result
 
 
 class VerificationService:
