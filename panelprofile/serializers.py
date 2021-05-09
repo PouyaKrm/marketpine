@@ -38,7 +38,6 @@ class BusinessmanProfileSerializer(BaseModelSerializerWithRequestObj):
     business_category = CategorySerializer(read_only=True)
     category = serializers.PrimaryKeyRelatedField(write_only=True, queryset=BusinessCategory.objects.all())
     defined_groups = serializers.SerializerMethodField(read_only=True)
-    phone = serializers.CharField(max_length=20, validators=[phone_validator], required=False)
     logo = FileFieldWithLinkRepresentation(read_only=True)
 
     customers_total = serializers.SerializerMethodField(read_only=True)
@@ -73,9 +72,9 @@ class BusinessmanProfileSerializer(BaseModelSerializerWithRequestObj):
         ]
 
         extra_kwargs = {'username': {'read_only': True},
-                        'first_name': {'required': True},
-                        'last_name': {'required': True},
-                        # 'phone': {'read_only': True},
+                        'first_name': {'required': False},
+                        'last_name': {'required': False},
+                        'phone': {'read_only': True},
                         'email': {'read_only': True},
                         'authorized': {'read_only': True},
                         'date_joined': {'read_only': True},

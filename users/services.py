@@ -41,10 +41,12 @@ class BusinessmanService:
                                    business_name: str,
                                    category: BusinessCategory, phone: str = None, email: str = None,
                                    viewed_intro: bool = None) -> Businessman:
-        if user.authorized == Businessman.AUTHORIZATION_UNAUTHORIZED:
+        if first_name is not None and user.authorized == Businessman.AUTHORIZATION_UNAUTHORIZED:
             user.first_name = first_name
+        if last_name is not None and user.authorized == Businessman.AUTHORIZATION_UNAUTHORIZED:
             user.last_name = last_name
-        user.business_name = business_name
+        if business_name is not None:
+            user.business_name = business_name
         is_unique = self.is_phone_unique_for_update(user, phone)
         if phone is not None and not user.is_phone_verified and not is_unique:
             raise ApplicationErrorCodes.get_exception(ApplicationErrorCodes.PHONE_NUMBER_IS_NOT_UNIQUE)
@@ -59,7 +61,6 @@ class BusinessmanService:
 
         user.save()
         return user
-
 
     def send_businessman_phone_verification(self, user: Businessman, new_phone: str = None):
         if new_phone is not None:
