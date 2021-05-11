@@ -121,13 +121,11 @@ class BusinessmanService:
         except ObjectDoesNotExist:
             raise ApplicationErrorCodes.get_exception(ApplicationErrorCodes.RECORD_NOT_FOUND)
 
-
     def send_phone_change_verification(self, user: Businessman, new_phone: str) -> PhoneChangeVerification:
 
         is_unique = businessman_service.is_phone_unique_for_update(user, new_phone)
         if not is_unique or user.phone == new_phone:
             raise ApplicationErrorCodes.get_exception(ApplicationErrorCodes.PHONE_NUMBER_IS_NOT_UNIQUE)
-        verification_service.delete_all_phone_change_codes(user)
         return verification_service.create_send_phone_change_verification_codes(user, new_phone)
 
     def change_phone_number(self, user: Businessman,
@@ -183,12 +181,17 @@ class VerificationService:
         return vcode
 
     def create_send_phone_change_verification_codes(self, user: Businessman, new_phone: str) -> PhoneChangeVerification:
-        exist = PhoneChangeVerification.objects.filter(businessman=user,
-                                                       previous_phone_verification__expiration_time__gt=timezone.now(),
-                                                       new_phone_verification__expiration_time__gt=timezone.now()).exists()
+        exist = PhoneChangeVerification.objects.filter(
+            businessman=user,
+            new_phone=new_phone,
+            previous_phone_verification__expiration_time__gt=timezone.now(),
+            new_phone_verification__expiration_time__gt=timezone.now()).exists()
+
         if exist:
             raise ApplicationErrorCodes.get_exception(ApplicationErrorCodes.VERIFICATION_CODE_ALREADY_SENT)
+
         with transaction.atomic():
+            verification_service.delete_all_phone_change_codes(user)
             PhoneChangeVerification.objects.filter(businessman=user).delete()
             previous_verification = self._create_verification_code_for_user(user,
                                                                             VerificationCodes.USED_FOR_PHONE_CHANGE)
