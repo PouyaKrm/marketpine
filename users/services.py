@@ -121,7 +121,6 @@ class BusinessmanService:
         except ObjectDoesNotExist:
             raise ApplicationErrorCodes.get_exception(ApplicationErrorCodes.RECORD_NOT_FOUND)
 
-
     def send_phone_change_verification(self, user: Businessman, new_phone: str) -> PhoneChangeVerification:
 
         is_unique = businessman_service.is_phone_unique_for_update(user, new_phone)
@@ -182,12 +181,15 @@ class VerificationService:
         return vcode
 
     def create_send_phone_change_verification_codes(self, user: Businessman, new_phone: str) -> PhoneChangeVerification:
-        exist = PhoneChangeVerification.objects.filter(businessman=user,
-                                                       new_phone=new_phone,
-                                                       previous_phone_verification__expiration_time__gt=timezone.now(),
-                                                       new_phone_verification__expiration_time__gt=timezone.now()).exists()
+        exist = PhoneChangeVerification.objects.filter(
+            businessman=user,
+            new_phone=new_phone,
+            previous_phone_verification__expiration_time__gt=timezone.now(),
+            new_phone_verification__expiration_time__gt=timezone.now()).exists()
+
         if exist:
             raise ApplicationErrorCodes.get_exception(ApplicationErrorCodes.VERIFICATION_CODE_ALREADY_SENT)
+
         with transaction.atomic():
             verification_service.delete_all_phone_change_codes(user)
             PhoneChangeVerification.objects.filter(businessman=user).delete()
