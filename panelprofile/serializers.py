@@ -36,7 +36,7 @@ class BusinessmanProfileSerializer(BaseModelSerializerWithRequestObj):
     auth_documents = serializers.SerializerMethodField(read_only=True)
     sms_panel_details = serializers.SerializerMethodField(read_only=True)
     business_category = CategorySerializer(read_only=True)
-    category = serializers.PrimaryKeyRelatedField(write_only=True, queryset=BusinessCategory.objects.all())
+    category = serializers.PrimaryKeyRelatedField(write_only=True, required=False, queryset=BusinessCategory.objects.all())
     defined_groups = serializers.SerializerMethodField(read_only=True)
     logo = FileFieldWithLinkRepresentation(read_only=True)
 
@@ -74,6 +74,7 @@ class BusinessmanProfileSerializer(BaseModelSerializerWithRequestObj):
         extra_kwargs = {'username': {'read_only': True},
                         'first_name': {'required': False},
                         'last_name': {'required': False},
+                        'business_name': {'required': False},
                         'phone': {'read_only': True},
                         'email': {'read_only': True},
                         'authorized': {'read_only': True},
