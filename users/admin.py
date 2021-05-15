@@ -28,7 +28,10 @@ class BusinessmanAdminModel(UserAdmin):
     readonly_fields = ['authorized']
     fieldsets = (
         (None, {'fields': ('username', 'password')}),
-        ('General Info', {'fields': ('business_name', 'phone', 'logo', 'email', 'business_category')}),
+        ('General Info', {'fields': ('business_name', 'phone',
+                                     'first_name', 'last_name', 'logo',
+                                     'email', 'business_category')
+                          }),
         ('Permissions', {
             'fields': [
                 'is_phone_verified', 'authorized', 'has_sms_panel', 'panel_activation_date', 'panel_expiration_date',

@@ -27,7 +27,7 @@ from panelprofile.services import sms_panel_info_service
 from users.models import Businessman
 
 from common.util.custom_permission import HasUploadedAuthDocsAndAuthenticated
-from users.permissions import IsPhoneVerified
+from users.permissions import IsPhoneVerified, IsProfileComplete
 from users.services import verification_service, businessman_service
 
 
@@ -207,7 +207,7 @@ class UploadBusinessmanDocs(CreateAPIView):
     """
 
     serializer_class = AuthSerializer
-    permission_classes = [permissions.IsAuthenticated, IsPhoneVerified, AuthDocsNotUploaded]
+    permission_classes = [permissions.IsAuthenticated, IsPhoneVerified, IsProfileComplete, AuthDocsNotUploaded]
 
     def get_serializer_context(self):
         return {'user': self.request.user}

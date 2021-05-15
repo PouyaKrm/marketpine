@@ -10,11 +10,10 @@ import jwt
 from django.conf import settings
 from common.util import get_client_ip
 from .models import BusinessmanRefreshTokens, Businessman
+from .services import businessman_service
 
 
 class HasValidRefreshToken(permissions.BasePermission):
-
-
     """
     Check if refresh token is presented in header and is valid.
     """
@@ -36,7 +35,7 @@ class HasValidRefreshToken(permissions.BasePermission):
         ip = get_client_ip(request)
 
         try:
-            BusinessmanRefreshTokens.objects.get(pk=payload['id'], username=payload['iss'],  ip=ip)
+            BusinessmanRefreshTokens.objects.get(pk=payload['id'], username=payload['iss'], ip=ip)
         except ObjectDoesNotExist:
             return False
 
@@ -46,20 +45,16 @@ class HasValidRefreshToken(permissions.BasePermission):
 
 
 class IsBusinessmanAuthorized(permissions.BasePermission):
-
     message = 'تا ارسال مدارک احراز هویت امکان دسترسی به این قسمت نیست'
 
     def has_permission(self, request: Request, view: View) -> bool:
-
         return request.user.is_authorized()
 
 
 class IsPanelActive(permissions.BasePermission):
-
     message = 'تا فعال سازی پنل امکان دسترسی به این قسمت نیست'
 
     def has_permission(self, request: Request, view: View) -> bool:
-
         return request.user.is_panel_active()
 
 
@@ -72,7 +67,19 @@ class IsPanelActivePermissionPostPutMethod(IsPanelActive):
         return super().has_permission(request, view)
 
 
+class IsProfileComplete(permissions.BasePermission):
+
+    message = 'اطلاعات پروفایل تکمیل نیست'
+
+    def has_permission(self, request: Request, view: View) -> bool:
+        return request.user.business_name and \
+               request.user.first_name and \
+               request.user.last_name and \
+               businessman_service.has_business_category(request.user)
+
+
 class IsPhoneVerified(permissions.BasePermission):
 
     def has_permission(self, request: Request, view: View) -> bool:
         return request.user.is_phone_verified
+

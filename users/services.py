@@ -67,6 +67,9 @@ class BusinessmanService:
         user.save()
         return user
 
+    def has_business_category(self, user: Businessman) -> bool:
+        return BusinessCategory.objects.filter(businessman=user).exists()
+
     def send_businessman_phone_verification(self, user: Businessman, new_phone: str = None):
         if new_phone is not None:
             self._check_phone_is_unique_for_update(user, new_phone)
@@ -81,6 +84,8 @@ class BusinessmanService:
         verification_service.check_phone_confirm_code_is_valid_and_delete(user, code)
         user.is_phone_verified = True
         user.save()
+
+
 
     def login_user(self, username: str, password: str, request: Request) -> dict:
 
