@@ -1,5 +1,9 @@
-from common.util.sms_panel.client import ClientManagement
-from panelprofile.models import SMSPanelInfo
+from django.core.exceptions import ObjectDoesNotExist
+
+from base_app.error_codes import ApplicationErrorCodes
+from common.util.kavenegar_local import APIException
+from common.util.sms_panel.client import ClientManagement, sms_client_management
+from panelprofile.models import SMSPanelInfo, SMSPanelStatus, BusinessmanAuthDocs
 from smspanel.models import SMSMessage
 from users.models import Businessman
 
@@ -38,5 +42,49 @@ class SMSPanelInfoService:
     def has_valid_credit_to_send_to_all(self, user: Businessman) -> bool:
         return user.has_sms_panel and user.smspanelinfo.has_valid_credit_to_send_message_to_all()
 
+    def get_buinessman_sms_panel(self, user: Businessman) -> SMSPanelInfo:
+
+        try:
+            return SMSPanelInfo.objects.get(businessman=user)
+        except ObjectDoesNotExist:
+            raise ApplicationErrorCodes.get_exception(ApplicationErrorCodes.BUSINESSMAN_HAS_NO_SMS_PANEL)
+
+    def activate_sms_panel(self, user: Businessman) -> SMSPanelInfo:
+        sms_panel = self.get_buinessman_sms_panel(user)
+
+        try:
+            sms_client_management.activate_sms_panel(sms_panel.api_key)
+            sms_panel.status = SMSPanelStatus.ACTIVE_LOGIN
+            sms_panel.save()
+            return sms_panel
+        except APIException as ex:
+            raise ApplicationErrorCodes.get_exception(ApplicationErrorCodes.KAVENEGAR_CLIENT_MANAGEMENT_ERROR, ex)
+
+    def deactivate_sms_panel(self, user: Businessman) -> SMSPanelInfo:
+        sms_panel = self.get_buinessman_sms_panel(user)
+        try:
+            sms_client_management.deactivate_sms_panel(sms_panel.api_key)
+            sms_panel.status = SMSPanelStatus.INACTIVE
+            sms_panel.save()
+            return sms_panel
+        except APIException as ex:
+            raise ApplicationErrorCodes.get_exception(ApplicationErrorCodes.KAVENEGAR_CLIENT_MANAGEMENT_ERROR, ex)
+
+
+class BusinessmanAuthDocsService:
+
+    def delete_businessman_docs(self, user: Businessman) -> BusinessmanAuthDocs:
+        doc = self._get_businessman_auth_docs(user)
+        doc.delete()
+        return doc
+
+    def _get_businessman_auth_docs(self, user: Businessman):
+
+        try:
+            return BusinessmanAuthDocs.objects.get(businessman=user)
+        except ObjectDoesNotExist as ex:
+            raise ApplicationErrorCodes.get_exception(ApplicationErrorCodes.BUSINESSMAN_HAS_NO_AUTH_DOCS, ex)
+
 
 sms_panel_info_service = SMSPanelInfoService()
+business_man_auth_doc_service = BusinessmanAuthDocsService()

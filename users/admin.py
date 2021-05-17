@@ -5,9 +5,12 @@ from django.shortcuts import redirect, render
 from django.urls import reverse, path
 from django.utils.html import format_html
 from kavenegar import APIException
+
+from base_app.error_codes import ApplicationErrorException
 from .models import Businessman, Customer, VerificationCodes, AuthStatus, BusinessCategory, \
     BusinessmanCustomer
 from . import forms
+from .services import businessman_service
 
 
 def generate_button_link(disable: bool, button_color='blue'):
@@ -92,11 +95,11 @@ class BusinessmanAdminModel(UserAdmin):
             self.message_user(request, 'user does not have businessmanauthdocs', level=messages.ERROR)
             return redirect(reverse('admin:users_businessman_changelist'))
 
-        if businessman.authorized == AuthStatus.PENDING:
-            try:
-                businessman.businessmanauthdocs.authorize_user()
-            except APIException as e:
-                self.message_user(request, e.message, level=messages.ERROR)
+        try:
+            businessman_service.authorize_user(businessman)
+        except ApplicationErrorException as e:
+            self.message_user(request, f'{e.http_message.get("code")} - {e.http_message.get("message")}',
+                              level=messages.ERROR)
 
         return redirect(reverse('admin:users_businessman_changelist'))
 
@@ -131,7 +134,11 @@ class BusinessmanAdminModel(UserAdmin):
         if request.method != 'POST' or businessman.authorized == AuthStatus.UNAUTHORIZED:
             return redirect(reverse('admin:users_businessman_changelist'))
 
-        businessman.businessmanauthdocs.un_authorize_user()
+        try:
+            businessman_service.un_authorize_user(businessman)
+        except ApplicationErrorException as e:
+            self.message_user(request, f'{e.http_message.get("code")} - {e.http_message.get("message")}',
+                              level=messages.ERROR)
 
         return redirect(reverse('admin:users_businessman_changelist'))
 

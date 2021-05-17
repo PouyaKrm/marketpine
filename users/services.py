@@ -15,6 +15,7 @@ from base_app.error_codes import ApplicationErrorCodes
 from common.util import get_client_ip
 from common.util.kavenegar_local import APIException
 from common.util.sms_panel.message import system_sms_message
+from panelprofile.services import sms_panel_info_service, business_man_auth_doc_service
 from users.models import Businessman, VerificationCodes, BusinessmanRefreshTokens, BusinessCategory, \
     PhoneChangeVerification
 
@@ -144,6 +145,29 @@ class BusinessmanService:
         user.phone = vcode.new_phone
         user.save()
         return user
+
+    def authorize_user(self, user: Businessman) -> Businessman:
+
+        if user.authorized != Businessman.AUTHORIZATION_PENDING:
+            return user
+
+        with transaction.atomic():
+            sms_panel_info_service.activate_sms_panel(user)
+            user.authorized = Businessman.AUTHORIZATION_AUTHORIZED
+            user.has_sms_panel = True
+            user.save()
+
+        return user
+
+    def un_authorize_user(self, user: Businessman) -> Businessman:
+        if user.authorized == Businessman.AUTHORIZATION_UNAUTHORIZED:
+            return user
+        with transaction.atomic():
+            sms_panel_info_service.deactivate_sms_panel(user)
+            business_man_auth_doc_service.delete_businessman_docs(user)
+            user.authorized = Businessman.AUTHORIZATION_UNAUTHORIZED
+            user.save()
+            return user
 
     def _check_phone_is_unique_for_update(self, user: Businessman, new_phone: str):
         is_unique = self.is_phone_unique_for_update(user, new_phone)

@@ -7,6 +7,7 @@ from django.http.response import HttpResponse
 from django.urls import path, reverse, re_path
 from django.utils.html import format_html
 from common.util.kavenegar_local import APIException
+from users.models import Businessman
 
 from .models import SMSPanelInfo, AuthDoc, BusinessmanAuthDocs
 
@@ -53,39 +54,11 @@ admin.site.register(AuthDoc, AuthDocAdmin)
 
 class BusinessmanAuthDocsAdmin(admin.ModelAdmin):
 
-    fields = ['businessman_username', 'form_link', 'card_link', 'certificate_link']
-    readonly_fields = ['businessman_username', 'form_link', 'card_link', 'certificate_link']
-    actions = ['delete_docs']
+    fields = ['businessman', 'form_link', 'card_link', 'certificate_link']
+    readonly_fields = ['businessman', 'form_link', 'card_link', 'certificate_link']
 
-    def get_actions(self, request):
-
-        """
-        Removes default delete action
-        :param request:
-        :return:
-        """
-
-        actions = super().get_actions(request)
-        del actions['delete_selected']
-        return actions
-
-    def delete_docs(self, request, queryset):
-
-        """
-        An action that deletes selected records using overrided delete method in BusinessmanAuthDocs model
-        :param request:
-        :param queryset: contains selected BusinessmanAuthDocs records
-        :return:
-        """
-
-        for obj in queryset.all():
-            try:
-                obj.delete()
-            except APIException as e:
-                self.message_user(e.message, request, level=messages.ERROR)
-        self.message_user(message='please delete users from kavenegar too to prevent from error hapenning', request=request)
-
-    delete_docs.short_description = 'Delete selected records'
+    def has_delete_permission(self, request: HttpRequest, obj=None) -> bool:
+        return False
 
     def get_urls(self):
 
