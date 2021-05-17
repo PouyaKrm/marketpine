@@ -19,7 +19,6 @@ from rest_framework.views import APIView
 
 from base_app.error_codes import ApplicationErrorException
 from common.util.http_helpers import ok, bad_request, no_content
-from panelprofile.models import AuthDoc
 from panelprofile.permissions import AuthDocsNotUploaded, IsPhoneNotVerified
 from panelprofile.serializers import AuthSerializer, BusinessmanProfileSerializer, UploadImageSerializer, \
     SMSPanelInfoSerializer, PhoneChangeSerializer

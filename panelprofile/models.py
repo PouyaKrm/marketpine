@@ -17,7 +17,6 @@ from base_app.models import PrivateFileStorage, PublicFileStorage
 max_message_cost = settings.SMS_PANEL['MAX_MESSAGE_COST']
 min_credit = settings.SMS_PANEL['MIN_CREDIT']
 
-fs = PublicFileStorage('commit_form/', '/commit-form/')
 auth_fs = PrivateFileStorage('auth-docs/', '/auth-docs/')
 
 
@@ -113,11 +112,6 @@ class SMSPanelInfo(models.Model):
 
     def credit_in_tomans(self) -> int:
         return self.credit / 10
-
-class AuthDoc(models.Model):
-
-    file = models.FileField(storage=fs, upload_to='auth-doc', validators=[pdf_file_validator])
-
 
 class BusinessmanAuthDocs(models.Model):
 
