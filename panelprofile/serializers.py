@@ -33,7 +33,6 @@ class SMSPanelInfoSerializer(serializers.ModelSerializer):
 
 
 class BusinessmanProfileSerializer(BaseModelSerializerWithRequestObj):
-    auth_documents = serializers.SerializerMethodField(read_only=True)
     sms_panel_details = serializers.SerializerMethodField(read_only=True)
     business_category = CategorySerializer(read_only=True)
     category = serializers.PrimaryKeyRelatedField(write_only=True, required=False, queryset=BusinessCategory.objects.all())
@@ -64,7 +63,6 @@ class BusinessmanProfileSerializer(BaseModelSerializerWithRequestObj):
             'panel_expiration_date',
             'can_activate_panel',
             'duration_type',
-            'auth_documents',
             'sms_panel_details',
             'category',
             'defined_groups',
@@ -88,27 +86,6 @@ class BusinessmanProfileSerializer(BaseModelSerializerWithRequestObj):
         request = self.context['request']
         domain = request.META['HTTP_HOST']
         return 'http://' + domain + path
-
-    def get_auth_documents(self, obj: Businessman):
-
-        """
-        gives the path of views in profiledownload app for downloading uploaded
-        documents
-        :param obj: configured Businessman
-        :return: dictionary that it's values are retrieved urls of the views
-        """
-
-        commitment_form_link = self.generate_link(reverse('commitment_form_download'))
-
-        if obj.authorized == AuthStatus.UNAUTHORIZED:
-            return {'commitment_form': commitment_form_link}
-
-        form_link = self.generate_link(reverse('auth_docs_download', args=['form']))
-        national_card_link = self.generate_link(reverse('auth_docs_download', args=['card']))
-        birth_certificate_link = self.generate_link(reverse('auth_docs_download', args=['certificate']))
-
-        return {'commitment_form': commitment_form_link, 'form': form_link,
-                'national_card': national_card_link, 'birth_certificate': birth_certificate_link}
 
     def get_sms_panel_details(self, obj: Businessman):
 
