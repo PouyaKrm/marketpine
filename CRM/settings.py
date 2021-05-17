@@ -362,7 +362,7 @@ ONLINE_MENU = {
     'SUB_DIR': 'menus/',
     'BASE_URL': '/menu/',
     'MAX_FILE_SIZE': 10000000,
-    'MAX_ALLOWED_IMAGES': 10
+    'MAX_ALLOWED_IMAGES': 30
 }
 
 MOBILE_APP_PAGE_CONF = {
