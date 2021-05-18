@@ -74,13 +74,14 @@ class SMSPanelInfoService:
     def has_sms_panel(self, user: Businessman) -> bool:
         return SMSPanelInfo.objects.filter(businessman=user).exists()
 
-    def update_sms_panel_info(self, user: Businessman) -> SMSPanelInfo:
+    def fetch_sms_panel_info(self, user: Businessman) -> SMSPanelInfo:
         sms_panel = self.get_buinessman_sms_panel(user)
         info = sms_client_management.fetch_user_by_api_key(sms_panel.api_key)
         sms_panel.api_key = info.api_key
         sms_panel.credit = info.credit
         sms_panel.sms_farsi_cost = info.sms_farsi_cost
         sms_panel.sms_english_cost = info.sms_english_cost
+        sms_panel.status = info.status
         sms_panel.save()
         return sms_panel
 
@@ -121,7 +122,7 @@ class BusinessmanAuthDocsService:
         with transaction.atomic():
             has_panel = sms_panel_info_service.has_sms_panel(user)
             if has_panel:
-                sms_panel_info_service.update_sms_panel_info(user)
+                sms_panel_info_service.fetch_sms_panel_info(user)
             else:
                 sms_panel_info_service.create_sms_panel(user, password)
 

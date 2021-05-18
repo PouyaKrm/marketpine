@@ -184,7 +184,7 @@ class ClientManagement:
 
         info = SMSPanelInfo()
         info.api_key = response['apikey']
-        info.status = '0'
+        info.status = response['status']
         info.credit = response['remaincredit']
         info.sms_farsi_cost = response['smsfarsicost']
         info.sms_english_cost = response['smsenglishcost']

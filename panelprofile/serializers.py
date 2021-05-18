@@ -20,6 +20,7 @@ from .models import SMSPanelInfo, BusinessmanAuthDocs
 from django.conf import settings
 from common.util.custom_validators import pdf_file_validator, validate_logo_size, phone_validator
 from common.util.sms_panel.client import ClientManagement
+from .services import sms_panel_info_service
 
 
 class SMSPanelInfoSerializer(serializers.ModelSerializer):
@@ -89,10 +90,11 @@ class BusinessmanProfileSerializer(BaseModelSerializerWithRequestObj):
 
     def get_sms_panel_details(self, obj: Businessman):
 
-        if not obj.has_sms_panel:
+        has_panel = sms_panel_info_service.has_sms_panel(obj)
+        if not has_panel:
             return None
-
-        serializer = SMSPanelInfoSerializer(obj.smspanelinfo)
+        panel = sms_panel_info_service.fetch_sms_panel_info(obj)
+        serializer = SMSPanelInfoSerializer(panel)
         return serializer.data
 
     def get_defined_groups(self, obj: Businessman):
