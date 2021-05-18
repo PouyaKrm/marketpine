@@ -86,7 +86,9 @@ class BusinessmanService:
         user.is_phone_verified = True
         user.save()
 
-
+    def is_password_correct(self, user: Businessman, password: str) -> bool:
+        user = authenticate(username=user.username, password=password)
+        return user is not None
 
     def login_user(self, username: str, password: str, request: Request) -> dict:
 
@@ -143,6 +145,12 @@ class BusinessmanService:
                                                                                       new_phone_code)
 
         user.phone = vcode.new_phone
+        user.save()
+        return user
+
+    def authdocs_uploaded_and_pending(self, user: Businessman) -> Businessman:
+        user.authorized = Businessman.AUTHORIZATION_PENDING
+        user.has_sms_panel = True
         user.save()
         return user
 

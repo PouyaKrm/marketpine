@@ -20,6 +20,7 @@ class ApplicationErrorCodes:
     BUSINESSMAN_HAS_NO_SMS_PANEL = _get_code_message_dict.__func__(1005, 'پنل پیامکی برای کاربر ثبت نشده')
     KAVENEGAR_CLIENT_MANAGEMENT_ERROR = _get_code_message_dict.__func__(1006, 'خطای مدیریت مشتری از سوی کاونگار')
     BUSINESSMAN_HAS_NO_AUTH_DOCS = _get_code_message_dict.__func__(1007, 'کاربر هیچ مدارک احراز هویتی در سیستم ندارد')
+    INVALID_PASSWORD = _get_code_message_dict.__func__(1008, 'کلمه عبور اشتباه')
 
     @staticmethod
     def get_exception(code: dict, original_exception: Exception = None) -> ApplicationErrorException:

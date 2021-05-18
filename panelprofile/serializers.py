@@ -157,7 +157,7 @@ class UploadImageSerializer(BaseModelSerializerWithRequestObj):
         return instance
 
 
-class AuthSerializer(serializers.ModelSerializer):
+class AuthSerializer(BaseModelSerializerWithRequestObj):
     password = serializers.CharField(min_length=8, max_length=16, required=True, write_only=True)
     form = serializers.ImageField(max_length=300, required=True, write_only=True)
 
@@ -176,7 +176,7 @@ class AuthSerializer(serializers.ModelSerializer):
 
     def validate_password(self, value):
 
-        user = self.context['user']
+        user = self.request.user
 
         if authenticate(username=user.username, password=value) is None:
             raise serializers.ValidationError('کلمه عبور نا معتبر')
@@ -203,32 +203,6 @@ class AuthSerializer(serializers.ModelSerializer):
             raise ValidationError('ندازه فایل بیش از حد مجاز است')
 
         return value
-
-    def create(self, validated_data: dict):
-
-        user = self.context['user']
-
-        password = validated_data.pop('password')
-
-        if user.has_sms_panel:
-            user.smspanelinfo.update_panel_info()
-        else:
-            sms = SMSPanelInfo()
-            sms.create_sms_panel(user, password)
-
-        BusinessmanAuthDocs.objects.create(businessman=user, **validated_data)
-
-        user.authorized = AuthStatus.PENDING
-        user.has_sms_panel = True
-
-        user.save()
-
-        try:
-            system_sms_message.send_admin_authroize_docs_uploaded(user.username)
-        except APIException:
-            pass
-
-        return {**validated_data, 'password': password}
 
 
 class PhoneChangeSerializer(BaseSerializerWithRequestObj):

@@ -1,17 +1,18 @@
 from django.core.exceptions import ObjectDoesNotExist
+from django.db import transaction
 
 from base_app.error_codes import ApplicationErrorCodes
 from common.util.kavenegar_local import APIException
 from common.util.sms_panel.client import ClientManagement, sms_client_management
+from common.util.sms_panel.message import system_sms_message
 from panelprofile.models import SMSPanelInfo, SMSPanelStatus, BusinessmanAuthDocs
 from smspanel.models import SMSMessage
 from users.models import Businessman
 
-
 client = ClientManagement()
 
-class SMSPanelInfoService:
 
+class SMSPanelInfoService:
 
     def increase_credit_in_tomans(self, sms_panel_info: SMSPanelInfo, amount_in_tomans: int) -> int:
         """
@@ -70,6 +71,29 @@ class SMSPanelInfoService:
         except APIException as ex:
             raise ApplicationErrorCodes.get_exception(ApplicationErrorCodes.KAVENEGAR_CLIENT_MANAGEMENT_ERROR, ex)
 
+    def has_sms_panel(self, user: Businessman) -> bool:
+        return SMSPanelInfo.objects.filter(businessman=user).exists()
+
+    def update_sms_panel_info(self, user: Businessman) -> SMSPanelInfo:
+        sms_panel = self.get_buinessman_sms_panel(user)
+        info = sms_client_management.fetch_user_by_api_key(sms_panel.api_key)
+        sms_panel.api_key = info.api_key
+        sms_panel.credit = info.credit
+        sms_panel.sms_farsi_cost = info.sms_farsi_cost
+        sms_panel.sms_english_cost = info.sms_english_cost
+        sms_panel.save()
+        return sms_panel
+
+    def create_sms_panel(self, user: Businessman, password: str) -> SMSPanelInfo:
+        from users.services import businessman_service
+        is_correct = businessman_service.is_password_correct(user, password)
+        if not is_correct:
+            raise ApplicationErrorCodes.get_exception(ApplicationErrorCodes.INVALID_PASSWORD)
+        info = sms_client_management.add_user(user, password)
+        info.businessman = user
+        info.save()
+        return info
+
 
 class BusinessmanAuthDocsService:
 
@@ -84,6 +108,36 @@ class BusinessmanAuthDocsService:
             return BusinessmanAuthDocs.objects.get(businessman=user)
         except ObjectDoesNotExist as ex:
             raise ApplicationErrorCodes.get_exception(ApplicationErrorCodes.BUSINESSMAN_HAS_NO_AUTH_DOCS, ex)
+
+    def businessman_auth_docs_upload(self,
+                                     user: Businessman,
+                                     form,
+                                     national_card,
+                                     birth_certificate,
+                                     password) -> BusinessmanAuthDocs:
+
+        from users.services import businessman_service
+
+        with transaction.atomic():
+            has_panel = sms_panel_info_service.has_sms_panel(user)
+            if has_panel:
+                sms_panel_info_service.update_sms_panel_info(user)
+            else:
+                sms_panel_info_service.create_sms_panel(user, password)
+
+            doc = BusinessmanAuthDocs.objects.create(
+                businessman=user, form=form,
+                national_card=national_card,
+                birth_certificate=birth_certificate
+            )
+            businessman_service.authdocs_uploaded_and_pending(user)
+
+        try:
+            system_sms_message.send_admin_authroize_docs_uploaded(user.username)
+        except APIException as ex:
+            pass
+
+        return doc
 
 
 sms_panel_info_service = SMSPanelInfoService()

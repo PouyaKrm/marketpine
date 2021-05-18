@@ -116,6 +116,10 @@ class ClientManagement:
         result = self.fetch(user.smspanelinfo.api_key)
         return self.__create_sms_panel_info_object_by_api_respone(result)
 
+    def fetch_user_by_api_key(self, apikey: str):
+        result = self.fetch(apikey)
+        return self.__create_sms_panel_info_object_by_api_respone(result)
+
     def fetch_user_by_local_id(self, user):
 
         """
