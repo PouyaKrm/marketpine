@@ -117,6 +117,15 @@ class SMSPanelInfo(models.Model):
     def credit_in_tomans(self) -> int:
         return self.credit / 10
 
+    def is_status_active(self):
+        return self.status == SMSPanelInfo.STATUS_ACTIVE
+
+    def is_status_active_login(self):
+        return self.status == SMSPanelInfo.STATUS_ACTIVE_LOGIN
+
+    def is_status_disabled(self):
+        return self.status == SMSPanelInfo.STATUS_INACTIVE
+
 class BusinessmanAuthDocs(models.Model):
 
     """

@@ -7,6 +7,7 @@ from rest_framework.request import Request
 
 from django.conf import settings
 
+from panelprofile.services import sms_panel_info_service
 from smspanel.models import SMSMessage
 
 english_sms_cost = settings.SMS_PANEL['MAX_MESSAGE_COST']
@@ -33,7 +34,12 @@ class HasActiveSMSPanel(permissions.BasePermission):
         if request.method == 'GET':
             return True
 
-        return request.user.has_sms_panel and (request.user.smspanelinfo.status == SMSPanelStatus.ACTIVE_LOGIN)
+        has_panel = sms_panel_info_service.has_sms_panel(request.user)
+        if not has_panel:
+            return False
+        panel = sms_panel_info_service.fetch_sms_panel_info(request.user)
+
+        return not panel.is_status_disabled()
 
 
 class HasValidCreditSendSMS(permissions.BasePermission):
@@ -46,7 +52,7 @@ class HasValidCreditSendSMS(permissions.BasePermission):
     message = 'اعتبار شما برای ارسال پیام کافی نیست'
 
     def has_permission(self, request: Request, view: View):
-        smspanelinfo = request.user.smspanelinfo
+        smspanelinfo = sms_panel_info_service.get_buinessman_sms_panel(request.user)
         if (check_has_min_credit(smspanelinfo) and remained_credit_for_message(smspanelinfo) >
                 send_plain_max_customers * english_sms_cost):
             return True
@@ -64,7 +70,7 @@ class HasValidCreditSendSMSToAll(permissions.BasePermission):
 
     def has_permission(self, request: Request, view: View):
 
-        smspanelinfo = request.user.smspanelinfo
+        smspanelinfo = sms_panel_info_service.get_buinessman_sms_panel(request.user)
         return check_has_min_credit(smspanelinfo) and smspanelinfo.has_remained_credit_for_new_message_to_all()
 
 
@@ -79,13 +85,13 @@ class HasValidCreditSendSMSToGroup(permissions.BasePermission):
     message = "اعتبار کافی برای ارسال پیام موجود نیست"
 
     def has_permission(self, request: Request, view: View):
-
+        smspanelinfo = sms_panel_info_service.get_buinessman_sms_panel(request.user)
         try:
             group = request.user.businessmangroups_set.get(id=view.kwargs['group_id'])
         except ObjectDoesNotExist:
             return True
         
-        return group.customers.count() * english_sms_cost < remained_credit_for_message(request.user.smspanelinfo)
+        return group.customers.count() * english_sms_cost < remained_credit_for_message(smspanelinfo)
 
 
 class HasValidCreditResendFailedSMS(permissions.BasePermission):
@@ -94,7 +100,7 @@ class HasValidCreditResendFailedSMS(permissions.BasePermission):
 
     def has_permission(self, request: Request, view: View):
 
-        smspanelinfo = request.user.smspanelinfo
+        smspanelinfo = sms_panel_info_service.get_buinessman_sms_panel(request.user)
         try:
             failed_sms = request.user.smsmessage_set.get(id=view.kwargs['sms_id'], status=SMSMessage.STATUS_FAILED)
         except ObjectDoesNotExist:
@@ -116,9 +122,12 @@ class HasValidCreditResendTemplateSMS(permissions.BasePermission):
 
     def has_permission(self, request: Request, view: View):
 
+        smspanelinfo = sms_panel_info_service.get_buinessman_sms_panel(request.user)
+
         try:
             unsent_sms = request.user.unsenttemplatesms_set.get(id=view.kwargs['unsent_sms_id'])
         except ObjectDoesNotExist:
             return True
         
-        return unsent_sms.customers.count() * english_sms_cost < request.user.smspanelinfo.credit
+        return unsent_sms.customers.count() * english_sms_cost < smspanelinfo.credit
+
