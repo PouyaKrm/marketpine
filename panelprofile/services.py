@@ -55,7 +55,7 @@ class SMSPanelInfoService:
 
         try:
             sms_client_management.activate_sms_panel(sms_panel.api_key)
-            sms_panel.status = SMSPanelStatus.ACTIVE_LOGIN
+            sms_panel.status = SMSPanelInfo.STATUS_ACTIVE
             sms_panel.save()
             return sms_panel
         except APIException as ex:
@@ -65,7 +65,7 @@ class SMSPanelInfoService:
         sms_panel = self.get_buinessman_sms_panel(user)
         try:
             sms_client_management.deactivate_sms_panel(sms_panel.api_key)
-            sms_panel.status = SMSPanelStatus.INACTIVE
+            sms_panel.status = SMSPanelInfo.STATUS_INACTIVE
             sms_panel.save()
             return sms_panel
         except APIException as ex:
@@ -83,6 +83,7 @@ class SMSPanelInfoService:
         sms_panel.sms_english_cost = info.sms_english_cost
         sms_panel.status = info.status
         sms_panel.save()
+
         return sms_panel
 
     def create_sms_panel(self, user: Businessman, password: str) -> SMSPanelInfo:

@@ -28,15 +28,15 @@ class SMSPanelStatus:
 
 class SMSPanelInfo(models.Model):
 
-    STATUS_INACTIVE = '0'
-    STATUS_ACTIVE_LOGIN = '1'
-    STATUS_ACTIVE = '2'
+    STATUS_INACTIVE = 'Disabled'
+    STATUS_ACTIVE_LOGIN = 'Approved'
+    STATUS_ACTIVE = 'ApprovedWithoutLogin'
 
     businessman = models.OneToOneField(Businessman, on_delete=models.CASCADE)
     username = models.CharField(max_length=100)
     api_key = models.TextField(default=None, null=True)
-    STATUS_CHOICES = [(STATUS_ACTIVE, 'ACTIVE_LOGIN'), (STATUS_INACTIVE, 'INACTIVE'), (STATUS_ACTIVE, 'ACTIVE')]
-    status = models.CharField(max_length=1, choices=STATUS_CHOICES, default='0')
+    STATUS_CHOICES = [(STATUS_ACTIVE_LOGIN, 'ACTIVE_LOGIN'), (STATUS_INACTIVE, 'INACTIVE'), (STATUS_ACTIVE, 'ACTIVE')]
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='0')
     minimum_allowed_credit = models.PositiveIntegerField(default=10000)
     credit = models.PositiveIntegerField(default=1000)
     sms_farsi_cost = models.PositiveSmallIntegerField()
