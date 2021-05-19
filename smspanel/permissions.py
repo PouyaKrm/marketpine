@@ -85,15 +85,12 @@ class HasValidCreditResendFailedSMS(permissions.BasePermission):
     message = 'اعتبار کافی برای باز ارسال پیام موجود نیست'
 
     def has_permission(self, request: Request, view: View):
-
-        smspanelinfo = sms_panel_info_service.get_buinessman_sms_panel(request.user)
         try:
             failed_sms = request.user.smsmessage_set.get(id=view.kwargs['sms_id'], status=SMSMessage.STATUS_FAILED)
         except ObjectDoesNotExist:
             return True
 
-        return (remained_credit_for_message(smspanelinfo) and
-                failed_sms.receivers.count() * english_sms_cost < remained_credit_for_message(smspanelinfo))
+        return sms_panel_info_service.get_panel_has_valid_credit_resend_failed_sms(request.user, failed_sms)
 
 
 class HasValidCreditResendTemplateSMS(permissions.BasePermission):
@@ -107,13 +104,10 @@ class HasValidCreditResendTemplateSMS(permissions.BasePermission):
     message = 'اعتبار کافی برای باز ارسال پیام موجود نیست'
 
     def has_permission(self, request: Request, view: View):
-
-        smspanelinfo = sms_panel_info_service.get_buinessman_sms_panel(request.user)
-
         try:
             unsent_sms = request.user.unsenttemplatesms_set.get(id=view.kwargs['unsent_sms_id'])
         except ObjectDoesNotExist:
             return True
         
-        return unsent_sms.customers.count() * english_sms_cost < smspanelinfo.credit
+        return sms_panel_info_service.get_panel_has_valid_credit_resend_template_sms(request.user, unsent_sms)
 
