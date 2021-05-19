@@ -1,4 +1,5 @@
 from django.core.exceptions import ObjectDoesNotExist
+from django.db.models.aggregates import Sum
 
 from users.models import Businessman
 from common.util.sms_panel.message import ClientBulkToCustomerSMSMessage, ClientBulkToAllToCustomerSMSMessage, \
@@ -168,6 +169,15 @@ class SendSMSMessage:
         if receptor_phone is None:
             return q
         return q.filter(receptor=receptor_phone)
+
+    def get_pending_messages(self, user: Businessman):
+        return SMSMessage.objects.filter(businessman=user, status=SMSMessage.STATUS_PENDING)
+
+    def get_reserved_credit_of_pending_messages(self, user: Businessman) -> int:
+        r = self.get_pending_messages(user).aggregate(Sum('reserved_credit'))['reserved_credit__sum']
+        if r is None:
+            return 0
+        return r
 
 
 sms_message_service = SendSMSMessage()

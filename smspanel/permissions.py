@@ -34,15 +34,10 @@ class HasActiveSMSPanel(permissions.BasePermission):
         if request.method == 'GET':
             return True
 
-        has_panel = sms_panel_info_service.has_sms_panel(request.user)
-        if not has_panel:
-            return False
-        panel = sms_panel_info_service.fetch_sms_panel_info(request.user)
-
-        return not panel.is_status_disabled()
+        return sms_panel_info_service.fetch_panel_and_check_is_active(request.user)
 
 
-class HasValidCreditSendSMS(permissions.BasePermission):
+class HasValidCreditSendSMSToInviduals(permissions.BasePermission):
 
     """
     Checks that businessman has enough credit for sending sms to specific amount of customers.
@@ -52,11 +47,7 @@ class HasValidCreditSendSMS(permissions.BasePermission):
     message = 'اعتبار شما برای ارسال پیام کافی نیست'
 
     def has_permission(self, request: Request, view: View):
-        smspanelinfo = sms_panel_info_service.get_buinessman_sms_panel(request.user)
-        if (check_has_min_credit(smspanelinfo) and remained_credit_for_message(smspanelinfo) >
-                send_plain_max_customers * english_sms_cost):
-            return True
-        return False
+        return sms_panel_info_service.get_panel_has_valid_credit_send_sms_inviduals(request.user)
 
 
 class HasValidCreditSendSMSToAll(permissions.BasePermission):
@@ -69,10 +60,7 @@ class HasValidCreditSendSMSToAll(permissions.BasePermission):
     message = 'اعتبار شما برای ارسال پیام کافی نیست'
 
     def has_permission(self, request: Request, view: View):
-
-        smspanelinfo = sms_panel_info_service.get_buinessman_sms_panel(request.user)
-        return check_has_min_credit(smspanelinfo) and smspanelinfo.has_remained_credit_for_new_message_to_all()
-
+        return sms_panel_info_service.get_panel_has_credit_for_message_to_all(request.user)
 
 
 class HasValidCreditSendSMSToGroup(permissions.BasePermission):

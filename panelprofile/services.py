@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import transaction
 
@@ -7,10 +8,15 @@ from common.util.sms_panel.client import ClientManagement, sms_client_management
 from common.util.sms_panel.message import system_sms_message
 from panelprofile.models import SMSPanelInfo, SMSPanelStatus, BusinessmanAuthDocs
 from smspanel.models import SMSMessage
+from smspanel.services import sms_message_service
 from users.models import Businessman
 
 client = ClientManagement()
 
+english_sms_cost = settings.SMS_PANEL['MAX_MESSAGE_COST']
+send_plain_max_customers = settings.SMS_PANEL['SEND_PLAIN_CUSTOMERS_MAX_NUMBER']
+min_credit = settings.SMS_PANEL['MIN_CREDIT']
+max_message_cost = settings.SMS_PANEL['MAX_MESSAGE_COST']
 
 class SMSPanelInfoService:
 
@@ -40,9 +46,6 @@ class SMSPanelInfoService:
         sms_panel_info.credit = new_credit
         sms_panel_info.save()
 
-    def has_valid_credit_to_send_to_all(self, user: Businessman) -> bool:
-        return user.has_sms_panel and user.smspanelinfo.has_valid_credit_to_send_message_to_all()
-
     def get_buinessman_sms_panel(self, user: Businessman) -> SMSPanelInfo:
 
         try:
@@ -71,6 +74,20 @@ class SMSPanelInfoService:
         except APIException as ex:
             raise ApplicationErrorCodes.get_exception(ApplicationErrorCodes.KAVENEGAR_CLIENT_MANAGEMENT_ERROR, ex)
 
+    def fetch_panel_and_check_is_active(self, user: Businessman) -> bool:
+        has_panel = self.has_sms_panel(user)
+        if not has_panel:
+            return False
+        panel = self.fetch_sms_panel_info(user)
+        return not panel.is_status_disabled()
+
+    def has_panel_and_is_active(self, user: Businessman) -> bool:
+        has_panel = self.has_sms_panel(user)
+        if not has_panel:
+            return False
+        panel = self.get_buinessman_sms_panel(user)
+        return not panel.is_status_disabled()
+
     def has_sms_panel(self, user: Businessman) -> bool:
         return SMSPanelInfo.objects.filter(businessman=user).exists()
 
@@ -95,6 +112,32 @@ class SMSPanelInfoService:
         info.businessman = user
         info.save()
         return info
+
+    def fetch_panel_has_credit_for_message_to_all(self, user: Businessman) -> bool:
+        panel = self.fetch_sms_panel_info(user)
+        return self._has_min_credit(panel) and self._has_credit_for_message_to_all(panel)
+
+    def get_panel_has_credit_for_message_to_all(self, user: Businessman):
+        panel = self.get_buinessman_sms_panel(user)
+        return self._has_min_credit(panel) and self._has_credit_for_message_to_all(panel)
+
+    def get_panel_has_valid_credit_send_sms_inviduals(self, user: Businessman):
+        panel = sms_panel_info_service.get_buinessman_sms_panel(user)
+        has_min_credit = self._has_min_credit(panel)
+        remained = self._panel_remained_credit(panel)
+        return has_min_credit and (remained > send_plain_max_customers * english_sms_cost)
+
+    def _has_credit_for_message_to_all(self, panel: SMSPanelInfo):
+        user = panel.businessman
+        remained = self._panel_remained_credit(panel)
+        return remained > max_message_cost * user.customers.count()
+
+    def _panel_remained_credit(self, panel: SMSPanelInfo) -> int:
+        reserved = sms_message_service.get_reserved_credit_of_pending_messages(panel.businessman)
+        return panel.credit - reserved
+
+    def _has_min_credit(self, panel: SMSPanelInfo) -> bool:
+        return panel.credit >= min_credit
 
 
 class BusinessmanAuthDocsService:

@@ -23,7 +23,7 @@ from .serializers import SMSTemplateSerializer, SendSMSSerializer, SentSMSRetrie
     SendPlainSMSToAllSerializer, SendByTemplateSerializer, SendPlainToGroup, UnsentPlainSMSListSerializer, \
     UnsentTemplateSMSListSerializer, SMSMessageListSerializer, WelcomeMessageSerializer, SentSMSSerializer
 from .models import SMSTemplate, SentSMS, SMSMessage
-from .permissions import HasValidCreditSendSMS, HasValidCreditSendSMSToAll, HasValidCreditResendFailedSMS, \
+from .permissions import HasValidCreditSendSMSToInviduals, HasValidCreditSendSMSToAll, HasValidCreditResendFailedSMS, \
     HasValidCreditResendTemplateSMS, HasValidCreditSendSMSToGroup, HasActiveSMSPanel
 from .serializers import SMSTemplateSerializer, SendSMSSerializer, SentSMSRetrieveForCustomer, \
     SendPlainSMSToAllSerializer, SendByTemplateSerializer, SendPlainToGroup, UnsentPlainSMSListSerializer, \
@@ -83,7 +83,7 @@ class SMSTemplateRetrieveAPIView(generics.RetrieveAPIView, mixins.UpdateModelMix
 @permission_classes([permissions.IsAuthenticated,
                      IsPanelActivePermissionPostPutMethod,
                      HasActiveSMSPanel,
-                     HasValidCreditSendSMS])
+                     HasValidCreditSendSMSToInviduals])
 def send_plain_sms(request):
     """
     sends sms message without using template.
@@ -138,7 +138,7 @@ def send_plain_to_all(request):
 
 @api_view(['POST'])
 @permission_classes(
-    [permissions.IsAuthenticated, IsPanelActivePermissionPostPutMethod, HasActiveSMSPanel, HasValidCreditSendSMS])
+    [permissions.IsAuthenticated, IsPanelActivePermissionPostPutMethod, HasActiveSMSPanel, HasValidCreditSendSMSToInviduals])
 def send_sms_by_template(request, template_id):
     """
     sends message to specific number of cutomers of a businessman using a tmplate that it's id 
