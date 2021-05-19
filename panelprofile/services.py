@@ -6,6 +6,7 @@ from base_app.error_codes import ApplicationErrorCodes
 from common.util.kavenegar_local import APIException
 from common.util.sms_panel.client import ClientManagement, sms_client_management
 from common.util.sms_panel.message import system_sms_message
+from groups.models import BusinessmanGroups
 from panelprofile.models import SMSPanelInfo, SMSPanelStatus, BusinessmanAuthDocs
 from smspanel.models import SMSMessage
 from smspanel.services import sms_message_service
@@ -126,6 +127,11 @@ class SMSPanelInfoService:
         has_min_credit = self._has_min_credit(panel)
         remained = self._panel_remained_credit(panel)
         return has_min_credit and (remained > send_plain_max_customers * english_sms_cost)
+
+    def get_panel_has_valid_credit_send_to_group(self, user: Businessman, group: BusinessmanGroups):
+        panel = sms_panel_info_service.get_buinessman_sms_panel(user)
+        remained = self._panel_remained_credit(panel)
+        return self._has_min_credit(panel) and (remained > group.customers.count() * english_sms_cost)
 
     def _has_credit_for_message_to_all(self, panel: SMSPanelInfo):
         user = panel.businessman

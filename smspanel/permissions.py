@@ -73,13 +73,11 @@ class HasValidCreditSendSMSToGroup(permissions.BasePermission):
     message = "اعتبار کافی برای ارسال پیام موجود نیست"
 
     def has_permission(self, request: Request, view: View):
-        smspanelinfo = sms_panel_info_service.get_buinessman_sms_panel(request.user)
         try:
             group = request.user.businessmangroups_set.get(id=view.kwargs['group_id'])
         except ObjectDoesNotExist:
             return True
-        
-        return group.customers.count() * english_sms_cost < remained_credit_for_message(smspanelinfo)
+        return sms_panel_info_service.get_panel_has_valid_credit_send_to_group(request.user, group)
 
 
 class HasValidCreditResendFailedSMS(permissions.BasePermission):
