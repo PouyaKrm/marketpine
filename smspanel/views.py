@@ -162,27 +162,18 @@ class SendByTemplateAPIView(APIView):
             return bad_request(ex.http_message)
 
 
-@api_view(['POST'])
-@permission_classes(
-    [permissions.IsAuthenticated, IsPanelActivePermissionPostPutMethod, HasActiveSMSPanel, HasValidCreditSendSMSToAll])
-def send_sms_by_template_to_all(request, template_id):
-    """
-    sends sms message to all customers of a businessman by a template specified as path varialble
-    """
+class SendByTemplateToAll(APIView):
 
-    try:
-        template = SMSTemplate.objects.get(businessman=request.user, id=template_id)
-    except ObjectDoesNotExist:
-        return Response({'detail': ' قالب مورد نظر وجود ندارد'}, status=status.HTTP_404_NOT_FOUND)
+    permission_classes = [permissions.IsAuthenticated, IsPanelActivePermissionPostPutMethod, HasActiveSMSPanel,
+                          HasValidCreditSendSMSToAll]
 
-    messainger = SMSMessageService()
-
-    try:
-        messainger.send_by_template_to_all(request.user, template.content)
-    except APIException as e:
-        return send_message_failed_response(e)
-
-    return create_sms_sent_success_response(request.user)
+    def post(self, request: Request, template_id: int):
+        try:
+            info = sms_message_service.send_by_template_to_all(request.user, template_id)
+            sr = SMSPanelInfoSerializer(info)
+            return ok(sr.data)
+        except ApplicationErrorException as ex:
+            return bad_request(ex.http_message)
 
 
 @api_view(['POST'])

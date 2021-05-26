@@ -99,33 +99,24 @@ class SMSMessageService:
 
     def send_by_template(self,
                          user: Businessman, customer_ids: List[int],
-                         template: int,
-                         used_for=SMSMessage.USED_FOR_NONE, **kwargs) -> SMSPanelInfo:
+                         template: int) -> SMSPanelInfo:
+
         from customers.services import customer_service
         from panelprofile.services import sms_panel_info_service
         info = sms_panel_info_service.get_buinessman_sms_panel(user)
-        template = self._get_template_by_id(user, template)
+        template = self._get_template_by_id(user, template, "template")
         customers = customer_service.get_bsuinessman_customers_by_ids(user, customer_ids)
         if customers.count() == 0:
             raise ApplicationErrorCodes.get_field_error("customers", ApplicationErrorCodes.RECORD_NOT_FOUND)
-        sms = SMSMessage.objects.create(
-            message=template.content,
-            businessman=user,
-            message_type=SMSMessage.TYPE_TEMPLATE,
-            used_for=used_for, **kwargs)
-        SMSMessageReceivers.objects.bulk_create(
-            [SMSMessageReceivers(sms_message=sms, customer=c) for c in customers]
-        )
-        sms.set_reserved_credit_by_receivers()
+        self._send_by_template(user, customers, template.content, SMSMessage.USED_FOR_NONE)
         return info
 
-    def send_by_template_to_all(self, user: Businessman, template: str, used_for=SMSMessage.USED_FOR_NONE, **kwargs):
-        from customers.services import customer_service
-        sms = SMSMessage.objects.create(message=template, businessman=user, used_for=used_for,
-                                        message_type=SMSMessage.TYPE_TEMPLATE, **kwargs)
-        self.__set_receivers_for_sms_message(sms, customer_service.get_businessman_customers(user))
-
-        return sms
+    def send_by_template_to_all(self, user: Businessman, template: int) -> SMSPanelInfo:
+        from panelprofile.services import sms_panel_info_service
+        temp = self._get_template_by_id(user, template)
+        sms = self._send_by_template_to_all(user, temp.content, SMSMessage.USED_FOR_NONE)
+        info = sms_panel_info_service.get_buinessman_sms_panel(user)
+        return info
 
     def set_message_to_pending(self, sms_messsage: SMSMessage):
 
@@ -155,24 +146,24 @@ class SMSMessageService:
 
     def content_marketing_message_status_cancel(self, template: str, user: Businessman) -> SMSMessage:
 
-        return self.send_by_template_to_all(user, template, SMSMessage.USED_FOR_CONTENT_MARKETING,
-                                            status=SMSMessage.STATUS_CANCLE)
+        return self._send_by_template_to_all(user, template, SMSMessage.USED_FOR_CONTENT_MARKETING,
+                                             status=SMSMessage.STATUS_CANCLE)
 
     def set_content_marketing_message_to_pending(self, sms_message):
         return self.set_message_to_pending(sms_message)
 
     def festival_message_status_cancel(self, template: str, user: Businessman) -> SMSMessage:
-        return self.send_by_template_to_all(user, template, SMSMessage.USED_FOR_FESTIVAL,
-                                            status=SMSMessage.STATUS_CANCLE)
+        return self._send_by_template_to_all(user, template, SMSMessage.USED_FOR_FESTIVAL,
+                                             status=SMSMessage.STATUS_CANCLE)
 
     def friend_invitation_message(self, user: Businessman, template: str, customer):
-        return self.send_by_template(user, [customer], template, SMSMessage.USED_FOR_FRIEND_INVITATION)
+        return self._send_by_template(user, [customer], template, SMSMessage.USED_FOR_FRIEND_INVITATION)
 
     def send_welcome_message(self, user: Businessman, customer) -> SMSMessage:
         wm = self.get_welcome_message_or_create(user)
         if not user.has_sms_panel or not wm.send_message:
             return None
-        return self.send_by_template(user, [customer], wm.message, SMSMessage.USED_FOR_WELCOME_MESSAGE)
+        return self._send_by_template(user, [customer], wm.message, SMSMessage.USED_FOR_WELCOME_MESSAGE)
 
     def update_welcome_message(self, businessman: Businessman, message: str, send_message: bool) -> WelcomeMessage:
         w = self.get_welcome_message_or_create(businessman)
@@ -204,11 +195,42 @@ class SMSMessageService:
             return 0
         return r
 
-    def _get_template_by_id(self, user: Businessman, template: int) -> SMSTemplate:
+    def _get_template_by_id(self, user: Businessman, template: int, error_field_name: str = None) -> SMSTemplate:
         try:
             return SMSTemplate.objects.get(businessman=user, id=template)
         except ObjectDoesNotExist as ex:
-            raise ApplicationErrorCodes.get_field_error("template", ApplicationErrorCodes.RECORD_NOT_FOUND, ex)
+            if error_field_name is not None:
+                raise ApplicationErrorCodes.get_field_error(error_field_name, ApplicationErrorCodes.RECORD_NOT_FOUND,
+                                                            ex)
+            else:
+                raise ApplicationErrorCodes.get_exception(ApplicationErrorCodes.RECORD_NOT_FOUND, ex)
+
+    def _send_by_template_to_all(self, user: Businessman, template: str,
+                                 used_for=SMSMessage.USED_FOR_NONE,
+                                 **kwargs) -> SMSMessage:
+        from customers.services import customer_service
+        sms = SMSMessage.objects.create(message=template, businessman=user, used_for=used_for,
+                                        message_type=SMSMessage.TYPE_TEMPLATE, **kwargs)
+        self.__set_receivers_for_sms_message(sms, customer_service.get_businessman_customers(user))
+
+        return sms
+
+    def _send_by_template(self,
+                          user: Businessman,
+                          customers: QuerySet,
+                          template: str,
+                          used_for=SMSMessage.USED_FOR_NONE, **kwargs) -> SMSMessage:
+
+        sms = SMSMessage.objects.create(
+            message=template,
+            businessman=user,
+            message_type=SMSMessage.TYPE_TEMPLATE,
+            used_for=used_for, **kwargs)
+        SMSMessageReceivers.objects.bulk_create(
+            [SMSMessageReceivers(sms_message=sms, customer=c) for c in customers]
+        )
+        sms.set_reserved_credit_by_receivers()
+        return sms
 
 
 sms_message_service = SMSMessageService()

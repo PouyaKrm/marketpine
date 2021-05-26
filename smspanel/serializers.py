@@ -143,6 +143,7 @@ class SentSMSSerializer(serializers.ModelSerializer):
             'message'
         ]
 
+
 class SentSMSRetrieveForCustomer(serializers.ModelSerializer):
 
     rendered_content = serializers.SerializerMethodField(read_only=True)
@@ -162,9 +163,6 @@ class SentSMSRetrieveForCustomer(serializers.ModelSerializer):
             'id',
             'rendered_content',
         ]
-
-
-
 
 
 class SendPlainToGroup(serializers.Serializer):
