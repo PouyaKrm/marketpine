@@ -112,10 +112,7 @@ def send_plain_sms(request):
         return bad_request(e.http_message)
 
 
-@api_view(['POST'])
-@permission_classes(
-    [permissions.IsAuthenticated, IsPanelActivePermissionPostPutMethod, HasActiveSMSPanel, HasValidCreditSendSMSToAll])
-def send_plain_to_all(request):
+class SendPlainToAllAPIView(APIView):
     """
     sends a same message to all customers of a businessman.
     :return: If data is invalid, Response with status code 400, else if error
@@ -124,19 +121,24 @@ def send_plain_to_all(request):
      If operation was successful, Response with status code 204
     """
 
-    serializer = SendPlainSMSToAllSerializer(data=request.data, context={'user': request.user})
+    permission_classes = [permissions.IsAuthenticated, IsPanelActivePermissionPostPutMethod, HasActiveSMSPanel,
+                          HasValidCreditSendSMSToAll]
 
-    if not serializer.is_valid():
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    def post(self, request: Request):
+        serializer = SendPlainSMSToAllSerializer(data=request.data, context={'user': request.user})
 
-    try:
-        serializer.create(serializer.validated_data)
-    except APIException as e:
-        return send_message_failed_response(e)
-    except HTTPException:
-        return Response({'detail': 'خطا در ارسال پیام'}, status=status.HTTP_424_FAILED_DEPENDENCY)
+        if not serializer.is_valid():
+            return bad_request(serializer.errors)
 
-    return create_sms_sent_success_response(request.user)
+        try:
+            info = sms_message_service.send_plain_sms_to_all(
+                request.user,
+                serializer.validated_data.get('content')
+            )
+            sr = SMSPanelInfoSerializer(info)
+            return ok(sr.data)
+        except ApplicationErrorException as ex:
+            return bad_request(ex.http_message)
 
 
 @api_view(['POST'])

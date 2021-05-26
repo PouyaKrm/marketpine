@@ -86,13 +86,14 @@ class SMSMessageService:
 
     def send_plain_sms_to_all(self, user: Businessman, message: str):
         from customers.services import customer_service
+        from panelprofile.services import sms_panel_info_service
+        info = sms_panel_info_service.get_buinessman_sms_panel(user)
         sms = SMSMessage.objects.create(message=message, businessman=user, message_type=SMSMessage.TYPE_PLAIN)
         SMSMessageReceivers.objects.bulk_create(
             [SMSMessageReceivers(sms_message=sms, customer=c) for c in customer_service.get_businessman_customers(user).all()
              ])
         sms.set_reserved_credit_by_receivers()
-
-        return sms
+        return info
 
     def send_by_template(self, user: Businessman, receiver_customers: QuerySet, message_template: str,
                          used_for=SMSMessage.USED_FOR_NONE, **kwargs):

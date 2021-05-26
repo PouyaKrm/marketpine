@@ -5,7 +5,7 @@ urlpatterns = [
     path('templates/', views.SMSTemplateCreateListAPIView.as_view()),
     path('templates/<int:pk>/', views.SMSTemplateRetrieveAPIView.as_view()),
     path('send-sms/plain/', views.send_plain_sms),
-    path('send-sms/plain/to-all/', views.send_plain_to_all),
+    path('send-sms/plain/to-all/', views.SendPlainToAllAPIView.as_view()),
     path('send-sms/plain/to-group/<int:group_id>/', views.send_plain_sms_to_group),
     path('resend-sms/<int:sms_id>/', views.resend_failed_sms),
     path('send-sms/template/<int:template_id>/', views.send_sms_by_template),

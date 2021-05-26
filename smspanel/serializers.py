@@ -71,22 +71,8 @@ class SendSMSSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("طول پیام بیش از حئ مجاز است")
         return value
 
-
     def create(self, validated_data: dict):
-
-        user = self.context['user']
-
-        customers = validated_data.get('customers')
-
-        customers = user.customers.filter(id__in=customers).all()
-
-        content = validated_data.get('content')
-
-        messainger = SMSMessageService()
-
-        messainger.send_plain_sms(customers, user, content)
-
-        return validated_data
+        pass
 
 
 class SendPlainSMSToAllSerializer(serializers.Serializer):
