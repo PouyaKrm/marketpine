@@ -1,6 +1,9 @@
 from django.core.exceptions import ObjectDoesNotExist
 from django.db.models.aggregates import Sum
+from itypes import List
 
+from base_app.error_codes import ApplicationErrorCodes
+from panelprofile.models import SMSPanelInfo
 from users.models import Businessman
 from common.util.sms_panel.message import ClientBulkToCustomerSMSMessage, ClientBulkToAllToCustomerSMSMessage, \
     ClientSMSMessage, ClientToAllCustomersSMSMessage, BulkMessageWithAdditionalContext
@@ -9,6 +12,8 @@ from common.util.sms_panel.helpers import calculate_total_sms_cost
 from common.util.kavenegar_local import APIException
 from .models import UnsentTemplateSMS, SentSMS, UnsentPlainSMS, SMSMessage, SMSMessageReceivers, WelcomeMessage
 from django.db.models import QuerySet
+
+from typing import List
 
 from groups.models import BusinessmanGroups
 
@@ -63,21 +68,25 @@ class SMSMessageService:
         sms.save()
         sms.set_reserved_credit_by_receivers()
 
-    def send_plain_sms(self, customers: QuerySet, user: Businessman, message: str):
+    def send_plain_sms(self,  user: Businessman, customer_ids: List[int], message: str) -> SMSPanelInfo:
+        from panelprofile.services import sms_panel_info_service
+        from customers.services import customer_service
+        info = sms_panel_info_service.get_buinessman_sms_panel(user)
+        customers = customer_service.get_bsuinessman_customers_by_ids(user, customer_ids)
+        if customers.count() == 0:
+            raise ApplicationErrorCodes.get_exception(ApplicationErrorCodes.RECORD_NOT_FOUND)
         sms = SMSMessage.objects.create(message=message, businessman=user, message_type=SMSMessage.TYPE_PLAIN,
                                         status=SMSMessage.STATUS_PENDING)
         SMSMessageReceivers.objects.bulk_create(
-            [SMSMessageReceivers(sms_message=sms, customer=c) for c in customers.all()
+            [SMSMessageReceivers(sms_message=sms, customer=c) for c in customers
              ])
         sms.save()
         sms.set_reserved_credit_by_receivers()
-
-        return sms
+        return info
 
     def send_plain_sms_to_all(self, user: Businessman, message: str):
         from customers.services import customer_service
         sms = SMSMessage.objects.create(message=message, businessman=user, message_type=SMSMessage.TYPE_PLAIN)
-        # SMSMessageReceivers.objects.create(sms_message=sms, customer=user.customers.all())
         SMSMessageReceivers.objects.bulk_create(
             [SMSMessageReceivers(sms_message=sms, customer=c) for c in customer_service.get_businessman_customers(user).all()
              ])

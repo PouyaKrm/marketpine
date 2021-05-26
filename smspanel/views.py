@@ -5,6 +5,7 @@ from django.urls import reverse
 from rest_framework.generics import ListAPIView
 from rest_framework.views import APIView
 
+from base_app.error_codes import ApplicationErrorException
 from base_app.views import BaseListAPIView
 from common.util import create_link
 from common.util.http_helpers import ok, bad_request
@@ -15,6 +16,8 @@ from rest_framework import generics, mixins, permissions, status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.request import Request
 from rest_framework.response import Response
+
+from panelprofile.serializers import SMSPanelInfoSerializer
 from users.models import Customer, Businessman
 from users.permissions import IsPanelActivePermissionPostPutMethod
 from .serializers import SMSTemplateSerializer, SendSMSSerializer, SentSMSRetrieveForCustomer, \
@@ -95,16 +98,18 @@ def send_plain_sms(request):
     serializer = SendSMSSerializer(data=request.data, context={'user': request.user})
 
     if not serializer.is_valid():
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        return bad_request(serializer.errors)
 
     try:
-        serializer.create(serializer.validated_data)
-    except APIException as e:
-        return send_message_failed_response(e)
-    except HTTPException:
-        return Response({'detail': 'خطا در ارسال پیام'}, status=status.HTTP_424_FAILED_DEPENDENCY)
-
-    return create_sms_sent_success_response(request.user)
+        info = sms_message_service.send_plain_sms(
+            request.user,
+            serializer.validated_data.get('customers'),
+            serializer.validated_data.get('content')
+        )
+        sr = SMSPanelInfoSerializer(info)
+        return ok(sr.data)
+    except ApplicationErrorException as e:
+        return bad_request(e.http_message)
 
 
 @api_view(['POST'])
@@ -136,7 +141,8 @@ def send_plain_to_all(request):
 
 @api_view(['POST'])
 @permission_classes(
-    [permissions.IsAuthenticated, IsPanelActivePermissionPostPutMethod, HasActiveSMSPanel, HasValidCreditSendSMSToInviduals])
+    [permissions.IsAuthenticated, IsPanelActivePermissionPostPutMethod, HasActiveSMSPanel,
+     HasValidCreditSendSMSToInviduals])
 def send_sms_by_template(request, template_id):
     """
     sends message to specific number of cutomers of a businessman using a tmplate that it's id 
@@ -313,7 +319,6 @@ def resend_template_sms(request: Request, unsent_sms_id):
 
 
 class SentSMSRetrieveAPIView(BaseListAPIView):
-
     permission_classes = [permissions.IsAuthenticated, HasActiveSMSPanel]
     serializer_class = SentSMSSerializer
 

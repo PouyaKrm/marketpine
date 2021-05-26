@@ -3,6 +3,7 @@ from rest_framework import serializers
 
 from base_app.serializers import BaseModelSerializerWithRequestObj
 from common.util.custom_validators import sms_not_contains_link
+from customers.serializers import CustomerReadIdListRepresentRelatedField
 from .models import SMSTemplate, SentSMS, UnsentPlainSMS, UnsentTemplateSMS, SMSMessage, WelcomeMessage
 from common.util.custom_templates import render_template, get_fake_context, render_template_with_customer_data
 from .services import SMSMessageService
@@ -48,13 +49,10 @@ class SMSTemplateSerializer(serializers.ModelSerializer):
 
 class SendSMSSerializer(serializers.ModelSerializer):
 
-    content = serializers.CharField(required=True)
-
+    content = serializers.CharField(required=True, validators=[sms_not_contains_link])
     customers = serializers.ListField(child=serializers.IntegerField(min_value=1), required=True, min_length=1)
 
-
     class Meta:
-
         model = SentSMS
         fields = [
             'content',
@@ -98,7 +96,7 @@ class SendPlainSMSToAllSerializer(serializers.Serializer):
     information from kavehnegar api
     """
 
-    content = serializers.CharField(required=True)
+    content = serializers.CharField(required=True, validators=[sms_not_contains_link])
 
     class Meta:
         fields = [
@@ -119,22 +117,7 @@ class SendPlainSMSToAllSerializer(serializers.Serializer):
         return value
 
     def create(self, validated_data: dict):
-
-        """
-        send message to customers and saves message_id that is retrieved from kavehnegar api
-        :raises APIException if kavehnegar api does not accept the send of the message
-        :raises HTTPException if an error occur during http request
-        :returns content
-        """
-
-        user = self.context['user']
-        content = validated_data.get('content')
-
-        messanger = SMSMessageService()
-
-        messanger.send_plain_sms_to_all(user, content)
-        
-        return validated_data
+        pass
 
 
 class SendByTemplateSerializer(serializers.Serializer):
