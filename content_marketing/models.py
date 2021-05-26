@@ -11,7 +11,7 @@ from django.dispatch import receiver
 from common.util import get_file_extension, generate_url_safe_base64_file_name
 from common.util.kavenegar_local import APIException, HTTPException
 from smspanel.models import SMSMessage
-from smspanel.services import SendSMSMessage, sms_message_service
+from smspanel.services import SMSMessageService, sms_message_service
 from users.models import Businessman, Customer, BaseModel, BusinessmanManyToOneBaseModel
 
 from common.util.sms_panel.message import SystemSMSMessage, system_sms_message

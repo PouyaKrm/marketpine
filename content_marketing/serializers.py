@@ -11,7 +11,7 @@ from common.util.custom_validators import sms_not_contains_link
 from customers.services import customer_service
 from panelprofile.services import sms_panel_info_service
 from smspanel.models import SMSMessage, SMSMessageReceivers
-from smspanel.services import SendSMSMessage
+from smspanel.services import SMSMessageService
 from .models import Post, Comment, Like, ContentMarketingSettings
 from common.util.custom_templates import get_fake_context, render_template, get_template_context
 from django.conf import settings

@@ -2,7 +2,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.utils import timezone
 
 from customer_return_plan.festivals.models import Festival
-from smspanel.services import SendSMSMessage
+from smspanel.services import SMSMessageService
 from users.models import Businessman, Customer
 
 
@@ -47,7 +47,7 @@ class FestivalService:
         if festival.message_sent or festival.is_expired():
             return True, False
 
-        SendSMSMessage().set_message_to_pending(festival.sms_message)
+        SMSMessageService().set_message_to_pending(festival.sms_message)
         festival.message_sent = True
         festival.save()
 

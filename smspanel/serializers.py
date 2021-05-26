@@ -5,7 +5,7 @@ from base_app.serializers import BaseModelSerializerWithRequestObj
 from common.util.custom_validators import sms_not_contains_link
 from .models import SMSTemplate, SentSMS, UnsentPlainSMS, UnsentTemplateSMS, SMSMessage, WelcomeMessage
 from common.util.custom_templates import render_template, get_fake_context, render_template_with_customer_data
-from .services import SendSMSMessage
+from .services import SMSMessageService
 from django.conf import settings
 
 persian_max_chars = settings.SMS_PANEL['PERSIAN_MAX_CHARS']
@@ -84,7 +84,7 @@ class SendSMSSerializer(serializers.ModelSerializer):
 
         content = validated_data.get('content')
 
-        messainger = SendSMSMessage()
+        messainger = SMSMessageService()
 
         messainger.send_plain_sms(customers, user, content)
 
@@ -130,7 +130,7 @@ class SendPlainSMSToAllSerializer(serializers.Serializer):
         user = self.context['user']
         content = validated_data.get('content')
 
-        messanger = SendSMSMessage()
+        messanger = SMSMessageService()
 
         messanger.send_plain_sms_to_all(user, content)
         
@@ -170,7 +170,7 @@ class SendByTemplateSerializer(serializers.Serializer):
         customers = user.customers.filter(id__in=validated_data.get('customers')).all()
         template = self.context['template']
 
-        messanger = SendSMSMessage()
+        messanger = SMSMessageService()
 
         messanger.send_by_template(user, customers, template.content)
         
@@ -231,7 +231,7 @@ class SendPlainToGroup(serializers.Serializer):
         group = self.context['group']
         message = validate_data.get('content')
 
-        messanger = SendSMSMessage()
+        messanger = SMSMessageService()
         messanger.send_plain_sms(group.customers.all(), user, message)
 
         return validate_data

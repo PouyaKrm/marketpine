@@ -11,7 +11,7 @@ from base_app.views import BaseListAPIView
 from common.util.http_helpers import ok, bad_request, not_found, forbidden, no_content
 from customer_return_plan.festivals.permissions import CanDeleteOrUpdateFestival
 from customer_return_plan.festivals.services import FestivalService
-from smspanel.services import SendSMSMessage
+from smspanel.services import SMSMessageService
 from users.models import Customer
 from users.permissions import IsPanelActivePermissionPostPutMethod
 from .models import Festival

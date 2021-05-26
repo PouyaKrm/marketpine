@@ -7,7 +7,7 @@ from common.util import generate_discount_code, DiscountType
 from customer_return_plan.festivals.services import FestivalService
 from customer_return_plan.services import DiscountService
 from customers.services import customer_service
-from smspanel.services import SendSMSMessage
+from smspanel.services import SMSMessageService
 from users.models import Customer
 from .models import Festival
 from common.util.custom_validators import phone_validator, sms_not_contains_link
@@ -115,7 +115,7 @@ class FestivalCreationSerializer(BaseFestivalSerializer):
         message = validated_data.pop('message')
         discount_data = validated_data.pop('discount')
         festival = Festival.objects.create(businessman=user, **validated_data)
-        festival.sms_message = SendSMSMessage().festival_message_status_cancel(message, user)
+        festival.sms_message = SMSMessageService().festival_message_status_cancel(message, user)
         festival.discount = discount_service.create_festival_discount(user=user,
                                                                       expires=True,
                                                                       expire_date=festival.end_date,
@@ -194,7 +194,7 @@ class RetrieveFestivalSerializer(NestedUpdateMixin, BaseFestivalSerializer):
         for key, val in validated_data.items():
             setattr(instance, key, val)
 
-        SendSMSMessage().update_not_pending_message_text(instance.sms_message, message)
+        SMSMessageService().update_not_pending_message_text(instance.sms_message, message)
 
         discount_service.update_discount(discount=instance.discount, expires=True, expire_date=instance.end_date,
                                          user=instance.businessman, **discount_data)

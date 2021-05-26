@@ -38,7 +38,7 @@ def send_template_sms_message_to_all(user: Businessman, template: str):
             raise APIException(e.status, e.message)
 
 
-class SendSMSMessage:
+class SMSMessageService:
 
     def create_unsent_plain_sms(self, ex: SendSMSException, content: str, user: Businessman, receptors: QuerySet):
 
@@ -75,10 +75,11 @@ class SendSMSMessage:
         return sms
 
     def send_plain_sms_to_all(self, user: Businessman, message: str):
+        from customers.services import customer_service
         sms = SMSMessage.objects.create(message=message, businessman=user, message_type=SMSMessage.TYPE_PLAIN)
         # SMSMessageReceivers.objects.create(sms_message=sms, customer=user.customers.all())
         SMSMessageReceivers.objects.bulk_create(
-            [SMSMessageReceivers(sms_message=sms, customer=c) for c in user.customers.all()
+            [SMSMessageReceivers(sms_message=sms, customer=c) for c in customer_service.get_businessman_customers(user).all()
              ])
         sms.set_reserved_credit_by_receivers()
 
@@ -96,9 +97,10 @@ class SendSMSMessage:
         return sms
 
     def send_by_template_to_all(self, user: Businessman, template: str, used_for=SMSMessage.USED_FOR_NONE, **kwargs):
+        from customers.services import customer_service
         sms = SMSMessage.objects.create(message=template, businessman=user, used_for=used_for,
                                         message_type=SMSMessage.TYPE_TEMPLATE, **kwargs)
-        self.__set_receivers_for_sms_message(sms, user.customers.all())
+        self.__set_receivers_for_sms_message(sms, customer_service.get_businessman_customers(user))
 
         return sms
 
@@ -180,4 +182,4 @@ class SendSMSMessage:
         return r
 
 
-sms_message_service = SendSMSMessage()
+sms_message_service = SMSMessageService()

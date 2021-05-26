@@ -7,10 +7,8 @@ from rest_framework.views import APIView
 
 from base_app.views import BaseListAPIView
 from common.util import create_link
-from common.util.http_helpers import ok, get_query_param_or_default, bad_request
-from common.util.paginators import create_pagination_response, create_pagination_response_body
+from common.util.http_helpers import ok, bad_request
 from common.util.kavenegar_local import APIException, HTTPException
-from common.util.sms_panel.message import retrive_sent_messages
 from common.util import paginators as custom_paginator
 
 from rest_framework import generics, mixins, permissions, status
@@ -31,7 +29,7 @@ from .serializers import SMSTemplateSerializer, SendSMSSerializer, SentSMSRetrie
 from .models import SMSTemplate, SentSMS
 from common.util import paginators, jalali
 
-from .services import send_template_sms_message_to_all, SendSMSMessage, sms_message_service
+from .services import send_template_sms_message_to_all, SMSMessageService, sms_message_service
 
 from common.util.sms_panel.message import ClientBulkToAllToCustomerSMSMessage
 
@@ -179,7 +177,7 @@ def send_sms_by_template_to_all(request, template_id):
     except ObjectDoesNotExist:
         return Response({'detail': ' قالب مورد نظر وجود ندارد'}, status=status.HTTP_404_NOT_FOUND)
 
-    messainger = SendSMSMessage()
+    messainger = SMSMessageService()
 
     try:
         messainger.send_by_template_to_all(request.user, template.content)
@@ -231,7 +229,7 @@ def send_template_sms_to_group(request: Request, template_id, group_id):
     except ObjectDoesNotExist:
         return Response({'detail': ' قالب مورد نظر وجود ندارد'}, status=status.HTTP_404_NOT_FOUND)
 
-    messagger = SendSMSMessage()
+    messagger = SMSMessageService()
 
     try:
         messagger.send_by_template(request.user, group.customers.all(), template.content)
@@ -283,7 +281,7 @@ def resend_plain_sms(request: Request, unsent_sms_id):
     except ObjectDoesNotExist:
         return Response({'detail': 'unsent sms with provided id does not exist'}, status=status.HTTP_404_NOT_FOUND)
 
-    messainger = SendSMSMessage()
+    messainger = SMSMessageService()
 
     try:
         messainger.set_message_to_pending(request.user, unsent_plain_sms)
@@ -304,7 +302,7 @@ def resend_template_sms(request: Request, unsent_sms_id):
     except ObjectDoesNotExist:
         return Response({'detail': 'unsent sms with provided id does not exist'}, status=status.HTTP_404_NOT_FOUND)
 
-    messainger = SendSMSMessage()
+    messainger = SMSMessageService()
 
     try:
         messainger.resend_unsent_template_sms(request.user, unsent_template_sms)

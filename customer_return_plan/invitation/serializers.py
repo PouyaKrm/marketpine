@@ -7,7 +7,7 @@ from customers.serializers import CustomerListCreateSerializer, CustomerSerializ
 from customer_return_plan.invitation.models import FriendInvitation, FriendInvitationSettings
 from common.util import common_serializers, DiscountType, generate_discount_code, create_field_error
 from customers.services import customer_service
-from smspanel.services import SendSMSMessage
+from smspanel.services import SMSMessageService
 from users.models import Customer, Businessman
 
 from django.conf import settings
@@ -75,7 +75,7 @@ class BaseFriendInvitationSerializer(serializers.Serializer):
         invitation.inviter_discount = inviter_discount
         invitation.invited_discount = invited_discount
 
-        sms = SendSMSMessage().friend_invitation_message(user, settings.sms_template, invited_customer)
+        sms = SMSMessageService().friend_invitation_message(user, settings.sms_template, invited_customer)
         invitation.sms_message = sms
         invitation.save()
         return {'id': invitation.id, 'businessman': user.username, 'inviter': invitation.inviter.phone,
@@ -155,7 +155,7 @@ class FriendInvitationCreationSerializer(serializers.Serializer):
         invitation.inviter_discount = inviter_discount
         invitation.invited_discount = invited_discount
 
-        sms = SendSMSMessage().friend_invitation_message(user, settings.sms_template, invited_customer)
+        sms = SMSMessageService().friend_invitation_message(user, settings.sms_template, invited_customer)
         invitation.sms_message = sms
         invitation.save()
         return {'id': invitation.id, 'businessman': user.username, 'inviter': invitation.inviter.phone,
