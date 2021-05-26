@@ -10,7 +10,8 @@ from common.util.sms_panel.message import ClientBulkToCustomerSMSMessage, Client
 from common.util.sms_panel.exceptions import SendSMSException
 from common.util.sms_panel.helpers import calculate_total_sms_cost
 from common.util.kavenegar_local import APIException
-from .models import UnsentTemplateSMS, SentSMS, UnsentPlainSMS, SMSMessage, SMSMessageReceivers, WelcomeMessage
+from .models import UnsentTemplateSMS, SentSMS, UnsentPlainSMS, SMSMessage, SMSMessageReceivers, WelcomeMessage, \
+    SMSTemplate
 from django.db.models import QuerySet
 
 from typing import List
@@ -68,7 +69,7 @@ class SMSMessageService:
         sms.save()
         sms.set_reserved_credit_by_receivers()
 
-    def send_plain_sms(self,  user: Businessman, customer_ids: List[int], message: str) -> SMSPanelInfo:
+    def send_plain_sms(self, user: Businessman, customer_ids: List[int], message: str) -> SMSPanelInfo:
         from panelprofile.services import sms_panel_info_service
         from customers.services import customer_service
         info = sms_panel_info_service.get_buinessman_sms_panel(user)
@@ -90,21 +91,33 @@ class SMSMessageService:
         info = sms_panel_info_service.get_buinessman_sms_panel(user)
         sms = SMSMessage.objects.create(message=message, businessman=user, message_type=SMSMessage.TYPE_PLAIN)
         SMSMessageReceivers.objects.bulk_create(
-            [SMSMessageReceivers(sms_message=sms, customer=c) for c in customer_service.get_businessman_customers(user).all()
+            [SMSMessageReceivers(sms_message=sms, customer=c) for c in
+             customer_service.get_businessman_customers(user).all()
              ])
         sms.set_reserved_credit_by_receivers()
         return info
 
-    def send_by_template(self, user: Businessman, receiver_customers: QuerySet, message_template: str,
-                         used_for=SMSMessage.USED_FOR_NONE, **kwargs):
-        sms = SMSMessage.objects.create(message=message_template, businessman=user,
-                                        message_type=SMSMessage.TYPE_TEMPLATE, used_for=used_for, **kwargs)
+    def send_by_template(self,
+                         user: Businessman, customer_ids: List[int],
+                         template: int,
+                         used_for=SMSMessage.USED_FOR_NONE, **kwargs) -> SMSPanelInfo:
+        from customers.services import customer_service
+        from panelprofile.services import sms_panel_info_service
+        info = sms_panel_info_service.get_buinessman_sms_panel(user)
+        template = self._get_template_by_id(user, template)
+        customers = customer_service.get_bsuinessman_customers_by_ids(user, customer_ids)
+        if customers.count() == 0:
+            raise ApplicationErrorCodes.get_field_error("customers", ApplicationErrorCodes.RECORD_NOT_FOUND)
+        sms = SMSMessage.objects.create(
+            message=template.content,
+            businessman=user,
+            message_type=SMSMessage.TYPE_TEMPLATE,
+            used_for=used_for, **kwargs)
         SMSMessageReceivers.objects.bulk_create(
-            [SMSMessageReceivers(sms_message=sms, customer=c) for c in receiver_customers]
+            [SMSMessageReceivers(sms_message=sms, customer=c) for c in customers]
         )
         sms.set_reserved_credit_by_receivers()
-
-        return sms
+        return info
 
     def send_by_template_to_all(self, user: Businessman, template: str, used_for=SMSMessage.USED_FOR_NONE, **kwargs):
         from customers.services import customer_service
@@ -190,6 +203,12 @@ class SMSMessageService:
         if r is None:
             return 0
         return r
+
+    def _get_template_by_id(self, user: Businessman, template: int) -> SMSTemplate:
+        try:
+            return SMSTemplate.objects.get(businessman=user, id=template)
+        except ObjectDoesNotExist as ex:
+            raise ApplicationErrorCodes.get_field_error("template", ApplicationErrorCodes.RECORD_NOT_FOUND, ex)
 
 
 sms_message_service = SMSMessageService()

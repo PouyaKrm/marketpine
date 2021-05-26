@@ -141,35 +141,25 @@ class SendPlainToAllAPIView(APIView):
             return bad_request(ex.http_message)
 
 
-@api_view(['POST'])
-@permission_classes(
-    [permissions.IsAuthenticated, IsPanelActivePermissionPostPutMethod, HasActiveSMSPanel,
-     HasValidCreditSendSMSToInviduals])
-def send_sms_by_template(request, template_id):
-    """
-    sends message to specific number of cutomers of a businessman using a tmplate that it's id 
-    is specified as a path variable.
-    """
+class SendByTemplateAPIView(APIView):
+    permission_classes = [permissions.IsAuthenticated, IsPanelActivePermissionPostPutMethod, HasActiveSMSPanel,
+                          HasValidCreditSendSMSToInviduals]
 
-    try:
-        template = SMSTemplate.objects.get(businessman=request.user, id=template_id)
+    def post(self, request):
+        serializer = SendByTemplateSerializer(data=request.data, context={'user': request.user})
+        if not serializer.is_valid():
+            return bad_request(serializer.errors)
 
-    except ObjectDoesNotExist:
-        return Response(status=status.HTTP_404_NOT_FOUND)
-
-    serializer = SendByTemplateSerializer(data=request.data, context={'user': request.user, 'template': template})
-
-    if not serializer.is_valid():
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-    try:
-        serializer.create(serializer.validated_data)
-    except APIException as e:
-        return send_message_failed_response(e)
-    except HTTPException as e:
-        return Response({'detail': 'خطا درپردازش اطلاعات'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-    return create_sms_sent_success_response(request.user)
+        try:
+            info = sms_message_service.send_by_template(
+                request.user,
+                serializer.validated_data.get('customers'),
+                serializer.validated_data.get('template')
+            )
+            sr = SMSPanelInfoSerializer(info)
+            return ok(sr.data)
+        except ApplicationErrorException as ex:
+            return bad_request(ex.http_message)
 
 
 @api_view(['POST'])

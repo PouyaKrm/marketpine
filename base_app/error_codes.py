@@ -26,3 +26,8 @@ class ApplicationErrorCodes:
     @staticmethod
     def get_exception(code: dict, original_exception: Exception = None) -> ApplicationErrorException:
         return ApplicationErrorException(code, original_exception)
+
+    @staticmethod
+    def get_field_error(field_name, error_code: dict, original_exception: Exception = None) -> ApplicationErrorException:
+        message = {field_name: error_code['message']}
+        return ApplicationErrorException(message, original_exception)

@@ -111,11 +111,12 @@ class SendByTemplateSerializer(serializers.Serializer):
     """
     sends sms message to specific number ofcustomers and creates their records in the database.
     """
-
+    template = serializers.IntegerField(min_value=1)
     customers = serializers.ListField(child=serializers.IntegerField(min_value=1), min_length=1, required=True)
 
     class Meta:
         fields = [
+            "template",
             'customers'
         ]
 
@@ -127,24 +128,7 @@ class SendByTemplateSerializer(serializers.Serializer):
         return value
     
     def create(self, validated_data: dict):
-
-        """
-        sends sms message by a template and creates records of sent messages in the database.
-        :raises APIException if kavehnegar api does not accept the send of the message
-        :raises HTTPException if an error occur during http request
-        :return: customers
-        """
-
-        user = self.context['user']
-        customers = user.customers.filter(id__in=validated_data.get('customers')).all()
-        template = self.context['template']
-
-        messanger = SMSMessageService()
-
-        messanger.send_by_template(user, customers, template.content)
-        
-        return validated_data
-
+        pass
 
 
 class SentSMSSerializer(serializers.ModelSerializer):
