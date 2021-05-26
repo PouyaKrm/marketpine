@@ -34,7 +34,7 @@ class BusinessmanGroups(BusinessmanManyToOneBaseModel):
         self.customers.set(customers)
 
     def get_all_customers(self):
-        return self.customers.filter(businessmans=self.businessman).order_by('-membership__create_date').all()
+        return self.customers.filter(businessmans=self.businessman, connected_businessmans__is_deleted=False).order_by('-membership__create_date').all()
 
     def customers_total(self):
         return self.get_all_customers().count()
