@@ -14,7 +14,6 @@ class CustomerService:
 
     def customer_exists_by_id(self, user: Businessman, customer_id: int) -> bool:
         return BusinessmanCustomer.objects.filter(businessman=user, customer__id=customer_id, is_deleted=False).exists()
-        # return Customer.objects.filter(businessman=user, id=customer_id).exists()
 
     def get_customer(self, user: Businessman, phone: str) -> Customer:
         return Customer.objects.get(businessman=user, phone=phone)
