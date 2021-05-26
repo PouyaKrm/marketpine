@@ -2,6 +2,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import QuerySet
 from rest_framework.generics import get_object_or_404
 
+from base_app.error_codes import ApplicationErrorCodes
 from smspanel.services import sms_message_service
 from users.models import Customer, Businessman, BusinessmanCustomer
 
@@ -9,10 +10,11 @@ from users.models import Customer, Businessman, BusinessmanCustomer
 class CustomerService:
 
     def customer_exists(self, user: Businessman, phone: str) -> bool:
-        return Customer.objects.filter(businessmans=user, phone=phone).exists()
+        return BusinessmanCustomer.objects.filter(customer=user, customer__phone=phone, is_deleted=False).exists()
 
     def customer_exists_by_id(self, user: Businessman, customer_id: int) -> bool:
-        return Customer.objects.filter(businessman=user, id=customer_id).exists()
+        return BusinessmanCustomer.objects.filter(businessman=user, customer__id=customer_id, is_deleted=False).exists()
+        # return Customer.objects.filter(businessman=user, id=customer_id).exists()
 
     def get_customer(self, user: Businessman, phone: str) -> Customer:
         return Customer.objects.get(businessman=user, phone=phone)
@@ -20,32 +22,43 @@ class CustomerService:
     def get_customer_by_id(self, customer_id: int) -> Customer:
         return Customer.objects.get(id=customer_id)
 
-    def get_businessman_customer_by_id(self, user: Businessman, customer_id: int):
-        return user.customers.get(id=customer_id)
-
-    def get_customer_by_id_or_404(self, user: Businessman, customer_id: int):
-        return get_object_or_404(Customer, businessmans=user, id=customer_id)
+    def get_businessman_customer_by_id(self, user: Businessman, customer_id: int) -> Customer:
+        try:
+            bc = BusinessmanCustomer.objects.get(businessman=user, customer__id=customer_id, is_deleted=False)
+            return bc.customer
+        except ObjectDoesNotExist as ex:
+            raise ApplicationErrorCodes.get_exception(ApplicationErrorCodes.RECORD_NOT_FOUND, ex)
 
     def get_businessman_customers(self, user: Businessman):
-        return Customer.objects.filter(businessmans=user).order_by('-date_joined').all()
+        return Customer.objects.filter(businessmans=user, connected_businessmans__is_deleted=False).order_by('-date_joined').all()
 
     def get_bsuinessman_customers_by_ids(self, user: Businessman, customer_ids: [int]):
-        return Customer.objects.filter(businessmans=user, id__in=customer_ids).all()
+        return Customer.objects.filter(businessmans=user, id__in=customer_ids, connected_businessmans__is_deleted=False).all()
 
     def get_customer_by_phone(self, phone: str) -> Customer:
         return Customer.objects.get(phone=phone)
 
     def get_customer_by_businessman_and_phone(self, businessman: Businessman, phone: str) -> Customer:
-        return businessman.customers.get(phone=phone)
+        try:
+            bc = BusinessmanCustomer.objects.get(businessman=businessman, customer__phone=phone, is_deleted=False)
+            return bc.customer
+        except ObjectDoesNotExist as ex:
+            raise ApplicationErrorCodes.get_exception(ApplicationErrorCodes.RECORD_NOT_FOUND, ex)
 
-    def add_customer(self, businessman: Businessman, phone: str, full_name='', groups: list = None) -> Customer:
+    def add_customer(self, businessman: Businessman, phone: str, full_name='', groups: list = None, joined_by=BusinessmanCustomer.JOINED_BY_PANEL) -> Customer:
+        self._check_is_phone_number_unique_for_register(businessman, phone)
         c = None
         try:
             c = Customer.objects.get(phone=phone)
-            BusinessmanCustomer.objects.create(customer=c, businessman=businessman)
+            bc = self._get_businessman_customer_relation(businessman, c)
+            if bc is not None and bc.is_deleted:
+                bc.is_deleted = False
+                bc.save()
+            else:
+                BusinessmanCustomer.objects.create(customer=c, businessman=businessman, joined_by=joined_by)
         except ObjectDoesNotExist:
             c = Customer.objects.create(phone=phone, full_name=full_name)
-            BusinessmanCustomer.objects.create(customer=c, businessman=businessman)
+            BusinessmanCustomer.objects.create(customer=c, businessman=businessman, joined_by=joined_by)
         finally:
             sms_message_service.send_welcome_message(businessman, c)
             if groups is not None:
@@ -61,16 +74,22 @@ class CustomerService:
         return BusinessmanCustomer.objects.get(customer=customer, businessman=businessman).create_date
 
     def is_phone_number_unique_for_register(self, businessman: Businessman, phone: str) -> bool:
-        return not businessman.customers.filter(phone=phone).exists()
+        return not businessman.customers.filter(phone=phone, connected_businessmans__is_deleted=False).exists()
 
     def is_phone_number_unique(self, phone: str) -> bool:
         return Customer.objects.filter(phone=phone).exists()
 
-    def delete_customer_for_businessman(self, businessman: Businessman, customer_id):
-        BusinessmanCustomer.objects.filter(businessman=businessman, customer__id=customer_id).delete()
+    def delete_customer_for_businessman(self, businessman: Businessman, customer_id) -> Customer:
+        try:
+            bc = BusinessmanCustomer.objects.get(businessman=businessman, customer__id=customer_id, is_deleted=False)
+            bc.is_deleted = True
+            bc.save()
+            return bc.customer
+        except ObjectDoesNotExist:
+            raise ApplicationErrorCodes.get_exception(ApplicationErrorCodes.RECORD_NOT_FOUND)
 
     def get_businessmans_of_customer(self, c: Customer) -> QuerySet:
-        return c.businessmans.all()
+        return c.businessmans.filter(connected_customers__is_deleted=False).all()
 
     def can_edit_phone(self, user: Businessman, c: Customer, phone: str) -> bool:
         can_edit_phone = self._can_edit_phone_number_value(user, c, phone)
@@ -78,6 +97,8 @@ class CustomerService:
         return not c.is_phone_confirmed and (can_edit_phone or can_change)
 
     def edit_customer_phone(self, user: Businessman, c: Customer, phone: str) -> Customer:
+        if phone is None or not customer_service.can_edit_phone(user, c, phone):
+            return c
 
         if c.is_phone_confirmed:
             return c
@@ -104,6 +125,12 @@ class CustomerService:
         c.full_name = full_name
         c.save()
         return c
+
+    def edit_customer_phone_full_name(self, user: Businessman, customer_id: int, phone: str = None, full_name: str = None) -> Customer:
+        customer = self.get_businessman_customer_by_id(user, customer_id)
+        self.edit_customer_phone(user, customer, phone)
+        self.edit_full_name(user, customer, full_name)
+        return customer
 
     def can_edit_full_name(self, user: Businessman, c: Customer) -> bool:
         return not BusinessmanCustomer.objects.exclude(businessman=user).filter(customer=c).exists()
@@ -135,7 +162,6 @@ class CustomerService:
         BusinessmanGroups.reset_customer_groups(user, customer, groups)
         return customer
 
-
     def get_customer_by_phone_or_create(self, phone) -> Customer:
         try:
             return customer_service.get_customer_by_phone(phone)
@@ -143,5 +169,17 @@ class CustomerService:
             return Customer.objects.create(phone=phone)
 
 
+    def _check_is_phone_number_unique_for_register(self, user: Businessman, phone: str):
+        is_unique = self.is_phone_number_unique_for_register(user, phone)
+        if not is_unique:
+            raise ApplicationErrorCodes.get_exception(ApplicationErrorCodes.PHONE_NUMBER_IS_NOT_UNIQUE)
+
+    def _get_businessman_customer_relation(self, user: Businessman, customer: Customer) -> BusinessmanCustomer:
+        try:
+            return BusinessmanCustomer.objects.get(businessman=user, customer=customer)
+        except ObjectDoesNotExist:
+            return None
+
 
 customer_service = CustomerService()
+
