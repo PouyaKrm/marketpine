@@ -1,10 +1,11 @@
-from django.urls import path, re_path
+from django.urls import path
+
 from . import views
 
 urlpatterns = [
     path('templates/', views.SMSTemplateCreateListAPIView.as_view()),
     path('templates/<int:pk>/', views.SMSTemplateRetrieveAPIView.as_view()),
-    path('send-sms/plain/', views.send_plain_sms),
+    path('send-sms/plain/', views.SendPlainSms.as_view()),
     path('send-sms/plain/to-all/', views.SendPlainToAllAPIView.as_view()),
     path('send-sms/plain/to-group/<int:group_id>/', views.SendPlainSmsToGroup.as_view()),
     path('resend-sms/<int:sms_id>/', views.ResendFailedSms),

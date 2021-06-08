@@ -1,40 +1,23 @@
-from django.core.exceptions import ObjectDoesNotExist
-from django.core.paginator import Paginator
 from django.conf import settings
-from django.urls import reverse
-from rest_framework.generics import ListAPIView
+from rest_framework import generics, mixins, permissions, status
+from rest_framework.request import Request
+from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from base_app.error_codes import ApplicationErrorException
 from base_app.views import BaseListAPIView
-from common.util import create_link
 from common.util.http_helpers import ok, bad_request
-from common.util.kavenegar_local import APIException, HTTPException
-from common.util import paginators as custom_paginator
-
-from rest_framework import generics, mixins, permissions, status
-from rest_framework.decorators import api_view, permission_classes
-from rest_framework.request import Request
-from rest_framework.response import Response
-
+from common.util.kavenegar_local import APIException
 from panelprofile.serializers import SMSPanelInfoSerializer
-from users.models import Customer, Businessman
+from users.models import Businessman
 from users.permissions import IsPanelActivePermissionPostPutMethod
-from .serializers import SMSTemplateSerializer, SendSMSSerializer, SentSMSRetrieveForCustomer, \
-    SendPlainSMSToAllSerializer, SendByTemplateSerializer, SendPlainToGroup, UnsentPlainSMSListSerializer, \
-    UnsentTemplateSMSListSerializer, SMSMessageListSerializer, WelcomeMessageSerializer, SentSMSSerializer
-from .models import SMSTemplate, SentSMS, SMSMessage
+from .models import SMSTemplate
 from .permissions import HasValidCreditSendSMSToInviduals, HasValidCreditSendSMSToAll, HasValidCreditResendFailedSMS, \
-    HasValidCreditResendTemplateSMS, HasValidCreditSendSMSToGroup, HasActiveSMSPanel
-from .serializers import SMSTemplateSerializer, SendSMSSerializer, SentSMSRetrieveForCustomer, \
-    SendPlainSMSToAllSerializer, SendByTemplateSerializer, SendPlainToGroup, UnsentPlainSMSListSerializer, \
-    UnsentTemplateSMSListSerializer
-from .models import SMSTemplate, SentSMS
-from common.util import paginators, jalali
-
-from .services import send_template_sms_message_to_all, SMSMessageService, sms_message_service
-
-from common.util.sms_panel.message import ClientBulkToAllToCustomerSMSMessage
+    HasValidCreditSendSMSToGroup, HasActiveSMSPanel
+from .serializers import SMSMessageListSerializer, WelcomeMessageSerializer, SentSMSSerializer
+from .serializers import SMSTemplateSerializer, SendSMSSerializer, SendPlainSMSToAllSerializer, \
+    SendByTemplateSerializer, SendPlainToGroup
+from .services import sms_message_service
 
 page_size = settings.PAGINATION_PAGE_NUM
 
@@ -80,12 +63,14 @@ class SMSTemplateRetrieveAPIView(generics.RetrieveAPIView, mixins.UpdateModelMix
         return {'user': self.request.user}
 
 
-@api_view(['POST'])
-@permission_classes([permissions.IsAuthenticated,
-                     IsPanelActivePermissionPostPutMethod,
-                     HasActiveSMSPanel,
-                     HasValidCreditSendSMSToInviduals])
-def send_plain_sms(request):
+class SendPlainSms(APIView):
+    permission_classes = [
+        permissions.IsAuthenticated,
+        IsPanelActivePermissionPostPutMethod,
+        HasActiveSMSPanel,
+        HasValidCreditSendSMSToInviduals
+    ]
+
     """
     sends sms message without using template.
     :param request: contains message content and id of customers that are receptors of message
@@ -95,21 +80,23 @@ def send_plain_sms(request):
      If operation was successful, Response with status code 204
     """
 
-    serializer = SendSMSSerializer(data=request.data, context={'user': request.user})
+    def post(self, request: Request):
 
-    if not serializer.is_valid():
-        return bad_request(serializer.errors)
+        serializer = SendSMSSerializer(data=request.data, context={'user': request.user})
 
-    try:
-        info = sms_message_service.send_plain_sms(
-            request.user,
-            serializer.validated_data.get('customers'),
-            serializer.validated_data.get('content')
-        )
-        sr = SMSPanelInfoSerializer(info)
-        return ok(sr.data)
-    except ApplicationErrorException as e:
-        return bad_request(e.http_message)
+        if not serializer.is_valid():
+            return bad_request(serializer.errors)
+
+        try:
+            info = sms_message_service.send_plain_sms(
+                request.user,
+                serializer.validated_data.get('customers'),
+                serializer.validated_data.get('content')
+            )
+            sr = SMSPanelInfoSerializer(info)
+            return ok(sr.data)
+        except ApplicationErrorException as e:
+            return bad_request(e.http_message)
 
 
 class SendPlainToAllAPIView(APIView):
@@ -176,10 +163,12 @@ class SendByTemplateToAll(APIView):
 
 
 class SendPlainSmsToGroup(APIView):
-    permission_classes = [permissions.IsAuthenticated,
-                          IsPanelActivePermissionPostPutMethod,
-                          HasActiveSMSPanel,
-                          HasValidCreditSendSMSToGroup]
+    permission_classes = [
+        permissions.IsAuthenticated,
+        IsPanelActivePermissionPostPutMethod,
+        HasActiveSMSPanel,
+        HasValidCreditSendSMSToGroup
+    ]
 
     def post(self, request: Request, group_id):
         sr = SendPlainToGroup(data=request.data)
@@ -234,57 +223,6 @@ class ResendFailedSms(APIView):
             return ok(sr.data)
         except ApplicationErrorException as ex:
             return bad_request(ex.http_message)
-
-
-@api_view(['GET'])
-def list_unsent_template_sms(request: Request):
-    unsent_sms = request.user.unsenttemplatesms_set.order_by('-create_date').all()
-
-    paginate = custom_paginator.NumberedPaginator(request, unsent_sms, UnsentTemplateSMSListSerializer)
-
-    return paginate.next_page()
-
-
-@api_view(['POST'])
-@permission_classes([permissions.IsAuthenticated,
-                     IsPanelActivePermissionPostPutMethod,
-                     HasActiveSMSPanel,
-                     HasValidCreditResendFailedSMS])
-def resend_plain_sms(request: Request, unsent_sms_id):
-    try:
-        unsent_plain_sms = request.user.unsentplainsms_set.get(id=unsent_sms_id)
-    except ObjectDoesNotExist:
-        return Response({'detail': 'unsent sms with provided id does not exist'}, status=status.HTTP_404_NOT_FOUND)
-
-    messainger = SMSMessageService()
-
-    try:
-        messainger.set_message_to_pending(request.user, unsent_plain_sms)
-    except APIException as e:
-        return send_message_failed_response(e)
-
-    return create_sms_sent_success_response(request.user)
-
-
-@api_view(['POST'])
-@permission_classes([permissions.IsAuthenticated,
-                     IsPanelActivePermissionPostPutMethod,
-                     HasActiveSMSPanel,
-                     HasValidCreditResendTemplateSMS])
-def resend_template_sms(request: Request, unsent_sms_id):
-    try:
-        unsent_template_sms = request.user.unsenttemplatesms_set.get(id=unsent_sms_id)
-    except ObjectDoesNotExist:
-        return Response({'detail': 'unsent sms with provided id does not exist'}, status=status.HTTP_404_NOT_FOUND)
-
-    messainger = SMSMessageService()
-
-    try:
-        messainger.resend_unsent_template_sms(request.user, unsent_template_sms)
-    except APIException as e:
-        return send_message_failed_response(e)
-
-    return create_sms_sent_success_response(request.user)
 
 
 class SentSMSRetrieveAPIView(BaseListAPIView):
