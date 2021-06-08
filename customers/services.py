@@ -1,13 +1,13 @@
 from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import QuerySet
-from rest_framework.generics import get_object_or_404
 
 from base_app.error_codes import ApplicationErrorCodes
+from base_app.services import BaseService
 from smspanel.services import sms_message_service
 from users.models import Customer, Businessman, BusinessmanCustomer
 
 
-class CustomerService:
+class CustomerService(BaseService):
 
     def customer_exists(self, user: Businessman, phone: str) -> bool:
         return BusinessmanCustomer.objects.filter(customer=user, customer__phone=phone, is_deleted=False).exists()
@@ -16,17 +16,17 @@ class CustomerService:
         return BusinessmanCustomer.objects.filter(businessman=user, customer__id=customer_id, is_deleted=False).exists()
 
     def get_customer(self, user: Businessman, phone: str) -> Customer:
-        return Customer.objects.get(businessman=user, phone=phone)
+        return Customer.objects.get(businessman=user, phone=phone, connected_businessmans__is_deleted=False)
 
     def get_customer_by_id(self, customer_id: int) -> Customer:
         return Customer.objects.get(id=customer_id)
 
-    def get_businessman_customer_by_id(self, user: Businessman, customer_id: int) -> Customer:
+    def get_businessman_customer_by_id(self, user: Businessman, customer_id: int, field_name: str = None) -> Customer:
         try:
             bc = BusinessmanCustomer.objects.get(businessman=user, customer__id=customer_id, is_deleted=False)
             return bc.customer
         except ObjectDoesNotExist as ex:
-            raise ApplicationErrorCodes.get_exception(ApplicationErrorCodes.RECORD_NOT_FOUND, ex)
+            self.throw_exception(ApplicationErrorCodes.RECORD_NOT_FOUND, field_name, ex)
 
     def get_businessman_customers(self, user: Businessman):
         return Customer.objects.filter(businessmans=user, connected_businessmans__is_deleted=False).order_by('-date_joined').all()

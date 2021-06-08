@@ -45,7 +45,8 @@ class PurchaseService:
     def submit_purchase_with_discounts(self, businessman: Businessman, customer_id: int, amount: int,
                                        discount_ids: [int] = None) -> (bool, bool, CustomerPurchase):
 
-        purchase = CustomerPurchase(businessman=businessman, amount=amount, customer_id=customer_id)
+        customer = customer_service.get_businessman_customer_by_id(businessman, customer_id)
+        purchase = CustomerPurchase(businessman=businessman, amount=amount, customer=customer)
         purchase.save()
         if (discount_ids is not None) and len(discount_ids) != 0:
             discount_service.try_apply_discounts(businessman, discount_ids, purchase)
@@ -59,7 +60,7 @@ class PurchaseService:
         # return self.get_customer_all_purchases(businessman, customer).aggregate(Sum('amount')).get(
         #     'sum_amount')
 
-    def add_customer_purchase(self, user: Businessman, customer: Customer, amount: int) -> CustomerPurchase:
+    def add_customer_purchase(self, user: Businessman, customer_id: Customer, amount: int) -> CustomerPurchase:
         purchase = CustomerPurchase.objects.create(businessman=user, customer=customer, amount=amount)
         # p = CustomerPurchase.objects.values('customer').annotate(purchase_sum=Sum('amount')).filter(
         #     purchase_sum__gt=0).order_by('-purchase_sum')[:5]

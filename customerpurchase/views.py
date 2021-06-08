@@ -5,18 +5,18 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from common.util.http_helpers import not_found, no_content
-from customer_return_plan.loyalty.services import loyalty_service
+from base_app.error_codes import ApplicationErrorException
+from common.util import paginators
+from common.util.http_helpers import not_found, no_content, bad_request
 from customerpurchase.models import CustomerPurchase
 from customers.services import customer_service
 from .serializers import PurchaseCreationUpdateSerializer, PurchaseListSerializer, CustomerPurchaseListSerializer
-from common.util import paginators
-# Create your views here.
-
 from .services import purchase_service
 
-class PurchaseListCreateAPIView(APIView):
 
+# Create your views here.
+
+class PurchaseListCreateAPIView(APIView):
 
     def get(self, request):
 
@@ -30,16 +30,15 @@ class PurchaseListCreateAPIView(APIView):
         serializer = PurchaseCreationUpdateSerializer(data=request.data)
 
         serializer._context = {'user': request.user}
+        try:
+            if not serializer.is_valid():
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        if not serializer.is_valid():
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-        obj = serializer.create(serializer.validated_data)
-
-        serializer.instance = obj
-
-        return Response(serializer.data, status=status.HTTP_200_OK)
-
+            obj = serializer.create(serializer.validated_data)
+            serializer.instance = obj
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except ApplicationErrorException as ex:
+            return bad_request(ex.http_message)
 
 
 

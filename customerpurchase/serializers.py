@@ -1,15 +1,13 @@
 from rest_framework import serializers
 
 from common.util import create_field_error, create_detail_error
-from customer_return_plan.models import Discount
+from common.util.common_serializers import CustomerSerializer
+from customer_return_plan.serializers import DiscountReadIdListRepresentRelatedField
 from customer_return_plan.services import DiscountService
 from customerpurchase.models import CustomerPurchase
-from common.util.common_serializers import CustomerSerializer
-from customers.services import CustomerService
 from customers.serializers import CustomerReadIdListRepresentRelatedField
+from customers.services import CustomerService
 from .services import purchase_service
-from customer_return_plan.loyalty.services import loyalty_service
-from customer_return_plan.serializers import DiscountReadIdListRepresentRelatedField
 
 customer_service = CustomerService()
 discount_service = DiscountService()
@@ -69,11 +67,9 @@ class PurchaseCreationUpdateSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
 
         user = self.context['user']
-        # customer = customer_service.get_customer_by_id(user, validated_data.get('customer_id'))
         customer = validated_data.get('customer')
         amount = validated_data.get('amount')
         discounts = validated_data.get('discounts')
-        # result = purchase_service.submit_purchase_with_discounts(user, **validated_data)
         result = purchase_service.add_customer_purchase(user, customer, amount)
         if discounts is not None:
             discount_service.try_apply_discounts(user, discounts, result)

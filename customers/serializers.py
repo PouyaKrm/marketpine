@@ -1,19 +1,16 @@
 from django.core.exceptions import ObjectDoesNotExist
+from django.db.models import QuerySet
 from rest_framework import serializers
 
 from base_app.serializers import BusinessmanGroupRelatedField
-from common.util import create_field_error
-from common.util.custom_templates import CustomerTemplate
 from common.util.custom_validators import phone_validator
 # from common.util.sms_panel.message import SystemSMSMessage
-from common.util.sms_panel.message import SystemSMSMessage
 from customer_return_plan.invitation.models import FriendInvitation
 from customer_return_plan.services import DiscountService, discount_service
 from customerpurchase.services import PurchaseService
 from customers.services import CustomerService
 from smspanel.services import SMSMessageService
 from users.models import Customer
-from django.db.models import Sum, QuerySet
 
 message_service = SMSMessageService()
 customer_service = CustomerService()
@@ -45,7 +42,7 @@ class CustomerReadIdListRepresentRelatedField(serializers.RelatedField):
         #     raise serializers.ValidationError('not all customer ids are valid')
         # return query
         try:
-            return customer_service.get_businessman_customer_by_id(self.context['user'], data)
+            return customer_service.get_businessman_customer_by_id(self.context['user'], data, "customer")
         except ObjectDoesNotExist:
             raise serializers.ValidationError('not all customer ids are valid')
 
