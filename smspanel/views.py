@@ -293,7 +293,7 @@ class SentSMSRetrieveAPIView(BaseListAPIView):
 
     def get_queryset(self):
         phone = self.request.query_params.get('phone')
-        return sms_message_service.get_businessman_sent_sms(self.request.user, phone)
+        return sms_message_service.get_sent_sms(self.request.user, phone)
 
 
 class RetrieveUpdateWelcomeMessageApiView(APIView):

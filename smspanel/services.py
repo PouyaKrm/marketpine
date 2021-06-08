@@ -212,7 +212,7 @@ class SMSMessageService:
                                               message='به {} خوش آمدید'.format(businessman.business_name))
             return s
 
-    def get_businessman_sent_sms(self, businessman: Businessman, receptor_phone: str = None):
+    def get_sent_sms(self, businessman: Businessman, receptor_phone: str = None):
         q = SentSMS.objects.filter(sms_message__businessman=businessman).order_by('-create_date')
         if receptor_phone is None:
             return q
