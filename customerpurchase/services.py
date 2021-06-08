@@ -60,7 +60,7 @@ class PurchaseService:
         # return self.get_customer_all_purchases(businessman, customer).aggregate(Sum('amount')).get(
         #     'sum_amount')
 
-    def add_customer_purchase(self, user: Businessman, customer_id: Customer, amount: int) -> CustomerPurchase:
+    def add_customer_purchase(self, user: Businessman, customer: Customer, amount: int) -> CustomerPurchase:
         purchase = CustomerPurchase.objects.create(businessman=user, customer=customer, amount=amount)
         # p = CustomerPurchase.objects.values('customer').annotate(purchase_sum=Sum('amount')).filter(
         #     purchase_sum__gt=0).order_by('-purchase_sum')[:5]
