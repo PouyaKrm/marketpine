@@ -163,7 +163,6 @@ class SendByTemplateAPIView(APIView):
 
 
 class SendByTemplateToAll(APIView):
-
     permission_classes = [permissions.IsAuthenticated, IsPanelActivePermissionPostPutMethod, HasActiveSMSPanel,
                           HasValidCreditSendSMSToAll]
 
@@ -176,30 +175,24 @@ class SendByTemplateToAll(APIView):
             return bad_request(ex.http_message)
 
 
-@api_view(['POST'])
-@permission_classes([permissions.IsAuthenticated,
-                     IsPanelActivePermissionPostPutMethod,
-                     HasActiveSMSPanel,
-                     HasValidCreditSendSMSToGroup])
-def send_plain_sms_to_group(request: Request, group_id):
-    user = request.user
+class SendPlainSmsToGroup(APIView):
 
-    try:
-        group = user.businessmangroups_set.get(id=group_id)
-    except ObjectDoesNotExist:
-        return Response({'details': 'group not found'}, status=status.HTTP_404_NOT_FOUND)
+    permission_classes = [permissions.IsAuthenticated,
+                          IsPanelActivePermissionPostPutMethod,
+                          HasActiveSMSPanel,
+                          HasValidCreditSendSMSToGroup]
 
-    serializer = SendPlainToGroup(data=request.data, context={'user': request.user, 'group': group})
+    def post(self, request: Request, group_id):
+        sr = SendPlainToGroup(data=request.data)
+        if not sr.is_valid():
+            return bad_request(sr.errors)
 
-    if not serializer.is_valid():
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-    try:
-        serializer.create(serializer.validated_data)
-    except APIException as e:
-        return send_message_failed_response(e)
-
-    return create_sms_sent_success_response(request.user)
+        try:
+            info = sms_message_service.send_to_group(request.user, group_id, sr.validated_data.get('content'))
+            sr = SMSPanelInfoSerializer(info)
+            return ok(sr.data)
+        except ApplicationErrorException as ex:
+            return bad_request(ex.http_message)
 
 
 @api_view(['POST'])

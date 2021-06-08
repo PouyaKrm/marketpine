@@ -118,6 +118,16 @@ class SMSMessageService:
         info = sms_panel_info_service.get_buinessman_sms_panel(user)
         return info
 
+    def send_to_group(self, user: Businessman, group_id: int, message: str) -> SMSPanelInfo:
+        from panelprofile.services import sms_panel_info_service
+        info = sms_panel_info_service.get_buinessman_sms_panel(user)
+        try:
+            group = BusinessmanGroups.get_group_by_id(user, group_id)
+            self._send_plain(user, group.get_all_customers(), message)
+            return info
+        except ObjectDoesNotExist as ex:
+            raise ApplicationErrorCodes.get_exception(ApplicationErrorCodes.RECORD_NOT_FOUND, ex)
+
     def set_message_to_pending(self, sms_messsage: SMSMessage):
 
         if not sms_messsage.has_any_unsent_receivers():
@@ -225,6 +235,19 @@ class SMSMessageService:
             message=template,
             businessman=user,
             message_type=SMSMessage.TYPE_TEMPLATE,
+            used_for=used_for, **kwargs)
+        SMSMessageReceivers.objects.bulk_create(
+            [SMSMessageReceivers(sms_message=sms, customer=c) for c in customers]
+        )
+        sms.set_reserved_credit_by_receivers()
+        return sms
+
+    def _send_plain(self, user: Businessman, customers: QuerySet, message: str,
+                    used_for: str = SMSMessage.USED_FOR_NONE, **kwargs) -> SMSMessage:
+        sms = SMSMessage.objects.create(
+            message=message,
+            businessman=user,
+            message_type=SMSMessage.TYPE_PLAIN,
             used_for=used_for, **kwargs)
         SMSMessageReceivers.objects.bulk_create(
             [SMSMessageReceivers(sms_message=sms, customer=c) for c in customers]

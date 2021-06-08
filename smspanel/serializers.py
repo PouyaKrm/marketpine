@@ -177,16 +177,7 @@ class SendPlainToGroup(serializers.Serializer):
         return value
 
     def create(self, validate_data: dict):
-
-        user = self.context['user']
-        group = self.context['group']
-        message = validate_data.get('content')
-
-        messanger = SMSMessageService()
-        messanger.send_plain_sms(group.customers.all(), user, message)
-
-        return validate_data
-
+        pass
 
 class SMSMessageListSerializer(serializers.ModelSerializer):
 
