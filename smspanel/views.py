@@ -176,7 +176,6 @@ class SendByTemplateToAll(APIView):
 
 
 class SendPlainSmsToGroup(APIView):
-
     permission_classes = [permissions.IsAuthenticated,
                           IsPanelActivePermissionPostPutMethod,
                           HasActiveSMSPanel,
@@ -188,36 +187,26 @@ class SendPlainSmsToGroup(APIView):
             return bad_request(sr.errors)
 
         try:
-            info = sms_message_service.send_to_group(request.user, group_id, sr.validated_data.get('content'))
+            info = sms_message_service.send_plain_to_group(request.user, group_id, sr.validated_data.get('content'))
             sr = SMSPanelInfoSerializer(info)
             return ok(sr.data)
         except ApplicationErrorException as ex:
             return bad_request(ex.http_message)
 
 
-@api_view(['POST'])
-@permission_classes([permissions.IsAuthenticated,
-                     IsPanelActivePermissionPostPutMethod,
-                     HasActiveSMSPanel,
-                     HasValidCreditSendSMSToGroup])
-def send_template_sms_to_group(request: Request, template_id, group_id):
-    try:
-        group = request.user.businessmangroups_set.get(id=group_id)
-    except ObjectDoesNotExist:
-        return Response({'details': 'گروه وجود ندارد'}, status=status.HTTP_404_NOT_FOUND)
+class SendTemplateSmsToGroup(APIView):
+    permission_classes = [permissions.IsAuthenticated,
+                          IsPanelActivePermissionPostPutMethod,
+                          HasActiveSMSPanel,
+                          HasValidCreditSendSMSToGroup]
 
-    try:
-        template = SMSTemplate.objects.get(businessman=request.user, id=template_id)
-    except ObjectDoesNotExist:
-        return Response({'detail': ' قالب مورد نظر وجود ندارد'}, status=status.HTTP_404_NOT_FOUND)
-
-    messagger = SMSMessageService()
-
-    try:
-        messagger.send_by_template(request.user, group.customers.all(), template.content)
-    except APIException as e:
-        return send_message_failed_response(e)
-    return create_sms_sent_success_response(request.user)
+    def post(self, request: Request, template_id, group_id):
+        try:
+            info = sms_message_service.send_by_template_to_group(request.user, group_id, template_id)
+            sr = SMSPanelInfoSerializer(info)
+            return ok(sr.data)
+        except ApplicationErrorException as ex:
+            return bad_request(ex.http_message)
 
 
 class FailedSMSMessagesList(BaseListAPIView):

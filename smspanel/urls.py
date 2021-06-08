@@ -10,7 +10,7 @@ urlpatterns = [
     path('resend-sms/<int:sms_id>/', views.resend_failed_sms),
     path('send-sms/template/', views.SendByTemplateAPIView.as_view()),
     path('send-sms/template/to-all/<int:template_id>/', views.SendByTemplateToAll.as_view()),
-    path('send-sms/template/<int:template_id>/to-group/<int:group_id>/', views.send_template_sms_to_group),
+    path('send-sms/template/<int:template_id>/to-group/<int:group_id>/', views.SendTemplateSmsToGroup.as_view()),
     path('resend-sms/template/<int:unsent_sms_id>/', views.resend_template_sms),
     path('failed/', views.FailedSMSMessagesList.as_view()),
     # path('unsent-sms/template/', views.list_unsent_template_sms),

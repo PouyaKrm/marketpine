@@ -118,7 +118,7 @@ class SMSMessageService:
         info = sms_panel_info_service.get_buinessman_sms_panel(user)
         return info
 
-    def send_to_group(self, user: Businessman, group_id: int, message: str) -> SMSPanelInfo:
+    def send_plain_to_group(self, user: Businessman, group_id: int, message: str) -> SMSPanelInfo:
         from panelprofile.services import sms_panel_info_service
         info = sms_panel_info_service.get_buinessman_sms_panel(user)
         try:
@@ -127,6 +127,18 @@ class SMSMessageService:
             return info
         except ObjectDoesNotExist as ex:
             raise ApplicationErrorCodes.get_exception(ApplicationErrorCodes.RECORD_NOT_FOUND, ex)
+
+    def send_by_template_to_group(self, user: Businessman, group_id: int, template_id: int) -> SMSPanelInfo:
+        from panelprofile.services import sms_panel_info_service
+        info = sms_panel_info_service.get_buinessman_sms_panel(user)
+        template = self._get_template_by_id(user, template_id, "template_id")
+        try:
+            group = BusinessmanGroups.get_group_by_id(user, group_id)
+        except ObjectDoesNotExist as ex:
+            raise ApplicationErrorCodes.get_field_error("group_id", ApplicationErrorCodes.RECORD_NOT_FOUND, ex)
+
+        self._send_by_template(user, group.get_all_customers(), template.content)
+        return info
 
     def set_message_to_pending(self, sms_messsage: SMSMessage):
 
