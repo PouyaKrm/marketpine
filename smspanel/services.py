@@ -143,6 +143,13 @@ class SMSMessageService:
     def get_failed_messages(self, user: Businessman):
         return SMSMessage.objects.filter(businessman=user, status=SMSMessage.STATUS_FAILED).order_by('-create_date')
 
+    def resend_failed_message(self, user: Businessman, sms_id: int) -> SMSPanelInfo:
+        from panelprofile.services import sms_panel_info_service
+        info = sms_panel_info_service.get_buinessman_sms_panel(user)
+        sms = self._get_message(user, sms_id, SMSMessage.STATUS_FAILED)
+        self.set_message_to_pending(sms)
+        return info
+
     def set_message_to_pending(self, sms_messsage: SMSMessage):
 
         if not sms_messsage.has_any_unsent_receivers():
@@ -270,5 +277,23 @@ class SMSMessageService:
         sms.set_reserved_credit_by_receivers()
         return sms
 
+    def _get_message(self, user: Businessman, sms_id: int, status: str = None, field_name: str = None) -> SMSMessage:
+
+        if status is not None:
+            try:
+                return SMSMessage.objects.get(businessman=user, id=sms_id, status=status)
+            except ObjectDoesNotExist as ex:
+                if field_name is not None:
+                    raise ApplicationErrorCodes.get_field_error(field_name, ApplicationErrorCodes.RECORD_NOT_FOUND, ex)
+                else:
+                    raise ApplicationErrorCodes.get_exception(ApplicationErrorCodes.RECORD_NOT_FOUND)
+        else:
+            try:
+                return SMSMessage.objects.get(businessman=user, id=sms_id)
+            except ObjectDoesNotExist as ex:
+                if field_name is not None:
+                    raise ApplicationErrorCodes.get_field_error(field_name, ApplicationErrorCodes.RECORD_NOT_FOUND, ex)
+                else:
+                    raise ApplicationErrorCodes.get_exception(ApplicationErrorCodes.RECORD_NOT_FOUND)
 
 sms_message_service = SMSMessageService()

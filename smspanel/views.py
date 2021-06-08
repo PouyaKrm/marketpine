@@ -218,20 +218,22 @@ class FailedSMSMessagesList(BaseListAPIView):
         return sms_message_service.get_failed_messages(self.request.user)
 
 
-@api_view(['POST'])
-@permission_classes([permissions.IsAuthenticated,
-                     IsPanelActivePermissionPostPutMethod,
-                     HasActiveSMSPanel,
-                     HasValidCreditResendFailedSMS])
-def resend_failed_sms(request, sms_id):
-    try:
-        sms = request.user.smsmessage_set.get(id=sms_id, status=SMSMessage.STATUS_FAILED)
-    except ObjectDoesNotExist:
-        return Response(status=status.HTTP_404_NOT_FOUND)
+class ResendFailedSms(APIView):
+    permission_classes = [
+        permissions.IsAuthenticated,
+        IsPanelActivePermissionPostPutMethod,
+        HasActiveSMSPanel,
+        HasValidCreditResendFailedSMS
+    ]
 
-    sms_message_service.set_message_to_pending(sms)
-    serializer = SMSMessageListSerializer(sms)
-    return Response(serializer.data, status=status.HTTP_200_OK)
+    def post(self, request: Request, sms_id: int):
+
+        try:
+            info = sms_message_service.resend_failed_message(request.user, sms_id)
+            sr = SMSPanelInfoSerializer(info)
+            return ok(sr.data)
+        except ApplicationErrorException as ex:
+            return bad_request(ex.http_message)
 
 
 @api_view(['GET'])
