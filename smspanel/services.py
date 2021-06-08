@@ -140,6 +140,9 @@ class SMSMessageService:
         self._send_by_template(user, group.get_all_customers(), template.content)
         return info
 
+    def get_failed_messages(self, user: Businessman):
+        return SMSMessage.objects.filter(businessman=user, status=SMSMessage.STATUS_FAILED).order_by('-create_date')
+
     def set_message_to_pending(self, sms_messsage: SMSMessage):
 
         if not sms_messsage.has_any_unsent_receivers():

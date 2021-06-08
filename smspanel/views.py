@@ -195,12 +195,14 @@ class SendPlainSmsToGroup(APIView):
 
 
 class SendTemplateSmsToGroup(APIView):
-    permission_classes = [permissions.IsAuthenticated,
-                          IsPanelActivePermissionPostPutMethod,
-                          HasActiveSMSPanel,
-                          HasValidCreditSendSMSToGroup]
+    permission_classes = [
+        permissions.IsAuthenticated,
+        IsPanelActivePermissionPostPutMethod,
+        HasActiveSMSPanel,
+        HasValidCreditSendSMSToGroup
+    ]
 
-    def post(self, request: Request, template_id, group_id):
+    def post(self, request: Request, template_id: int, group_id: int):
         try:
             info = sms_message_service.send_by_template_to_group(request.user, group_id, template_id)
             sr = SMSPanelInfoSerializer(info)
@@ -213,7 +215,7 @@ class FailedSMSMessagesList(BaseListAPIView):
     serializer_class = SMSMessageListSerializer
 
     def get_queryset(self):
-        return self.request.user.smsmessage_set.filter(status=SMSMessage.STATUS_FAILED)
+        return sms_message_service.get_failed_messages(self.request.user)
 
 
 @api_view(['POST'])
