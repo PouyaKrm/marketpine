@@ -182,8 +182,12 @@ class DiscountService:
             inviter_discount__businessman=user,
         ).annotate(
             purchase_sum_of_invited=Sum('inviter_discount__invited__purchases__amount',
-                                        filter=Q(inviter_discount__inviter=customer,
-                                                 inviter_discount__invited__purchases__businessman=user))).filter(
+                                        filter=Q(
+                                            inviter_discount__inviter=customer,
+                                            inviter_discount__invited__purchases__businessman=user
+                                        )
+                                        )
+        ).filter(
             purchase_sum_of_invited__gt=0
         )
 
