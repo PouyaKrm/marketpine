@@ -1,7 +1,9 @@
 from abc import ABC
+from datetime import datetime
 from typing import Tuple
 
 from django.test import TestCase
+from django.utils import timezone
 from faker import Faker
 
 # Create your tests here.
@@ -39,3 +41,6 @@ class BaseTestClass(TestCase, ABC):
         bc = BusinessmanCustomer.objects.get(customer=customer, businessman=businessman)
         bc.is_deleted = True
         bc.save()
+
+    def create_time_in_past(self) -> datetime:
+        return timezone.now() - timezone.timedelta(days=30)

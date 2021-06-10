@@ -298,15 +298,6 @@ class DiscountService:
             id__in=discount_ids).order_by(
             'create_date')
 
-    def delete_discount(self, user: Businessman, discount_id: int) -> (bool, Discount):
-
-        try:
-            discount = Discount.objects.get(businessman=user, id=discount_id)
-        except ObjectDoesNotExist:
-            return False, None
-        discount.delete()
-        return True, discount
-
     def delete_last_loyalty_number_discount(self, user: Businessman, customer: Customer) -> Discount:
         if self.get_customer_loyalty_number_discounts(user, customer).count() > 0:
             d = self.get_customer_loyalty_number_discounts(user, customer).order_by('-create_date').first()
