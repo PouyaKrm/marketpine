@@ -148,7 +148,7 @@ class ApplyDiscountSerializer(serializers.Serializer):
         ]
 
     def validate_phone(self, value):
-        if not CustomerService().customer_exists(self.context['user'], value):
+        if not CustomerService().customer_exists_by_phone(self.context['user'], value):
             raise serializers.ValidationError('مشتری با این شماره تلفن وجود ندارد')
         return value
 

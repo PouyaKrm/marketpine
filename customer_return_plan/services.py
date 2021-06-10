@@ -5,7 +5,6 @@ from django.utils import timezone
 from strgen import StringGenerator
 
 from customer_return_plan.festivals.models import Festival
-from customer_return_plan.invitation.models import FriendInvitation
 from customer_return_plan.models import Discount, PurchaseDiscount
 from customerpurchase.models import CustomerPurchase
 from customers.services import CustomerService
@@ -171,18 +170,48 @@ class DiscountService:
 
         # customer = customer_service.get_customer_by_id(user, customer_id)
 
-        festival_discounts = Discount.objects.annotate(
-            purchase_sum_of_invited=Sum('inviter_discount__invited__purchases__amount', filter=Q(inviter_discount__invited__purchases__businessman=user))).filter(businessman=user) \
- \
-            .filter(Q(used_for=Discount.USED_FOR_FESTIVAL)
-                    | Q(used_for=Discount.USED_FOR_INVITATION,
-                        inviter_discount__inviter=customer, purchase_sum_of_invited__gt=0)
-                    | Q(used_for=Discount.USED_FOR_INVITATION,
-                        inviter_discount__inviter=customer, connected_purchases__customer=customer)
-                    | Q(used_for=Discount.USED_FOR_INVITATION,
-                        invited_discount__invited=customer)).distinct().order_by('-create_date')
+        exist = customer_service.customer_exists(user, customer)
 
-        return festival_discounts
+        if not exist:
+            return Discount.objects.none()
+
+        inviter_discount = Discount.objects.filter(
+            businessman=user,
+            used_for=Discount.USED_FOR_INVITATION,
+            inviter_discount__inviter=customer,
+            inviter_discount__businessman=user,
+        ).annotate(
+            purchase_sum_of_invited=Sum('inviter_discount__invited__purchases__amount',
+                                        filter=Q(inviter_discount__inviter=customer,
+                                                 inviter_discount__invited__purchases__businessman=user))).filter(
+            purchase_sum_of_invited__gt=0
+        )
+
+        invited_discount = Discount.objects.filter(
+            businessman=user,
+            invited_discount__businessman=user,
+            invited_discount__invited=customer,
+        )
+
+        festival_discount = Discount.objects.filter(businessman=user, used_for=Discount.USED_FOR_FESTIVAL)
+
+        #        festival_discounts = Discount.objects.annotate(
+        #            purchase_sum_of_invited=Sum('inviter_discount__invited__purchases__amount',
+        #                                        filter=Q(inviter_discount__invited__purchases__businessman=user))).filter(
+        #            businessman=user) \
+        # \
+        #            .filter(Q(used_for=Discount.USED_FOR_FESTIVAL)
+        #                    | Q(used_for=Discount.USED_FOR_INVITATION,
+        #                        inviter_discount__inviter=customer, purchase_sum_of_invited__gt=0)
+        #                    | Q(used_for=Discount.USED_FOR_INVITATION,
+        #                        inviter_discount__inviter=customer, connected_purchases__customer=customer)
+        #                    | Q(used_for=Discount.USED_FOR_INVITATION,
+        #                        invited_discount__invited=customer)).distinct().order_by('-create_date')
+        #
+        #        return festival_discounts
+
+        discounts = inviter_discount | invited_discount | festival_discount
+        return discounts.order_by('-create_date')
 
     # def get_customer_discount_by_customer
 

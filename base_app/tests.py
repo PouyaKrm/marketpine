@@ -1,3 +1,41 @@
+from abc import ABC
+from typing import Tuple
+
 from django.test import TestCase
+from faker import Faker
 
 # Create your tests here.
+from users.models import Businessman, Customer, BusinessmanCustomer
+
+fake = Faker('fa_IR')
+
+
+class BaseTestClass(TestCase, ABC):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fake = fake
+
+    def create_businessman(self) -> Businessman:
+        return Businessman.objects.create(username=fake.profile()['username'])
+
+    def create_customer(self) -> Customer:
+        return Customer.objects.create(phone=fake.phone_number())
+
+    def create_customer_with_businessman(self, businessman: Businessman) -> Customer:
+        c = self.create_customer()
+        BusinessmanCustomer.objects.create(businessman=businessman, customer=c)
+        return c
+
+    def create_customer_and_businessman_with_relation(self) -> Tuple[Businessman, Customer]:
+        b = self.create_businessman()
+        c = self.create_customer_with_businessman(b)
+        return b, c
+
+    def add_customer_to_businessman(self, businessman: Businessman, customer: Customer):
+        BusinessmanCustomer.objects.create(businessman=businessman, customer=customer)
+
+    def delete_customer_for_businessman(self, businessman: Businessman, customer: Customer):
+        bc = BusinessmanCustomer.objects.get(customer=customer, businessman=businessman)
+        bc.is_deleted = True
+        bc.save()

@@ -9,8 +9,11 @@ from users.models import Customer, Businessman, BusinessmanCustomer
 
 class CustomerService(BaseService):
 
-    def customer_exists(self, user: Businessman, phone: str) -> bool:
+    def customer_exists_by_phone(self, user: Businessman, phone: str) -> bool:
         return BusinessmanCustomer.objects.filter(customer=user, customer__phone=phone, is_deleted=False).exists()
+
+    def customer_exists(self, user: Businessman, customer: Customer) -> bool:
+        return BusinessmanCustomer.objects.filter(businessman=user, customer=customer, is_deleted=False).exists()
 
     def customer_exists_by_id(self, user: Businessman, customer_id: int) -> bool:
         return BusinessmanCustomer.objects.filter(businessman=user, customer__id=customer_id, is_deleted=False).exists()
