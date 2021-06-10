@@ -1,3 +1,4 @@
+import uuid
 from random import randint
 
 # Create your tests here.
@@ -28,6 +29,16 @@ class BusinessmanDiscountTest(BaseTestClass):
         d.businessman = businessman
         d.save()
         return d
+
+    def test_is_discount_code_unique_false(self):
+        d = self.invitation.invited_discount
+        result = discount_service.is_discount_code_unique(self.businessman, d.discount_code)
+        self.assertFalse(result)
+
+    def test_is_discount_code_unique_true(self):
+        code = uuid.uuid4()
+        result = discount_service.is_discount_code_unique(self.businessman, code)
+        self.assertTrue(result)
 
     def _create_friend_invitation(self, businessman: Businessman, inviter: Customer,
                                   invited: Customer) -> FriendInvitation:
@@ -207,3 +218,25 @@ class BusinessmanDiscountTest(BaseTestClass):
         self.assertTrue(result[1])
         self.assertEqual(result[2], d)
         self.assertEqual(result[3], p)
+
+    def test_get_used_festival_discounts_in_month(self):
+        d = self._create_discount(self.businessman, Discount.USED_FOR_FESTIVAL)
+        c = self.invitation.invited
+        p = self._create_purchase(self.businessman, c)
+        PurchaseDiscount.objects.create(discount=d, purchase=p)
+        PurchaseDiscount.objects.create(discount=self.invitation.invited_discount, purchase=p)
+        discounts = discount_service.get_used_festival_discounts_in_month(self.businessman, timezone.now())
+        self.assertEqual(discounts.count(), 1)
+        first = discounts.first()
+        self.assertEqual(first.used_for, Discount.USED_FOR_FESTIVAL)
+
+    def test_get_used_invitation_discounts_in_month(self):
+        d = self._create_discount(self.businessman, Discount.USED_FOR_FESTIVAL)
+        c = self.invitation.invited
+        p = self._create_purchase(self.businessman, c)
+        PurchaseDiscount.objects.create(discount=d, purchase=p)
+        PurchaseDiscount.objects.create(discount=self.invitation.invited_discount, purchase=p)
+        discounts = discount_service.get_used_invitation_discounts_in_month(self.businessman, timezone.now())
+        self.assertEqual(discounts.count(), 1)
+        first = discounts.first()
+        self.assertEqual(first.used_for, Discount.USED_FOR_INVITATION)
