@@ -1,20 +1,20 @@
 from django.db import models
-from django.conf import settings
 # Create your models here.
 from django.db.models.aggregates import Sum
 
 from customer_return_plan.models import BaseDiscountSettings, Discount
 from smspanel.models import SMSMessage
-from users.models import Customer, Businessman, BusinessmanManyToOneBaseModel
+from users.models import Customer, Businessman, BusinessmanManyToOneBaseModel, BusinessmanCustomer
 
 
 class FriendInvitation(BusinessmanManyToOneBaseModel):
-
-    inviter = models.ForeignKey(Customer, related_name='inviter', null=True, on_delete=models.SET_NULL)
-    invited = models.ForeignKey(Customer, related_name='invited', null=True, on_delete=models.SET_NULL)
+    inviter = models.ForeignKey(BusinessmanCustomer, related_name='inviter', null=True, on_delete=models.SET_NULL)
+    invited = models.ForeignKey(BusinessmanCustomer, related_name='invited', null=True, on_delete=models.SET_NULL)
     new = models.BooleanField(default=True)
-    inviter_discount = models.OneToOneField(Discount, related_name='inviter_discount', on_delete=models.PROTECT, null=True)
-    invited_discount = models.OneToOneField(Discount, related_name='invited_discount', on_delete=models.PROTECT, null=True)
+    inviter_discount = models.OneToOneField(Discount, related_name='inviter_discount', on_delete=models.PROTECT,
+                                            null=True)
+    invited_discount = models.OneToOneField(Discount, related_name='invited_discount', on_delete=models.PROTECT,
+                                            null=True)
     sms_message = models.OneToOneField(SMSMessage, null=True, blank=True, on_delete=models.SET_NULL)
 
     class Meta:

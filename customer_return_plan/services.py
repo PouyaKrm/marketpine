@@ -1,3 +1,5 @@
+from typing import Tuple
+
 from django.core.exceptions import ObjectDoesNotExist
 from django.db.models.aggregates import Sum
 from django.db.models.query_utils import Q
@@ -178,13 +180,13 @@ class DiscountService:
         inviter_discount = Discount.objects.filter(
             businessman=user,
             used_for=Discount.USED_FOR_INVITATION,
-            inviter_discount__inviter=customer,
-            inviter_discount__businessman=user,
+            inviter_discount__inviter__customer=customer,
+            inviter_discount__inviter__businessman=user,
         ).annotate(
-            purchase_sum_of_invited=Sum('inviter_discount__invited__purchases__amount',
+            purchase_sum_of_invited=Sum('inviter_discount__invited__customer__purchases__amount',
                                         filter=Q(
-                                            inviter_discount__inviter=customer,
-                                            inviter_discount__invited__purchases__businessman=user
+                                            inviter_discount__inviter__customer=customer,
+                                            inviter_discount__invited__customer__purchases__businessman=user
                                         )
                                         )
         ).filter(
@@ -193,8 +195,8 @@ class DiscountService:
 
         invited_discount = Discount.objects.filter(
             businessman=user,
-            invited_discount__businessman=user,
-            invited_discount__invited=customer,
+            invited_discount__invited__businessman=user,
+            invited_discount__invited__customer=customer,
         )
 
         festival_discount = Discount.objects.filter(businessman=user, used_for=Discount.USED_FOR_FESTIVAL)
@@ -332,19 +334,32 @@ class DiscountService:
 class CustomerDiscountService:
 
     def get_customer_discounts(self, customer: Customer):
-        discounts = Discount.objects.annotate(
-            purchase_sum_of_invited=Sum('inviter_discount__invited__purchases__amount')).filter(
-            businessman__customers=customer) \
-            .filter(
-            Q(used_for=Discount.USED_FOR_FESTIVAL)
-            | Q(used_for=Discount.USED_FOR_INVITATION,
-                inviter_discount__inviter=customer, purchase_sum_of_invited__gt=0)
-            | Q(used_for=Discount.USED_FOR_INVITATION,
-                inviter_discount__inviter=customer, connected_purchases__customer=customer)
-            | Q(used_for=Discount.USED_FOR_INVITATION,
-                invited_discount__invited=customer)).distinct().order_by('-create_date')
 
-        return discounts
+        inviter_discount = Discount.objects.filter(
+            used_for=Discount.USED_FOR_INVITATION
+        ).filter(
+            inviter_discount__inviter__customer=customer,
+            inviter_discount__inviter__is_deleted=False
+        )
+
+        invited_discount = Discount.objects.filter(
+            used_for=Discount.USED_FOR_INVITATION,
+        ).filter(
+            invited_discount__invited__customer=customer,
+            invited_discount__invited__is_deleted=False
+        )
+
+        joined_businessmans = Businessman.objects.filter(
+            connected_customers__customer=customer,
+            connected_customers__is_deleted=False
+        )
+
+        festival_discount = Discount.objects.filter(
+            used_for=Discount.USED_FOR_FESTIVAL,
+            festival__businessman__in=joined_businessmans
+        )
+
+        return invited_discount | inviter_discount | festival_discount
 
     def get_customer_available_discount(self, customer: Customer):
         return self.get_customer_discounts(customer) \
@@ -352,6 +367,36 @@ class CustomerDiscountService:
             .exclude(festival__marked_as_deleted_for_businessman=True) \
             .exclude(
             connected_purchases__customer=customer)
+
+    def is_invitation_inviter_discount_and_invited_has_purchase(self, discount: Discount, customer: Customer) -> Tuple[
+        bool, bool, bool]:
+
+        """
+        :param discount: discount to be used to check against
+        :param customer: customer to check if  discount is related to this customer and customer has it as inviter in frient invitation
+        :returns:
+             -x (:py:class:`bool`) - is discount used_for == USED_FOR_INVITATION
+             -y (:py:class:`bool`) - is customer is has discount as inviter
+             -x (:py:class:`bool`) - is invited customer has any purchase
+        """
+
+        if not discount.is_invitation_discount():
+            return False, False, False
+
+        if discount.inviter_discount.inviter.customer != customer:
+            return True, False, False
+
+        p_sum = CustomerPurchase.objects.filter(
+            businessman=discount.businessman,
+            customer=discount.inviter_discount.invited.customer
+        ).aggregate(
+            purchase_amount_sum=Sum('amount')
+        )
+
+        if p_sum is not None and p_sum['purchase_amount_sum'] is not None and p_sum['purchase_amount_sum'] > 0:
+            return True, True, True
+
+        return True, True, False
 
     def get_customer_used_discounts(self, customer: Customer):
         return self.get_customer_discounts(customer) \

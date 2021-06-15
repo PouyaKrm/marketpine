@@ -1,19 +1,21 @@
 import uuid
+from abc import ABC
 from random import randint
-
 # Create your tests here.
+from typing import Tuple
+
 from django.utils import timezone
 
 from base_app.tests import BaseTestClass
 from customer_return_plan.festivals.models import Festival
 from customer_return_plan.invitation.models import FriendInvitation
 from customer_return_plan.models import Discount, PurchaseDiscount
-from customer_return_plan.services import discount_service
+from customer_return_plan.services import discount_service, customer_discount_service
 from customerpurchase.models import CustomerPurchase
-from users.models import Businessman, Customer
+from users.models import Businessman, Customer, BusinessmanCustomer
 
 
-class BusinessmanDiscountTest(BaseTestClass):
+class BaseDiscountServiceTestClass(BaseTestClass, ABC):
 
     def setUp(self) -> None:
         bc = self.create_customer_and_businessman_with_relation()
@@ -22,6 +24,27 @@ class BusinessmanDiscountTest(BaseTestClass):
         invited = self.create_customer_with_businessman(b)
         self.invitation = self._create_friend_invitation(b, bc[1], invited)
 
+    def create_customer_and_businessman_with_relation(self) -> Tuple[Businessman, BusinessmanCustomer]:
+        b = self.create_businessman()
+        c = self.create_customer_with_businessman(b)
+        return b, c
+
+    def create_customer_with_businessman(self, businessman: Businessman) -> BusinessmanCustomer:
+        c = super().create_customer_with_businessman(businessman)
+        return BusinessmanCustomer.objects.get(businessman=businessman, customer=c)
+
+    def _create_friend_invitation(self, businessman: Businessman, inviter: BusinessmanCustomer,
+                                  invited: BusinessmanCustomer) -> FriendInvitation:
+        # inviter = BusinessmanCustomer.objects.get(businessman=businessman, customer=inviter)
+        # invited = BusinessmanCustomer.objects.get(businessman=businessman, customer=invited)
+        inviter_discount = self._create_discount(businessman, Discount.USED_FOR_INVITATION)
+        invited_discount = self._create_discount(businessman, Discount.USED_FOR_INVITATION)
+        return FriendInvitation.objects.create(businessman=businessman,
+                                               inviter=inviter, invited=invited,
+                                               inviter_discount=inviter_discount,
+                                               invited_discount=invited_discount
+                                               )
+
     def _create_discount(self, businessman: Businessman, used_for: str = Discount.USED_FOR_NONE) -> Discount:
         d = Discount()
         d.set_discount_data(randint(0, 10000).__str__(), Discount.DISCOUNT_TYPE_FLAT_RATE, 0, 1000)
@@ -29,6 +52,39 @@ class BusinessmanDiscountTest(BaseTestClass):
         d.businessman = businessman
         d.save()
         return d
+
+    # def _create_friend_invitation(self, businessman: Businessman, inviter: Customer,
+    #                               invited: Customer) -> FriendInvitation:
+    #     inviter_discount = self._create_discount(businessman, Discount.USED_FOR_INVITATION)
+    #     invited_discount = self._create_discount(businessman, Discount.USED_FOR_INVITATION)
+    #     invitation = FriendInvitation()
+    #     invitation.businessman = businessman
+    #     invitation.inviter = inviter
+    #     invitation.invited = invited
+    #     invitation.inviter_discount = inviter_discount
+    #     invitation.invited_discount = invited_discount
+    #     invitation.save()
+    #     return invitation
+
+    def _create_purchase(self, businessman: Businessman, customer: Customer) -> CustomerPurchase:
+        p = CustomerPurchase.objects.create(amount=10, customer=customer,
+                                            businessman=businessman)
+        return p
+
+    def _create_festival(self, businessman: Businessman, discount: Discount) -> Festival:
+        past = self.create_time_in_past()
+        return Festival.objects.create(businessman=businessman,
+                                       discount=discount,
+                                       start_date=past,
+                                       end_date=timezone.now()
+                                       )
+
+    def add_customer_to_businessman(self, businessman: Businessman, customer: Customer) -> BusinessmanCustomer:
+        c = super().add_customer_to_businessman(businessman, customer)
+        return BusinessmanCustomer.objects.get(businessman=businessman, customer=customer)
+
+
+class BusinessmanDiscountTest(BaseDiscountServiceTestClass):
 
     def test_is_discount_code_unique_false(self):
         d = self.invitation.invited_discount
@@ -40,60 +96,45 @@ class BusinessmanDiscountTest(BaseTestClass):
         result = discount_service.is_discount_code_unique(self.businessman, code)
         self.assertTrue(result)
 
-    def _create_friend_invitation(self, businessman: Businessman, inviter: Customer,
-                                  invited: Customer) -> FriendInvitation:
-        inviter_discount = self._create_discount(businessman, Discount.USED_FOR_INVITATION)
-        invited_discount = self._create_discount(businessman, Discount.USED_FOR_INVITATION)
-        invitation = FriendInvitation()
-        invitation.businessman = businessman
-        invitation.inviter = inviter
-        invitation.invited = invited
-        invitation.inviter_discount = inviter_discount
-        invitation.invited_discount = invited_discount
-        invitation.save()
-        return invitation
-
-    def _create_purchase(self, businessman: Businessman, customer: Customer) -> CustomerPurchase:
-        p = CustomerPurchase.objects.create(amount=10, customer=self.invitation.invited,
-                                            businessman=self.invitation.businessman)
-        return p
-
     def test_inviter_discount_with_invited_has_no_purchase(self):
         discounts = discount_service.get_customer_discounts_for_businessman(self.invitation.businessman,
-                                                                            self.invitation.inviter)
+                                                                            self.invitation.inviter.customer)
         self.assertFalse(discounts.filter(used_for=Discount.USED_FOR_INVITATION).exists())
 
     def test_inviter_has_discount_with_invited_has_purchase(self):
-        self._create_purchase(self.businessman, self.invitation.invited)
+        self._create_purchase(self.businessman, self.invitation.invited.customer)
         discounts = discount_service.get_customer_discounts_for_businessman(self.invitation.businessman,
-                                                                            self.invitation.inviter)
+                                                                            self.invitation.inviter.customer)
         self.assertTrue(discounts.filter(used_for=Discount.USED_FOR_INVITATION).exists())
         self.assertEqual(discounts.first().inviter_discount.inviter, self.invitation.inviter)
 
     def test_inviter_has_no_discount_when_is_deleted(self):
-        self._create_purchase(self.businessman, self.invitation.invited)
-        self.delete_customer_for_businessman(self.invitation.businessman, self.invitation.inviter)
+        self._create_purchase(self.businessman, self.invitation.invited.customer)
+        self.delete_customer_for_businessman(self.invitation.businessman, self.invitation.inviter.customer)
         discounts = discount_service.get_customer_discounts_for_businessman(self.invitation.businessman,
-                                                                            self.invitation.inviter)
+                                                                            self.invitation.inviter.customer)
         self.assertFalse(discounts.count(), 0)
 
     def test_inviter_has_no_discount_when_invitation_blongs_to_another_businessman(self):
         b2 = self.create_businessman()
         # invited = self.create_customer_with_businessman(b2)
         invited = self.invitation.invited
-        self._create_friend_invitation(b2, self.invitation.inviter, invited)
-        CustomerPurchase.objects.create(amount=10, customer=invited,
+        invited_new = self.add_customer_to_businessman(b2, self.invitation.invited.customer)
+        inviter_new = self.add_customer_to_businessman(b2, self.invitation.inviter.customer)
+        self._create_friend_invitation(b2, inviter_new, invited_new)
+        CustomerPurchase.objects.create(amount=10, customer=invited.customer,
                                         businessman=b2)
 
         discounts = discount_service.get_customer_discounts_for_businessman(self.invitation.businessman,
-                                                                            self.invitation.inviter)
+                                                                            self.invitation.inviter.customer)
 
         self.assertFalse(discounts.filter(used_for=Discount.USED_FOR_INVITATION,
                                           inviter_discount__inviter=self.invitation.inviter).exists())
 
     def test_invited_discount(self):
-        discounts = discount_service.get_customer_discounts_for_businessman(self.invitation.businessman,
-                                                                            self.invitation.invited)
+        discounts = discount_service.get_customer_discounts_for_businessman(
+            self.invitation.businessman,
+            self.invitation.invited.customer)
         all_match = all(
             d.used_for == Discount.USED_FOR_INVITATION and d.invited_discount.invited == self.invitation.invited for d
             in discounts)
@@ -102,9 +143,10 @@ class BusinessmanDiscountTest(BaseTestClass):
     def test_has_invited_discount_and_inviter_discount(self):
         invited_c = self.create_customer_with_businessman(self.invitation.businessman)
         self._create_friend_invitation(self.invitation.businessman, self.invitation.invited, invited_c)
-        CustomerPurchase.objects.create(businessman=self.invitation.businessman, customer=invited_c, amount=10)
-        discounts = discount_service.get_customer_discounts_for_businessman(self.invitation.businessman,
-                                                                            self.invitation.invited)
+        CustomerPurchase.objects.create(businessman=self.invitation.businessman, customer=invited_c.customer, amount=10)
+        discounts = discount_service.get_customer_discounts_for_businessman(
+            self.invitation.businessman,
+            self.invitation.invited.customer)
         count = discounts.count()
         inviter_discount_count = discounts.filter(inviter_discount__inviter=self.invitation.invited).count()
         invited_discount_count = discounts.filter(invited_discount__invited=self.invitation.invited).count()
@@ -114,7 +156,8 @@ class BusinessmanDiscountTest(BaseTestClass):
 
     def test_festival_discount(self):
         d = self._create_discount(self.businessman, Discount.USED_FOR_FESTIVAL)
-        discounts = discount_service.get_customer_discounts_for_businessman(self.businessman, self.invitation.inviter)
+        discounts = discount_service.get_customer_discounts_for_businessman(self.businessman,
+                                                                            self.invitation.inviter.customer)
         fd = discounts.get(used_for=Discount.USED_FOR_FESTIVAL)
         self.assertEqual(fd, d)
 
@@ -122,9 +165,9 @@ class BusinessmanDiscountTest(BaseTestClass):
         self._create_discount(self.businessman, Discount.USED_FOR_FESTIVAL)
         invited_c = self.create_customer_with_businessman(self.invitation.businessman)
         self._create_friend_invitation(self.invitation.businessman, self.invitation.invited, invited_c)
-        CustomerPurchase.objects.create(businessman=self.invitation.businessman, customer=invited_c, amount=10)
+        CustomerPurchase.objects.create(businessman=self.invitation.businessman, customer=invited_c.customer, amount=10)
         discounts = discount_service.get_customer_discounts_for_businessman(self.invitation.businessman,
-                                                                            self.invitation.invited)
+                                                                            self.invitation.invited.customer)
         count = discounts.count()
         inviter_discount_count = discounts.filter(inviter_discount__inviter=self.invitation.invited).count()
         invited_discount_count = discounts.filter(invited_discount__invited=self.invitation.invited).count()
@@ -135,10 +178,10 @@ class BusinessmanDiscountTest(BaseTestClass):
         self.assertEqual(festival_discount_count, 1)
 
     def test_customer_unused_discount_for_businessman(self):
-        p = self._create_purchase(self.businessman, self.invitation.invited)
+        p = self._create_purchase(self.businessman, self.invitation.invited.customer)
         PurchaseDiscount.objects.create(discount=self.invitation.invited_discount, purchase=p)
         discount = discount_service.get_customer_unused_discounts_for_businessman(self.businessman,
-                                                                                  self.invitation.invited)
+                                                                                  self.invitation.invited.customer)
         self.assertEqual(discount.count(), 0)
 
     def test_customer_available_discount_for_businessman_discount_expired(self):
@@ -147,7 +190,7 @@ class BusinessmanDiscountTest(BaseTestClass):
         d.expire_date = self.create_time_in_past()
         d.save()
         discounts = discount_service.get_customer_available_discounts_for_businessman(self.businessman,
-                                                                                      self.invitation.invited)
+                                                                                      self.invitation.invited.customer)
         self.assertEqual(discounts.count(), 0)
 
     def test_customer_available_discount_for_businessman_festival_deleted(self):
@@ -158,34 +201,34 @@ class BusinessmanDiscountTest(BaseTestClass):
         f.discount = d
         f.save()
         discounts = discount_service.get_customer_available_discounts_for_businessman(self.businessman,
-                                                                                      self.invitation.invited)
+                                                                                      self.invitation.invited.customer)
         self.assertFalse(discounts.filter(used_for=Discount.USED_FOR_FESTIVAL).exists())
 
     def test_customer_available_discount_for_businessman_discount_used(self):
-        p = self._create_purchase(self.businessman, self.invitation.invited)
+        p = self._create_purchase(self.businessman, self.invitation.invited.customer)
         PurchaseDiscount.objects.create(discount=self.invitation.invited_discount, purchase=p)
         discount = discount_service.get_customer_available_discounts_for_businessman(self.businessman,
-                                                                                     self.invitation.invited)
+                                                                                     self.invitation.invited.customer)
         self.assertEqual(discount.count(), 0)
 
     def test_can_customer_use_discount(self):
         can_use = discount_service.can_customer_use_discount(self.businessman,
                                                              self.invitation.inviter_discount,
-                                                             self.invitation.inviter
+                                                             self.invitation.inviter.customer
                                                              )
         self.assertFalse(can_use)
 
     def test_has_customer_any_discount(self):
         has_discount = discount_service.has_customer_any_discount(self.businessman,
-                                                                  self.invitation.inviter)
+                                                                  self.invitation.inviter.customer)
         self.assertFalse(has_discount)
 
     def test_get_customer_used_discounts_for_businessman(self):
         c = self.invitation.invited
-        p = self._create_purchase(self.businessman, self.invitation.invited)
+        p = self._create_purchase(self.businessman, self.invitation.invited.customer)
         PurchaseDiscount.objects.create(discount=self.invitation.invited_discount, purchase=p)
         discounts = discount_service.get_customer_used_discounts_for_businessman(self.businessman,
-                                                                                 c)
+                                                                                 c.customer)
         exist = discounts.filter(invited_discount__invited=c).exists()
         self.assertTrue(exist)
         self.assertEqual(discounts.count(), 1)
@@ -198,7 +241,7 @@ class BusinessmanDiscountTest(BaseTestClass):
     def test_delete_customer_from_discount_invalid_customer_id(self):
         c = self.invitation.invited
         d = self.invitation.invited_discount
-        p = self._create_purchase(self.businessman, c)
+        p = self._create_purchase(self.businessman, c.customer)
         PurchaseDiscount.objects.create(discount=d, purchase=p)
         result = discount_service.delete_customer_from_discount(self.businessman,
                                                                 d.id,
@@ -209,11 +252,11 @@ class BusinessmanDiscountTest(BaseTestClass):
     def test_delete_customer_from_discount(self):
         c = self.invitation.invited
         d = self.invitation.invited_discount
-        p = self._create_purchase(self.businessman, c)
+        p = self._create_purchase(self.businessman, c.customer)
         PurchaseDiscount.objects.create(discount=d, purchase=p)
         result = discount_service.delete_customer_from_discount(self.businessman,
                                                                 d.id,
-                                                                c.id)
+                                                                c.customer.id)
         self.assertTrue(result[0])
         self.assertTrue(result[1])
         self.assertEqual(result[2], d)
@@ -222,7 +265,7 @@ class BusinessmanDiscountTest(BaseTestClass):
     def test_get_used_festival_discounts_in_month(self):
         d = self._create_discount(self.businessman, Discount.USED_FOR_FESTIVAL)
         c = self.invitation.invited
-        p = self._create_purchase(self.businessman, c)
+        p = self._create_purchase(self.businessman, c.customer)
         PurchaseDiscount.objects.create(discount=d, purchase=p)
         PurchaseDiscount.objects.create(discount=self.invitation.invited_discount, purchase=p)
         discounts = discount_service.get_used_festival_discounts_in_month(self.businessman, timezone.now())
@@ -233,10 +276,150 @@ class BusinessmanDiscountTest(BaseTestClass):
     def test_get_used_invitation_discounts_in_month(self):
         d = self._create_discount(self.businessman, Discount.USED_FOR_FESTIVAL)
         c = self.invitation.invited
-        p = self._create_purchase(self.businessman, c)
+        p = self._create_purchase(self.businessman, c.customer)
         PurchaseDiscount.objects.create(discount=d, purchase=p)
         PurchaseDiscount.objects.create(discount=self.invitation.invited_discount, purchase=p)
         discounts = discount_service.get_used_invitation_discounts_in_month(self.businessman, timezone.now())
         self.assertEqual(discounts.count(), 1)
         first = discounts.first()
         self.assertEqual(first.used_for, Discount.USED_FOR_INVITATION)
+
+
+class CustomerDiscountServiceTestClass(BaseDiscountServiceTestClass):
+
+    def test_return_is_not_none(self):
+        result = customer_discount_service.get_customer_discounts(self.invitation.invited.customer)
+        self.assertTrue(result is not None)
+
+    def test_invited_discount(self):
+        c = self.invitation.invited
+        discounts = customer_discount_service.get_customer_discounts(c.customer)
+        count = discounts.count()
+        exist = discounts.filter(used_for=Discount.USED_FOR_INVITATION, invited_discount__invited=c)
+        self.assertEqual(count, 1)
+        self.assertTrue(exist)
+
+    def test_invited_discount_on_invited_is_deleted(self):
+        c = self.invitation.invited
+        self.delete_customer_for_businessman(self.businessman, c.customer)
+        b = self.create_businessman()
+        invited_new = self.add_customer_to_businessman(b, c.customer)
+        c2 = self.create_customer_with_businessman(b)
+        fi = self._create_friend_invitation(b, c2, invited_new)
+        discounts = customer_discount_service.get_customer_discounts(c.customer)
+        exist = discounts.filter(used_for=Discount.USED_FOR_INVITATION,
+                                 invited_discount__invited__customer=c.customer,
+                                 businessman=self.businessman
+                                 ).exists()
+
+        self.assertFalse(exist)
+        self.assertEqual(discounts.count(), 1)
+
+    def test_inviter_discount(self):
+        c = self.invitation.inviter
+        discount = customer_discount_service.get_customer_discounts(c.customer)
+        self.assertEqual(discount.count(), 1)
+        exist = discount.filter(used_for=Discount.USED_FOR_INVITATION, inviter_discount__inviter=c).exists()
+        self.assertTrue(exist)
+
+    def test_inviter_discount_inviter_deleted(self):
+        c = self.invitation.inviter
+        self.delete_customer_for_businessman(self.businessman, c.customer)
+        b = self.create_businessman()
+        inviter_new = self.add_customer_to_businessman(b, c.customer)
+        invited_new = self.add_customer_to_businessman(b, self.invitation.invited.customer)
+        self._create_friend_invitation(b, inviter_new, invited_new)
+        discounts = customer_discount_service.get_customer_discounts(c.customer)
+        exist = discounts.filter(used_for=Discount.USED_FOR_INVITATION,
+                                 inviter_discount__inviter=c,
+                                 businessman=self.businessman
+                                 ).exists()
+        self.assertFalse(exist)
+        self.assertEqual(discounts.count(), 1)
+
+    def test_festival_discount(self):
+        d = self._create_discount(self.businessman, Discount.USED_FOR_FESTIVAL)
+        self._create_festival(self.businessman, d)
+        b = self.create_businessman()
+        d2 = self._create_discount(b, Discount.USED_FOR_FESTIVAL)
+        self._create_festival(b, d2)
+        self.add_customer_to_businessman(b, self.invitation.inviter.customer)
+        self.delete_customer_for_businessman(b, self.invitation.inviter.customer)
+        discounts = customer_discount_service.get_customer_discounts(self.invitation.inviter.customer)
+        count = discounts.filter(businessman=self.businessman, used_for=Discount.USED_FOR_FESTIVAL).count()
+        self.assertEqual(count, 1)
+
+    def test_get_customer_available_discount_expired(self):
+        c = self.invitation.inviter.customer
+        d = self._create_discount(self.businessman, used_for=Discount.USED_FOR_FESTIVAL)
+        past = self.create_time_in_past()
+        d.expires = True
+        d.expire_date = past
+        d.save()
+        discounts = customer_discount_service.get_customer_available_discount(c)
+        exist = discounts.filter(id=d.id).exists()
+        self.assertFalse(exist)
+
+    def test_get_customer_available_discount_festival_deleted(self):
+        d = self._create_discount(self.businessman, Discount.USED_FOR_FESTIVAL)
+        f = self._create_festival(self.businessman, d)
+        f.marked_as_deleted_for_businessman = True
+        f.save()
+        c = self.invitation.inviter.customer
+        discounts = customer_discount_service.get_customer_available_discount(c)
+        exist = discounts.filter(id=d.id).exists()
+        self.assertFalse(exist)
+
+    def test_get_customer_available_discount_purchase_added(self):
+        c = self.invitation.inviter.customer
+        p = self._create_purchase(self.businessman, c)
+        d = self._create_discount(self.businessman, Discount.USED_FOR_FESTIVAL)
+        self._create_festival(self.businessman, d)
+        PurchaseDiscount.objects.create(discount=d, purchase=p)
+        discounts = customer_discount_service.get_customer_available_discount(c)
+        exist = discounts.filter(id=d.id).exists()
+        self.assertFalse(exist)
+
+    def test_inviter_discount_invited_has_purchase_for_another_businessman(self):
+        b = self.create_businessman()
+        invited = self.invitation.invited.customer
+        self.add_customer_to_businessman(b, invited)
+        self._create_purchase(b, invited)
+        d = customer_discount_service.get_customer_discounts(self.invitation.inviter.customer)
+        self.assertEqual(d.count(), 1)
+
+    def test_is_invitation_discount_invited_has_purchase_not_invitation_discount(self):
+        d = self._create_discount(self.businessman, Discount.USED_FOR_FESTIVAL)
+        inviter_c = self.invitation.inviter.customer
+        result = customer_discount_service.is_invitation_inviter_discount_and_invited_has_purchase(d, inviter_c)
+        self.assertFalse(result[0])
+        self.assertFalse(result[1])
+        self.assertFalse(result[2])
+
+    def test_is_invitation_discount_invited_has_purchase_customer_is_not_inviter(self):
+        d = self.invitation.inviter_discount
+        invited_c = self.invitation.invited.customer
+        result = customer_discount_service.is_invitation_inviter_discount_and_invited_has_purchase(d, invited_c)
+        self.assertTrue(result[0])
+        self.assertFalse(result[1])
+        self.assertFalse(result[2])
+
+    def test_is_invitation_discount_invited_has_purchase_invited_has_0_purchase(self):
+        d = self.invitation.inviter_discount
+        inviter_c = self.invitation.inviter.customer
+        result = customer_discount_service.is_invitation_inviter_discount_and_invited_has_purchase(d, inviter_c)
+        self.assertTrue(result[0])
+        self.assertTrue(result[1])
+        self.assertFalse(result[2])
+
+    def test_is_invitation_discount_invited_has_purchase_and_invited_has_purchase(self):
+        invited_c = self.invitation.invited.customer
+        inviter_c = self.invitation.inviter.customer
+        d = self.invitation.inviter_discount
+        CustomerPurchase.objects.create(businessman=self.invitation.businessman, customer=invited_c,
+                                        amount=10)
+        result = customer_discount_service.is_invitation_inviter_discount_and_invited_has_purchase(d,
+                                                                                                   inviter_c)
+        self.assertTrue(result[0])
+        self.assertTrue(result[1])
+        self.assertTrue(result[2])

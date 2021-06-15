@@ -44,3 +44,4 @@ class BaseTestClass(TestCase, ABC):
 
     def create_time_in_past(self) -> datetime:
         return timezone.now() - timezone.timedelta(days=30)
+
