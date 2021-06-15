@@ -1,8 +1,8 @@
 from rest_framework.decorators import api_view
-from rest_framework.generics import ListAPIView, get_object_or_404
 from rest_framework.request import Request
-from rest_framework import generics
+from rest_framework.response import Response
 
+from base_app.error_codes import ApplicationErrorException
 from base_app.views import BaseListAPIView
 from common.util import create_detail_error
 from common.util.http_helpers import ok, bad_request, not_found
@@ -57,12 +57,12 @@ class CustomerDiscountsListAPIView(BaseListAPIView):
     serializer_class = ReadOnlyDiscountWithUsedFieldSerializer
 
     def get_serializer_context(self):
-        customer = customer_service.get_customer_by_id_or_404(self.request.user, self.kwargs.get('customer_id'))
+        customer = customer_service.get_businessman_customer_by_id(self.request.user, self.kwargs.get('customer_id'))
         return {'customer': customer, 'user': self.request.user}
 
     def get_queryset(self):
         use_state = self.request.query_params.get('ust')
-        customer = customer_service.get_customer_by_id_or_404(self.request.user, self.kwargs.get('customer_id'))
+        customer = customer_service.get_businessman_customer_by_id(self.request.user, self.kwargs.get('customer_id'))
         default = discount_service.get_customer_discounts_for_businessman(self.request.user, customer)
         if use_state is None:
             return default
@@ -78,6 +78,12 @@ class CustomerDiscountsListAPIView(BaseListAPIView):
             return discount_service.get_customer_available_discounts_for_businessman(self.request.user, customer)
         else:
             return default
+
+    def list(self, request: Request, *args, **kwargs) -> Response:
+        try:
+            return super().list(request, *args, **kwargs)
+        except ApplicationErrorException as ex:
+            return bad_request(ex.http_message)
 
 
 @api_view(['GET'])
