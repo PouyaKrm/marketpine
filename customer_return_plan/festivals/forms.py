@@ -1,18 +1,33 @@
-from django import forms
 from django.core.exceptions import ValidationError
 
-from panelprofile.models import SMSPanelStatus
+from panelprofile.services import sms_panel_info_service
 from .models import Festival
+from ..forms import BaseReturnPlanForm
+from ..models import Discount
 
 
-class FestivalForm(forms.ModelForm):
+class FestivalForm(BaseReturnPlanForm):
     class Meta:
         model = Festival
         fields = '__all__'
 
+    def clean_discount(self):
+        discount = self.cleaned_data.get('discount')
+        businessman = self.cleaned_data.get('businessman')
+        self._check_discount_used_for_is_used_anywhere_belongs_to_businessman(
+            discount,
+            businessman,
+            Discount.USED_FOR_FESTIVAL
+        )
+        return discount
+
     def clean(self):
         super().clean()
         businessman = self.cleaned_data.get('businessman')
-        if businessman is not None and (not businessman.has_sms_panel or
-                                        businessman.smspanelinfo.status == SMSPanelStatus.INACTIVE):
-            raise ValidationError('businessman does not have active sms panel')
+        has_sms_panel = sms_panel_info_service.has_sms_panel(businessman)
+        if not has_sms_panel:
+            raise ValidationError('بیزینس من پنل اسمس ندارد')
+        panel = sms_panel_info_service.get_buinessman_sms_panel(businessman)
+        if panel.is_status_disabled():
+            raise ValidationError('پنل اسمس بیزینس من فعال نیست')
+        return self.cleaned_data
