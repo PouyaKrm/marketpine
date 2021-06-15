@@ -1,16 +1,17 @@
+from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
 from rest_framework import serializers
+
+from base_app.serializers import BaseModelSerializerWithRequestObj
+from common.util import create_field_error
 from common.util.custom_validators import phone_validator, sms_not_contains_link
+from customer_return_plan.invitation.models import FriendInvitation, FriendInvitationSettings
 from customer_return_plan.serializers import ReadOnlyDiscountSerializer
 from customer_return_plan.services import DiscountService
-from customers.serializers import CustomerListCreateSerializer, CustomerSerializer
-from customer_return_plan.invitation.models import FriendInvitation, FriendInvitationSettings
-from common.util import common_serializers, DiscountType, generate_discount_code, create_field_error
+from customers.serializers import CustomerListCreateSerializer
 from customers.services import customer_service
 from smspanel.services import SMSMessageService
-from users.models import Customer, Businessman
-
-from django.conf import settings
+from users.models import Businessman
 
 template_min_chars = settings.SMS_PANEL['TEMPLATE_MIN_CHARS']
 template_max_chars = settings.SMS_PANEL['TEMPLATE_MAX_CHARS']
@@ -174,9 +175,9 @@ class FriendInvitationListSerializer(serializers.ModelSerializer):
         ]
 
 
-class InvitationBusinessmanListSerializer(serializers.ModelSerializer):
-    inviter = CustomerListCreateSerializer(read_only=True)
-    invited = CustomerListCreateSerializer(read_only=True)
+class InvitationBusinessmanListSerializer(BaseModelSerializerWithRequestObj):
+    inviter = serializers.SerializerMethodField(read_only=True)
+    invited = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = FriendInvitation
@@ -187,6 +188,12 @@ class InvitationBusinessmanListSerializer(serializers.ModelSerializer):
             'invited',
             'new',
         ]
+
+    def get_inviter(self, invitation: FriendInvitation):
+        return CustomerListCreateSerializer(invitation.inviter.customer, context={'user': self.request.user}).data
+
+    def get_invited(self, invitation: FriendInvitation):
+        return CustomerListCreateSerializer(invitation.invited.customer, context={'user': self.request.user}).data
 
 
 class InvitationRetrieveSerializer(InvitationBusinessmanListSerializer):

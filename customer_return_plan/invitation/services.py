@@ -1,4 +1,6 @@
 from django.core.exceptions import ObjectDoesNotExist
+from django.db.models.aggregates import Sum
+from django.db.models.query_utils import Q
 
 from customer_return_plan.invitation.models import FriendInvitationSettings, FriendInvitation
 from customer_return_plan.models import Discount
@@ -52,8 +54,30 @@ class FriendInvitationService:
                                                create_date__month=date.month,
                                                create_date__day=date.day)
 
-    def get_businessman_all_invitations(self, businessman: Businessman):
-        return FriendInvitation.objects.filter(businessman=businessman)
+    def get_businessman_all_invitations(self, businessman: Businessman, inviter_customer_id: int = None):
+        query = FriendInvitation.objects.filter(businessman=businessman)
+        if inviter_customer_id is not None:
+            query = query.filter(inviter__customer__id=inviter_customer_id)
+        return query.order_by('-create_date')
+
+    def customer_all_invited_friend_purchases_sum(self, user: Businessman, inviter: Customer) -> int:
+        result = FriendInvitation.objects.filter(businessman=user, inviter__customer=inviter) \
+            .aggregate(
+            purchase_sum=Sum(
+                'invited__customer__purchases__amount',
+                filter=Q(
+                    invited__customer__purchases__businessman=user
+                )
+            )
+        ).get(
+            'purchase_sum'
+        )
+        if result is None:
+            return 0
+        return result
+
+    def customer_total_invitations_count(self, customer: Customer):
+        return FriendInvitation.objects.filter(inviter__customer=customer).count()
 
     def _create_invitation_discount(self, invite_settings: FriendInvitationSettings,
                                     businessman: Businessman) -> Discount:
@@ -67,6 +91,9 @@ class FriendInvitationService:
                                  invited: Customer) -> SMSMessage:
         sms = sms_message_service.friend_invitation_message(businessman, invitation_settings.sms_template, invited)
         return sms
+
+    def invitation_exist_by_discount(self, discount: Discount):
+        return FriendInvitation.objects.filter(Q(inviter_discount=discount) | Q(invited_discount=discount)).exists()
 
 
 invitation_service = FriendInvitationService()

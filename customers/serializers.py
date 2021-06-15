@@ -5,7 +5,6 @@ from rest_framework import serializers
 from base_app.serializers import BusinessmanGroupRelatedField
 from common.util.custom_validators import phone_validator
 # from common.util.sms_panel.message import SystemSMSMessage
-from customer_return_plan.invitation.models import FriendInvitation
 from customer_return_plan.services import DiscountService, discount_service
 from customerpurchase.services import PurchaseService
 from customers.services import CustomerService
@@ -99,7 +98,8 @@ class CustomerListCreateSerializer(serializers.ModelSerializer):
         return purchases_total - p_d
 
     def get_invitations_total(self, obj: Customer):
-        return FriendInvitation.customer_total_invitations_count(obj)
+        from customer_return_plan.invitation.services import invitation_service
+        return invitation_service.customer_total_invitations_count(obj)
 
     def get_used_discounts_total(self, obj: Customer):
         return discount_service.get_customer_used_discounts_for_businessman(self.context['user'], obj).count()
@@ -110,7 +110,8 @@ class CustomerListCreateSerializer(serializers.ModelSerializer):
         return self.discount_service.has_customer_any_discount(user, obj)
 
     def get_invited_purchases_total(self, obj: Customer):
-        return FriendInvitation.customer_all_invited_friend_purchases_sum(self.context['user'], obj)
+        from customer_return_plan.invitation.services import invitation_service
+        return invitation_service.customer_all_invited_friend_purchases_sum(self.context['user'], obj)
 
     def get_date_joined(self, obj: Customer):
         user = self.context['user']

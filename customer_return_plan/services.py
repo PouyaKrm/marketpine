@@ -7,6 +7,7 @@ from django.utils import timezone
 from strgen import StringGenerator
 
 from customer_return_plan.festivals.models import Festival
+from customer_return_plan.festivals.services import festival_service
 from customer_return_plan.models import Discount, PurchaseDiscount
 from customerpurchase.models import CustomerPurchase
 from customers.services import CustomerService
@@ -329,6 +330,12 @@ class DiscountService:
                                        purchase_discount__create_date__year=date.year,
                                        purchase_discount__create_date__month=date.month
                                        )
+
+    def is_discount_used_anywhere_else(self, discount: Discount) -> bool:
+        from .invitation.services import invitation_service
+        festival_exist = festival_service.festival_exist_by_discount(discount)
+        invitation_exist = invitation_service.invitation_exist_by_discount(discount)
+        return festival_exist or invitation_exist
 
 
 class CustomerDiscountService:

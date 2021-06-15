@@ -1,24 +1,25 @@
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
+# Create your views here.
+from rest_framework import generics
 from rest_framework import status, permissions
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from common.util import paginators
+from common.util.custom_validators import phone_validator
 from common.util.http_helpers import ok, bad_request
 from customer_return_plan.invitation.models import FriendInvitation
 from smspanel.permissions import HasActiveSMSPanel
+from users.models import Businessman
 from users.permissions import IsPanelActivePermissionPostPutMethod
 from .serializers import FriendInvitationCreationSerializer, FriendInvitationListSerializer, \
     InvitationBusinessmanListSerializer, InvitationRetrieveSerializer, FriendInvitationSettingsSerializer
-from users.models import Businessman
-from common.util.custom_validators import phone_validator
-from common.util import paginators
-# Create your views here.
-from rest_framework import generics
+# ToDo this view is jus for test purposes and must not be used in production
+from .services import invitation_service
 
 
-#ToDo this view is jus for test purposes and must not be used in production
 class FriendInvitationListAPIView(APIView):
 
     def get(self, request: Request):
@@ -64,14 +65,11 @@ class BusinessmanInvitationListAPIView(generics.ListAPIView):
     serializer_class = InvitationBusinessmanListSerializer
 
     def get_serializer_context(self):
-        return {'user': self.request.user}
+        return {'request': self.request}
 
     def get_queryset(self):
         customer_id = self.request.query_params.get('id')
-        query = FriendInvitation.objects.filter(businessman=self.request.user).order_by('-create_date')
-        if customer_id:
-            return query.filter(inviter__id=customer_id).all()
-        return query.all()
+        return invitation_service.get_businessman_all_invitations(self.request.user, customer_id)
 
 
 @api_view(['GET'])

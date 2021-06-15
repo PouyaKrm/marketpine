@@ -2,6 +2,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.utils import timezone
 
 from customer_return_plan.festivals.models import Festival
+from customer_return_plan.models import Discount
 from smspanel.services import SMSMessageService
 from users.models import Businessman, Customer
 
@@ -65,6 +66,9 @@ class FestivalService:
         if f is not None:
             f.remaining_pwa_notif_customers.remove(customer)
         return f
+
+    def festival_exist_by_discount(self, discount: Discount) -> bool:
+        return Festival.objects.filter(discount=discount).exists()
 
 
 festival_service = FestivalService()
