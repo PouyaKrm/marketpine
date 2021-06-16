@@ -331,11 +331,16 @@ class DiscountService:
                                        purchase_discount__create_date__month=date.month
                                        )
 
-    def is_discount_used_anywhere_else(self, discount: Discount) -> bool:
+    def is_discount_used_anywhere_else(self, discount: Discount, exclude_festival: Festival = None,
+                                       exclude_invitation=None) -> bool:
         from .invitation.services import invitation_service
-        festival_exist = festival_service.festival_exist_by_discount(discount)
-        invitation_exist = invitation_service.invitation_exist_by_discount(discount)
-        return festival_exist or invitation_exist
+        festival_exist_q = festival_service.filter_festival_by_discount(discount)
+        if exclude_festival is not None:
+            festival_exist_q = festival_exist_q.exclude(id=exclude_festival.id)
+        invitation_exist_q = invitation_service.filter_invitation_by_discount(discount)
+        if exclude_invitation is not None:
+            invitation_exist_q = invitation_exist_q.exclude(id=exclude_invitation.id)
+        return festival_exist_q.exists() or invitation_exist_q.exists()
 
 
 class CustomerDiscountService:

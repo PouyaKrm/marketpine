@@ -67,8 +67,8 @@ class FestivalService:
             f.remaining_pwa_notif_customers.remove(customer)
         return f
 
-    def festival_exist_by_discount(self, discount: Discount) -> bool:
-        return Festival.objects.filter(discount=discount).exists()
+    def filter_festival_by_discount(self, discount: Discount):
+        return Festival.objects.filter(discount=discount)
 
 
 festival_service = FestivalService()

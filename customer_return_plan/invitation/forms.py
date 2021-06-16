@@ -2,6 +2,7 @@ from django.core.exceptions import ValidationError
 
 from customer_return_plan.forms import BaseReturnPlanForm
 from customer_return_plan.invitation.models import FriendInvitation
+from customer_return_plan.invitation.services import invitation_service
 from customer_return_plan.models import Discount
 
 
@@ -28,43 +29,42 @@ class CreateChangeInvitationForm(BaseReturnPlanForm):
                 'فرد معرفی شده باید عضو بیزینس منی باشید که صاحب این معرفی دوست است',
                 code='invalid'
             )
+        already_invited_q = invitation_service.get_businessman_all_invitations(businessman).filter(
+            invited=invited
+        )
+
+        if self.instance is not None:
+            already_invited_q = already_invited_q.exclude(id=self.instance.id)
+        if already_invited_q.exists():
+            raise ValidationError(
+                'این فرد قبلا معرفی شده',
+                code='invalid'
+            )
         return invited
 
     def clean_inviter_discount(self):
         d = self.cleaned_data.get('inviter_discount')
         businessman = self.cleaned_data.get('businessman')
-        self._check_discount_used_any_where_else(d)
-        if d.used_for != Discount.USED_FOR_INVITATION:
-            raise ValidationError(
-                'نوع تخفیف باید معرفی دوست باشد',
-                code='invalid'
-            )
-
-        if d.businessman != businessman:
-            raise ValidationError(
-                'بیزینس من صاحب تخیفیف با بیزینس من دازنده این معرفی دوست باید یکسان باشد',
-                code='invalid'
-            )
+        self._check_discount_used_for_is_used_anywhere_belongs_to_businessman(
+            d,
+            businessman,
+            Discount.USED_FOR_INVITATION,
+            None,
+            self.instance
+        )
         return d
 
     def validate_invited_discount(self):
 
         d = self.cleaned_data.get('invited_discount')
-        self._check_discount_used_any_where_else(d)
         businessman = self.cleaned_data.get('businessman')
-
-        if d.used_for != Discount.USED_FOR_INVITATION:
-            raise ValidationError(
-                'نوع تخفیف باید معرفی دوست باشد',
-                code='invalid'
-            )
-
-        if d.businessman != businessman:
-            raise ValidationError(
-                'بیزینس من صاحب تخیفیف با بیزینس من دازنده این معرفی دوست باید یکسان باشد',
-                code='invalid'
-            )
-        return d
+        self._check_discount_used_for_is_used_anywhere_belongs_to_businessman(
+            d,
+            businessman,
+            Discount.USED_FOR_INVITATION,
+            None,
+            self.instance
+        )
 
     def clean(self):
         inviter = self.cleaned_data.get('inviter')

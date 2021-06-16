@@ -92,8 +92,10 @@ class FriendInvitationService:
         sms = sms_message_service.friend_invitation_message(businessman, invitation_settings.sms_template, invited)
         return sms
 
-    def invitation_exist_by_discount(self, discount: Discount):
-        return FriendInvitation.objects.filter(Q(inviter_discount=discount) | Q(invited_discount=discount)).exists()
+    def filter_invitation_by_discount(self, discount: Discount):
+        return FriendInvitation.objects.filter(
+            Q(inviter_discount=discount) | Q(invited_discount=discount)
+        )
 
 
 invitation_service = FriendInvitationService()
