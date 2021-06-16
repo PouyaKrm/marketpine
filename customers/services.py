@@ -90,6 +90,12 @@ class CustomerService(BaseService):
         except ObjectDoesNotExist:
             raise ApplicationErrorCodes.get_exception(ApplicationErrorCodes.RECORD_NOT_FOUND)
 
+    def get_businessmancustomer(self, businessman: Businessman, customer: Customer):
+        try:
+            BusinessmanCustomer.objects.get(businessman=businessman, customer=customer, is_deleted=False)
+        except ObjectDoesNotExist as ex:
+            raise ApplicationErrorCodes.get_exception(ApplicationErrorCodes.RECORD_NOT_FOUND, ex)
+
     def get_businessmans_of_customer(self, c: Customer) -> QuerySet:
         return c.businessmans.filter(connected_customers__is_deleted=False).all()
 

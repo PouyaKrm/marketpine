@@ -1,10 +1,11 @@
+from base_app.error_codes import ApplicationErrorException
 from customer_application.error_codes import CustomerAppErrors
 
 
-class CustomerServiceException(Exception):
+class CustomerServiceException(ApplicationErrorException):
 
-    def __init__(self, http_message):
-        self.http_message = http_message
+    def __init__(self, http_message, original_exception: Exception = None):
+        super().__init__(http_message, original_exception)
 
     @staticmethod
     def for_customer_by_phone_does_not_exist():

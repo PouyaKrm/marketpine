@@ -1,9 +1,9 @@
+from django.conf import settings
+from django.contrib.auth.models import AbstractUser, AbstractBaseUser, BaseUserManager
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.db import models
-from django.contrib.auth.models import AbstractUser, AbstractBaseUser, BaseUserManager
 from django.db.models.signals import post_save
 from django.dispatch.dispatcher import receiver
-from django.conf import settings
 from django.utils import timezone
 
 from base_app.models import PanelDurationBaseModel, PublicFileStorage
@@ -105,7 +105,6 @@ class Businessman(AbstractUser, PanelDurationBaseModel):
         return self.panel_expiration_date <= now or self.panel_expiration_date - now <= days_before_expire
 
     def clean(self):
-        from users.services import businessman_service
         super().clean()
         duration_type = self.duration_type
         panel_expire_date = self.panel_expiration_date
@@ -277,7 +276,8 @@ class BusinessmanCustomer(BaseModel):
     JOINED_BY_INVITATION = '2'
     joined_by_choices = [
         (JOINED_BY_PANEL, 'By Panel'),
-        (JOINED_BY_CUSTOMER_APP, 'Customer App')
+        (JOINED_BY_CUSTOMER_APP, 'Customer App'),
+        (JOINED_BY_INVITATION, 'Joined by invitation')
     ]
 
     customer = models.ForeignKey(Customer, on_delete=models.CASCADE, related_name='connected_businessmans',

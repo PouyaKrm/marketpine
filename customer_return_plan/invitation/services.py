@@ -2,6 +2,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.db.models.aggregates import Sum
 from django.db.models.query_utils import Q
 
+from base_app.error_codes import ApplicationErrorException, ApplicationErrorCodes
 from customer_return_plan.invitation.models import FriendInvitationSettings, FriendInvitation
 from customer_return_plan.models import Discount
 from customer_return_plan.services import discount_service
@@ -25,11 +26,17 @@ class FriendInvitationService:
     def is_invitation_enabled(self, businessman: Businessman) -> bool:
         return not self.get_businessman_invitation_setting_or_create(businessman).disabled
 
+    def check_invitation_enabled(self, businessman: Businessman):
+        if not self.is_invitation_enabled(businessman):
+            raise ApplicationErrorException(ApplicationErrorCodes.FRIEND_INVITATION_DISABLED)
+
     def is_friend_already_invited(self, businessman: Businessman, friend_phone: str) -> bool:
         customer_service.get_customer_by_businessman_and_phone(businessman, friend_phone)
 
     def create_invitation(self, businessman: Businessman, inviter: Customer, invited: Customer) -> Discount:
-        invitation = FriendInvitation(businessman=businessman, inviter=inviter, invited=invited)
+        inviter_bc = customer_service.get_businessmancustomer(businessman, inviter)
+        invited_bc = customer_service.get_businessmancustomer(businessman, invited)
+        invitation = FriendInvitation(businessman=businessman, inviter=inviter_bc, invited=invited_bc)
         settings = self.get_businessman_invitation_setting_or_create(businessman)
         inviter_discount = self._create_invitation_discount(settings, businessman)
         invited_discount = self._create_invitation_discount(settings, businessman)
