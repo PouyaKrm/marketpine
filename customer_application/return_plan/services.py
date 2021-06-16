@@ -1,5 +1,6 @@
 from customer_application.error_codes import CustomerAppErrors
 from customer_application.exceptions import CustomerServiceException
+from customer_application.services import customer_data_service
 from customer_return_plan.invitation.services import invitation_service
 from customers.services import customer_service
 from users.models import Businessman, BusinessmanCustomer
@@ -17,6 +18,9 @@ class InvitationInfo:
 class ReturnPlanService:
 
     def add_friend_invitation(self, info: InvitationInfo):
+        customer_data_service.check_user_joined_businessman(info.businessman,
+                                                            info.customer
+                                                            )
         self._check_invitation_is_active(info.businessman)
         self._check_friend_already_invited(info.businessman, info.friend_phone)
         if not info.customer.is_full_name_set() and info.full_name is None:

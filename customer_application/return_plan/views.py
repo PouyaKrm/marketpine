@@ -15,10 +15,10 @@ logger = logging.getLogger(__name__)
 @api_view(['POST'])
 @authentication_classes([CustomerAuthenticationSchema])
 def friend_invitation(request: Request):
-    sr = FriendInvitationSerializer(data=request.data, request=request, context={'user': request.user})
-    if not sr.is_valid():
-        return bad_request(sr.errors)
     try:
+        sr = FriendInvitationSerializer(data=request.data, request=request, context={'user': request.user})
+        if not sr.is_valid():
+            return bad_request(sr.errors)
         inf = InvitationInfo()
         inf.businessman = sr.validated_data.get('businessman')
         inf.customer = request.user

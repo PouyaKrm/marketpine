@@ -1,21 +1,23 @@
+import logging
+import secrets
+
 import jwt
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
 from django.utils import timezone
 
 from common.util.kavenegar_local import APIException, HTTPException
+from common.util.sms_panel.message import SystemSMSMessage
+from customer_application.exceptions import CustomerServiceException
 from customer_return_plan.festivals.services import festival_service
 from customer_return_plan.services import customer_discount_service
 from customers.services import customer_service
-from customer_application.exceptions import CustomerServiceException
-from common.util.sms_panel.message import SystemSMSMessage
 from online_menu.services import online_menu_service
 from smspanel.services import sms_message_service
 from users.models import Customer, Businessman, BusinessmanCustomer
 from users.services import businessman_service
+from .error_codes import CustomerAppErrors
 from .models import CustomerVerificationCode, CustomerLoginTokens, CustomerUpdatePhoneModel
-import secrets
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -211,7 +213,8 @@ customer_auth_service = CustomerAuthService()
 class CustomerDataService:
 
     def get_all_businessmans(self, customer: Customer, business_name: str = None):
-        query = customer.businessmans.order_by('-connected_customers__create_date')
+        query = customer.businessmans.filter(connected_customers__is_deleted=False).order_by(
+            '-connected_customers__create_date')
         if business_name is not None and business_name.strip() != '':
             query = query.filter(business_name__icontains=business_name)
         return query.all()
@@ -232,9 +235,12 @@ class CustomerDataService:
         if customer.is_anonymous:
             CustomerServiceException.for_should_login()
         b = self.get_businessman_by_id_or_page_id(page_businessman_id)
-        exist = BusinessmanCustomer.objects.filter(businessman=b, customer=customer).exists()
+        exist = BusinessmanCustomer.objects.filter(businessman=b, customer=customer, is_deleted=False).exists()
         if exist:
             return b
+
+        self._check_customer_not_already_deleted(b, customer)
+
         BusinessmanCustomer.objects.create(businessman=b, customer=customer,
                                            joined_by=BusinessmanCustomer.JOINED_BY_CUSTOMER_APP)
         sms_message_service.send_welcome_message(b, customer)
@@ -272,7 +278,7 @@ class CustomerDataService:
 
     def get_businessman_of_customer_by_id(self, customer: Customer, businessman_id: int) -> Businessman:
         try:
-            return customer.businessmans.get(id=businessman_id)
+            return customer.businessmans.get(id=businessman_id, connected_customers__is_deleted=False)
         except ObjectDoesNotExist:
             CustomerServiceException.for_businessman_not_found()
 
@@ -292,6 +298,18 @@ class CustomerDataService:
         customer.full_name = full_name
         customer.save()
         return customer
+
+    def _check_customer_not_already_deleted(self, businessman: Businessman, customer: Customer):
+        already_deleted = BusinessmanCustomer.objects.filter(businessman=businessman, customer=customer,
+                                                             is_deleted=True).exists()
+
+        if already_deleted:
+            raise CustomerServiceException(CustomerAppErrors.CAN_NOT_JOIN_BUSINESSMAN_THAT_DELETED_CUSTOMER_BEFORE)
+
+    def check_user_joined_businessman(self, businessman: Businessman, customer: Customer):
+        exist = BusinessmanCustomer.objects.filter(businessman=businessman, customer=customer, is_deleted=False)
+        if not exist:
+            raise CustomerServiceException(CustomerAppErrors.USER_NOT_JOINED_BUSINESSMAN)
 
 
 customer_data_service = CustomerDataService()

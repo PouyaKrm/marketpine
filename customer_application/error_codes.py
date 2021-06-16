@@ -12,6 +12,9 @@ class CustomerAppErrors:
     PHONE_NUMBER_ALREADY_TAKEN = '9'
     FULL_NAME_MUST_BE_SET = '10'
     RECORD_NOT_FOUND = '11'
+    CAN_NOT_JOIN_BUSINESSMAN_THAT_DELETED_CUSTOMER_BEFORE = {'code': '12',
+                                                             'message': 'امکان عضویت به فروشگاهی که قبلا شما را از لیست مشتریان خود حذف کرده نیست'}
+    USER_NOT_JOINED_BUSINESSMAN = {'code': '13', 'message': 'عضو بیزینس من نیستید'}
 
     @staticmethod
     def error_dict(code, error: dict = None):
