@@ -95,14 +95,14 @@ class CustomerVerificationCodeService:
                 send_attempts__lt=2,
                 last_send_time__lt=timezone.now() - timezone.timedelta(minutes=1))
             return v
-        except ObjectDoesNotExist:
-            CustomerServiceException.for_invalid_verification_code()
+        except ObjectDoesNotExist as ex:
+            raise CustomerServiceException(CustomerAppErrors.INVALID_PASSWORD, ex)
 
     def _check_not_has_unexpired_verification_code(self, customer: Customer, used_for):
         exist = CustomerVerificationCode.objects.filter(used_for=used_for, customer=customer,
                                                         expiration_time__gt=timezone.now()).exists()
         if exist:
-            CustomerServiceException.for_verification_code_already_sent()
+            raise CustomerServiceException(CustomerAppErrors.ONE_TIME_PASSWORD_ALREADY_SENT)
 
     def _get_last_unexpired_verify_code_by_code(self, customer: Customer, code: str,
                                                 used_for: str) -> CustomerVerificationCode:
@@ -110,8 +110,8 @@ class CustomerVerificationCodeService:
             return CustomerVerificationCode.objects.get(customer=customer, code=code,
                                                         used_for=used_for,
                                                         expiration_time__gt=timezone.now())
-        except ObjectDoesNotExist:
-            raise CustomerServiceException.for_invalid_verification_code()
+        except ObjectDoesNotExist as ex:
+            raise CustomerServiceException(CustomerAppErrors.INVALID_PASSWORD, ex)
 
 
 class CustomerLoginTokensService:
@@ -124,8 +124,8 @@ class CustomerLoginTokensService:
     def get_customer_by_token(self, token: str, user_agent: str) -> Customer:
         try:
             return CustomerLoginTokens.objects.get(token=token, user_agent=user_agent).customer
-        except ObjectDoesNotExist:
-            CustomerServiceException.for_login_token_does_not_exist()
+        except ObjectDoesNotExist as ex:
+            raise CustomerServiceException(CustomerAppErrors.LOGIN_TOKEN_DOES_NOT_EXIST, ex)
 
 
 class CustomerAuthService:
@@ -139,9 +139,9 @@ class CustomerAuthService:
         c = customer_service.get_customer_by_phone_or_create(phone)
         try:
             p = self._verification_code_service.generate_new_login_verification_code(c)
-        except (APIException, HTTPException) as e:
+        except (APIException, HTTPException) as ex:
             p.delete()
-            CustomerServiceException.for_password_send_failed()
+            raise CustomerServiceException(CustomerAppErrors.PASSWORD_SEND_FAILED, ex)
 
     def login(self, phone: str, login_code: str, user_agent) -> dict:
         c = self._get_customer(phone)
@@ -156,16 +156,14 @@ class CustomerAuthService:
         c = self._get_customer(phone)
         try:
             self._verification_code_service.resend_login_verification_code(c)
-        except (HTTPException, APIException) as e:
-            logger.error(e)
-            CustomerServiceException.for_password_send_failed()
+        except (HTTPException, APIException) as ex:
+            raise CustomerServiceException(CustomerAppErrors.PASSWORD_SEND_FAILED, ex)
 
     def _get_customer(self, phone: str):
         try:
             return customer_service.get_customer_by_phone(phone)
-        except ObjectDoesNotExist as e:
-            logger.error(e)
-            CustomerServiceException.for_customer_by_phone_does_not_exist()
+        except ObjectDoesNotExist as ex:
+            raise CustomerServiceException(CustomerAppErrors.CODE_PHONE_DOES_NOT_EXIST, ex)
 
     def get_customer_by_login_token(self, token: str, user_agent: str) -> Customer:
         return self._login_token_service.get_customer_by_token(token, user_agent)
@@ -181,21 +179,20 @@ class CustomerAuthService:
         is_unique = customer_service.is_phone_number_unique_for_update(customer, new_phone)
         is_same = new_phone == customer.phone
         if not is_unique or is_same:
-            CustomerServiceException.for_phone_number_already_taken()
+            raise CustomerServiceException(CustomerAppErrors.PHONE_NUMBER_ALREADY_TAKEN)
         p = None
         try:
             vc = self._verification_code_service.generate_new_phone_update_code(customer, new_phone)
             p = CustomerUpdatePhoneModel.objects.create(new_phone=new_phone, verify_code=vc)
-        except (APIException, HTTPException) as e:
+        except (APIException, HTTPException) as ex:
             p.delete()
-            CustomerServiceException.for_password_send_failed()
+            raise CustomerServiceException(CustomerAppErrors.PASSWORD_SEND_FAILED, ex)
 
     def resend_phone_update_code(self, customer: Customer):
         try:
             self._verification_code_service.resend_phone_update_code(customer)
-        except (APIException, HTTPException) as e:
-            logger.error(e)
-            CustomerServiceException.for_password_send_failed()
+        except (APIException, HTTPException) as ex:
+            raise CustomerServiceException(CustomerAppErrors.PASSWORD_SEND_FAILED, ex)
 
     def update_phone(self, customer: Customer, code: str) -> dict:
         vc = self._verification_code_service.check_phone_update_code(customer, code)
@@ -233,7 +230,7 @@ class CustomerDataService:
 
     def add_customer_to_businessman(self, page_businessman_id: str, customer: Customer) -> Businessman:
         if customer.is_anonymous:
-            CustomerServiceException.for_should_login()
+            raise CustomerServiceException(CustomerAppErrors.USER_SHOULD_LOGIN)
         b = self.get_businessman_by_id_or_page_id(page_businessman_id)
         exist = BusinessmanCustomer.objects.filter(businessman=b, customer=customer, is_deleted=False).exists()
         if exist:
@@ -267,20 +264,20 @@ class CustomerDataService:
     def get_businessman_by_id(self, businessman_id: int) -> Businessman:
         try:
             return Businessman.objects.get(id=businessman_id)
-        except ObjectDoesNotExist:
-            CustomerServiceException.for_businessman_not_found()
+        except ObjectDoesNotExist as ex:
+            raise CustomerServiceException(CustomerAppErrors.BUSINESSMAN_NOT_FOUND, ex)
 
     def get_businessman_by_page_id(self, page_id: str) -> Businessman:
         try:
             return businessman_service.get_businessman_by_page_id(page_id)
-        except ObjectDoesNotExist:
-            CustomerServiceException.for_businessman_not_found()
+        except ObjectDoesNotExist as ex:
+            raise CustomerServiceException(CustomerAppErrors.BUSINESSMAN_NOT_FOUND, ex)
 
     def get_businessman_of_customer_by_id(self, customer: Customer, businessman_id: int) -> Businessman:
         try:
             return customer.businessmans.get(id=businessman_id, connected_customers__is_deleted=False)
-        except ObjectDoesNotExist:
-            CustomerServiceException.for_businessman_not_found()
+        except ObjectDoesNotExist as ex:
+            raise CustomerServiceException(CustomerAppErrors.BUSINESSMAN_NOT_FOUND, ex)
 
     def get_profile(self, customer: Customer) -> dict:
         total_businessman = self.get_all_businessmans(customer).count()

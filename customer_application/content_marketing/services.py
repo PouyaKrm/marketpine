@@ -2,6 +2,7 @@ from django.core.exceptions import ObjectDoesNotExist
 
 from content_marketing.models import Post, Comment
 from content_marketing.services import content_marketing_service
+from customer_application.error_codes import CustomerAppErrors
 from customer_application.exceptions import CustomerServiceException
 from customer_application.services import customer_data_service
 from users.models import Customer
@@ -24,8 +25,8 @@ class CustomerAppContentMarketingService:
             p = self._get_post(post_id)
             self._set_views_for_post(p, customer)
             return p
-        except ObjectDoesNotExist:
-            CustomerServiceException.for_record_not_found()
+        except ObjectDoesNotExist as ex:
+            raise CustomerServiceException(CustomerAppErrors.RECORD_NOT_FOUND, ex)
 
     def toggle_post_like(self, post_id: int, customer: Customer) -> Post:
 

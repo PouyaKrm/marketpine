@@ -24,7 +24,7 @@ class ReturnPlanService:
         self._check_invitation_is_active(info.businessman)
         self._check_friend_already_invited(info.businessman, info.friend_phone)
         if not info.customer.is_full_name_set() and info.full_name is None:
-            CustomerServiceException.for_full_name_should_set()
+            raise CustomerServiceException(CustomerAppErrors.FULL_NAME_MUST_BE_SET)
         elif not info.customer.is_full_name_set() and info.full_name is not None:
             info.customer.full_name = info.full_name
             info.customer.save()
@@ -36,7 +36,7 @@ class ReturnPlanService:
 
     def _check_friend_already_invited(self, businessman: Businessman, friend_phone: str) -> str:
         if businessman.customers.filter(phone=friend_phone).exists():
-            CustomerServiceException.for_friend_already_invited()
+            raise CustomerServiceException(CustomerAppErrors.FRIEND_ALREADY_INVITED)
         return friend_phone
 
     def _check_invitation_is_active(self, businessman: Businessman):
