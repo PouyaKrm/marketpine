@@ -1,15 +1,13 @@
 from rest_framework import permissions
-from rest_framework.pagination import PageNumberPagination
 from rest_framework.request import Request
 
+from base_app.error_codes import ApplicationErrorException
 from base_app.permissions import AllowAnyOnGet
-from common.util.http_helpers import ok, bad_request, no_content
-from content_marketing.services import content_marketing_service
+from common.util.http_helpers import ok, bad_request
 from customer_application.base_views import BaseListAPIView, BaseAPIView
 from customer_application.content_marketing.serializers import PostListSerializer, PostRetrieveSerializer, \
     CommentListCreateSerializer
 from customer_application.content_marketing.services import customer_content_service
-from customer_application.exceptions import CustomerServiceException
 from customer_application.pagination import CustomerAppListPaginator
 
 
@@ -38,7 +36,7 @@ class PostsListAPIView(BaseListAPIView):
     def get(self, request, *args, **kwargs):
         try:
             return super().get(request, *args, **kwargs)
-        except CustomerServiceException as e:
+        except ApplicationErrorException as e:
             return bad_request(e.http_message)
 
     def get_serializer_context(self):
@@ -54,7 +52,7 @@ class PostRetrieveLikeAPIView(BaseAPIView):
             post = customer_content_service.retrieve_post_for_view(post_id, request.user)
             sr = PostRetrieveSerializer(post, request=request)
             return ok(sr.data)
-        except CustomerServiceException as e:
+        except ApplicationErrorException as e:
             return bad_request(e.http_message)
 
 
@@ -65,7 +63,7 @@ class PostLike(BaseAPIView):
             post = customer_content_service.toggle_post_like(post_id, request.user)
             sr = PostRetrieveSerializer(post, request=request)
             return ok(sr.data)
-        except CustomerServiceException as e:
+        except ApplicationErrorException as e:
             return bad_request(e.http_message)
 
 
@@ -80,7 +78,7 @@ class CommentsListCreateAPIView(BaseAPIView):
             page = paginator.paginate_queryset(c, request)
             sr = CommentListCreateSerializer(page, many=True, request=request)
             return paginator.get_paginated_response(sr.data)
-        except CustomerServiceException as e:
+        except ApplicationErrorException as e:
             return bad_request(e.http_message)
 
     def post(self, request, post_id: int):
@@ -92,5 +90,5 @@ class CommentsListCreateAPIView(BaseAPIView):
             c = customer_content_service.add_comment(request.user, post_id, body)
             sr = CommentListCreateSerializer(c, request=request)
             return ok(sr.data)
-        except CustomerServiceException as e:
+        except ApplicationErrorException as e:
             return bad_request(e.http_message)

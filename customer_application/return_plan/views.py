@@ -3,9 +3,9 @@ import logging
 from rest_framework.decorators import api_view, authentication_classes
 from rest_framework.request import Request
 
+from base_app.error_codes import ApplicationErrorException
 from common.util.http_helpers import bad_request, ok
 from customer_application.base_views import CustomerAuthenticationSchema, BaseListAPIView
-from customer_application.exceptions import CustomerServiceException
 from customer_application.return_plan.serializers import FriendInvitationSerializer, CustomerReadonlyDiscountSerializer
 from customer_application.return_plan.services import return_plan_service, InvitationInfo
 from customer_return_plan.services import customer_discount_service
@@ -27,7 +27,7 @@ def friend_invitation(request: Request):
         inf.friend_full_name = sr.validated_data.get('friend_full_name')
         result = return_plan_service.add_friend_invitation(inf)
         return ok(result)
-    except CustomerServiceException as e:
+    except ApplicationErrorException as e:
         logger.error(e)
         return bad_request(e.http_message)
 

@@ -1,19 +1,18 @@
-from rest_framework import permissions
-from rest_framework.decorators import api_view, permission_classes, authentication_classes
-from rest_framework.request import Request
-from rest_framework.views import APIView
+import logging
 
+from rest_framework import permissions
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.request import Request
+
+from base_app.error_codes import ApplicationErrorException
 from common.util.http_helpers import bad_request, no_content, get_user_agent, ok
-from customer_application.exceptions import CustomerServiceException
 from customer_application.serializers import CustomerPhoneSerializer, CustomerLoginSerializer, \
     BaseBusinessmanSerializer, BusinessmanRetrieveSerializer, FestivalNotificationSerializer, \
     PostNotificationSerializer, CustomerProfileSerializer, CustomerCodeSerializer
-from online_menu.serializers import OnlineMenuSerializer
-from .base_views import CustomerAuthenticationSchema, BaseListAPIView, BaseRetrieveAPIView, BaseAPIView
+from .base_views import BaseListAPIView, BaseAPIView
 from .error_codes import CustomerAppErrors
 from .pagination import CustomerAppListPaginator
 from .services import customer_auth_service, customer_data_service
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -30,7 +29,7 @@ def send_login_code(request: Request):
         else:
             customer_auth_service.send_login_code(sr.validated_data.get('phone'))
         return no_content()
-    except CustomerServiceException as e:
+    except ApplicationErrorException as e:
         logger.error(e)
         return bad_request(e.http_message)
 
@@ -48,7 +47,7 @@ def customer_login(request: Request):
     try:
         t = customer_auth_service.login(phone, code, ua)
         return ok(t)
-    except CustomerServiceException as e:
+    except ApplicationErrorException as e:
         logger.error(e)
         return bad_request(e.http_message)
 
@@ -85,7 +84,7 @@ class PhoneUpdateSendCode(BaseAPIView):
             phone = sr.validated_data.get('phone')
             customer_auth_service.send_phone_update_code(request.user, phone)
             return no_content()
-        except CustomerServiceException as e:
+        except ApplicationErrorException as e:
             return bad_request(e.http_message)
 
 
@@ -99,10 +98,8 @@ class PhoneUpdate(BaseAPIView):
             code = sr.validated_data.get('code')
             result = customer_auth_service.update_phone(request.user, code)
             return ok(result)
-        except CustomerServiceException as e:
+        except ApplicationErrorException as e:
             return bad_request(e.http_message)
-
-
 
 
 class BusinessmansList(BaseListAPIView):
@@ -127,7 +124,7 @@ class BusinessmanRetrieveAPIView(BaseAPIView):
             b = customer_data_service.get_businessman_by_id_or_page_id(page_businessman_id)
             sr = BusinessmanRetrieveSerializer(b, request=request)
             return ok(sr.data)
-        except CustomerServiceException as e:
+        except ApplicationErrorException as e:
             logger.error(e)
             return bad_request(e.http_message)
 
@@ -139,9 +136,8 @@ class BusinessmanRetrieveAPIView(BaseAPIView):
             b = customer_data_service.add_customer_to_businessman(page_businessman_id, request.user)
             sr = BusinessmanRetrieveSerializer(b, request=request)
             return ok(sr.data)
-        except CustomerServiceException as e:
+        except ApplicationErrorException as e:
             return bad_request(e.http_message)
-
 
 
 class NotificationAPIView(BaseAPIView):
