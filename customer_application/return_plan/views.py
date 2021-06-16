@@ -6,10 +6,8 @@ from rest_framework.request import Request
 from common.util.http_helpers import bad_request, ok
 from customer_application.base_views import CustomerAuthenticationSchema, BaseListAPIView
 from customer_application.exceptions import CustomerServiceException
-from customer_application.pagination import CustomerAppListPaginator
 from customer_application.return_plan.serializers import FriendInvitationSerializer, CustomerReadonlyDiscountSerializer
 from customer_application.return_plan.services import return_plan_service, InvitationInfo
-from customer_application.services import customer_data_service
 from customer_return_plan.services import customer_discount_service
 
 logger = logging.getLogger(__name__)
@@ -50,29 +48,4 @@ class CustomerDiscountListAPIView(BaseListAPIView):
         return query.order_by('-create_date')
 
     serializer_class = CustomerReadonlyDiscountSerializer
-
-
-@api_view(['GET'])
-@authentication_classes([CustomerAuthenticationSchema])
-def customer_businessman_discounts_list_api_view(request: Request, businessman_id: int):
-
-    customer = request.user
-    p = CustomerAppListPaginator()
-    ust = request.query_params.get('ust', 'available')
-    try:
-        businessman = customer_data_service.get_businessman_by_id_or_page_id(businessman_id)
-        if ust == 'used':
-            discounts = customer_discount_service.get_customer_used_discounts(request.user).filter(
-                businessman=businessman)
-            # discounts = discount_service.get_customer_used_discounts_for_businessman(businessman, customer)
-        else:
-            # discounts = discount_service.get_customer_available_discounts_for_businessman(businessman, customer)
-            discounts = customer_discount_service.get_customer_available_discount(customer).filter(
-                businessman=businessman)
-        result_page = p.paginate_queryset(discounts, request)
-        sr = CustomerReadonlyDiscountSerializer(result_page, request=request, many=True)
-        return p.get_paginated_response(sr.data)
-    except CustomerServiceException as e:
-        logger.error(e)
-        return bad_request(e.http_message)
 
