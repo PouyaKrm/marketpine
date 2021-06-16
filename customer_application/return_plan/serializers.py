@@ -3,10 +3,10 @@ from rest_framework import serializers
 from base_app.serializers import BaseModelSerializerWithRequestObj, BaseSerializerWithRequestObj
 from common.util import create_field_error
 from common.util.custom_validators import phone_validator
-from customer_application.serializers import BusinessmanIdRelatedField, BaseBusinessmanSerializer, \
-    customer_full_name_field
+from customer_application.serializers import BusinessmanIdRelatedField, BaseBusinessmanSerializer
 from customer_return_plan.models import Discount
 from customer_return_plan.serializers import ReadOnlyDiscountSerializer
+from customer_return_plan.services import customer_discount_service
 
 
 class FriendInvitationSerializer(BaseSerializerWithRequestObj):
@@ -40,8 +40,24 @@ class FriendInvitationSerializer(BaseSerializerWithRequestObj):
 
 
 class CustomerReadonlyDiscountSerializer(ReadOnlyDiscountSerializer, BaseModelSerializerWithRequestObj):
-
     businessman = serializers.SerializerMethodField(read_only=True)
+    is_invitation_and_usable = serializers.SerializerMethodField(read_only=True)
+
+    class Meta:
+        model = Discount
+        fields = [
+            'id',
+            'discount_code',
+            'expires',
+            'expire_date',
+            'discount_type',
+            'used_for',
+            'percent_off',
+            'flat_rate_off',
+            'customers_used_total',
+            'is_invitation_and_usable',
+            'businessman'
+        ]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -50,8 +66,17 @@ class CustomerReadonlyDiscountSerializer(ReadOnlyDiscountSerializer, BaseModelSe
             context = {**kwargs.get('context')}
         context['customer'] = self.request.user
 
-    class Meta(ReadOnlyDiscountSerializer.Meta):
-        fields = ['businessman'] + ReadOnlyDiscountSerializer.Meta.fields.copy()
-
     def get_businessman(self, obj: Discount):
         return BaseBusinessmanSerializer(obj.businessman, request=self.request).data
+
+    def get_is_invitation_and_usable(self, obj: Discount):
+        result = customer_discount_service.is_invitation_inviter_discount_and_invited_has_purchase(obj,
+                                                                                                   self.request.user
+                                                                                                   )
+        resp = {
+            'is_invitation_discount': result[0],
+            'is_customer_inviter': result[1],
+            'invited_has_purchase': result[2]
+        }
+
+        return resp
