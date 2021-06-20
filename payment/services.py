@@ -1,4 +1,5 @@
 from django.conf import settings
+from django.db import transaction
 from django.urls import reverse
 from rest_framework.request import Request
 from zeep import Client
@@ -41,20 +42,21 @@ class PaymentService:
     def _create_payment(self, request: Request, user: Businessman, amount_toman: float, description: str,
                         payment_type) -> Payment:
         try:
-            p = Payment.objects.create(
-                businessman=user,
-                amount=amount_toman,
-                description=description,
-                phone=user.phone,
-                payment_type=payment_type
-            )
-            call_back = request.build_absolute_uri(reverse('payment:verify'), )
-            client = Client(url)
-            merchant = setting_merchant
-            result = client.service.PaymentRequest(merchant, p.amount, p.description, p.businessman.email,
-                                                   p.phone, call_back)
-            p.create_status = result.Status
-            p.save()
+            with transaction.atomic():
+                p = Payment.objects.create(
+                    businessman=user,
+                    amount=amount_toman,
+                    description=description,
+                    phone=user.phone,
+                    payment_type=payment_type
+                )
+                call_back = request.build_absolute_uri(reverse('payment:verify'), )
+                client = Client(url)
+                merchant = setting_merchant
+                result = client.service.PaymentRequest(merchant, p.amount, p.description, p.businessman.email,
+                                                       p.phone, call_back)
+                p.create_status = result.Status
+                p.save()
             if p.create_status == 100:
                 p.authority = result.Authority
                 p.save()
