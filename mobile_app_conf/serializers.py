@@ -1,15 +1,12 @@
 import ast
 
-from django.core.exceptions import ObjectDoesNotExist
-from django.db.models import QuerySet
-from rest_framework import serializers
-
 from django.conf import settings
+from rest_framework import serializers
 
 from base_app.serializers import BaseModelSerializerWithRequestObj, BaseSerializerWithRequestObj, \
     FileFieldWithLinkRepresentation
-from common.util import create_link, get_client_ip, create_field_error
-from common.util.custom_validators import file_size_validator, fixed_phone_line_or_cell_phone_validator
+from common.util import create_link, get_client_ip
+from common.util.custom_validators import fixed_phone_line_or_cell_phone_validator
 from common.util.gelocation import geolocation_service, LocationAPIException
 from mobile_app_conf.models import MobileAppHeader, MobileAppPageConf, ContactInfo
 from .services import mobile_page_conf_service
@@ -175,8 +172,9 @@ class MobileAppPageConfSerializer(BaseModelSerializerWithRequestObj):
         time_from = attrs.get('working_time_from')
         time_to = attrs.get('working_time_to')
 
-        if show and (time_from is None) or (time_to is None):
-            raise serializers.ValidationError('when show is True both working_time_from and working_time_to should be provided')
+        if show and (time_from is None or time_to is None):
+            raise serializers.ValidationError(
+                'when show is True both working_time_from and working_time_to should be provided')
         return attrs
 
 
