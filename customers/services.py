@@ -90,9 +90,9 @@ class CustomerService(BaseService):
         except ObjectDoesNotExist:
             raise ApplicationErrorCodes.get_exception(ApplicationErrorCodes.RECORD_NOT_FOUND)
 
-    def get_businessmancustomer(self, businessman: Businessman, customer: Customer):
+    def get_businessmancustomer(self, businessman: Businessman, customer: Customer) -> BusinessmanCustomer:
         try:
-            BusinessmanCustomer.objects.get(businessman=businessman, customer=customer, is_deleted=False)
+            return BusinessmanCustomer.objects.get(businessman=businessman, customer=customer, is_deleted=False)
         except ObjectDoesNotExist as ex:
             raise ApplicationErrorCodes.get_exception(ApplicationErrorCodes.RECORD_NOT_FOUND, ex)
 

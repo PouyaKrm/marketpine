@@ -70,13 +70,21 @@ class CustomerReadonlyDiscountSerializer(ReadOnlyDiscountSerializer, BaseModelSe
         return BaseBusinessmanSerializer(obj.businessman, request=self.request).data
 
     def get_is_invitation_and_usable(self, obj: Discount):
-        result = customer_discount_service.is_invitation_inviter_discount_and_invited_has_purchase(obj,
-                                                                                                   self.request.user
-                                                                                                   )
+        result = customer_discount_service.is_invitation_inviter_discount_and_invited_has_purchase(
+            obj,
+            self.request.user
+        )
+
         resp = {
             'is_invitation_discount': result[0],
             'is_customer_inviter': result[1],
-            'invited_has_purchase': result[2]
+            'invited_has_purchase': result[2],
+            'invited_full_name': None,
+            'invited_phone': None
         }
+
+        if result[0] and result[1]:
+            resp['invited_full_name'] = obj.inviter_discount.invited.customer.full_name
+            resp['invited_phone'] = obj.inviter_discount.invited.customer.phone
 
         return resp

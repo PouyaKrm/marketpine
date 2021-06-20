@@ -389,7 +389,7 @@ class CustomerDiscountService:
         :returns:
              -x (:py:class:`bool`) - is discount used_for == USED_FOR_INVITATION
              -y (:py:class:`bool`) - is customer is has discount as inviter
-             -x (:py:class:`bool`) - is invited customer has any purchase
+             -z (:py:class:`bool`) - is invited customer has any purchase
         """
 
         if not discount.is_invitation_discount():

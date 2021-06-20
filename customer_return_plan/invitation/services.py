@@ -36,10 +36,13 @@ class FriendInvitationService:
     def create_invitation(self, businessman: Businessman, inviter: Customer, invited: Customer) -> Discount:
         inviter_bc = customer_service.get_businessmancustomer(businessman, inviter)
         invited_bc = customer_service.get_businessmancustomer(businessman, invited)
-        invitation = FriendInvitation(businessman=businessman, inviter=inviter_bc, invited=invited_bc)
+        invitation = FriendInvitation()
         settings = self.get_businessman_invitation_setting_or_create(businessman)
         inviter_discount = self._create_invitation_discount(settings, businessman)
         invited_discount = self._create_invitation_discount(settings, businessman)
+        invitation.businessman = businessman
+        invitation.inviter = inviter_bc
+        invitation.invited = invited_bc
         invitation.inviter_discount = inviter_discount
         invitation.invited_discount = invited_discount
         invitation.sms_message = self._send_invitation_message(businessman, settings, invited)
