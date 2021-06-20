@@ -1,32 +1,28 @@
 from datetime import datetime
 
 import jdatetime
+from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
+from django.http import HttpResponse
 from django.shortcuts import render, redirect
+from rest_framework import generics, permissions
+from rest_framework.decorators import api_view, permission_classes
 
+from base_app.error_codes import ApplicationErrorException
 from base_app.views import BaseListAPIView
-from common.util.http_helpers import bad_request, created
+from common.util.http_helpers import bad_request, created, ok
 from common.util.kavenegar_local import APIException
-from payment.exceptions import PaymentCreationFailedException, PaymentVerificationFailedException, \
+from payment.exceptions import PaymentVerificationFailedException, \
     PaymentAlreadyVerifiedException, PaymentOperationFailedException
 from smspanel.permissions import HasActiveSMSPanel
 from users.permissions import IsBusinessmanAuthorized
-from .models import PaymentTypes
-from django.http import HttpResponse
-from django.conf import settings
-
 from .models import Payment
+from .models import PaymentTypes
+from .permissions import ActivatePanelPermission
 from .serializers import (SMSCreditPaymentCreationSerializer,
                           PanelActivationPaymentCreationSerializer,
                           PaymentListSerializer, PanelActivationPlansSerializer
                           )
-
-from .permissions import ActivatePanelPermission
-
-from rest_framework.decorators import api_view, permission_classes
-from rest_framework.response import Response
-from rest_framework import status, generics, permissions
-
 from .services import payment_service
 
 frontend_url = settings.FRONTEND_URL
@@ -79,13 +75,18 @@ def verify(request):
 def create_payment_sms_credit(request):
     serializer = SMSCreditPaymentCreationSerializer(data=request.data, context={'request': request})
     if not serializer.is_valid():
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        return bad_request(serializer.errors)
 
     try:
-        serializer.save()
-    except PaymentCreationFailedException as e:
-        return Response({'status': e.returned_status}, status=status.HTTP_424_FAILED_DEPENDENCY)
-    return Response(serializer.data, status=status.HTTP_201_CREATED)
+        p = payment_service.create_payment_for_smspanel_credit(
+            request,
+            request.user,
+            serializer.validated_data.get('amount')
+        )
+        serializer = SMSCreditPaymentCreationSerializer(p)
+        return ok(serializer.data)
+    except ApplicationErrorException as ex:
+        return bad_request(ex.http_message)
 
 
 @api_view(['POST'])

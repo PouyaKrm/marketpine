@@ -1,5 +1,6 @@
 import logging
 
+from django.conf import settings
 from django.db.models import QuerySet
 from rest_framework import serializers
 
@@ -7,8 +8,6 @@ from common.util.kavenegar_local import APIException
 from common.util.sms_panel.client import sms_client_management
 from common.util.sms_panel.message import system_sms_message
 from .models import Payment, PaymentTypes, PanelActivationPlans
-from django.conf import settings
-
 from .services import payment_service
 
 zarinpal_forward_link = settings.ZARINPAL.get('FORWARD_LINK')
@@ -29,14 +28,12 @@ class SMSCreditPaymentCreationSerializer(serializers.ModelSerializer):
         fields = [
             'id',
             'amount',
-            'description',
             'authority',
             'forward_link'
         ]
         extra_kwargs = {'id': {'read_only': True},
                         'authority': {'read_only': True},
                         'amount': {'required': True},
-                        'description': {'required': True},
                         }
 
     def validate_amount(self, value):

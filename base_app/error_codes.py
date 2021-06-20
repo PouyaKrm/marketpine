@@ -21,13 +21,15 @@ class ApplicationErrorCodes:
     KAVENEGAR_CLIENT_MANAGEMENT_ERROR = _get_code_message_dict.__func__(1006, 'خطای مدیریت مشتری از سوی کاونگار')
     BUSINESSMAN_HAS_NO_AUTH_DOCS = _get_code_message_dict.__func__(1007, 'کاربر هیچ مدارک احراز هویتی در سیستم ندارد')
     INVALID_PASSWORD = _get_code_message_dict.__func__(1008, 'کلمه عبور اشتباه')
-    CUSTOMER_ALREADY_ADDED =  _get_code_message_dict.__func__(1009, 'مشتری قبلا اضافه شده')
+    CUSTOMER_ALREADY_ADDED = _get_code_message_dict.__func__(1009, 'مشتری قبلا اضافه شده')
+    PAYMENT_CREATION_FAILED = _get_code_message_dict.__func__(1010, 'پرداخت با خظا مواجه شد')
 
     @staticmethod
     def get_exception(code: dict, original_exception: Exception = None) -> ApplicationErrorException:
         return ApplicationErrorException(code, original_exception)
 
     @staticmethod
-    def get_field_error(field_name, error_code: dict, original_exception: Exception = None) -> ApplicationErrorException:
+    def get_field_error(field_name, error_code: dict,
+                        original_exception: Exception = None) -> ApplicationErrorException:
         message = {field_name: error_code['message']}
         return ApplicationErrorException(message, original_exception)

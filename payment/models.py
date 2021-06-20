@@ -1,18 +1,16 @@
+from django.conf import settings
 from django.db import models
 from django.db.models.signals import pre_save
 from django.dispatch.dispatcher import receiver
+from django.urls import reverse
 from django.utils import timezone
+from zeep import Client
 
 from base_app.models import PanelDurationBaseModel
+from panelprofile.services import sms_panel_info_service
 from payment.exceptions import PaymentCreationFailedException, PaymentVerificationFailedException, \
     PaymentAlreadyVerifiedException, PaymentOperationFailedException
 from users.models import Businessman, BaseModel
-from zeep import Client
-from django.conf import settings
-from django.urls import reverse
-
-from panelprofile.services import sms_panel_info_service
-
 
 url = settings.ZARINPAL.get('url')
 setting_merchant = settings.ZARINPAL.get('MERCHANT')
@@ -46,12 +44,14 @@ class PaymentTypes:
     SMS = '0'
     ACTIVATION = '1'
 
-class Payment(models.Model):
 
+class Payment(models.Model):
+    TYPE_SMS = 'SMS'
+    TYPE_WALLET_INCREASE = 'WALLET'
 
     payment_choices = [
-        ('SMS', '0'),
-        ('ACTIVATION', '1')
+        ('SMS', TYPE_SMS),
+        ('ACTIVATION', TYPE_WALLET_INCREASE)
     ]
 
     creation_date = models.DateTimeField(auto_now_add=True)
