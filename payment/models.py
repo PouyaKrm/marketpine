@@ -65,7 +65,7 @@ class Payment(models.Model):
     phone = models.CharField(max_length=15, null=True, blank=True)
     amount = models.IntegerField()
     verification_date = models.DateTimeField(null=True)
-    payment_type = models.CharField(max_length=2, choices=payment_choices, default='0')
+    payment_type = models.CharField(max_length=10, choices=payment_choices, default='0')
     panel_plan = models.ForeignKey(PanelActivationPlans, on_delete=models.PROTECT, null=True, blank=True)
 
     def __str__(self):
