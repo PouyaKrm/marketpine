@@ -108,8 +108,8 @@ class MobileAppPageConfSerializer(BaseModelSerializerWithRequestObj):
     headers = MobileAppHeaderSerializer(many=True, read_only=True)
     ip_location = serializers.SerializerMethodField(read_only=True)
     page_id = serializers.CharField(required=False, allow_blank=True, min_length=6, max_length=20)
-    instagram_page_url = serializers.URLField(required=False, allow_blank=True, max_length=200)
-    telegram_url = serializers.URLField(required=False, max_length=200, allow_blank=True)
+    instagram_page_url = serializers.URLField(required=False, allow_blank=True, allow_null=True, max_length=200)
+    telegram_url = serializers.URLField(required=False, max_length=200, allow_blank=True, allow_null=True)
     show_working_time = serializers.BooleanField(required=True)
 
     class Meta:
@@ -159,11 +159,13 @@ class MobileAppPageConfSerializer(BaseModelSerializerWithRequestObj):
         return value
 
     def validate_instagram_page_url(self, value):
-        mobile_page_conf_service.check_instagram_page_url_is_valid(value)
+        if value is not None:
+            mobile_page_conf_service.check_instagram_page_url_is_valid(value)
         return value
 
     def validate_telegram_url(self, value):
-        mobile_page_conf_service.check_telegram_url_is_valid(value)
+        if value is not None:
+            mobile_page_conf_service.check_telegram_url_is_valid(value)
         return value
 
     def validate(self, attrs):
