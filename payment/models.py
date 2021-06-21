@@ -140,7 +140,7 @@ class Payment(models.Model):
     def reverse_operations(self):
         try:
             if self.payment_type == PaymentTypes.SMS:
-                sms_panel_info_service.decrease_credit_in_tomans(self.businessman.smspanelinfo, self.amount)
+                sms_panel_info_service.get_panel_decrease_credit_in_tomans(self.businessman.smspanelinfo, self.amount)
                 self.save()
         except Exception as e:
             self.businessman.smspanelinfo.credit -= self.amount
@@ -153,7 +153,7 @@ class Payment(models.Model):
 
     def do_operations(self):
         if self.payment_type == PaymentTypes.SMS:
-            sms_panel_info_service.increase_credit_in_tomans(self.businessman.smspanelinfo, self.amount)
+            sms_panel_info_service.get_panel_increase_credit_in_tomans(self.businessman.smspanelinfo, self.amount)
 
         elif self.payment_type == PaymentTypes.ACTIVATION:
             self.__update_panel_activation_data()
@@ -177,6 +177,8 @@ class Payment(models.Model):
         self.businessman.save()
         self.businessman.smspanelinfo.activate()
 
+    def is_payment_type_sms(self) -> bool:
+        return self.payment_type == Payment.TYPE_SMS
 
 class FailedPaymentOperation(models.Model):
 

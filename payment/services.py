@@ -1,10 +1,16 @@
+from typing import Tuple
+
 from django.conf import settings
+from django.core.exceptions import ObjectDoesNotExist
 from django.db import transaction
 from django.urls import reverse
+from django.utils import timezone
 from rest_framework.request import Request
 from zeep import Client
 
 from base_app.error_codes import ApplicationErrorException, ApplicationErrorCodes
+from panelprofile.models import SMSPanelInfo
+from panelprofile.services import sms_panel_info_service
 from payment.models import PanelActivationPlans, Payment, PaymentTypes
 from users.models import Businessman
 
@@ -39,6 +45,49 @@ class PaymentService:
 
         return self._create_payment(request, user, amount_tomal, 'افزایش اعتبار پنل اسمس', Payment.TYPE_SMS)
 
+    def verify_payment_by_authority(self, authority: str) -> Tuple[Payment, SMSPanelInfo]:
+        p = self._get_payment_by_authority(authority)
+        increased_sms_panel_credit = False
+        try:
+            self._check_payment_verified_before(p)
+            if p.is_payment_type_sms():
+                sms_panel_info_service.get_panel_increase_credit_in_tomans(p.businessman, p.amount)
+                increased_sms_panel_credit = True
+            self.verify_payment(p)
+            return p, sms_panel_info_service.get_buinessman_sms_panel(p.businessman)
+        except Exception as ex:
+            if increased_sms_panel_credit:
+                sms_panel_info_service.get_panel_decrease_credit_in_tomans(p.businessman, p.amount)
+            if not isinstance(ex, ApplicationErrorException):
+                raise ApplicationErrorException(ApplicationErrorCodes.PAYMENT_VERIFICATION_FAILED, ex)
+            else:
+                raise ex
+
+    def verify_payment(self, p: Payment):
+        try:
+            self._check_payment_verified_before(p)
+            merchant = setting_merchant
+            client = Client(url)
+            result = client.service.PaymentVerification(merchant, p.authority, p.amount)
+            p.verification_status = result.Status
+            p.save()
+
+            if result.Status == 100:
+                p.refid = str(result.RefID)
+                p.verification_date = timezone.now()
+                p.save()
+            elif result.Status != 100:
+                raise ApplicationErrorException(ApplicationErrorCodes.PAYMENT_WAS_NOT_SUCCESSFUL)
+        except Exception as ex:
+            if not isinstance(ex, ApplicationErrorException):
+                raise ApplicationErrorException(ApplicationErrorCodes.PAYMENT_VERIFICATION_FAILED, ex)
+            else:
+                raise ex
+
+    def _check_payment_verified_before(self, p: Payment):
+        if p.is_verified_before():
+            raise ApplicationErrorException(ApplicationErrorCodes.PAYMENT_ALREADY_VERIFIED)
+
     def _create_payment(self, request: Request, user: Businessman, amount_toman: float, description: str,
                         payment_type) -> Payment:
         try:
@@ -67,6 +116,12 @@ class PaymentService:
 
         except Exception as ex:
             raise ApplicationErrorException(ApplicationErrorCodes.PAYMENT_CREATION_FAILED, ex)
+
+    def _get_payment_by_authority(self, authority: str) -> Payment:
+        try:
+            return Payment.objects.get(authority=authority)
+        except ObjectDoesNotExist as ex:
+            raise ApplicationErrorException(ApplicationErrorCodes.RECORD_NOT_FOUND, ex)
 
 
 payment_service = PaymentService()
