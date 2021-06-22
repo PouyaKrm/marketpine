@@ -114,9 +114,16 @@ class TestVerifyPayment(PaymentServiceBaseTestClass):
 
 class TestVerifyPaymentByAuthority(PaymentServiceBaseTestClass):
 
+    def setUp(self) -> None:
+        super().setUp()
+        self.callback_status = "OK"
+
+    def test_throws_exception_on_invalid_callback_status(self):
+        self.assertRaises(ValueError, payment_service.verify_payment_by_authority, 'auth', 'fake')
+
     def test_invalid_authority(self):
         with self.assertRaises(ApplicationErrorException) as cx:
-            payment_service.verify_payment_by_authority('auth')
+            payment_service.verify_payment_by_authority('auth', self.callback_status)
         ex = cx.exception
         self.assertEqual(ex.http_message, ApplicationErrorCodes.RECORD_NOT_FOUND)
 
@@ -125,7 +132,7 @@ class TestVerifyPaymentByAuthority(PaymentServiceBaseTestClass):
         self.p.save()
 
         with self.assertRaises(ApplicationErrorException) as cx:
-            payment_service.verify_payment_by_authority(self.p.authority)
+            payment_service.verify_payment_by_authority(self.p.authority, self.callback_status)
         ex = cx.exception
         self.assertEqual(ex.http_message, ApplicationErrorCodes.PAYMENT_ALREADY_VERIFIED)
 
@@ -137,11 +144,11 @@ class TestVerifyPaymentByAuthority(PaymentServiceBaseTestClass):
         ex = ApplicationErrorException(ApplicationErrorCodes.PAYMENT_ALREADY_VERIFIED)
         increase_credit_mock.side_effect = ex
         with self.assertRaises(ApplicationErrorException) as cx:
-            payment_service.verify_payment_by_authority(self.p.authority)
+            payment_service.verify_payment_by_authority(self.p.authority, self.callback_status)
         excep = cx.exception
         self.assertEqual(excep, ex)
         increase_credit_mock.assert_called_once()
-        verify_payment_mock.assert_not_called()
+        verify_payment_mock.assert_called_once()
 
     @patch('payment.services.sms_panel_info_service.get_panel_increase_credit_in_tomans')
     @patch("payment.services.payment_service.verify_payment")
@@ -154,12 +161,12 @@ class TestVerifyPaymentByAuthority(PaymentServiceBaseTestClass):
         verify_payment_mock.side_effect = ex
         p = self._create_payment(payment_type=Payment.TYPE_SMS)
         with self.assertRaises(ApplicationErrorException) as cx:
-            payment_service.verify_payment_by_authority(p.authority)
+            payment_service.verify_payment_by_authority(p.authority, self.callback_status)
         exception = cx.exception
         self.assertEqual(exception.originalException, ex)
         verify_payment_mock.assert_called_once()
-        decrease_credit_mock.assert_called_once()
-        increase_credit_mock.assert_called_once()
+        decrease_credit_mock.assert_not_called()
+        increase_credit_mock.assert_not_called()
 
     @patch('payment.services.sms_panel_info_service.get_panel_increase_credit_in_tomans')
     @patch("payment.services.payment_service.verify_payment")
@@ -169,7 +176,7 @@ class TestVerifyPaymentByAuthority(PaymentServiceBaseTestClass):
         info = SMSPanelInfo()
         get_businessman_sms.return_value = info
         p = self._create_payment(payment_type=Payment.TYPE_SMS)
-        result = payment_service.verify_payment_by_authority(p.authority)
+        result = payment_service.verify_payment_by_authority(p.authority, self.callback_status)
         self.assertEqual(result[0], p)
         self.assertEqual(result[1], info)
         get_businessman_sms.assert_called_once()

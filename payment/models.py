@@ -60,6 +60,7 @@ class Payment(models.Model):
     authority = models.CharField(max_length=255, null=True, blank=True)
     refid = models.CharField(max_length=255, null=True, blank=True)
     create_status = models.IntegerField(null=True)
+    call_back_status = models.CharField(max_length=10, null=True, blank=True)
     verification_status = models.IntegerField(null=True)
     description = models.CharField(max_length=255, null=True, blank=True)
     phone = models.CharField(max_length=15, null=True, blank=True)

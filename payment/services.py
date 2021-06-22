@@ -45,15 +45,21 @@ class PaymentService:
 
         return self._create_payment(request, user, amount_tomal, 'افزایش اعتبار پنل اسمس', Payment.TYPE_SMS)
 
-    def verify_payment_by_authority(self, authority: str) -> Tuple[Payment, SMSPanelInfo]:
+    def verify_payment_by_authority(self, authority: str, callback_status: str) -> Tuple[Payment, SMSPanelInfo]:
+
+        if callback_status != "OK" and callback_status != "NOK":
+            raise ValueError('invalid callback status')
+
         p = self._get_payment_by_authority(authority)
+        p.call_back_status = callback_status
+        p.save()
         increased_sms_panel_credit = False
         try:
             self._check_payment_verified_before(p)
+            self.verify_payment(p)
             if p.is_payment_type_sms():
                 sms_panel_info_service.get_panel_increase_credit_in_tomans(p.businessman, p.amount)
                 increased_sms_panel_credit = True
-            self.verify_payment(p)
             return p, sms_panel_info_service.get_buinessman_sms_panel(p.businessman)
         except Exception as ex:
             if increased_sms_panel_credit:

@@ -39,14 +39,14 @@ class VerifyPayment(APIView):
         authority = request.GET.get('Authority')
         if pay_status is None or authority is None:
             return redirect(frontend_url)
-        if pay_status != 'OK':
-            return render(request, "payment/payment-failed.html", {
-                'current_time': current_time,
-                'frontend_url': frontend_url
-            })
+        # if pay_status != 'OK':
+        #     return render(request, "payment/payment-failed.html", {
+        #         'current_time': current_time,
+        #         'frontend_url': frontend_url
+        #     })
 
         try:
-            result = payment_service.verify_payment_by_authority(authority)
+            result = payment_service.verify_payment_by_authority(authority, pay_status)
             p = result[0]
             local_pay_date = jdatetime.date.fromgregorian(date=p.verification_date).strftime("%y/%m/%d %H:%M")
             if p.payment_type == PaymentTypes.SMS:
