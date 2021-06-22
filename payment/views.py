@@ -7,8 +7,10 @@ from django.http import HttpResponse
 from django.shortcuts import render, redirect
 from rest_framework import generics, permissions
 from rest_framework.decorators import api_view, permission_classes
+from rest_framework.request import Request
+from rest_framework.views import APIView
 
-from base_app.error_codes import ApplicationErrorException
+from base_app.error_codes import ApplicationErrorException, ApplicationErrorCodes
 from base_app.views import BaseListAPIView
 from common.util.http_helpers import bad_request, created, ok
 from common.util.kavenegar_local import APIException
@@ -26,6 +28,41 @@ from .serializers import (SMSCreditPaymentCreationSerializer,
 from .services import payment_service
 
 frontend_url = settings.FRONTEND_URL
+
+
+class VerifyPayment(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request: Request):
+        current_time = datetime.now()
+        pay_status = request.GET.get('Status')
+        authority = request.GET.get('Authority')
+        if pay_status is None or authority is None:
+            return redirect(frontend_url)
+        if pay_status != 'OK':
+            return render(request, "payment/payment-failed.html", {
+                'current_time': current_time,
+                'frontend_url': frontend_url
+            })
+
+        try:
+            result = payment_service.verify_payment_by_authority(authority)
+            p = result[0]
+            local_pay_date = jdatetime.date.fromgregorian(date=p.verification_date).strftime("%y/%m/%d %H:%M")
+            if p.payment_type == PaymentTypes.SMS:
+                return render(request, "payment/sms-charge-sucess.html",
+                              {'payment': p, 'credit': result[1].credit,
+                               'verification_date': local_pay_date,
+                               'current_time': current_time})
+        except ApplicationErrorException as ex:
+            if ex.http_message == ApplicationErrorCodes.RECORD_NOT_FOUND:
+                message = 'پرداخت موردنظر پیدا نشد'
+            else:
+                message = ex.http_message['message']
+            return render(request, "payment/payment-failed.html", {'current_time': current_time,
+                                                                   'frontend_url': frontend_url,
+                                                                   'exception_message': message
+                                                                   })
 
 
 def verify(request):

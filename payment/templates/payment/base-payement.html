@@ -24,7 +24,11 @@
             <div class="card p-3">
                 <div class="card-title">
                     <span class="float-right">نتیجه پرداخت</span>
-                    <span class="float-left">{{ current_time }}</span>
+                    <span class="float-left">
+                        {% localtime on %}
+                            {{ current_time }}
+                        {% endlocaltime %}
+                    </span>
                 </div>
 
                 <div class="card-image">

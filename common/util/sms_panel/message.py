@@ -1,16 +1,12 @@
 import logging
 
-import requests
-
-from users.models import Businessman
-
-from common.util.kavenegar_local import KavenegarAPI, APIException, HTTPException
-from common.util.sms_panel.exceptions import SendSMSException
-from common.util.custom_templates import render_template_with_customer_data
-
 from django.conf import settings
 from django.db.models import QuerySet
-from django.template import Template
+
+from common.util.custom_templates import render_template_with_customer_data
+from common.util.kavenegar_local import KavenegarAPI, APIException
+from common.util.sms_panel.exceptions import SendSMSException
+from users.models import Businessman
 
 sms_settings = settings.SMS_PANEL
 api_key = sms_settings['API_KEY']
@@ -81,7 +77,7 @@ class SystemSMSMessage(BaseSMSMessage):
     def send_admin_low_system_credit_message(self):
         try:
             return self.send_message(admin_phone,
-                                     'اعتبار پنل پیامک سیستم مشترینو کم است و تعدادی از مشتریان موفق به شارژ پنل نشده اند')
+                                     'اعتبار پنل پیامک سیستم کاوه نگار کم است و تعدادی از مشتریان موفق به شارژ پنل نشده اند')
         except APIException as e:
             logging.error(e)
             raise e
