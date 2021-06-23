@@ -16,7 +16,7 @@ class ContentMarketingService:
 
     def create_post(self, request: Request, post_data: dict) -> Post:
         send_sms = post_data.get('send_sms')
-        send_pwa = post_data.get('send_pwa')
+        # send_pwa = post_data.get('send_pwa')
         template = None
         if send_sms:
             template = post_data.pop('notif_sms_template')
@@ -25,8 +25,8 @@ class ContentMarketingService:
 
         if send_sms:
             post.notif_sms = self._send_notif_sms(post, template)
-        if send_pwa:
-            self._send_post_pwa_notif(post)
+        # if send_pwa:
+        #     self._send_post_pwa_notif(post)
 
         post.video_url = create_link(post.videofile.url, request)
         post.save()
