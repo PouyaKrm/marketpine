@@ -1,22 +1,15 @@
 import os
 
+from django.conf import settings
 from django.db.models.base import Model
-from django.core import validators
 from django.template import TemplateSyntaxError
 from rest_framework import serializers
-from rest_framework.exceptions import ValidationError
 
-from common.util import create_link, create_field_error, create_detail_error
+from common.util import create_link, create_field_error
+from common.util.custom_templates import get_fake_context, render_template
 from common.util.custom_validators import sms_not_contains_link
-from customers.services import customer_service
-from panelprofile.services import sms_panel_info_service
-from smspanel.models import SMSMessage, SMSMessageReceivers
-from smspanel.services import SMSMessageService
-from .models import Post, Comment, Like, ContentMarketingSettings
-from common.util.custom_templates import get_fake_context, render_template, get_template_context
-from django.conf import settings
-
 from common.util.custom_validators import validate_file_size
+from .models import Post, Comment, Like, ContentMarketingSettings
 from .services import content_marketing_service
 
 template_min_chars = settings.SMS_PANEL['TEMPLATE_MIN_CHARS']
@@ -128,9 +121,6 @@ class UploadListPostSerializer(BasePostSerializer):
         request = self.context['request']
         if not sms_notif:
             return attrs
-
-        if not sms_panel_info_service.has_valid_credit_to_send_to_all(request.user):
-            raise ValidationError({'notif_sms_template': 'اعتبار کافی برای ارسال پیامک موجود نیست'})
         if template is None:
             raise serializers.ValidationError(create_field_error('notif_sms_template is required', ['template is required']))
         elif len(template) < template_min_chars or len(template) > template_max_chars:

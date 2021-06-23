@@ -69,7 +69,7 @@ class ContentMarketingService:
         post.remaining_pwa_notif_customers.set(c)
 
     def _send_notif_sms(self, post: Post, template: str) -> SMSMessage:
-        has_credit = sms_panel_info_service.has_valid_credit_to_send_to_all(post.businessman)
+        has_credit = sms_panel_info_service.get_panel_has_credit_for_message_to_all(post.businessman)
         if not has_credit:
             raise ApplicationErrorCodes.get_exception(ApplicationErrorCodes.NOT_ENOUGH_SMS_CREDIT)
         sms = sms_message_service.content_marketing_message_status_cancel(user=post.businessman,
