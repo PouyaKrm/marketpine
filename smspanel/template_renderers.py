@@ -7,6 +7,7 @@ from common.util import gregorian_to_jalali_str
 from content_marketing.models import Post
 from customer_return_plan.festivals.models import Festival
 from customer_return_plan.invitation.models import FriendInvitation
+from mobile_app_conf.services import mobile_page_conf_service
 from smspanel.models import SMSMessage, SMSMessageReceivers
 from users.models import Customer
 
@@ -24,7 +25,8 @@ class BaseTemplateRenderer:
         return {'customer_phone': customer.phone, 'full_name': customer.full_name}
 
     def _businessman_key_value(self) -> dict:
-        page_id = self._businessman.mobileapppageconf.page_id
+        page_conf = mobile_page_conf_service.get_businessman_conf_or_create(self._businessman)
+        page_id = page_conf.page_id
         if page_id is not None:
             p_id = page_id
         else:
@@ -119,10 +121,10 @@ class FriendInvitationTemplateRenderer(BaseTemplateRenderer):
         else:
             discount_amount = invited_discount.flat_rate_off
         invite_context = {
-            'inviter_phone': self.invitation.inviter.phone,
-            'invited_phone': self.invitation.invited.phone,
-            'invited_full_name': self.invitation.invited.full_name,
-            'inviter_full_name': self.invitation.inviter.full_name,
+            'inviter_phone': self.invitation.inviter.customer.phone,
+            'invited_phone': self.invitation.invited.customer.phone,
+            'invited_full_name': self.invitation.invited.customer.full_name,
+            'inviter_full_name': self.invitation.inviter.customer.full_name,
             'invited_discount_code': self.invitation.inviter_discount.discount_code,
             'invited_discount_amount': discount_amount.__str__(),
             'invite_date': invite_date
