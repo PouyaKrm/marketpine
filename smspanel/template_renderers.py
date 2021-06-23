@@ -1,5 +1,7 @@
-from django.core.exceptions import ObjectDoesNotExist
+import re
+
 from django.conf import settings
+from django.core.exceptions import ObjectDoesNotExist
 
 from common.util import gregorian_to_jalali_str
 from content_marketing.models import Post
@@ -7,8 +9,6 @@ from customer_return_plan.festivals.models import Festival
 from customer_return_plan.invitation.models import FriendInvitation
 from smspanel.models import SMSMessage, SMSMessageReceivers
 from users.models import Customer
-import re
-import jdatetime
 
 page_url = settings.BUSINESSMAN_PAGE_URL
 video_page_url = settings.VIDEO_PAGE_URL
@@ -24,8 +24,9 @@ class BaseTemplateRenderer:
         return {'customer_phone': customer.phone, 'full_name': customer.full_name}
 
     def _businessman_key_value(self) -> dict:
-        if self._businessman.is_page_id_set():
-            p_id = self._businessman.page_id
+        page_id = self._businessman.mobileapppageconf.page_id
+        if page_id is not None:
+            p_id = page_id
         else:
             p_id = self._businessman.id
         return {
