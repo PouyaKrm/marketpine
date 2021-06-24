@@ -10,7 +10,7 @@ from base_app.models import PanelDurationBaseModel
 from panelprofile.services import sms_panel_info_service
 from payment.exceptions import PaymentCreationFailedException, PaymentVerificationFailedException, \
     PaymentAlreadyVerifiedException, PaymentOperationFailedException
-from users.models import Businessman, BaseModel
+from users.models import Businessman, BaseModel, BusinessmanOneToOneBaseModel
 
 url = settings.ZARINPAL.get('url')
 setting_merchant = settings.ZARINPAL.get('MERCHANT')
@@ -181,8 +181,8 @@ class Payment(models.Model):
     def is_payment_type_sms(self) -> bool:
         return self.payment_type == Payment.TYPE_SMS
 
-class FailedPaymentOperation(models.Model):
 
+class FailedPaymentOperation(models.Model):
     businessman = models.ForeignKey(Businessman, on_delete=models.PROTECT)
     payment = models.OneToOneField(Payment, on_delete=models.PROTECT)
     payment_amount = models.IntegerField()
@@ -190,3 +190,12 @@ class FailedPaymentOperation(models.Model):
     create_date = models.DateTimeField(auto_now_add=True)
     is_fixed = models.BooleanField(default=False)
 
+
+class Wallet(BusinessmanOneToOneBaseModel):
+    available_credit = models.BigIntegerField(default=0)
+    used_credit = models.BigIntegerField(default=0)
+    last_credit_increase_date = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        db_table = "wallet"
+        ordering = ('-create_date', '-update_date')
