@@ -11,11 +11,12 @@ from zeep import Client
 from base_app.error_codes import ApplicationErrorException, ApplicationErrorCodes
 from panelprofile.models import SMSPanelInfo
 from panelprofile.services import sms_panel_info_service
-from payment.models import PanelActivationPlans, Payment, PaymentTypes
+from payment.models import PanelActivationPlans, Payment, PaymentTypes, Wallet
 from users.models import Businessman
 
 url = settings.ZARINPAL.get('url')
 setting_merchant = settings.ZARINPAL.get('MERCHANT')
+wallet_initial_available_credit = settings.WALLET['INITIAL_AVAILABLE_CREDIT']
 
 
 class PaymentService:
@@ -128,6 +129,20 @@ class PaymentService:
             return Payment.objects.get(authority=authority)
         except ObjectDoesNotExist as ex:
             raise ApplicationErrorException(ApplicationErrorCodes.RECORD_NOT_FOUND, ex)
+
+
+class WalletService:
+
+    def get_businessman_wallet_or_create(self, user: Businessman) -> Wallet:
+
+        try:
+            return Wallet.objects.get(businessman=user)
+        except ObjectDoesNotExist:
+            return Wallet.objects.create(
+                businessman=user,
+                available_credit=wallet_initial_available_credit,
+                used_credit=0
+            )
 
 
 payment_service = PaymentService()
