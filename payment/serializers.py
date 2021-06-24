@@ -4,10 +4,11 @@ from django.conf import settings
 from django.db.models import QuerySet
 from rest_framework import serializers
 
+from base_app.serializers import BaseModelSerializerWithRequestObj
 from common.util.kavenegar_local import APIException
 from common.util.sms_panel.client import sms_client_management
 from common.util.sms_panel.message import system_sms_message
-from .models import Payment, PaymentTypes, PanelActivationPlans
+from .models import Payment, PaymentTypes, PanelActivationPlans, Wallet
 from .services import payment_service
 
 zarinpal_forward_link = settings.ZARINPAL.get('FORWARD_LINK')
@@ -140,3 +141,21 @@ class PaymentListSerializer(serializers.ModelSerializer):
                         'verification_date': {'read_only': True},
                         }
 
+
+class WalletSerializer(BaseModelSerializerWithRequestObj):
+    class Meta:
+        model = Wallet
+        fields = [
+            'available_credit',
+            'used_credit',
+            'create_date',
+            'update_date',
+            'last_credit_increase_date'
+        ]
+        read_only_fields = [
+            'available_credit',
+            'used_credit',
+            'create_date',
+            'update_date',
+            'last_credit_increase_date'
+        ]

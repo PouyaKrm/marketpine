@@ -146,3 +146,4 @@ class WalletService:
 
 
 payment_service = PaymentService()
+wallet_service = WalletService()
