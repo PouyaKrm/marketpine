@@ -29,6 +29,9 @@ class ApplicationErrorCodes:
     SMS_PANEL_INCREASE_DECREASE_CREDIT_FAILED = _get_code_message_dict.__func__(1014,
                                                                                 'تغییر اعتبار پنل پیامک با خطا مواجه شد')
 
+    USERNAME_IS_NOT_UNIQUE = _get_code_message_dict.__func__(1015, 'نام کاربری یکتا نیست')
+    EMAIL_IS_NOT_UNIQUE = _get_code_message_dict.__func__(1016, 'ایمیل یکتا نیست')
+
     @staticmethod
     def get_exception(code: dict, original_exception: Exception = None) -> ApplicationErrorException:
         return ApplicationErrorException(code, original_exception)

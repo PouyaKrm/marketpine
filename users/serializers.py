@@ -20,11 +20,9 @@ class BusinessmanRegisterSerializer(serializers.ModelSerializer):
         validators.UniqueValidator(queryset=Businessman.objects.all(), message="this email address is already taken")])
     phone = serializers.CharField(max_length=15, validators=[validators.UniqueValidator(queryset=Businessman.objects.all(), message="phone number must be unique")])
 
-
     class Meta:
         model = Businessman
         fields = [
-
             'username',
             'password',
             'password2',
@@ -34,25 +32,23 @@ class BusinessmanRegisterSerializer(serializers.ModelSerializer):
             'email'
         ]
 
-    def validate(self, attrs):
+        extra_kwargs = {
+            'first_name': {'required': True},
+            'last_name': {'required': True}
+        }
 
+    def validate(self, attrs):
         password2 = attrs.get('password2')
         del attrs['password2']
         password = attrs.get('password')
 
         if password != password2:
-
             raise serializers.ValidationError({'password2': ['passwords must match']})
 
         return attrs
 
     def create(self, validated_data):
-
-        user = Businessman(**validated_data)
-        user.set_password(validated_data['password'])
-        user.is_active = True
-        user.save()
-        return user
+        pass
         
 
 class BusinessmanPasswordResetSerializer(serializers.ModelSerializer):
