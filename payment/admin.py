@@ -1,7 +1,7 @@
 from django.contrib import admin
 
 from .forms import PanelActivationForm
-from .models import Payment, FailedPaymentOperation, PanelActivationPlans, Wallet
+from .models import Payment, FailedPaymentOperation, PanelActivationPlans, Wallet, Billing
 
 
 class PaymentAdmin(admin.ModelAdmin):
@@ -17,6 +17,11 @@ class WalletModelAdmin(admin.ModelAdmin):
     list_display_links = ['businessman', 'available_credit', 'used_credit', 'last_credit_increase_date', 'create_date']
 
 
+class BillingModelAdmin(admin.ModelAdmin):
+    list_display = ['businessman', 'amount', 'customer_added', 'create_date']
+    list_display_links = ['businessman', 'amount', 'customer_added', 'create_date']
+
+
 class PaymentOperationFailedAdmin(admin.ModelAdmin):
     list_display = ('businessman', 'operation_type', 'create_date', 'payment_amount', 'is_fixed')
 
@@ -30,3 +35,4 @@ admin.site.register(Payment, PaymentAdmin)
 admin.site.register(FailedPaymentOperation, PaymentOperationFailedAdmin)
 admin.site.register(PanelActivationPlans, PanelActiovationPalnModelAdmin)
 admin.site.register(Wallet, WalletModelAdmin)
+admin.site.register(Billing, BillingModelAdmin)

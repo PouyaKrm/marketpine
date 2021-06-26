@@ -1,8 +1,10 @@
 from django.core.exceptions import ObjectDoesNotExist
+from django.db import transaction
 from django.db.models import QuerySet
 
 from base_app.error_codes import ApplicationErrorCodes
 from base_app.services import BaseService
+from payment.services import wallet_billing_service
 from smspanel.services import sms_message_service
 from users.models import Customer, Businessman, BusinessmanCustomer
 
@@ -57,15 +59,36 @@ class CustomerService(BaseService):
                 bc.is_deleted = False
                 bc.save()
             else:
-                BusinessmanCustomer.objects.create(customer=c, businessman=businessman, joined_by=joined_by)
+                c = self._join_customer_to_businessman(businessman, c, joined_by, groups)
         except ObjectDoesNotExist:
+            c = self._create_customer_join_to_businessman(businessman, joined_by, phone, full_name, groups)
+        return c
+
+    def _join_customer_to_businessman(self, businessman: Businessman, customer: Customer, joined_by,
+                                      groups: list) -> Customer:
+        with transaction.atomic():
+            bc = BusinessmanCustomer.objects.create(customer=customer, businessman=businessman, joined_by=joined_by)
+            if joined_by == BusinessmanCustomer.JOINED_BY_PANEL:
+                wallet_billing_service.customer_add_by_panel_payment(bc)
+            self._reset_customer_group_send_welcome_message(businessman, customer, groups)
+            return customer
+
+    def _create_customer_join_to_businessman(self, businessman: Businessman, joined_by, phone: str,
+                                             full_name: str = None, groups: list = None) -> Customer:
+        with transaction.atomic():
             c = Customer.objects.create(phone=phone, full_name=full_name)
-            BusinessmanCustomer.objects.create(customer=c, businessman=businessman, joined_by=joined_by)
-        finally:
-            sms_message_service.send_welcome_message(businessman, c)
-            if groups is not None:
-                self.reset_customer_groups(businessman, c, groups)
+            bc = BusinessmanCustomer.objects.create(customer=c, businessman=businessman, joined_by=joined_by)
+            if joined_by == BusinessmanCustomer.JOINED_BY_PANEL:
+                wallet_billing_service.customer_add_by_panel_payment(bc)
+            self._reset_customer_group_send_welcome_message(businessman, c, groups)
             return c
+
+    def _reset_customer_group_send_welcome_message(self, businessman: Businessman, customer: Customer,
+                                                   groups: list = None):
+        sms_message_service.send_welcome_message(businessman, customer)
+        if groups is not None:
+            self.reset_customer_groups(businessman, customer, groups)
+        return customer
 
     def customer_registered_in_date(self, businessman: Businessman, date):
         return self.get_businessman_customers(businessman).filter(connected_businessmans__create_date__year=date.year,

@@ -11,12 +11,14 @@ from zeep import Client
 from base_app.error_codes import ApplicationErrorException, ApplicationErrorCodes
 from panelprofile.models import SMSPanelInfo
 from panelprofile.services import sms_panel_info_service
-from payment.models import PanelActivationPlans, Payment, PaymentTypes, Wallet
-from users.models import Businessman
+from payment.models import PanelActivationPlans, Payment, PaymentTypes, Wallet, Billing
+from users.models import Businessman, BusinessmanCustomer
 
 url = settings.ZARINPAL.get('url')
 setting_merchant = settings.ZARINPAL.get('MERCHANT')
 wallet_initial_available_credit = settings.WALLET['INITIAL_AVAILABLE_CREDIT']
+wallet_minimum_allowed_credit = settings.WALLET['MINIMUM_ALLOWED_CREDIT']
+customer_joined_by_panel_cost = settings.BILLING['CUSTOMER_JOINED_BY_PANEL_COST']
 
 
 class PaymentService:
@@ -143,6 +145,34 @@ class WalletAndBillingService:
                 available_credit=wallet_initial_available_credit,
                 used_credit=0
             )
+
+    def customer_add_by_panel_payment(self, bc: BusinessmanCustomer) -> Billing:
+        if bc.joined_by != BusinessmanCustomer.JOINED_BY_PANEL:
+            raise ValueError('joined_by field must be set to JOINED_BY_PANEL')
+        w = self.check_has_minimum_credit(bc.businessman)
+        self._decrease_wallet_available_credit(w, customer_joined_by_panel_cost)
+        b = Billing.objects.create(amount=customer_joined_by_panel_cost, customer_added=bc, businessman=bc.businessman)
+        return b
+
+    def has_minimum_credit(self, user: Businessman) -> bool:
+        w = self.get_businessman_wallet_or_create(user)
+        return w.available_credit > wallet_minimum_allowed_credit
+
+    def check_has_minimum_credit(self, user: Businessman, error_code: dict = None) -> Wallet:
+        wallet = self.get_businessman_wallet_or_create(user)
+        has_min = wallet.available_credit > wallet_minimum_allowed_credit
+        if has_min:
+            return wallet
+        if error_code is None:
+            raise ApplicationErrorException(ApplicationErrorCodes.NOT_ENOUGH_WALLET_CREDIT)
+        else:
+            raise ApplicationErrorException(error_code)
+
+    def _decrease_wallet_available_credit(self, wallet: Wallet, amount: int) -> Wallet:
+        wallet.available_credit -= amount
+        wallet.used_credit = wallet.used_credit + amount
+        wallet.save()
+        return wallet
 
 
 payment_service = PaymentService()
