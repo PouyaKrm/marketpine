@@ -27,7 +27,7 @@ class CustomerService(BaseService):
 
     def get_businessman_customer_by_id(self, user: Businessman, customer_id: int, field_name: str = None) -> Customer:
         try:
-            bc = BusinessmanCustomer.objects.get(businessman=user, customer__id=customer_id, is_deleted=False)
+            bc = BusinessmanCustomer.objects.get(businessman=user, customer_id=customer_id, is_deleted=False)
             return bc.customer
         except ObjectDoesNotExist as ex:
             self.throw_exception(ApplicationErrorCodes.RECORD_NOT_FOUND, field_name, ex)

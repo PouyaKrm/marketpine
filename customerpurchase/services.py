@@ -42,18 +42,17 @@ class PurchaseService:
             return True, False, -1
         return True, True, discount_amounts
 
-    def submit_purchase_with_discounts(self, businessman: Businessman, customer_id: int, amount: int,
-                                       discount_ids: [int] = None) -> (bool, bool, CustomerPurchase):
+    def submit_purchase_with_discounts(self, businessman: Businessman, customer: Customer, amount: int,
+                                       discount_ids: [int] = None) -> CustomerPurchase:
 
         from payment.services import wallet_billing_service
-        customer = customer_service.get_businessman_customer_by_id(businessman, customer_id)
         purchase = CustomerPurchase(businessman=businessman, amount=amount, customer=customer)
         bc = customer_service.get_businessmancustomer_delete_check(businessman, customer)
         wallet_billing_service.add_payment_if_customer_invited(bc)
         purchase.save()
         if (discount_ids is not None) and len(discount_ids) != 0:
             discount_service.try_apply_discounts(businessman, discount_ids, purchase)
-        return True, True, purchase
+        return purchase
 
     def get_customer_all_purchases(self, businessman: Businessman, customer: Customer):
         return CustomerPurchase.objects.filter(businessman=businessman, customer=customer)
