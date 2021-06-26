@@ -13,7 +13,6 @@ from customer_return_plan.festivals.services import festival_service
 from customer_return_plan.services import customer_discount_service
 from customers.services import customer_service
 from online_menu.services import online_menu_service
-from smspanel.services import sms_message_service
 from users.models import Customer, Businessman, BusinessmanCustomer
 from users.services import businessman_service
 from .error_codes import CustomerAppErrors
@@ -238,9 +237,8 @@ class CustomerDataService:
 
         self._check_customer_not_already_deleted(b, customer)
 
-        BusinessmanCustomer.objects.create(businessman=b, customer=customer,
-                                           joined_by=BusinessmanCustomer.JOINED_BY_CUSTOMER_APP)
-        sms_message_service.send_welcome_message(b, customer)
+        customer_service.add_customer(b, customer.phone, customer.full_name, None,
+                                      BusinessmanCustomer.JOINED_BY_CUSTOMER_APP)
         return b
 
     def get_businessman_by_id_or_page_id(self, page_businessman_id: str) -> Businessman:
