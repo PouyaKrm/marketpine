@@ -15,7 +15,7 @@ from common.util import get_client_ip
 from common.util.kavenegar_local import APIException
 from common.util.sms_panel.message import system_sms_message
 from panelprofile.services import sms_panel_info_service, business_man_auth_doc_service
-from payment.services import wallet_service
+from payment.services import wallet_billing_service
 from users.models import Businessman, VerificationCodes, BusinessmanRefreshTokens, BusinessCategory, \
     PhoneChangeVerification
 
@@ -63,7 +63,7 @@ class BusinessmanService:
             is_active=True)
         b.set_password(password)
         b.save()
-        wallet_service.get_businessman_wallet_or_create(b)
+        wallet_billing_service.get_businessman_wallet_or_create(b)
         return b
 
     def update_businessman_profile(self, user: Businessman, first_name: str, last_name: str,

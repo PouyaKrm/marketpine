@@ -131,7 +131,7 @@ class PaymentService:
             raise ApplicationErrorException(ApplicationErrorCodes.RECORD_NOT_FOUND, ex)
 
 
-class WalletService:
+class WalletAndBillingService:
 
     def get_businessman_wallet_or_create(self, user: Businessman) -> Wallet:
 
@@ -146,4 +146,4 @@ class WalletService:
 
 
 payment_service = PaymentService()
-wallet_service = WalletService()
+wallet_billing_service = WalletAndBillingService()

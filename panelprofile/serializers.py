@@ -8,7 +8,7 @@ from base_app.serializers import FileFieldWithLinkRepresentation, BaseModelSeria
 from common.util.custom_validators import validate_logo_size, phone_validator
 from customers.services import customer_service
 from payment.serializers import WalletSerializer
-from payment.services import wallet_service
+from payment.services import wallet_billing_service
 from users.models import Businessman, BusinessCategory
 from users.serializers import CategorySerializer
 from users.services import businessman_service
@@ -100,7 +100,7 @@ class BusinessmanProfileSerializer(BaseModelSerializerWithRequestObj):
         return customer_service.get_businessman_customers(user).count()
 
     def get_wallet(self, user: Businessman):
-        w = wallet_service.get_businessman_wallet_or_create(user)
+        w = wallet_billing_service.get_businessman_wallet_or_create(user)
         sr = WalletSerializer(w)
         return sr.data
 
