@@ -149,16 +149,16 @@ class WalletAndBillingService:
                 used_credit=0
             )
 
-    def payment_for_customer_added(self, bc: BusinessmanCustomer):
+    def payment_for_customer_added(self, bc: BusinessmanCustomer, low_credit_error_code: dict = None):
 
         if bc.joined_by != BusinessmanCustomer.JOINED_BY_PANEL and bc.joined_by != BusinessmanCustomer.JOINED_BY_INVITATION and bc.joined_by != BusinessmanCustomer.JOINED_BY_CUSTOMER_APP:
             raise ValueError("invalid joined by value in parameter")
 
         if bc.joined_by == BusinessmanCustomer.JOINED_BY_PANEL:
-            self._customer_add_by_panel_payment(bc)
+            self._customer_add_by_panel_payment(bc, low_credit_error_code)
 
         if bc.joined_by == BusinessmanCustomer.JOINED_BY_CUSTOMER_APP:
-            self._customer_add_by_app_payment(bc)
+            self._customer_add_by_app_payment(bc, low_credit_error_code)
 
     def add_payment_if_customer_invited(self, bc: BusinessmanCustomer) -> Billing:
         invited = invitation_service.is_businessmancustomer_invited(bc)
@@ -174,14 +174,14 @@ class WalletAndBillingService:
                                    businessman=bc.businessman)
         return b
 
-    def _customer_add_by_panel_payment(self, bc: BusinessmanCustomer) -> Billing:
-        w = self.check_has_minimum_credit(bc.businessman)
+    def _customer_add_by_panel_payment(self, bc: BusinessmanCustomer, error_code: dict = None) -> Billing:
+        w = self.check_has_minimum_credit(bc.businessman, error_code)
         self._decrease_wallet_available_credit(w, customer_joined_by_panel_cost)
         b = Billing.objects.create(amount=customer_joined_by_panel_cost, customer_added=bc, businessman=bc.businessman)
         return b
 
-    def _customer_add_by_app_payment(self, bc: BusinessmanCustomer) -> Billing:
-        w = self.check_has_minimum_credit(bc.businessman)
+    def _customer_add_by_app_payment(self, bc: BusinessmanCustomer, error_code: dict = None) -> Billing:
+        w = self.check_has_minimum_credit(bc.businessman, error_code)
         self._decrease_wallet_available_credit(w, customer_joined_by_app_cost)
         b = Billing.objects.create(amount=customer_joined_by_app_cost, customer_added=bc, businessman=bc.businessman)
         return b

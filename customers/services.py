@@ -48,7 +48,9 @@ class CustomerService(BaseService):
         except ObjectDoesNotExist as ex:
             raise ApplicationErrorCodes.get_exception(ApplicationErrorCodes.RECORD_NOT_FOUND, ex)
 
-    def add_customer(self, businessman: Businessman, phone: str, full_name='', groups: list = None, joined_by=BusinessmanCustomer.JOINED_BY_PANEL) -> Customer:
+    def add_customer(self, businessman: Businessman, phone: str, full_name='', groups: list = None,
+                     joined_by=BusinessmanCustomer.JOINED_BY_PANEL,
+                     low_credit_error_code: dict = None) -> Customer:
         self._check_is_phone_number_unique_for_register(businessman, phone)
         c = None
         try:
@@ -58,27 +60,29 @@ class CustomerService(BaseService):
                 bc.is_deleted = False
                 bc.save()
             else:
-                c = self._join_customer_to_businessman(businessman, c, joined_by, groups)
+                c = self._join_customer_to_businessman(businessman, c, joined_by, groups, low_credit_error_code)
         except ObjectDoesNotExist:
-            c = self._create_customer_join_to_businessman(businessman, joined_by, phone, full_name, groups)
+            c = self._create_customer_join_to_businessman(businessman, joined_by, phone, full_name, groups,
+                                                          low_credit_error_code)
         return c
 
     def _join_customer_to_businessman(self, businessman: Businessman, customer: Customer, joined_by,
-                                      groups: list) -> Customer:
+                                      groups: list, low_credit_error_code: dict = None) -> Customer:
         from payment.services import wallet_billing_service
         with transaction.atomic():
             bc = BusinessmanCustomer.objects.create(customer=customer, businessman=businessman, joined_by=joined_by)
-            wallet_billing_service.payment_for_customer_added(bc)
+            wallet_billing_service.payment_for_customer_added(bc, low_credit_error_code)
             self._reset_customer_group_send_welcome_message(businessman, customer, groups)
             return customer
 
     def _create_customer_join_to_businessman(self, businessman: Businessman, joined_by, phone: str,
-                                             full_name: str = None, groups: list = None) -> Customer:
+                                             full_name: str = None, groups: list = None,
+                                             low_credit_error_code: dict = None) -> Customer:
         from payment.services import wallet_billing_service
         with transaction.atomic():
             c = Customer.objects.create(phone=phone, full_name=full_name)
             bc = BusinessmanCustomer.objects.create(customer=c, businessman=businessman, joined_by=joined_by)
-            wallet_billing_service.payment_for_customer_added(bc)
+            wallet_billing_service.payment_for_customer_added(bc, low_credit_error_code)
             self._reset_customer_group_send_welcome_message(businessman, c, groups)
             return c
 

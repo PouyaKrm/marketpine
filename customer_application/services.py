@@ -43,7 +43,8 @@ class CustomerVerificationCodeService:
         self._resend_verification_code(customer, CustomerVerificationCode.USED_FOR_PHONE_UPDATE)
 
     def check_phone_update_code(self, customer, code) -> CustomerVerificationCode:
-        return self._get_last_unexpired_verify_code_by_code(customer, code, CustomerVerificationCode.USED_FOR_PHONE_UPDATE)
+        return self._get_last_unexpired_verify_code_by_code(customer, code,
+                                                            CustomerVerificationCode.USED_FOR_PHONE_UPDATE)
 
     def _generate_verification_code(self, customer: Customer, used_for, phone=None) -> CustomerVerificationCode:
         self._check_not_has_unexpired_verification_code(customer, used_for)
@@ -237,8 +238,12 @@ class CustomerDataService:
 
         self._check_customer_not_already_deleted(b, customer)
 
-        customer_service.add_customer(b, customer.phone, customer.full_name, None,
-                                      BusinessmanCustomer.JOINED_BY_CUSTOMER_APP)
+        customer_service.add_customer(
+            b,
+            customer.phone, customer.full_name, None,
+            BusinessmanCustomer.JOINED_BY_CUSTOMER_APP,
+            CustomerAppErrors.CAN_NOT_JOIN_BUSINESSMAN
+        )
         return b
 
     def get_businessman_by_id_or_page_id(self, page_businessman_id: str) -> Businessman:
