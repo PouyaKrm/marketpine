@@ -68,8 +68,7 @@ class CustomerService(BaseService):
                                       groups: list) -> Customer:
         with transaction.atomic():
             bc = BusinessmanCustomer.objects.create(customer=customer, businessman=businessman, joined_by=joined_by)
-            if joined_by == BusinessmanCustomer.JOINED_BY_PANEL:
-                wallet_billing_service.customer_add_by_panel_payment(bc)
+            wallet_billing_service.payment_for_customer_added(bc)
             self._reset_customer_group_send_welcome_message(businessman, customer, groups)
             return customer
 
@@ -78,8 +77,7 @@ class CustomerService(BaseService):
         with transaction.atomic():
             c = Customer.objects.create(phone=phone, full_name=full_name)
             bc = BusinessmanCustomer.objects.create(customer=c, businessman=businessman, joined_by=joined_by)
-            if joined_by == BusinessmanCustomer.JOINED_BY_PANEL:
-                wallet_billing_service.customer_add_by_panel_payment(bc)
+            wallet_billing_service.payment_for_customer_added(bc)
             self._reset_customer_group_send_welcome_message(businessman, c, groups)
             return c
 

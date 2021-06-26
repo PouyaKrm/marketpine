@@ -146,9 +146,15 @@ class WalletAndBillingService:
                 used_credit=0
             )
 
-    def customer_add_by_panel_payment(self, bc: BusinessmanCustomer) -> Billing:
-        if bc.joined_by != BusinessmanCustomer.JOINED_BY_PANEL:
-            raise ValueError('joined_by field must be set to JOINED_BY_PANEL')
+    def payment_for_customer_added(self, bc: BusinessmanCustomer):
+
+        if bc.joined_by != BusinessmanCustomer.JOINED_BY_PANEL and bc.joined_by != BusinessmanCustomer.JOINED_BY_INVITATION and bc.joined_by != BusinessmanCustomer.JOINED_BY_CUSTOMER_APP:
+            raise ValueError("invalid joined by value in parameter")
+
+        if bc.joined_by == BusinessmanCustomer.JOINED_BY_PANEL:
+            self._customer_add_by_panel_payment(bc)
+
+    def _customer_add_by_panel_payment(self, bc: BusinessmanCustomer) -> Billing:
         w = self.check_has_minimum_credit(bc.businessman)
         self._decrease_wallet_available_credit(w, customer_joined_by_panel_cost)
         b = Billing.objects.create(amount=customer_joined_by_panel_cost, customer_added=bc, businessman=bc.businessman)
