@@ -168,6 +168,7 @@ class WalletAndBillingService:
         w = self.check_has_minimum_credit(bc.businessman)
         self._decrease_wallet_available_credit(w, customer_joined_by_app_cost)
         b = Billing.objects.create(amount=customer_joined_by_app_cost, customer_added=bc, businessman=bc.businessman)
+        return b
 
     def has_minimum_credit(self, user: Businessman) -> bool:
         w = self.get_businessman_wallet_or_create(user)
