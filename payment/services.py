@@ -19,6 +19,7 @@ setting_merchant = settings.ZARINPAL.get('MERCHANT')
 wallet_initial_available_credit = settings.WALLET['INITIAL_AVAILABLE_CREDIT']
 wallet_minimum_allowed_credit = settings.WALLET['MINIMUM_ALLOWED_CREDIT']
 customer_joined_by_panel_cost = settings.BILLING['CUSTOMER_JOINED_BY_PANEL_COST']
+customer_joined_by_app_cost = settings.BILLING['CUSTOMER_JOINED_BY_APP_COST']
 
 
 class PaymentService:
@@ -154,11 +155,19 @@ class WalletAndBillingService:
         if bc.joined_by == BusinessmanCustomer.JOINED_BY_PANEL:
             self._customer_add_by_panel_payment(bc)
 
+        if bc.joined_by == BusinessmanCustomer.JOINED_BY_CUSTOMER_APP:
+            self._customer_add_by_app_payment(bc)
+
     def _customer_add_by_panel_payment(self, bc: BusinessmanCustomer) -> Billing:
         w = self.check_has_minimum_credit(bc.businessman)
         self._decrease_wallet_available_credit(w, customer_joined_by_panel_cost)
         b = Billing.objects.create(amount=customer_joined_by_panel_cost, customer_added=bc, businessman=bc.businessman)
         return b
+
+    def _customer_add_by_app_payment(self, bc: BusinessmanCustomer) -> Billing:
+        w = self.check_has_minimum_credit(bc.businessman)
+        self._decrease_wallet_available_credit(w, customer_joined_by_app_cost)
+        b = Billing.objects.create(amount=customer_joined_by_app_cost, customer_added=bc, businessman=bc.businessman)
 
     def has_minimum_credit(self, user: Businessman) -> bool:
         w = self.get_businessman_wallet_or_create(user)
