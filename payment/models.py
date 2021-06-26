@@ -10,7 +10,8 @@ from base_app.models import PanelDurationBaseModel
 from panelprofile.services import sms_panel_info_service
 from payment.exceptions import PaymentCreationFailedException, PaymentVerificationFailedException, \
     PaymentAlreadyVerifiedException, PaymentOperationFailedException
-from users.models import Businessman, BaseModel, BusinessmanOneToOneBaseModel
+from users.models import Businessman, BaseModel, BusinessmanOneToOneBaseModel, BusinessmanManyToOneBaseModel, \
+    BusinessmanCustomer
 
 url = settings.ZARINPAL.get('url')
 setting_merchant = settings.ZARINPAL.get('MERCHANT')
@@ -198,4 +199,13 @@ class Wallet(BusinessmanOneToOneBaseModel):
 
     class Meta:
         db_table = "wallet"
+        ordering = ('-create_date', '-update_date')
+
+
+class Billing(BusinessmanManyToOneBaseModel):
+    amount = models.BigIntegerField()
+    customer_added = models.ForeignKey(BusinessmanCustomer, null=True, blank=True, on_delete=models.PROTECT)
+
+    class Meta:
+        db_table = 'billing'
         ordering = ('-create_date', '-update_date')
