@@ -45,8 +45,11 @@ class PurchaseService:
     def submit_purchase_with_discounts(self, businessman: Businessman, customer_id: int, amount: int,
                                        discount_ids: [int] = None) -> (bool, bool, CustomerPurchase):
 
+        from payment.services import wallet_billing_service
         customer = customer_service.get_businessman_customer_by_id(businessman, customer_id)
         purchase = CustomerPurchase(businessman=businessman, amount=amount, customer=customer)
+        bc = customer_service.get_businessmancustomer_delete_check(businessman, customer)
+        wallet_billing_service.add_payment_if_customer_invited(bc)
         purchase.save()
         if (discount_ids is not None) and len(discount_ids) != 0:
             discount_service.try_apply_discounts(businessman, discount_ids, purchase)
@@ -61,13 +64,10 @@ class PurchaseService:
         #     'sum_amount')
 
     def add_customer_purchase(self, user: Businessman, customer: Customer, amount: int) -> CustomerPurchase:
+        from payment.services import wallet_billing_service
         purchase = CustomerPurchase.objects.create(businessman=user, customer=customer, amount=amount)
-        # p = CustomerPurchase.objects.values('customer').annotate(purchase_sum=Sum('amount')).filter(
-        #     purchase_sum__gt=0).order_by('-purchase_sum')[:5]
-        # customers = []
-        # for c in p.all():
-        #     customers.append(c['customer'])
-        # BusinessmanGroups.set_members_for_purchase_top(user, customers)
+        bc = customer_service.get_businessmancustomer_delete_check(user, customer)
+        wallet_billing_service.add_payment_if_customer_invited(bc)
         self.re_evaluate_purchase_top_group(user)
         return purchase
 

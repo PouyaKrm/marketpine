@@ -9,6 +9,7 @@ from rest_framework.request import Request
 from zeep import Client
 
 from base_app.error_codes import ApplicationErrorException, ApplicationErrorCodes
+from customer_return_plan.invitation.services import invitation_service
 from panelprofile.models import SMSPanelInfo
 from panelprofile.services import sms_panel_info_service
 from payment.models import PanelActivationPlans, Payment, PaymentTypes, Wallet, Billing
@@ -20,6 +21,7 @@ wallet_initial_available_credit = settings.WALLET['INITIAL_AVAILABLE_CREDIT']
 wallet_minimum_allowed_credit = settings.WALLET['MINIMUM_ALLOWED_CREDIT']
 customer_joined_by_panel_cost = settings.BILLING['CUSTOMER_JOINED_BY_PANEL_COST']
 customer_joined_by_app_cost = settings.BILLING['CUSTOMER_JOINED_BY_APP_COST']
+invited_customer_after_purchase_cost = settings.BILLING['INVITED_CUSTOMER_AFTER_PURCHASE_COST']
 
 
 class PaymentService:
@@ -157,6 +159,20 @@ class WalletAndBillingService:
 
         if bc.joined_by == BusinessmanCustomer.JOINED_BY_CUSTOMER_APP:
             self._customer_add_by_app_payment(bc)
+
+    def add_payment_if_customer_invited(self, bc: BusinessmanCustomer) -> Billing:
+        invited = invitation_service.is_businessmancustomer_invited(bc)
+        if not invited:
+            return None
+        exist = Billing.objects.filter(customer_added=bc).exists()
+        if bc.joined_by == BusinessmanCustomer.JOINED_BY_INVITATION and exist:
+            return None
+
+        w = self.check_has_minimum_credit(bc.businessman)
+        self._decrease_wallet_available_credit(w, invited_customer_after_purchase_cost)
+        b = Billing.objects.create(amount=invited_customer_after_purchase_cost, customer_added=bc,
+                                   businessman=bc.businessman)
+        return b
 
     def _customer_add_by_panel_payment(self, bc: BusinessmanCustomer) -> Billing:
         w = self.check_has_minimum_credit(bc.businessman)

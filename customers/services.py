@@ -4,7 +4,6 @@ from django.db.models import QuerySet
 
 from base_app.error_codes import ApplicationErrorCodes
 from base_app.services import BaseService
-from payment.services import wallet_billing_service
 from smspanel.services import sms_message_service
 from users.models import Customer, Businessman, BusinessmanCustomer
 
@@ -66,6 +65,7 @@ class CustomerService(BaseService):
 
     def _join_customer_to_businessman(self, businessman: Businessman, customer: Customer, joined_by,
                                       groups: list) -> Customer:
+        from payment.services import wallet_billing_service
         with transaction.atomic():
             bc = BusinessmanCustomer.objects.create(customer=customer, businessman=businessman, joined_by=joined_by)
             wallet_billing_service.payment_for_customer_added(bc)
@@ -74,6 +74,7 @@ class CustomerService(BaseService):
 
     def _create_customer_join_to_businessman(self, businessman: Businessman, joined_by, phone: str,
                                              full_name: str = None, groups: list = None) -> Customer:
+        from payment.services import wallet_billing_service
         with transaction.atomic():
             c = Customer.objects.create(phone=phone, full_name=full_name)
             bc = BusinessmanCustomer.objects.create(customer=c, businessman=businessman, joined_by=joined_by)
@@ -111,7 +112,7 @@ class CustomerService(BaseService):
         except ObjectDoesNotExist:
             raise ApplicationErrorCodes.get_exception(ApplicationErrorCodes.RECORD_NOT_FOUND)
 
-    def get_businessmancustomer(self, businessman: Businessman, customer: Customer) -> BusinessmanCustomer:
+    def get_businessmancustomer_delete_check(self, businessman: Businessman, customer: Customer) -> BusinessmanCustomer:
         try:
             return BusinessmanCustomer.objects.get(businessman=businessman, customer=customer, is_deleted=False)
         except ObjectDoesNotExist as ex:
