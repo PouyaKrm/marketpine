@@ -149,16 +149,16 @@ class WalletAndBillingService:
                 used_credit=0
             )
 
-    def payment_for_customer_added(self, bc: BusinessmanCustomer, low_credit_error_code: dict = None):
+    def payment_for_customer_added(self, bc: BusinessmanCustomer, low_credit_error_code: dict = None) -> Billing:
 
         if bc.joined_by != BusinessmanCustomer.JOINED_BY_PANEL and bc.joined_by != BusinessmanCustomer.JOINED_BY_INVITATION and bc.joined_by != BusinessmanCustomer.JOINED_BY_CUSTOMER_APP:
             raise ValueError("invalid joined by value in parameter")
 
         if bc.joined_by == BusinessmanCustomer.JOINED_BY_PANEL:
-            self._customer_add_by_panel_payment(bc, low_credit_error_code)
+            return self._customer_add_by_panel_payment(bc, low_credit_error_code)
 
         if bc.joined_by == BusinessmanCustomer.JOINED_BY_CUSTOMER_APP:
-            self._customer_add_by_app_payment(bc, low_credit_error_code)
+            return self._customer_add_by_app_payment(bc, low_credit_error_code)
 
     def add_payment_if_customer_invited(self, bc: BusinessmanCustomer) -> Billing:
         invited = invitation_service.is_businessmancustomer_invited(bc)
