@@ -140,7 +140,7 @@ class PaymentService:
             raise ApplicationErrorException(ApplicationErrorCodes.RECORD_NOT_FOUND, ex)
 
 
-class DayBillResult:
+class BillingSummery:
 
     def __init__(self, query: QuerySet, added_by_panel_cost: int, added_by_app_cost: int, invitation_cost: int):
         self.query = query
@@ -213,7 +213,7 @@ class WalletAndBillingService:
         else:
             raise ApplicationErrorException(error_code)
 
-    def get_today_billings_until_now(self, user: Businessman) -> DayBillResult:
+    def get_today_billings_until_now(self, user: Businessman) -> BillingSummery:
         tz = pytz.timezone('Asia/Tehran')
         local_now = datetime.datetime.now(tz)
         local_start_of_day = tz.normalize(local_now.replace(hour=0, minute=0, second=0, microsecond=0))
@@ -226,7 +226,24 @@ class WalletAndBillingService:
         added_by_app = self._aggregate_added_by_app_amount(user, local_start_of_day, local_now)
         added_by_invitation = self._aggregate_added_by_invitation_amount(user, local_start_of_day, local_now)
 
-        return DayBillResult(query, added_by_panel, added_by_app, added_by_invitation)
+        return BillingSummery(query, added_by_panel, added_by_app, added_by_invitation)
+
+    def get_month_billings_until_now(self, user: Businessman) -> BillingSummery:
+        tz = pytz.timezone('Asia/Tehran')
+        local_now = datetime.datetime.now(tz)
+        local_start_of_month = tz.normalize(local_now.replace(day=1))
+        query = Billing.objects.filter(
+            businessman=user
+        ).filter(
+            create_date__gte=local_start_of_month,
+            create_date__lte=local_now
+        )
+
+        added_by_panel = self._aggregate_added_by_panel_amount(user, local_start_of_month, local_now)
+        added_by_app = self._aggregate_added_by_app_amount(user, local_start_of_month, local_now)
+        added_by_invitation = self._aggregate_added_by_invitation_amount(user, local_start_of_month, local_now)
+
+        return BillingSummery(query, added_by_panel, added_by_app, added_by_invitation)
 
     def _aggregate_added_by_panel_amount(self, user: Businessman, dt_from, dt_to):
         q = Billing.objects.filter(

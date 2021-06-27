@@ -1,3 +1,4 @@
+import calendar
 import random
 from typing import List, Tuple
 from unittest.mock import patch, Mock
@@ -187,8 +188,7 @@ class TestVerifyPaymentByAuthority(PaymentServiceBaseTestClass):
         panel_decrease.assert_not_called()
 
 
-class WalletBillingTest(BaseTestClass):
-
+class BaseWalletBillingTestClass(BaseTestClass):
     def setUp(self) -> None:
         super().setUp()
         self.businessman = self.create_businessman()
@@ -206,7 +206,7 @@ class WalletBillingTest(BaseTestClass):
         sum_amount = sum(b.amount for b in billings)
         return billings, sum_amount
 
-    def _create_billing_with_create_date(self, create_date, joined_by=BusinessmanCustomer.JOINED_BY_PANEL):
+    def _create_billing_with_create_date(self, create_date, joined_by=BusinessmanCustomer.JOINED_BY_PANEL) -> Billing:
         b = Billing.objects.create(amount=10,
                                    businessman=self.businessman,
                                    customer_added=self.create_customer_return_businessmancustomer(
@@ -216,6 +216,7 @@ class WalletBillingTest(BaseTestClass):
                                    )
         b.create_date = create_date
         b.save()
+        return b
 
     def _create_billing_for_other_businessman(self, joined_by=BusinessmanCustomer.JOINED_BY_CUSTOMER_APP):
         return Billing.objects.create(
@@ -227,12 +228,19 @@ class WalletBillingTest(BaseTestClass):
             amount=10
         )
 
+
+class WalletBillingGetTodayBillingUntilNowTest(BaseWalletBillingTestClass):
+
     def test_get_today_billings_until_now_added_by_panel(self):
         fakes = self._create_bulk_billing(3)
         self._create_billing_with_create_date(timezone.now() + timezone.timedelta(minutes=1))
         self._create_billing_for_other_businessman()
         result = wallet_billing_service.get_today_billings_until_now(self.businessman)
-        count = result.query.count()
+        count = result.query.filter(businessman=self.businessman).filter(
+            customer_added__joined_by=BusinessmanCustomer.JOINED_BY_PANEL
+        ).count()
+        all_count = result.query.count()
+        self.assertEqual(count, all_count)
         self.assertEqual(count, len(fakes[0]))
         self.assertEqual(result.added_by_panel_cost, fakes[1])
         self.assertEqual(result.added_by_app_cost, 0)
@@ -244,7 +252,10 @@ class WalletBillingTest(BaseTestClass):
         self._create_billing_with_create_date(future, BusinessmanCustomer.JOINED_BY_CUSTOMER_APP)
         self._create_billing_for_other_businessman(BusinessmanCustomer.JOINED_BY_CUSTOMER_APP)
         result = wallet_billing_service.get_today_billings_until_now(self.businessman)
-        count = result.query.filter(customer_added__joined_by=BusinessmanCustomer.JOINED_BY_CUSTOMER_APP).count()
+        count = result.query.filter(businessman=self.businessman).filter(
+            customer_added__joined_by=BusinessmanCustomer.JOINED_BY_CUSTOMER_APP).count()
+        all_count = result.query.count()
+        self.assertEqual(count, all_count)
         self.assertEqual(count, len(fakes[0]))
         self.assertEqual(result.added_by_panel_cost, 0)
         self.assertEqual(result.added_by_app_cost, fakes[1])
@@ -256,11 +267,11 @@ class WalletBillingTest(BaseTestClass):
         self._create_billing_with_create_date(future, BusinessmanCustomer.JOINED_BY_INVITATION)
         self._create_billing_for_other_businessman(BusinessmanCustomer.JOINED_BY_INVITATION)
         result = wallet_billing_service.get_today_billings_until_now(self.businessman)
-        count = result.query.filter(
-            businessman=self.businessman,
+        count = result.query.filter(businessman=self.businessman).filter(
             customer_added__joined_by=BusinessmanCustomer.JOINED_BY_INVITATION
         ).count()
-
+        all_count = result.query.count()
+        self.assertEqual(count, all_count)
         self.assertEqual(count, len(fakes[0]))
         self.assertEqual(result.added_by_panel_cost, 0)
         self.assertEqual(result.added_by_app_cost, 0)
@@ -280,8 +291,113 @@ class WalletBillingTest(BaseTestClass):
 
         result = wallet_billing_service.get_today_billings_until_now(self.businessman)
         count = result.query.filter(businessman=self.businessman).count()
+        all_count = result.query.count()
         fakes_count = len(fakes_panel[0]) + len(fakes_app[0]) + len(fakes_invitation[0])
+        self.assertEqual(count, all_count)
         self.assertEqual(count, fakes_count)
         self.assertEqual(result.added_by_panel_cost, fakes_panel[1])
         self.assertEqual(result.added_by_app_cost, fakes_app[1])
         self.assertEqual(result.invitation_cost, fakes_invitation[1])
+
+
+class WalletBillingGetMonthBillingsUntilNowTest(BaseWalletBillingTestClass):
+
+    def _create_billing_with_previous_month_date(self, joined_by=BusinessmanCustomer.JOINED_BY_PANEL) -> Billing:
+        first = timezone.now().replace(day=1)
+        pr = first - timezone.timedelta(days=1)
+        return self._create_billing_with_create_date(pr, joined_by)
+
+    def _create_billing_with_next_month_date(self, joined_by=BusinessmanCustomer.JOINED_BY_PANEL) -> Billing:
+        now = timezone.now()
+        last_day_of_month = calendar.monthrange(now.year, now.month)[1]
+        nx = timezone.datetime(now.year, now.month, last_day_of_month) + timezone.timedelta(days=1)
+        return self._create_billing_with_create_date(nx, joined_by)
+
+    def _create_billing_in_next_day_date(self, joined_by=BusinessmanCustomer.JOINED_BY_PANEL):
+        day = timezone.now() + timezone.timedelta(days=1)
+        return self._create_billing_with_create_date(day, joined_by)
+
+    def test_billings_added_by_panel(self):
+        fakes = self._create_bulk_billing(2)
+        self._create_billing_with_previous_month_date()
+        self._create_billing_with_next_month_date()
+        self._create_billing_in_next_day_date()
+        self._create_billing_for_other_businessman()
+        result = wallet_billing_service.get_month_billings_until_now(self.businessman)
+        count = result.query.filter(businessman=self.businessman).filter(
+            customer_added__joined_by=BusinessmanCustomer.JOINED_BY_PANEL).count()
+        all_count = result.query.count()
+        self.assertEqual(count, all_count)
+        self.assertEqual(count, len(fakes[0]))
+        self.assertEqual(result.added_by_panel_cost, fakes[1])
+        self.assertEqual(result.added_by_app_cost, 0)
+        self.assertEqual(result.invitation_cost, 0)
+
+    def test_billings_added_by_app(self):
+        fakes = self._create_bulk_billing(2, BusinessmanCustomer.JOINED_BY_CUSTOMER_APP)
+        self._create_billing_with_previous_month_date(BusinessmanCustomer.JOINED_BY_CUSTOMER_APP)
+        self._create_billing_with_next_month_date(BusinessmanCustomer.JOINED_BY_CUSTOMER_APP)
+        self._create_billing_in_next_day_date(BusinessmanCustomer.JOINED_BY_CUSTOMER_APP)
+        self._create_billing_for_other_businessman(BusinessmanCustomer.JOINED_BY_CUSTOMER_APP)
+        result = wallet_billing_service.get_month_billings_until_now(self.businessman)
+        count = result.query.filter(businessman=self.businessman).filter(
+            customer_added__joined_by=BusinessmanCustomer.JOINED_BY_CUSTOMER_APP).count()
+        all_count = result.query.count()
+        self.assertEqual(count, all_count)
+        self.assertEqual(count, len(fakes[0]))
+        self.assertEqual(result.added_by_panel_cost, 0)
+        self.assertEqual(result.added_by_app_cost, fakes[1])
+        self.assertEqual(result.invitation_cost, 0)
+
+    def test_billings_invitation(self):
+        fakes = self._create_bulk_billing(10, BusinessmanCustomer.JOINED_BY_INVITATION)
+        self._create_billing_with_previous_month_date(BusinessmanCustomer.JOINED_BY_INVITATION)
+        self._create_billing_with_next_month_date(BusinessmanCustomer.JOINED_BY_INVITATION)
+        self._create_billing_in_next_day_date(BusinessmanCustomer.JOINED_BY_INVITATION)
+        self._create_billing_for_other_businessman(BusinessmanCustomer.JOINED_BY_INVITATION)
+        result = wallet_billing_service.get_month_billings_until_now(self.businessman)
+        count = result.query.filter(businessman=self.businessman).filter(
+            customer_added__joined_by=BusinessmanCustomer.JOINED_BY_INVITATION).count()
+        all_count = result.query.count()
+        self.assertEqual(count, all_count)
+        self.assertEqual(count, len(fakes[0]))
+        self.assertEqual(result.added_by_panel_cost, 0)
+        self.assertEqual(result.added_by_app_cost, 0)
+        self.assertEqual(result.invitation_cost, fakes[1])
+
+    def test_billings(self):
+        panel_fakes = self._create_bulk_billing(3, BusinessmanCustomer.JOINED_BY_PANEL)
+        app_fakes = self._create_bulk_billing(5, BusinessmanCustomer.JOINED_BY_CUSTOMER_APP)
+        invitation_fakes = self._create_bulk_billing(6, BusinessmanCustomer.JOINED_BY_INVITATION)
+
+        self._create_billing_with_previous_month_date(BusinessmanCustomer.JOINED_BY_PANEL)
+        self._create_billing_with_next_month_date(BusinessmanCustomer.JOINED_BY_PANEL)
+        self._create_billing_in_next_day_date(BusinessmanCustomer.JOINED_BY_PANEL)
+        self._create_billing_for_other_businessman(BusinessmanCustomer.JOINED_BY_PANEL)
+
+        self._create_billing_with_previous_month_date(BusinessmanCustomer.JOINED_BY_CUSTOMER_APP)
+        self._create_billing_with_next_month_date(BusinessmanCustomer.JOINED_BY_CUSTOMER_APP)
+        self._create_billing_in_next_day_date(BusinessmanCustomer.JOINED_BY_CUSTOMER_APP)
+        self._create_billing_for_other_businessman(BusinessmanCustomer.JOINED_BY_CUSTOMER_APP)
+
+        self._create_billing_with_previous_month_date(BusinessmanCustomer.JOINED_BY_INVITATION)
+        self._create_billing_with_next_month_date(BusinessmanCustomer.JOINED_BY_INVITATION)
+        self._create_billing_in_next_day_date(BusinessmanCustomer.JOINED_BY_INVITATION)
+        self._create_billing_for_other_businessman(BusinessmanCustomer.JOINED_BY_INVITATION)
+
+        result = wallet_billing_service.get_month_billings_until_now(self.businessman)
+        panel_counts = result.query.filter(businessman=self.businessman).filter(
+            customer_added__joined_by=BusinessmanCustomer.JOINED_BY_PANEL).count()
+        app_count = result.query.filter(businessman=self.businessman).filter(
+            customer_added__joined_by=BusinessmanCustomer.JOINED_BY_CUSTOMER_APP).count()
+        invitation_count = result.query.filter(businessman=self.businessman).filter(
+            customer_added__joined_by=BusinessmanCustomer.JOINED_BY_INVITATION).count()
+        all_count = result.query.count()
+        fake_count = len(panel_fakes[0]) + len(app_fakes[0]) + len(invitation_fakes[0])
+        self.assertEqual(all_count, fake_count)
+        self.assertEqual(panel_counts, len(panel_fakes[0]))
+        self.assertEqual(app_count, len(app_fakes[0]))
+        self.assertEqual(invitation_count, len(invitation_fakes[0]))
+        self.assertEqual(result.added_by_panel_cost, panel_fakes[1])
+        self.assertEqual(result.added_by_app_cost, app_fakes[1])
+        self.assertEqual(result.invitation_cost, invitation_fakes[1])
