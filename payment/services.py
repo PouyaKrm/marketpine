@@ -1,8 +1,12 @@
+import datetime
 from typing import Tuple
 
+import pytz
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import transaction
+from django.db.models import QuerySet
+from django.db.models.aggregates import Sum
 from django.urls import reverse
 from django.utils import timezone
 from rest_framework.request import Request
@@ -136,6 +140,15 @@ class PaymentService:
             raise ApplicationErrorException(ApplicationErrorCodes.RECORD_NOT_FOUND, ex)
 
 
+class DayBillResult:
+
+    def __init__(self, query: QuerySet, added_by_panel_cost: int, added_by_app_cost: int, invitation_cost: int):
+        self.query = query
+        self.added_by_app_cost = added_by_app_cost
+        self.added_by_panel_cost = added_by_panel_cost
+        self.invitation_cost = invitation_cost
+
+
 class WalletAndBillingService:
 
     def get_businessman_wallet_or_create(self, user: Businessman) -> Wallet:
@@ -199,6 +212,57 @@ class WalletAndBillingService:
             raise ApplicationErrorException(ApplicationErrorCodes.NOT_ENOUGH_WALLET_CREDIT)
         else:
             raise ApplicationErrorException(error_code)
+
+    def get_today_billings_until_now(self, user: Businessman) -> DayBillResult:
+        tz = pytz.timezone('Asia/Tehran')
+        local_now = datetime.datetime.now(tz)
+        local_start_of_day = tz.normalize(local_now.replace(hour=0, minute=0, second=0, microsecond=0))
+        query = Billing.objects.filter(businessman=user).filter(
+            create_date__gte=local_start_of_day,
+            create_date__lte=local_now
+        )
+
+        added_by_panel = self._aggregate_added_by_panel_amount(user, local_start_of_day, local_now)
+        added_by_app = self._aggregate_added_by_app_amount(user, local_start_of_day, local_now)
+        added_by_invitation = self._aggregate_added_by_invitation_amount(user, local_start_of_day, local_now)
+
+        return DayBillResult(query, added_by_panel, added_by_app, added_by_invitation)
+
+    def _aggregate_added_by_panel_amount(self, user: Businessman, dt_from, dt_to):
+        q = Billing.objects.filter(
+            businessman=user
+        ).filter(
+            customer_added__joined_by=BusinessmanCustomer.JOINED_BY_PANEL
+        )
+        return self._aggregate_amount_from_to(q, dt_from, dt_to)
+
+    def _aggregate_added_by_app_amount(self, user: Businessman, dt_from, dt_to):
+        q = Billing.objects.filter(
+            businessman=user
+        ).filter(
+            customer_added__joined_by=BusinessmanCustomer.JOINED_BY_CUSTOMER_APP
+        )
+        return self._aggregate_amount_from_to(q, dt_from, dt_to)
+
+    def _aggregate_added_by_invitation_amount(self, user: Businessman, dt_from, dt_to):
+        q = Billing.objects.filter(
+            businessman=user
+        ).filter(
+            customer_added__joined_by=BusinessmanCustomer.JOINED_BY_INVITATION
+        )
+
+        return self._aggregate_amount_from_to(q, dt_from, dt_to)
+
+    def _aggregate_amount_from_to(self, query: QuerySet, dt_from, dt_to) -> int:
+        result = query.filter(
+            create_date__gte=dt_from,
+            create_date__lte=dt_to
+        ).aggregate(
+            Sum('amount')
+        ).get('amount__sum', 0)
+        if result is None:
+            return 0
+        return result
 
     def _decrease_wallet_available_credit(self, wallet: Wallet, amount: int) -> Wallet:
         wallet.available_credit -= amount

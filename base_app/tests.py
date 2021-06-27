@@ -45,3 +45,7 @@ class BaseTestClass(TestCase, ABC):
     def create_time_in_past(self) -> datetime:
         return timezone.now() - timezone.timedelta(days=30)
 
+    def create_customer_return_businessmancustomer(self, b: Businessman,
+                                                   joined_by=BusinessmanCustomer.JOINED_BY_PANEL) -> BusinessmanCustomer:
+        c = self.create_customer()
+        return BusinessmanCustomer.objects.create(businessman=b, customer=c, joined_by=joined_by)
