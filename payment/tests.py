@@ -231,7 +231,7 @@ class BaseWalletBillingTestClass(BaseTestClass):
 
 class WalletBillingGetTodayBillingUntilNowTest(BaseWalletBillingTestClass):
 
-    def test_get_today_billings_until_now_added_by_panel(self):
+    def test_billings_added_by_panel(self):
         fakes = self._create_bulk_billing(3)
         self._create_billing_with_create_date(timezone.now() + timezone.timedelta(minutes=1))
         self._create_billing_for_other_businessman()
@@ -246,7 +246,7 @@ class WalletBillingGetTodayBillingUntilNowTest(BaseWalletBillingTestClass):
         self.assertEqual(result.added_by_app_cost, 0)
         self.assertEqual(result.invitation_cost, 0)
 
-    def test_get_today_billings_until_now_added_by_app(self):
+    def test_billings_added_by_app(self):
         fakes = self._create_bulk_billing(3, BusinessmanCustomer.JOINED_BY_CUSTOMER_APP)
         future = timezone.now() + timezone.timedelta(minutes=1)
         self._create_billing_with_create_date(future, BusinessmanCustomer.JOINED_BY_CUSTOMER_APP)
@@ -261,7 +261,7 @@ class WalletBillingGetTodayBillingUntilNowTest(BaseWalletBillingTestClass):
         self.assertEqual(result.added_by_app_cost, fakes[1])
         self.assertEqual(result.invitation_cost, 0)
 
-    def test_get_today_billings_until_now_invitation(self):
+    def test_billings_invitation(self):
         fakes = self._create_bulk_billing(5, BusinessmanCustomer.JOINED_BY_INVITATION)
         future = timezone.now() + timezone.timedelta(minutes=1)
         self._create_billing_with_create_date(future, BusinessmanCustomer.JOINED_BY_INVITATION)
@@ -277,7 +277,7 @@ class WalletBillingGetTodayBillingUntilNowTest(BaseWalletBillingTestClass):
         self.assertEqual(result.added_by_app_cost, 0)
         self.assertEqual(result.invitation_cost, fakes[1])
 
-    def test_get_today_billings_until_now(self):
+    def test_billings(self):
         fakes_panel = self._create_bulk_billing(5, BusinessmanCustomer.JOINED_BY_PANEL)
         fakes_app = self._create_bulk_billing(2, BusinessmanCustomer.JOINED_BY_CUSTOMER_APP)
         fakes_invitation = self._create_bulk_billing(7, BusinessmanCustomer.JOINED_BY_INVITATION)
