@@ -245,7 +245,41 @@ class WalletAndBillingService:
 
     def get_month_billings_group_by_day(self, user: Businessman, date_of_month: datetime.date) -> List[
         MonthlyBillingSummery]:
-        q = self._group_by_billing_in_month(user, date_of_month.year, date_of_month.month)
+        tz = pytz.timezone('Asia/Tehran')
+        local_now = datetime.datetime.now(tz)
+        year = date_of_month.year
+        month = date_of_month.month
+        local_start_of_month = tz.normalize(
+            local_now.replace(
+                year=year,
+                month=month,
+                day=1,
+                hour=0,
+                minute=0,
+                second=0,
+                microsecond=0
+            )
+        )
+        last_day = calendar.monthrange(year, month)[1]
+        end_date = tz.normalize(
+            local_now.replace(
+                year=year,
+                month=month, day=last_day, hour=23, minute=59,
+                second=59,
+                microsecond=0
+            )
+        )
+
+        q = Billing.objects.filter(
+            businessman=user,
+            create_date__gte=local_start_of_month,
+            create_date__lte=end_date
+        ).values(
+            'create_date__date'
+        ).annotate(
+            amount_sum=Sum('amount')
+        ).order_by('create_date__date')
+
         q = list(q)
         mapped = map(lambda x: MonthlyBillingSummery(x['create_date__date'], x['amount_sum']), q)
         return list(mapped)
@@ -291,30 +325,7 @@ class WalletAndBillingService:
             lambda x: DailyBillSummery(x['create_date__date'], x['customer_added__joined_by'], x['amount_sum']),
             q
         )
-
         return list(mapped)
-
-    def _group_by_billing_in_month(self, user: Businessman, year, month):
-        tz = pytz.timezone('Asia/Tehran')
-        local_now = datetime.datetime.now(tz)
-        local_start_of_month = tz.normalize(
-            local_now.replace(year=year, month=month, day=1, hour=0, minute=0, second=0, microsecond=0))
-        last_day = calendar.monthrange(year, month)[1]
-        end_date = tz.normalize(
-            local_now.replace(year=year, month=month, day=last_day, hour=23, minute=59,
-                              second=59,
-                              microsecond=0))
-
-        q = Billing.objects.filter(
-            businessman=user,
-            create_date__gte=local_start_of_month,
-            create_date__lte=end_date
-        ).values(
-            'create_date__date'
-        ).annotate(
-            amount_sum=Sum('amount')
-        ).order_by('create_date__date')
-        return q
 
     def get_month_billings_until_now(self, user: Businessman) -> BillingSummery:
         tz = pytz.timezone('Asia/Tehran')
