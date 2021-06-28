@@ -454,10 +454,10 @@ class TestGetMonthBillingsGroupByDay(BaseWalletBillingTestClass):
 
         result = wallet_billing_service.get_month_billings_group_by_day(self.businessman, fakes_panel_month1[2])
         self.assertEqual(len(result), 2)
-        self.assertEqual(result[0].create_date, fakes_panel_month1[2].date())
-        self.assertEqual(result[1].create_date, fakes_customer_month1[2].date())
-        self.assertEqual(result[0].amount, fakes_panel_month1[1])
-        self.assertEqual(result[1].amount, fakes_customer_month1[1])
+        self.assertEqual(result[1].create_date, fakes_panel_month1[2].date())
+        self.assertEqual(result[0].create_date, fakes_customer_month1[2].date())
+        self.assertEqual(result[1].amount, fakes_panel_month1[1])
+        self.assertEqual(result[0].amount, fakes_customer_month1[1])
 
 
 class TestGetDayBillingsGroupByDayAndCustomerJoinedByType(BaseWalletBillingTestClass):

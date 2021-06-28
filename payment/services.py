@@ -278,7 +278,7 @@ class WalletAndBillingService:
             'create_date__date'
         ).annotate(
             amount_sum=Sum('amount')
-        ).order_by('create_date__date')
+        ).order_by('-create_date__date')
 
         q = list(q)
         mapped = map(lambda x: MonthlyBillingSummery(x['create_date__date'], x['amount_sum']), q)
@@ -318,7 +318,7 @@ class WalletAndBillingService:
             'create_date__date', 'customer_added__joined_by'
         ).annotate(
             amount_sum=Sum('amount')
-        ).order_by('create_date__date')
+        ).order_by('-create_date__date')
 
         q = list(q)
         mapped = map(
