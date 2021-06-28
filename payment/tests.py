@@ -462,38 +462,23 @@ class TestGetMonthBillingsGroupByDay(BaseWalletBillingTestClass):
 
 class TestGetDayBillingsGroupByDayAndCustomerJoinedByType(BaseWalletBillingTestClass):
 
-    def test_billing(self):
-        fakes_panel = self._create_bulk_billing_in_different_month(1, 2, 5, BusinessmanCustomer.JOINED_BY_PANEL)
-        fakes_app = self._create_bulk_billing_in_different_month(1, 2, 20, BusinessmanCustomer.JOINED_BY_CUSTOMER_APP)
-        fakes_invitation = self._create_bulk_billing_in_different_month(1, 2, 30,
-                                                                        BusinessmanCustomer.JOINED_BY_INVITATION)
+    def setUp(self) -> None:
+        super().setUp()
+        self.fakes_panel = self._create_bulk_billing_in_different_month(1, 2, 5, BusinessmanCustomer.JOINED_BY_PANEL)
+        self.fakes_app = self._create_bulk_billing_in_different_month(1, 2, 20,
+                                                                      BusinessmanCustomer.JOINED_BY_CUSTOMER_APP)
+        self.fakes_invitation = self._create_bulk_billing_in_different_month(1, 2, 30,
+                                                                             BusinessmanCustomer.JOINED_BY_INVITATION)
 
+    def test_billing(self):
         result = wallet_billing_service.get_day_billings_group_by_day_and_customer_joined_by_type(
             self.businessman,
-            fakes_panel[2]
+            self.fakes_panel[2]
         )
 
-        self.assertEqual(len(result), 3)
-        r_p = list(filter(lambda x: x.joined_by == BusinessmanCustomer.JOINED_BY_PANEL, result))
-        self.assertEqual(len(r_p), 1)
-        self.assertEqual(r_p[0].create_date, fakes_panel[2].date())
-        self.assertEqual(r_p[0].amount, fakes_panel[1])
-
-        r_a = list(filter(lambda x: x.joined_by == BusinessmanCustomer.JOINED_BY_CUSTOMER_APP, result))
-        self.assertEqual(len(r_a), 1)
-        self.assertEqual(r_a[0].create_date, fakes_app[2].date())
-        self.assertEqual(r_a[0].amount, fakes_app[1])
-
-        r_i = list(filter(lambda x: x.joined_by == BusinessmanCustomer.JOINED_BY_INVITATION, result))
-        self.assertEqual(len(r_i), 1)
-        self.assertEqual(r_i[0].create_date, fakes_invitation[2].date())
-        self.assertEqual(r_i[0].amount, fakes_invitation[1])
+        self._assert_call_result(result)
 
     def test_billings_other_businessman_have_billing(self):
-        fakes_panel = self._create_bulk_billing_in_different_month(1, 2, 5, BusinessmanCustomer.JOINED_BY_PANEL)
-        fakes_app = self._create_bulk_billing_in_different_month(1, 2, 20, BusinessmanCustomer.JOINED_BY_CUSTOMER_APP)
-        fakes_invitation = self._create_bulk_billing_in_different_month(1, 2, 30,
-                                                                        BusinessmanCustomer.JOINED_BY_INVITATION)
 
         b = self.create_businessman()
 
@@ -503,21 +488,36 @@ class TestGetDayBillingsGroupByDayAndCustomerJoinedByType(BaseWalletBillingTestC
 
         result = wallet_billing_service.get_day_billings_group_by_day_and_customer_joined_by_type(
             self.businessman,
-            fakes_panel[2]
+            self.fakes_panel[2]
         )
 
+        self._assert_call_result(result)
+
+    def test_billings_exist_in_other_day(self):
+        self._create_bulk_billing_in_different_month(1, 3, 4, BusinessmanCustomer.JOINED_BY_PANEL)
+        self._create_bulk_billing_in_different_month(1, 3, 6, BusinessmanCustomer.JOINED_BY_CUSTOMER_APP)
+        self._create_bulk_billing_in_different_month(1, 3, 8, BusinessmanCustomer.JOINED_BY_INVITATION)
+
+        result = wallet_billing_service.get_day_billings_group_by_day_and_customer_joined_by_type(
+            self.businessman,
+            self.fakes_panel[2]
+        )
+
+        self._assert_call_result(result)
+
+    def _assert_call_result(self, result):
         self.assertEqual(len(result), 3)
         r_p = list(filter(lambda x: x.joined_by == BusinessmanCustomer.JOINED_BY_PANEL, result))
         self.assertEqual(len(r_p), 1)
-        self.assertEqual(r_p[0].create_date, fakes_panel[2].date())
-        self.assertEqual(r_p[0].amount, fakes_panel[1])
+        self.assertEqual(r_p[0].create_date, self.fakes_panel[2].date())
+        self.assertEqual(r_p[0].amount, self.fakes_panel[1])
 
         r_a = list(filter(lambda x: x.joined_by == BusinessmanCustomer.JOINED_BY_CUSTOMER_APP, result))
         self.assertEqual(len(r_a), 1)
-        self.assertEqual(r_a[0].create_date, fakes_app[2].date())
-        self.assertEqual(r_a[0].amount, fakes_app[1])
+        self.assertEqual(r_a[0].create_date, self.fakes_app[2].date())
+        self.assertEqual(r_a[0].amount, self.fakes_app[1])
 
         r_i = list(filter(lambda x: x.joined_by == BusinessmanCustomer.JOINED_BY_INVITATION, result))
         self.assertEqual(len(r_i), 1)
-        self.assertEqual(r_i[0].create_date, fakes_invitation[2].date())
-        self.assertEqual(r_i[0].amount, fakes_invitation[1])
+        self.assertEqual(r_i[0].create_date, self.fakes_invitation[2].date())
+        self.assertEqual(r_i[0].amount, self.fakes_invitation[1])
