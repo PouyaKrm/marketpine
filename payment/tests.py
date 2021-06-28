@@ -479,7 +479,6 @@ class TestGetDayBillingsGroupByDayAndCustomerJoinedByType(BaseWalletBillingTestC
         self._assert_call_result(result)
 
     def test_billings_other_businessman_have_billing(self):
-
         b = self.create_businessman()
 
         self._create_bulk_billing_in_different_month(1, 2, 60, BusinessmanCustomer.JOINED_BY_PANEL, b)
@@ -503,6 +502,38 @@ class TestGetDayBillingsGroupByDayAndCustomerJoinedByType(BaseWalletBillingTestC
             self.fakes_panel[2]
         )
 
+        self._assert_call_result(result)
+
+    def _assert_call_result(self, result):
+        self.assertEqual(len(result), 3)
+        r_p = list(filter(lambda x: x.joined_by == BusinessmanCustomer.JOINED_BY_PANEL, result))
+        self.assertEqual(len(r_p), 1)
+        self.assertEqual(r_p[0].create_date, self.fakes_panel[2].date())
+        self.assertEqual(r_p[0].amount, self.fakes_panel[1])
+
+        r_a = list(filter(lambda x: x.joined_by == BusinessmanCustomer.JOINED_BY_CUSTOMER_APP, result))
+        self.assertEqual(len(r_a), 1)
+        self.assertEqual(r_a[0].create_date, self.fakes_app[2].date())
+        self.assertEqual(r_a[0].amount, self.fakes_app[1])
+
+        r_i = list(filter(lambda x: x.joined_by == BusinessmanCustomer.JOINED_BY_INVITATION, result))
+        self.assertEqual(len(r_i), 1)
+        self.assertEqual(r_i[0].create_date, self.fakes_invitation[2].date())
+        self.assertEqual(r_i[0].amount, self.fakes_invitation[1])
+
+
+class TestGroupBillingsByMonthJoinedByInPresentYear(BaseWalletBillingTestClass):
+
+    def setUp(self) -> None:
+        super().setUp()
+        self.fakes_panel = self._create_bulk_billing_in_different_month(2, 2, 5, BusinessmanCustomer.JOINED_BY_PANEL)
+        self.fakes_app = self._create_bulk_billing_in_different_month(3, 6, 20,
+                                                                      BusinessmanCustomer.JOINED_BY_CUSTOMER_APP)
+        self.fakes_invitation = self._create_bulk_billing_in_different_month(4, 8, 30,
+                                                                             BusinessmanCustomer.JOINED_BY_INVITATION)
+
+    def test_billings(self):
+        result = wallet_billing_service.group_billings_by_month_joined_by_in_present_year(self.businessman)
         self._assert_call_result(result)
 
     def _assert_call_result(self, result):

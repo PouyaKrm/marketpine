@@ -8,6 +8,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.db import transaction
 from django.db.models import QuerySet
 from django.db.models.aggregates import Sum
+from django.db.models.functions import TruncMonth
 from django.urls import reverse
 from django.utils import timezone
 from rest_framework.request import Request
@@ -325,6 +326,30 @@ class WalletAndBillingService:
             lambda x: DailyBillSummery(x['create_date__date'], x['customer_added__joined_by'], x['amount_sum']),
             q
         )
+        return list(mapped)
+
+    def group_billings_by_month_joined_by_in_present_year(self, user: Businessman):
+        tz = pytz.timezone('Asia/Tehran')
+        local_now = datetime.datetime.now(tz)
+        local_start_of_year = tz.normalize(
+            local_now.replace(month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
+        )
+        print(local_start_of_year)
+        q = Billing.objects.filter(
+            businessman=user,
+            create_date__gte=local_start_of_year,
+            create_date__lte=local_now
+        ).annotate(
+            month=TruncMonth('create_date', tzinfo=tz)
+        ).values(
+            'month',
+            'customer_added__joined_by'
+        ).annotate(
+            sum_amount=Sum('amount')
+        ).order_by('-month')
+
+        q = list(q)
+        mapped = map(lambda x: DailyBillSummery(x['month'].date(), x['customer_added__joined_by'], x['sum_amount']), q)
         return list(mapped)
 
     def get_month_billings_until_now(self, user: Businessman) -> BillingSummery:
