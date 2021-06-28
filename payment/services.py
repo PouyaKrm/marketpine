@@ -251,15 +251,15 @@ class WalletAndBillingService:
         return list(mapped)
 
     def get_day_billings_group_by_day_and_customer_joined_by_type(self, user: Businessman,
-                                                                  date_of_date: datetime.date) -> List[
+                                                                  date_of_day: datetime.date) -> List[
         DailyBillSummery]:
         tz = pytz.timezone('Asia/Tehran')
         local_now = datetime.datetime.now(tz)
         local_start_of_day = tz.normalize(
             local_now.replace(
-                year=date_of_date.year,
-                month=date_of_date.month,
-                day=date_of_date.day,
+                year=date_of_day.year,
+                month=date_of_day.month,
+                day=date_of_day.day,
                 hour=0,
                 minute=0,
                 second=0,
@@ -269,9 +269,9 @@ class WalletAndBillingService:
 
         local_end_of_day = tz.normalize(
             local_now.replace(
-                year=date_of_date.year,
-                month=date_of_date.month,
-                day=date_of_date.day,
+                year=date_of_day.year,
+                month=date_of_day.month,
+                day=date_of_day.day,
                 hour=23,
                 minute=59,
                 second=59
