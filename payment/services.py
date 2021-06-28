@@ -156,6 +156,14 @@ class MonthlyBillingSummery:
         self.amount = amount
 
 
+class DailyBillSummery:
+
+    def __init__(self, create_date, joined_by: str, amount: int):
+        self.create_date = create_date
+        self.joined_by = joined_by
+        self.amount = amount
+
+
 class WalletAndBillingService:
 
     def get_businessman_wallet_or_create(self, user: Businessman) -> Wallet:
@@ -240,6 +248,50 @@ class WalletAndBillingService:
         q = self._group_by_billing_in_month(user, date_of_month.year, date_of_month.month)
         q = list(q)
         mapped = map(lambda x: MonthlyBillingSummery(x['create_date__date'], x['amount_sum']), q)
+        return list(mapped)
+
+    def get_day_billings_group_by_day_and_customer_joined_by_type(self, user: Businessman,
+                                                                  date_of_date: datetime.date) -> List[
+        DailyBillSummery]:
+        tz = pytz.timezone('Asia/Tehran')
+        local_now = datetime.datetime.now(tz)
+        local_start_of_day = tz.normalize(
+            local_now.replace(
+                year=date_of_date.year,
+                month=date_of_date.month,
+                day=date_of_date.day,
+                hour=0,
+                minute=0,
+                second=0,
+                microsecond=0
+            )
+        )
+
+        local_end_of_day = tz.normalize(
+            local_now.replace(
+                year=date_of_date.year,
+                month=date_of_date.month,
+                day=date_of_date.day,
+                hour=23,
+                minute=59,
+                second=59
+            )
+        )
+        q = Billing.objects.filter(businessman=user).filter(
+            create_date__gte=local_start_of_day,
+            create_date__lte=local_end_of_day
+        ).values(
+            'create_date__date', 'customer_added__joined_by'
+        ).annotate(
+            amount_sum=Sum('amount')
+        ).order_by('create_date__date')
+
+        q = list(q)
+        mapped = map(
+            lambda x: DailyBillSummery(x['create_date__date'], x['customer_added__joined_by'], x['amount_sum']),
+            q
+        )
+
         return list(mapped)
 
     def _group_by_billing_in_month(self, user: Businessman, year, month):
