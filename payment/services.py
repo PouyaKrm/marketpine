@@ -1,5 +1,6 @@
+import calendar
 import datetime
-from typing import Tuple
+from typing import Tuple, List
 
 import pytz
 from django.conf import settings
@@ -149,6 +150,12 @@ class BillingSummery:
         self.invitation_cost = invitation_cost
 
 
+class MonthlyBillingSummery:
+    def __init__(self, create_date, amount):
+        self.create_date = create_date
+        self.amount = amount
+
+
 class WalletAndBillingService:
 
     def get_businessman_wallet_or_create(self, user: Businessman) -> Wallet:
@@ -227,6 +234,35 @@ class WalletAndBillingService:
         added_by_invitation = self._aggregate_added_by_invitation_amount(user, local_start_of_day, local_now)
 
         return BillingSummery(query, added_by_panel, added_by_app, added_by_invitation)
+
+    def get_month_billings_group_by_day(self, user: Businessman, month_date: datetime.date) -> List[
+        MonthlyBillingSummery]:
+        q = self._group_by_billing_in_month(user, month_date.year, month_date.month)
+        q = list(q)
+        mapped = map(lambda x: MonthlyBillingSummery(x['create_date__date'], x['amount_sum']), q)
+        return list(mapped)
+
+    def _group_by_billing_in_month(self, user: Businessman, year, month):
+        tz = pytz.timezone('Asia/Tehran')
+        local_now = datetime.datetime.now(tz)
+        local_start_of_month = tz.normalize(
+            local_now.replace(year=year, month=month, day=1, hour=0, minute=0, second=0, microsecond=0))
+        last_day = calendar.monthrange(year, month)[1]
+        end_date = tz.normalize(
+            local_now.replace(year=year, month=month, day=last_day, hour=23, minute=59,
+                              second=59,
+                              microsecond=0))
+
+        q = Billing.objects.filter(
+            businessman=user,
+            create_date__gte=local_start_of_month,
+            create_date__lte=end_date
+        ).values(
+            'create_date__date'
+        ).annotate(
+            amount_sum=Sum('amount')
+        ).order_by('create_date__date')
+        return q
 
     def get_month_billings_until_now(self, user: Businessman) -> BillingSummery:
         tz = pytz.timezone('Asia/Tehran')
