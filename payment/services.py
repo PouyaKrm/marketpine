@@ -235,9 +235,9 @@ class WalletAndBillingService:
 
         return BillingSummery(query, added_by_panel, added_by_app, added_by_invitation)
 
-    def get_month_billings_group_by_day(self, user: Businessman, month_date: datetime.date) -> List[
+    def get_month_billings_group_by_day(self, user: Businessman, date_of_month: datetime.date) -> List[
         MonthlyBillingSummery]:
-        q = self._group_by_billing_in_month(user, month_date.year, month_date.month)
+        q = self._group_by_billing_in_month(user, date_of_month.year, date_of_month.month)
         q = list(q)
         mapped = map(lambda x: MonthlyBillingSummery(x['create_date__date'], x['amount_sum']), q)
         return list(mapped)
