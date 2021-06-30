@@ -2,7 +2,6 @@ import datetime
 from typing import Tuple, List
 
 import jdatetime
-import pytz
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import transaction
@@ -243,21 +242,6 @@ class WalletAndBillingService:
         else:
             raise ApplicationErrorException(error_code)
 
-    def get_today_billings_until_now(self, user: Businessman) -> BillingSummery:
-        tz = pytz.timezone('Asia/Tehran')
-        local_now = datetime.datetime.now(tz)
-        local_start_of_day = tz.normalize(local_now.replace(hour=0, minute=0, second=0, microsecond=0))
-        query = Billing.objects.filter(businessman=user).filter(
-            create_date__gte=local_start_of_day,
-            create_date__lte=local_now
-        )
-
-        added_by_panel = self._aggregate_added_by_panel_amount(user, local_start_of_day, local_now)
-        added_by_app = self._aggregate_added_by_app_amount(user, local_start_of_day, local_now)
-        added_by_invitation = self._aggregate_added_by_invitation_amount(user, local_start_of_day, local_now)
-
-        return BillingSummery(query, added_by_panel, added_by_app, added_by_invitation)
-
     def get_month_billings_group_by_day(self, user: Businessman, date_of_month: jdatetime) -> List[
         MonthlyBillingSummery]:
         start = date_of_month.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
@@ -337,59 +321,6 @@ class WalletAndBillingService:
             end = now.replace(month=i + 1, day=end_day, hour=23, minute=59, second=59, microsecond=0)
             result.append((start, end))
 
-        return result
-
-    def get_month_billings_until_now(self, user: Businessman) -> BillingSummery:
-        tz = pytz.timezone('Asia/Tehran')
-        local_now = datetime.datetime.now(tz)
-        local_start_of_month = tz.normalize(local_now.replace(day=1))
-        query = Billing.objects.filter(
-            businessman=user
-        ).filter(
-            create_date__gte=local_start_of_month,
-            create_date__lte=local_now
-        )
-
-        added_by_panel = self._aggregate_added_by_panel_amount(user, local_start_of_month, local_now)
-        added_by_app = self._aggregate_added_by_app_amount(user, local_start_of_month, local_now)
-        added_by_invitation = self._aggregate_added_by_invitation_amount(user, local_start_of_month, local_now)
-
-        return BillingSummery(query, added_by_panel, added_by_app, added_by_invitation)
-
-    def _aggregate_added_by_panel_amount(self, user: Businessman, dt_from, dt_to):
-        q = Billing.objects.filter(
-            businessman=user
-        ).filter(
-            customer_added__joined_by=BusinessmanCustomer.JOINED_BY_PANEL
-        )
-        return self._aggregate_amount_from_to(q, dt_from, dt_to)
-
-    def _aggregate_added_by_app_amount(self, user: Businessman, dt_from, dt_to):
-        q = Billing.objects.filter(
-            businessman=user
-        ).filter(
-            customer_added__joined_by=BusinessmanCustomer.JOINED_BY_CUSTOMER_APP
-        )
-        return self._aggregate_amount_from_to(q, dt_from, dt_to)
-
-    def _aggregate_added_by_invitation_amount(self, user: Businessman, dt_from, dt_to):
-        q = Billing.objects.filter(
-            businessman=user
-        ).filter(
-            customer_added__joined_by=BusinessmanCustomer.JOINED_BY_INVITATION
-        )
-
-        return self._aggregate_amount_from_to(q, dt_from, dt_to)
-
-    def _aggregate_amount_from_to(self, query: QuerySet, dt_from, dt_to) -> int:
-        result = query.filter(
-            create_date__gte=dt_from,
-            create_date__lte=dt_to
-        ).aggregate(
-            Sum('amount')
-        ).get('amount__sum', 0)
-        if result is None:
-            return 0
         return result
 
     def _decrease_wallet_available_credit(self, wallet: Wallet, amount: int) -> Wallet:
