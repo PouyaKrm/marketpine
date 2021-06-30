@@ -1,4 +1,3 @@
-import calendar
 import datetime
 from typing import Tuple, List
 
@@ -9,6 +8,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.db import transaction
 from django.db.models import QuerySet
 from django.db.models.aggregates import Sum
+from django.db.models.functions import TruncDay
 from django.urls import reverse
 from django.utils import timezone
 from rest_framework.request import Request
@@ -247,45 +247,27 @@ class WalletAndBillingService:
 
         return BillingSummery(query, added_by_panel, added_by_app, added_by_invitation)
 
-    def get_month_billings_group_by_day(self, user: Businessman, date_of_month: datetime.date) -> List[
+    def get_month_billings_group_by_day(self, user: Businessman, date_of_month: jdatetime) -> List[
         MonthlyBillingSummery]:
-        tz = pytz.timezone('Asia/Tehran')
-        local_now = datetime.datetime.now(tz)
-        year = date_of_month.year
-        month = date_of_month.month
-        local_start_of_month = tz.normalize(
-            local_now.replace(
-                year=year,
-                month=month,
-                day=1,
-                hour=0,
-                minute=0,
-                second=0,
-                microsecond=0
-            )
-        )
-        last_day = calendar.monthrange(year, month)[1]
-        end_date = tz.normalize(
-            local_now.replace(
-                year=year,
-                month=month, day=last_day, hour=23, minute=59,
-                second=59,
-                microsecond=0
-            )
-        )
+        start = date_of_month.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        end_day = get_end_day_of_jalali_month(date_of_month)
+        end = date_of_month.replace(day=end_day, hour=23, minute=59, second=59)
 
         q = Billing.objects.filter(
             businessman=user,
-            create_date__gte=local_start_of_month,
-            create_date__lte=end_date
+            jcreate_date__gte=start,
+            jcreate_date__lte=end
+        ).annotate(
+            day=TruncDay('jcreate_date')
         ).values(
-            'create_date__date'
+            'day',
         ).annotate(
             amount_sum=Sum('amount')
-        ).order_by('-create_date__date')
+        ).order_by(
+            'day'
+        )
 
-        q = list(q)
-        mapped = map(lambda x: MonthlyBillingSummery(x['create_date__date'], x['amount_sum']), q)
+        mapped = map(lambda x: MonthlyBillingSummery(x['day'], x['amount_sum']), q)
         return list(mapped)
 
     def get_day_billings_group_by_day_and_customer_joined_by_type(self, user: Businessman,

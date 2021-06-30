@@ -1,7 +1,7 @@
 import jdatetime
 
 
-def get_end_day_of_jalali_month(date: jdatetime.datetime) -> int:
+def get_end_day_of_jalali_month(date: jdatetime) -> int:
     month = date.month
     if month < 7:
         end_day = 31
