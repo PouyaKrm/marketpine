@@ -151,23 +151,6 @@ class BillingSummery:
         self.invitation_cost = invitation_cost
 
 
-class MonthlyBillingSummery:
-    def __init__(self, create_date, amount):
-        self.create_date = create_date
-        self.amount = amount
-
-
-class DailyBillSummery:
-
-    def __init__(self, create_date, joined_by: str, amount: int):
-        self.create_date = create_date
-        self.joined_by = joined_by
-        self.amount = amount
-
-    def __str__(self):
-        return '{} {} {}'.format(self.create_date, self.joined_by, self.amount)
-
-
 class DayBillSummery:
 
     def __init__(self, joined_by: str, amount: int):
@@ -176,6 +159,26 @@ class DayBillSummery:
 
     def __str__(self):
         return '{} {}'.format(self.joined_by, self.amount)
+
+
+class MonthBillingSummery:
+    def __init__(self, create_date, amount):
+        self.create_date = create_date
+        self.amount = amount
+
+    def __str__(self):
+        return '{} {}'.format(self.create_date, self.amount)
+
+
+class YearBillSummery:
+
+    def __init__(self, create_date, joined_by: str, amount: int):
+        self.create_date = create_date
+        self.joined_by = joined_by
+        self.amount = amount
+
+    def __str__(self):
+        return '{} {} {}'.format(self.create_date, self.joined_by, self.amount)
 
 
 class WalletAndBillingService:
@@ -243,7 +246,7 @@ class WalletAndBillingService:
             raise ApplicationErrorException(error_code)
 
     def get_month_billings_group_by_day(self, user: Businessman, date_of_month: jdatetime) -> List[
-        MonthlyBillingSummery]:
+        MonthBillingSummery]:
         start = date_of_month.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
         end_day = get_end_day_of_jalali_month(date_of_month)
         end = date_of_month.replace(day=end_day, hour=23, minute=59, second=59)
@@ -262,7 +265,7 @@ class WalletAndBillingService:
             'day'
         )
 
-        mapped = map(lambda x: MonthlyBillingSummery(x['day'], x['amount_sum']), q)
+        mapped = map(lambda x: MonthBillingSummery(x['day'], x['amount_sum']), q)
         return list(mapped)
 
     def get_day_billings_group_by_day_and_customer_joined_by_type(self, user: Businessman,
@@ -287,7 +290,7 @@ class WalletAndBillingService:
         mapped = map(lambda x: DayBillSummery(x['customer_added__joined_by'], x['amount_sum']), q)
         return list(mapped)
 
-    def group_billings_by_month_joined_by_in_present_year(self, user: Businessman) -> List[List[DailyBillSummery]]:
+    def group_billings_by_month_joined_by_in_present_year(self, user: Businessman) -> List[List[YearBillSummery]]:
         result = []
         month_ranges = self._get_jalali_month_ranges()
         for start, end in month_ranges:
@@ -306,7 +309,7 @@ class WalletAndBillingService:
 
             q = list(q)
             mapped = map(
-                lambda x: DailyBillSummery(x['jcreate_date'].date(), x['customer_added__joined_by'], x['amount_sum']),
+                lambda x: YearBillSummery(x['jcreate_date'].date(), x['customer_added__joined_by'], x['amount_sum']),
                 q
             )
             result.append(list(mapped))
