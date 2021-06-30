@@ -2,19 +2,20 @@ import calendar
 import datetime
 from typing import Tuple, List
 
+import jdatetime
 import pytz
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import transaction
 from django.db.models import QuerySet
 from django.db.models.aggregates import Sum
-from django.db.models.functions import TruncMonth
 from django.urls import reverse
 from django.utils import timezone
 from rest_framework.request import Request
 from zeep import Client
 
 from base_app.error_codes import ApplicationErrorException, ApplicationErrorCodes
+from common.util.date_helpers import get_end_day_of_jalali_month
 from customer_return_plan.invitation.services import invitation_service
 from panelprofile.models import SMSPanelInfo
 from panelprofile.services import sms_panel_info_service
@@ -164,6 +165,8 @@ class DailyBillSummery:
         self.joined_by = joined_by
         self.amount = amount
 
+    def __str__(self):
+        return '{} {} {}'.format(self.create_date, self.joined_by, self.amount)
 
 class WalletAndBillingService:
 
@@ -328,29 +331,41 @@ class WalletAndBillingService:
         )
         return list(mapped)
 
-    def group_billings_by_month_joined_by_in_present_year(self, user: Businessman):
-        tz = pytz.timezone('Asia/Tehran')
-        local_now = datetime.datetime.now(tz)
-        local_start_of_year = tz.normalize(
-            local_now.replace(month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
-        )
-        print(local_start_of_year)
-        q = Billing.objects.filter(
-            businessman=user,
-            create_date__gte=local_start_of_year,
-            create_date__lte=local_now
-        ).annotate(
-            month=TruncMonth('create_date', tzinfo=tz)
-        ).values(
-            'month',
-            'customer_added__joined_by'
-        ).annotate(
-            sum_amount=Sum('amount')
-        ).order_by('-month')
+    def group_billings_by_month_joined_by_in_present_year(self, user: Businessman) -> List[List[DailyBillSummery]]:
+        result = []
+        month_ranges = self._get_jalali_month_ranges()
+        for start, end in month_ranges:
+            q = Billing.objects.filter(
+                businessman=user,
+                jcreate_date__gte=start,
+                jcreate_date__lte=end
+            ).values(
+                'customer_added__joined_by',
+                'jcreate_date'
+            ).annotate(
+                amount_sum=Sum('amount')
+            ).order_by(
+                'customer_added__joined_by',
+            )
 
-        q = list(q)
-        mapped = map(lambda x: DailyBillSummery(x['month'].date(), x['customer_added__joined_by'], x['sum_amount']), q)
-        return list(mapped)
+            q = list(q)
+            mapped = map(
+                lambda x: DailyBillSummery(x['jcreate_date'].date(), x['customer_added__joined_by'], x['amount_sum']),
+                q
+            )
+            result.append(list(mapped))
+        return result
+
+    def _get_jalali_month_ranges(self) -> List[Tuple[datetime.datetime, datetime.datetime]]:
+        now = jdatetime.datetime.now()
+        result = []
+        for i in range(12):
+            start = now.replace(month=i + 1, day=1, hour=0, minute=0, second=0, microsecond=0)
+            end_day = get_end_day_of_jalali_month(start)
+            end = now.replace(month=i + 1, day=end_day, hour=23, minute=59, second=59, microsecond=0)
+            result.append((start, end))
+
+        return result
 
     def get_month_billings_until_now(self, user: Businessman) -> BillingSummery:
         tz = pytz.timezone('Asia/Tehran')

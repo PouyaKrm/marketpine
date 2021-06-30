@@ -4,6 +4,7 @@ from datetime import datetime
 from typing import List, Tuple
 from unittest.mock import patch, Mock
 
+import jdatetime
 from django.utils import timezone
 
 from base_app.error_codes import ApplicationErrorException, ApplicationErrorCodes
@@ -526,29 +527,129 @@ class TestGroupBillingsByMonthJoinedByInPresentYear(BaseWalletBillingTestClass):
 
     def setUp(self) -> None:
         super().setUp()
-        self.fakes_panel = self._create_bulk_billing_in_different_month(2, 2, 5, BusinessmanCustomer.JOINED_BY_PANEL)
-        self.fakes_app = self._create_bulk_billing_in_different_month(3, 6, 20,
-                                                                      BusinessmanCustomer.JOINED_BY_CUSTOMER_APP)
-        self.fakes_invitation = self._create_bulk_billing_in_different_month(4, 8, 30,
-                                                                             BusinessmanCustomer.JOINED_BY_INVITATION)
+        self.fakes_panel_month = 5
+        self.fakes_app_month = 2
+        self.fakes_invitation_month = 12
+        self.fakes_panel = self._create_bulk_billing_in_different_month(
+            self.fakes_panel_month, 2, 5,
+            BusinessmanCustomer.JOINED_BY_PANEL
+        )
+        self.fakes_app = self._create_bulk_billing_in_different_month(
+            self.fakes_app_month, 6, 20,
+            BusinessmanCustomer.JOINED_BY_CUSTOMER_APP
+        )
+        self.fakes_invitation = self._create_bulk_billing_in_different_month(
+            self.fakes_invitation_month, 8, 30,
+            BusinessmanCustomer.JOINED_BY_INVITATION
+        )
+
+    def _create_billing_with_create_date(self, jcreate_date, joined_by=BusinessmanCustomer.JOINED_BY_PANEL) -> Billing:
+        b = Billing.objects.create(amount=10,
+                                   businessman=self.businessman,
+                                   customer_added=self.create_customer_return_businessmancustomer(
+                                       self.businessman,
+                                       joined_by
+                                   ),
+                                   )
+        b.jcreate_date = jcreate_date
+        b.create_date = jcreate_date.utcnow().togregorian()
+        b.save()
+        return b
+
+    def _create_bulk_billing_in_different_month(self, month: int, day: int, seed: int,
+                                                joined_by=BusinessmanCustomer.JOINED_BY_PANEL,
+                                                businessman: Businessman = None) -> Tuple[
+        List[Billing], int, datetime]:
+        now = jdatetime.datetime.now()
+        d = now.replace(month=month, day=day)
+        fakes = []
+        for _ in range(seed):
+            f = self._create_billing_with_create_date(d, joined_by)
+            if businessman is not None:
+                f.businessman = businessman
+                f.save()
+            fakes.append(f)
+        a_sum = sum([b.amount for b in fakes])
+        return fakes, a_sum, d
+
+    def _create_bulk_billing_in_different_year(self, year: int, month: int, day: int, seed: int,
+                                               joined_by=BusinessmanCustomer.JOINED_BY_PANEL,
+                                               businessman: Businessman = None) -> Tuple[
+        List[Billing], int, datetime]:
+
+        now = jdatetime.datetime.now()
+        future = now.replace(year=year)
+        fakes = self._create_bulk_billing_in_different_month(month, day, seed, joined_by, businessman)
+        for i in fakes[0]:
+            i.jcreate_date = future
+            i.create_date = future.utcnow().togregorian()
+            i.save()
+
+        return fakes
+
+    def test_billing_in_different_year(self):
+        now = jdatetime.datetime.now()
+        year = now.replace(year=now.year + 1).year
+        self._create_bulk_billing_in_different_year(year, self.fakes_panel_month, 2, 5,
+                                                    BusinessmanCustomer.JOINED_BY_PANEL)
+        self._create_bulk_billing_in_different_year(year, self.fakes_app_month, 6, 20,
+                                                    BusinessmanCustomer.JOINED_BY_CUSTOMER_APP)
+        self._create_bulk_billing_in_different_year(year, self.fakes_invitation_month, 8, 30,
+                                                    BusinessmanCustomer.JOINED_BY_INVITATION)
+
+        result = wallet_billing_service.group_billings_by_month_joined_by_in_present_year(self.businessman)
+
+        self._assert_call_result(result)
+
+    def test_billing_for_other_businessman(self):
+        b = self.create_businessman()
+        self._create_bulk_billing_in_different_month(self.fakes_panel_month, 2, 5,
+                                                     BusinessmanCustomer.JOINED_BY_PANEL,
+                                                     b
+                                                     )
+        self._create_bulk_billing_in_different_month(self.fakes_app_month, 6, 20,
+                                                     BusinessmanCustomer.JOINED_BY_CUSTOMER_APP,
+                                                     b)
+        self._create_bulk_billing_in_different_month(self.fakes_invitation_month, 8, 30,
+                                                     BusinessmanCustomer.JOINED_BY_INVITATION,
+                                                     b)
+
+        result = wallet_billing_service.group_billings_by_month_joined_by_in_present_year(self.businessman)
+
+        self._assert_call_result(result)
 
     def test_billings(self):
         result = wallet_billing_service.group_billings_by_month_joined_by_in_present_year(self.businessman)
         self._assert_call_result(result)
 
     def _assert_call_result(self, result):
-        self.assertEqual(len(result), 3)
-        r_p = list(filter(lambda x: x.joined_by == BusinessmanCustomer.JOINED_BY_PANEL, result))
+        self.assertEqual(len(result), 12)
+        r_p = result[self.fakes_panel_month - 1]
+        r_p = list(filter(lambda x: x.joined_by == BusinessmanCustomer.JOINED_BY_PANEL, r_p))
         self.assertEqual(len(r_p), 1)
         self.assertEqual(r_p[0].create_date, self.fakes_panel[2].date())
         self.assertEqual(r_p[0].amount, self.fakes_panel[1])
 
-        r_a = list(filter(lambda x: x.joined_by == BusinessmanCustomer.JOINED_BY_CUSTOMER_APP, result))
+        r_a = result[self.fakes_app_month - 1]
+        r_a = list(filter(lambda x: x.joined_by == BusinessmanCustomer.JOINED_BY_CUSTOMER_APP, r_a))
         self.assertEqual(len(r_a), 1)
         self.assertEqual(r_a[0].create_date, self.fakes_app[2].date())
         self.assertEqual(r_a[0].amount, self.fakes_app[1])
 
-        r_i = list(filter(lambda x: x.joined_by == BusinessmanCustomer.JOINED_BY_INVITATION, result))
+        r_i = result[self.fakes_invitation_month - 1]
+        r_i = list(filter(lambda x: x.joined_by == BusinessmanCustomer.JOINED_BY_INVITATION, r_i))
         self.assertEqual(len(r_i), 1)
         self.assertEqual(r_i[0].create_date, self.fakes_invitation[2].date())
         self.assertEqual(r_i[0].amount, self.fakes_invitation[1])
+
+
+class BillingTest(BaseWalletBillingTestClass):
+
+    def test_d(self):
+        now = jdatetime.datetime.now()
+        fakes = self._create_bulk_billing(3)
+        fakes[0][-1].jcreate_date = jdatetime.datetime.now() - jdatetime.timedelta(hours=1)
+        fakes[0][-1].save()
+        b = Billing.objects.filter(jcreate_date__gte=now).all()
+        for i in b:
+            print(i.jcreate_date)

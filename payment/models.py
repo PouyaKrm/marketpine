@@ -4,6 +4,7 @@ from django.db.models.signals import pre_save
 from django.dispatch.dispatcher import receiver
 from django.urls import reverse
 from django.utils import timezone
+from django_jalali.db import models as jmodels
 from zeep import Client
 
 from base_app.models import PanelDurationBaseModel
@@ -203,8 +204,10 @@ class Wallet(BusinessmanOneToOneBaseModel):
 
 
 class Billing(BusinessmanManyToOneBaseModel):
+    objects = jmodels.jManager()
     amount = models.BigIntegerField()
     customer_added = models.ForeignKey(BusinessmanCustomer, null=True, blank=True, on_delete=models.PROTECT)
+    jcreate_date = jmodels.jDateTimeField(auto_now_add=True, null=True)
 
     class Meta:
         db_table = 'billing'
