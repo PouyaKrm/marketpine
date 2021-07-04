@@ -197,6 +197,9 @@ class Wallet(BusinessmanOneToOneBaseModel):
     available_credit = models.BigIntegerField(default=0)
     used_credit = models.BigIntegerField(default=0)
     last_credit_increase_date = models.DateTimeField(null=True, blank=True)
+    has_subscription = models.BooleanField(default=False)
+    subscription_start = models.DateTimeField(null=True, blank=True)
+    subscription_end = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         db_table = "wallet"
