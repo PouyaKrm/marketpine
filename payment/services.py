@@ -1,5 +1,5 @@
 import datetime
-from typing import Tuple, List, Union
+from typing import Tuple, List, Union, Optional
 
 import jdatetime
 from django.conf import settings
@@ -185,22 +185,15 @@ class WalletAndBillingService:
             return None
 
         w = self.check_has_minimum_credit(bc.businessman)
-        self._decrease_wallet_available_credit(w, invited_customer_after_purchase_cost)
-        b = Billing.objects.create(amount=invited_customer_after_purchase_cost, customer_added=bc,
-                                   businessman=bc.businessman)
-        return b
+        return self._create_billing_if_not_has_subscription(w, invited_customer_after_purchase_cost, bc)
 
     def _customer_add_by_panel_payment(self, bc: BusinessmanCustomer, error_code: dict = None) -> Billing:
         w = self.check_has_minimum_credit(bc.businessman, error_code)
-        self._decrease_wallet_available_credit(w, customer_joined_by_panel_cost)
-        b = Billing.objects.create(amount=customer_joined_by_panel_cost, customer_added=bc, businessman=bc.businessman)
-        return b
+        return self._create_billing_if_not_has_subscription(w, customer_joined_by_panel_cost, bc)
 
     def _customer_add_by_app_payment(self, bc: BusinessmanCustomer, error_code: dict = None) -> Billing:
         w = self.check_has_minimum_credit(bc.businessman, error_code)
-        self._decrease_wallet_available_credit(w, customer_joined_by_app_cost)
-        b = Billing.objects.create(amount=customer_joined_by_app_cost, customer_added=bc, businessman=bc.businessman)
-        return b
+        return self._create_billing_if_not_has_subscription(w, customer_joined_by_app_cost, bc)
 
     def has_minimum_credit(self, user: Businessman) -> bool:
         w = self.get_businessman_wallet_or_create(user)
@@ -208,13 +201,39 @@ class WalletAndBillingService:
 
     def check_has_minimum_credit(self, user: Businessman, error_code: dict = None) -> Wallet:
         wallet = self.get_businessman_wallet_or_create(user)
+        has_sub = self._has_subscription(wallet)
+        if has_sub:
+            return wallet
         has_min = wallet.available_credit > wallet_minimum_allowed_credit
         if has_min:
             return wallet
         if error_code is None:
             raise ApplicationErrorException(ApplicationErrorCodes.NOT_ENOUGH_WALLET_CREDIT)
+
         else:
             raise ApplicationErrorException(error_code)
+
+    def _has_subscription(self, wallet: Wallet) -> bool:
+        has = wallet.has_subscription
+        if not has:
+            return False
+
+        if has and wallet.subscription_end <= timezone.now():
+            wallet.has_subscription = False
+            wallet.save()
+            return False
+        else:
+            return True
+
+    def _create_billing_if_not_has_subscription(self, wallet: Wallet, amount: int, bc: BusinessmanCustomer) -> Optional[
+        Billing
+    ]:
+        has_sub = self._has_subscription(wallet)
+        if has_sub:
+            return None
+        self._decrease_wallet_available_credit(wallet, amount)
+        b = Billing.objects.create(amount=amount, customer_added=bc, businessman=bc.businessman)
+        return b
 
     def get_billing_summery(self, user: Businessman, month: int = None, day: int = None) -> Union[
         List[BillingSummery], List[List[BillingSummery]]
