@@ -4,7 +4,7 @@ from django.conf import settings
 from django.db.models import QuerySet
 from rest_framework import serializers
 
-from base_app.serializers import BaseModelSerializerWithRequestObj
+from base_app.serializers import BaseModelSerializerWithRequestObj, BaseSerializerWithRequestObj
 from common.util.kavenegar_local import APIException
 from common.util.sms_panel.client import sms_client_management
 from common.util.sms_panel.message import system_sms_message
@@ -159,3 +159,9 @@ class WalletSerializer(BaseModelSerializerWithRequestObj):
             'update_date',
             'last_credit_increase_date'
         ]
+
+
+class BillingSummerySerializer(BaseSerializerWithRequestObj):
+    create_date = serializers.CharField(max_length=50, read_only=True)
+    amount = serializers.IntegerField(read_only=True)
+    joined_by = serializers.CharField(max_length=10, read_only=True)

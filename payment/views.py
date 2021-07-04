@@ -12,6 +12,7 @@ from rest_framework.views import APIView
 
 from base_app.error_codes import ApplicationErrorException, ApplicationErrorCodes
 from base_app.views import BaseListAPIView
+from common.util.date_helpers import get_end_day_of_jalali_month
 from common.util.http_helpers import bad_request, created, ok
 from common.util.kavenegar_local import APIException
 from payment.exceptions import PaymentVerificationFailedException, \
@@ -23,9 +24,9 @@ from .models import PaymentTypes
 from .permissions import ActivatePanelPermission
 from .serializers import (SMSCreditPaymentCreationSerializer,
                           PanelActivationPaymentCreationSerializer,
-                          PaymentListSerializer, PanelActivationPlansSerializer
+                          PaymentListSerializer, PanelActivationPlansSerializer, BillingSummerySerializer
                           )
-from .services import payment_service
+from .services import payment_service, wallet_billing_service
 
 frontend_url = settings.FRONTEND_URL
 
@@ -159,16 +160,25 @@ class PanelActivationPlansListAPIView(generics.ListAPIView):
 class BillingSummeryAPIView(APIView):
 
     def get(self, request: Request):
-        m = self._get_month(request)
-        day = self._get_day(request)
-        now = jdatetime.datetime.now()
-        if m is not None:
-            now = now.replace(month=m)
-        if day is not None:
-            now = now.replace(day=day)
+        try:
+            m = self._get_month(request)
+            day = None
+            if m is not None:
+                now = jdatetime.datetime.now().replace(month=m)
+                day = self._get_day(request, now)
+            result = wallet_billing_service.get_billing_summery(request.user, m, day)
+            if m is not None:
+                sr = BillingSummerySerializer(result, many=True)
+                return ok(sr.data)
+            else:
+                f = []
+                for i in result:
+                    sr = BillingSummerySerializer(i, many=True)
+                    f.append(sr.data)
+                return ok(f)
 
-        if m is not None and day is not None:
-            result = None
+        except ApplicationErrorException as ex:
+            return bad_request(ex.http_message)
 
     def _get_month(self, request: Request) -> int:
         err_message = 'مقدار ماه غیر مجاز است'
@@ -177,13 +187,13 @@ class BillingSummeryAPIView(APIView):
             return None
         try:
             m = int(m)
-            if m < 0 or m > 12:
+            if m <= 0 or m > 12:
                 raise ApplicationErrorException(err_message)
             return m
         except ValueError as ex:
             raise ApplicationErrorException(err_message, ex)
 
-    def _get_day(self, request: Request) -> int:
+    def _get_day(self, request: Request, month_date: jdatetime.datetime) -> int:
         err_message = 'مقدار روز غیر مجاز است'
         day = request.query_params.get('day')
         if day is None:
@@ -191,9 +201,14 @@ class BillingSummeryAPIView(APIView):
 
         try:
             day = int(day)
-            if day < 0 or day > 31:
+            end_day = get_end_day_of_jalali_month(month_date)
+            if day <= 0 or day > end_day:
                 raise ApplicationErrorException(err_message)
 
             return day
         except ValueError as ex:
             raise ApplicationErrorException(err_message, ex)
+
+    def _get_year_result_dict(self, result) -> dict:
+        print(type(result))
+        return None

@@ -1,5 +1,5 @@
 import datetime
-from typing import Tuple, List
+from typing import Tuple, List, Union
 
 import jdatetime
 from django.conf import settings
@@ -242,6 +242,24 @@ class WalletAndBillingService:
             raise ApplicationErrorException(ApplicationErrorCodes.NOT_ENOUGH_WALLET_CREDIT)
         else:
             raise ApplicationErrorException(error_code)
+
+    def get_billing_summery(self, user: Businessman, month: int = None, day: int = None) -> Union[
+        List[BillingSummery], List[List[BillingSummery]]
+    ]:
+        now = jdatetime.datetime.now()
+        if month is not None:
+            now = now.replace(month=month)
+        if day is not None:
+            now = now.replace(day=day)
+
+        if month is not None and day is not None:
+            return self.get_day_billings_group_by_day_and_customer_joined_by_type(user, now)
+
+        elif month is not None and day is None:
+            return self.get_month_billings_group_by_day(user, now)
+
+        else:
+            return self.group_billings_by_month_joined_by_in_present_year(user)
 
     def get_month_billings_group_by_day(self, user: Businessman, date_of_month: jdatetime) -> List[
         BillingSummery]:
