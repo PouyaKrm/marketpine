@@ -1,18 +1,18 @@
+from django.conf import settings
 from django.db import models
 from django.db.models.signals import pre_save
 from django.dispatch.dispatcher import receiver
+from django.urls import reverse
 from django.utils import timezone
+from django_jalali.db import models as jmodels
+from zeep import Client
 
 from base_app.models import PanelDurationBaseModel
+from panelprofile.services import sms_panel_info_service
 from payment.exceptions import PaymentCreationFailedException, PaymentVerificationFailedException, \
     PaymentAlreadyVerifiedException, PaymentOperationFailedException
-from users.models import Businessman, BaseModel
-from zeep import Client
-from django.conf import settings
-from django.urls import reverse
-
-from panelprofile.services import sms_panel_info_service
-
+from users.models import Businessman, BaseModel, BusinessmanOneToOneBaseModel, BusinessmanManyToOneBaseModel, \
+    BusinessmanCustomer
 
 url = settings.ZARINPAL.get('url')
 setting_merchant = settings.ZARINPAL.get('MERCHANT')
@@ -46,12 +46,14 @@ class PaymentTypes:
     SMS = '0'
     ACTIVATION = '1'
 
-class Payment(models.Model):
 
+class Payment(models.Model):
+    TYPE_SMS = 'SMS'
+    TYPE_WALLET_INCREASE = 'WALLET'
 
     payment_choices = [
-        ('SMS', '0'),
-        ('ACTIVATION', '1')
+        ('SMS', TYPE_SMS),
+        ('ACTIVATION', TYPE_WALLET_INCREASE)
     ]
 
     creation_date = models.DateTimeField(auto_now_add=True)
@@ -60,12 +62,13 @@ class Payment(models.Model):
     authority = models.CharField(max_length=255, null=True, blank=True)
     refid = models.CharField(max_length=255, null=True, blank=True)
     create_status = models.IntegerField(null=True)
+    call_back_status = models.CharField(max_length=10, null=True, blank=True)
     verification_status = models.IntegerField(null=True)
     description = models.CharField(max_length=255, null=True, blank=True)
     phone = models.CharField(max_length=15, null=True, blank=True)
     amount = models.IntegerField()
     verification_date = models.DateTimeField(null=True)
-    payment_type = models.CharField(max_length=2, choices=payment_choices, default='0')
+    payment_type = models.CharField(max_length=10, choices=payment_choices, default='0')
     panel_plan = models.ForeignKey(PanelActivationPlans, on_delete=models.PROTECT, null=True, blank=True)
 
     def __str__(self):
@@ -140,7 +143,7 @@ class Payment(models.Model):
     def reverse_operations(self):
         try:
             if self.payment_type == PaymentTypes.SMS:
-                sms_panel_info_service.decrease_credit_in_tomans(self.businessman.smspanelinfo, self.amount)
+                sms_panel_info_service.get_panel_decrease_credit_in_tomans(self.businessman.smspanelinfo, self.amount)
                 self.save()
         except Exception as e:
             self.businessman.smspanelinfo.credit -= self.amount
@@ -153,7 +156,7 @@ class Payment(models.Model):
 
     def do_operations(self):
         if self.payment_type == PaymentTypes.SMS:
-            sms_panel_info_service.increase_credit_in_tomans(self.businessman.smspanelinfo, self.amount)
+            sms_panel_info_service.get_panel_increase_credit_in_tomans(self.businessman.smspanelinfo, self.amount)
 
         elif self.payment_type == PaymentTypes.ACTIVATION:
             self.__update_panel_activation_data()
@@ -177,9 +180,11 @@ class Payment(models.Model):
         self.businessman.save()
         self.businessman.smspanelinfo.activate()
 
+    def is_payment_type_sms(self) -> bool:
+        return self.payment_type == Payment.TYPE_SMS
+
 
 class FailedPaymentOperation(models.Model):
-
     businessman = models.ForeignKey(Businessman, on_delete=models.PROTECT)
     payment = models.OneToOneField(Payment, on_delete=models.PROTECT)
     payment_amount = models.IntegerField()
@@ -187,3 +192,26 @@ class FailedPaymentOperation(models.Model):
     create_date = models.DateTimeField(auto_now_add=True)
     is_fixed = models.BooleanField(default=False)
 
+
+class Wallet(BusinessmanOneToOneBaseModel):
+    available_credit = models.BigIntegerField(default=0)
+    used_credit = models.BigIntegerField(default=0)
+    last_credit_increase_date = models.DateTimeField(null=True, blank=True)
+    has_subscription = models.BooleanField(default=False)
+    subscription_start = models.DateTimeField(null=True, blank=True)
+    subscription_end = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        db_table = "wallet"
+        ordering = ('-create_date', '-update_date')
+
+
+class Billing(BusinessmanManyToOneBaseModel):
+    objects = jmodels.jManager()
+    amount = models.BigIntegerField()
+    customer_added = models.ForeignKey(BusinessmanCustomer, null=True, blank=True, on_delete=models.PROTECT)
+    jcreate_date = jmodels.jDateTimeField(auto_now_add=True, null=True)
+
+    class Meta:
+        db_table = 'billing'
+        ordering = ('-create_date', '-update_date')

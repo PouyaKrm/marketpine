@@ -8,14 +8,14 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.db import transaction
 from django.utils import timezone
 from rest_framework.request import Request
-
 from rest_framework_jwt.settings import api_settings
 
-from base_app.error_codes import ApplicationErrorCodes
+from base_app.error_codes import ApplicationErrorCodes, ApplicationErrorException
 from common.util import get_client_ip
 from common.util.kavenegar_local import APIException
 from common.util.sms_panel.message import system_sms_message
 from panelprofile.services import sms_panel_info_service, business_man_auth_doc_service
+from payment.services import wallet_billing_service
 from users.models import Businessman, VerificationCodes, BusinessmanRefreshTokens, BusinessCategory, \
     PhoneChangeVerification
 
@@ -42,6 +42,29 @@ class BusinessmanService:
 
     def is_phone_unique_for_update(self, user: Businessman, new_phone: str) -> bool:
         return not Businessman.objects.filter(phone=new_phone).exclude(id=user.id).exists()
+
+    def register_user(self,
+                      username: str,
+                      password: str,
+                      phone: str,
+                      email: str,
+                      first_name: str,
+                      last_name: str) -> Businessman:
+
+        self._check_username_is_unique(username)
+        self._check_phone_is_unique(phone)
+        self._check_email_is_unique(email)
+        b = Businessman.objects.create(
+            username=username,
+            phone=phone,
+            email=email,
+            first_name=first_name,
+            last_name=last_name,
+            is_active=True)
+        b.set_password(password)
+        b.save()
+        wallet_billing_service.get_businessman_wallet_or_create(b)
+        return b
 
     def update_businessman_profile(self, user: Businessman, first_name: str, last_name: str,
                                    business_name: str,
@@ -195,6 +218,21 @@ class BusinessmanService:
             'exp_duration': api_settings.JWT_EXPIRATION_DELTA
         }
         return result
+
+    def _check_username_is_unique(self, username: str):
+        exist = Businessman.objects.filter(username=username).exists()
+        if exist:
+            raise ApplicationErrorException(ApplicationErrorCodes.USERNAME_IS_NOT_UNIQUE)
+
+    def _check_email_is_unique(self, email: str):
+        exist = Businessman.objects.filter(email=email).exists()
+        if exist:
+            raise ApplicationErrorException(ApplicationErrorCodes.EMAIL_IS_NOT_UNIQUE)
+
+    def _check_phone_is_unique(self, phone: str):
+        exist = Businessman.objects.filter(phone=phone).exists()
+        if exist:
+            raise ApplicationErrorException(ApplicationErrorCodes.PHONE_NUMBER_IS_NOT_UNIQUE)
 
 
 class VerificationService:

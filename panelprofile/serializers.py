@@ -1,25 +1,18 @@
-import os
-
+from django.conf import settings
 from django.contrib.auth import authenticate
 from django.core.exceptions import ValidationError
-from django.core.validators import RegexValidator
-from rest_framework.request import Request
-from rest_framework.reverse import reverse
 from rest_framework import serializers
 
 from base_app.serializers import FileFieldWithLinkRepresentation, BaseModelSerializerWithRequestObj, \
     BaseSerializerWithRequestObj, ImageFiledWithLinkRepresentation
-from common.util.kavenegar_local import APIException
-from common.util.sms_panel.message import system_sms_message
+from common.util.custom_validators import validate_logo_size, phone_validator
 from customers.services import customer_service
-from payment.models import Payment
-from users.models import AuthStatus, Businessman, BusinessCategory
+from payment.serializers import WalletSerializer
+from payment.services import wallet_billing_service
+from users.models import Businessman, BusinessCategory
 from users.serializers import CategorySerializer
 from users.services import businessman_service
 from .models import SMSPanelInfo, BusinessmanAuthDocs
-from django.conf import settings
-from common.util.custom_validators import pdf_file_validator, validate_logo_size, phone_validator
-from common.util.sms_panel.client import ClientManagement
 from .services import sms_panel_info_service
 
 
@@ -39,8 +32,8 @@ class BusinessmanProfileSerializer(BaseModelSerializerWithRequestObj):
     category = serializers.PrimaryKeyRelatedField(write_only=True, required=False, queryset=BusinessCategory.objects.all())
     defined_groups = serializers.SerializerMethodField(read_only=True)
     logo = FileFieldWithLinkRepresentation(read_only=True)
-
     customers_total = serializers.SerializerMethodField(read_only=True)
+    wallet = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
 
@@ -67,7 +60,8 @@ class BusinessmanProfileSerializer(BaseModelSerializerWithRequestObj):
             'sms_panel_details',
             'category',
             'defined_groups',
-            'customers_total'
+            'customers_total',
+            'wallet',
         ]
 
         extra_kwargs = {'username': {'read_only': True},
@@ -104,6 +98,11 @@ class BusinessmanProfileSerializer(BaseModelSerializerWithRequestObj):
     def get_customers_total(self, obj: Businessman):
         user = self.request.user
         return customer_service.get_businessman_customers(user).count()
+
+    def get_wallet(self, user: Businessman):
+        w = wallet_billing_service.get_businessman_wallet_or_create(user)
+        sr = WalletSerializer(w)
+        return sr.data
 
     def validate_email(self, value):
 

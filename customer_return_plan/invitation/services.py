@@ -8,7 +8,7 @@ from customer_return_plan.services import discount_service
 from customers.services import customer_service
 from smspanel.models import SMSMessage
 from smspanel.services import sms_message_service
-from users.models import Businessman, Customer
+from users.models import Businessman, Customer, BusinessmanCustomer
 
 
 class FriendInvitationService:
@@ -29,8 +29,8 @@ class FriendInvitationService:
         return customer_service.customer_exists_by_phone(businessman, friend_phone)
 
     def create_invitation(self, businessman: Businessman, inviter: Customer, invited: Customer) -> Discount:
-        inviter_bc = customer_service.get_businessmancustomer(businessman, inviter)
-        invited_bc = customer_service.get_businessmancustomer(businessman, invited)
+        inviter_bc = customer_service.get_businessmancustomer_delete_check(businessman, inviter)
+        invited_bc = customer_service.get_businessmancustomer_delete_check(businessman, invited)
         invitation = FriendInvitation()
         settings = self.get_businessman_invitation_setting_or_create(businessman)
         inviter_discount = self._create_invitation_discount(settings, businessman)
@@ -102,5 +102,7 @@ class FriendInvitationService:
             Q(inviter_discount=discount) | Q(invited_discount=discount)
         )
 
+    def is_businessmancustomer_invited(self, bc: BusinessmanCustomer) -> bool:
+        return FriendInvitation.objects.filter(invited=bc).exists()
 
 invitation_service = FriendInvitationService()

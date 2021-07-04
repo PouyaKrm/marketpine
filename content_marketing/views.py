@@ -1,4 +1,3 @@
-from rest_framework.pagination import PageNumberPagination
 from django.conf import settings
 from django.shortcuts import get_object_or_404
 from rest_framework import status, permissions
@@ -16,7 +15,6 @@ from base_app.views import BaseListAPIView
 from common.util.http_helpers import ok, no_content, bad_request
 from smspanel.permissions import HasActiveSMSPanel
 from users.models import Customer
-from users.permissions import IsPanelActivePermissionPostPutMethod
 from .models import Post
 from .permissions import DoesNotHavePendingPostForUpload
 from .serializers import (UploadListPostSerializer, DetailPostSerializer,
@@ -73,8 +71,7 @@ class PostCreateListAPIView(CreateAPIView, ListModelMixin):
     serializer_class = UploadListPostSerializer
     permission_classes = [permissions.IsAuthenticated,
                           HasActiveSMSPanel,
-                          IsPanelActivePermissionPostPutMethod,
-                          DoesNotHavePendingPostForUpload
+                          DoesNotHavePendingPostForUpload,
                           ]
     pagination_class = PageNumberPagination
     pagination_class.page_size = video_page_size

@@ -1,14 +1,14 @@
 import logging
 
+from django.conf import settings
 from django.db.models import QuerySet
 from rest_framework import serializers
 
+from base_app.serializers import BaseModelSerializerWithRequestObj, BaseSerializerWithRequestObj
 from common.util.kavenegar_local import APIException
 from common.util.sms_panel.client import sms_client_management
 from common.util.sms_panel.message import system_sms_message
-from .models import Payment, PaymentTypes, PanelActivationPlans
-from django.conf import settings
-
+from .models import Payment, PaymentTypes, PanelActivationPlans, Wallet
 from .services import payment_service
 
 zarinpal_forward_link = settings.ZARINPAL.get('FORWARD_LINK')
@@ -29,14 +29,12 @@ class SMSCreditPaymentCreationSerializer(serializers.ModelSerializer):
         fields = [
             'id',
             'amount',
-            'description',
             'authority',
             'forward_link'
         ]
         extra_kwargs = {'id': {'read_only': True},
                         'authority': {'read_only': True},
                         'amount': {'required': True},
-                        'description': {'required': True},
                         }
 
     def validate_amount(self, value):
@@ -143,3 +141,33 @@ class PaymentListSerializer(serializers.ModelSerializer):
                         'verification_date': {'read_only': True},
                         }
 
+
+class WalletSerializer(BaseModelSerializerWithRequestObj):
+    class Meta:
+        model = Wallet
+        fields = [
+            'available_credit',
+            'used_credit',
+            'create_date',
+            'update_date',
+            'last_credit_increase_date',
+            'has_subscription',
+            'subscription_start',
+            'subscription_end',
+        ]
+        read_only_fields = [
+            'available_credit',
+            'used_credit',
+            'create_date',
+            'update_date',
+            'last_credit_increase_date',
+            'has_subscription',
+            'subscription_start',
+            'subscription_end',
+        ]
+
+
+class BillingSummerySerializer(BaseSerializerWithRequestObj):
+    create_date = serializers.CharField(max_length=50, read_only=True)
+    amount = serializers.IntegerField(read_only=True)
+    joined_by = serializers.CharField(max_length=10, read_only=True)

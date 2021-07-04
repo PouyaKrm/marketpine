@@ -1,4 +1,5 @@
 from django.core.exceptions import ObjectDoesNotExist
+from django.db import transaction
 from django.db.models import QuerySet
 
 from base_app.error_codes import ApplicationErrorCodes
@@ -26,7 +27,7 @@ class CustomerService(BaseService):
 
     def get_businessman_customer_by_id(self, user: Businessman, customer_id: int, field_name: str = None) -> Customer:
         try:
-            bc = BusinessmanCustomer.objects.get(businessman=user, customer__id=customer_id, is_deleted=False)
+            bc = BusinessmanCustomer.objects.get(businessman=user, customer_id=customer_id, is_deleted=False)
             return bc.customer
         except ObjectDoesNotExist as ex:
             self.throw_exception(ApplicationErrorCodes.RECORD_NOT_FOUND, field_name, ex)
@@ -47,7 +48,9 @@ class CustomerService(BaseService):
         except ObjectDoesNotExist as ex:
             raise ApplicationErrorCodes.get_exception(ApplicationErrorCodes.RECORD_NOT_FOUND, ex)
 
-    def add_customer(self, businessman: Businessman, phone: str, full_name='', groups: list = None, joined_by=BusinessmanCustomer.JOINED_BY_PANEL) -> Customer:
+    def add_customer(self, businessman: Businessman, phone: str, full_name='', groups: list = None,
+                     joined_by=BusinessmanCustomer.JOINED_BY_PANEL,
+                     low_credit_error_code: dict = None) -> Customer:
         self._check_is_phone_number_unique_for_register(businessman, phone)
         c = None
         try:
@@ -57,15 +60,38 @@ class CustomerService(BaseService):
                 bc.is_deleted = False
                 bc.save()
             else:
-                BusinessmanCustomer.objects.create(customer=c, businessman=businessman, joined_by=joined_by)
+                c = self._join_customer_to_businessman(businessman, c, joined_by, groups, low_credit_error_code)
         except ObjectDoesNotExist:
+            c = self._create_customer_join_to_businessman(businessman, joined_by, phone, full_name, groups,
+                                                          low_credit_error_code)
+        return c
+
+    def _join_customer_to_businessman(self, businessman: Businessman, customer: Customer, joined_by,
+                                      groups: list, low_credit_error_code: dict = None) -> Customer:
+        from payment.services import wallet_billing_service
+        with transaction.atomic():
+            bc = BusinessmanCustomer.objects.create(customer=customer, businessman=businessman, joined_by=joined_by)
+            wallet_billing_service.payment_for_customer_added(bc, low_credit_error_code)
+            self._reset_customer_group_send_welcome_message(businessman, customer, groups)
+            return customer
+
+    def _create_customer_join_to_businessman(self, businessman: Businessman, joined_by, phone: str,
+                                             full_name: str = None, groups: list = None,
+                                             low_credit_error_code: dict = None) -> Customer:
+        from payment.services import wallet_billing_service
+        with transaction.atomic():
             c = Customer.objects.create(phone=phone, full_name=full_name)
-            BusinessmanCustomer.objects.create(customer=c, businessman=businessman, joined_by=joined_by)
-        finally:
-            sms_message_service.send_welcome_message(businessman, c)
-            if groups is not None:
-                self.reset_customer_groups(businessman, c, groups)
+            bc = BusinessmanCustomer.objects.create(customer=c, businessman=businessman, joined_by=joined_by)
+            wallet_billing_service.payment_for_customer_added(bc, low_credit_error_code)
+            self._reset_customer_group_send_welcome_message(businessman, c, groups)
             return c
+
+    def _reset_customer_group_send_welcome_message(self, businessman: Businessman, customer: Customer,
+                                                   groups: list = None):
+        sms_message_service.send_welcome_message(businessman, customer)
+        if groups is not None:
+            self.reset_customer_groups(businessman, customer, groups)
+        return customer
 
     def customer_registered_in_date(self, businessman: Businessman, date):
         return self.get_businessman_customers(businessman).filter(connected_businessmans__create_date__year=date.year,
@@ -90,7 +116,7 @@ class CustomerService(BaseService):
         except ObjectDoesNotExist:
             raise ApplicationErrorCodes.get_exception(ApplicationErrorCodes.RECORD_NOT_FOUND)
 
-    def get_businessmancustomer(self, businessman: Businessman, customer: Customer) -> BusinessmanCustomer:
+    def get_businessmancustomer_delete_check(self, businessman: Businessman, customer: Customer) -> BusinessmanCustomer:
         try:
             return BusinessmanCustomer.objects.get(businessman=businessman, customer=customer, is_deleted=False)
         except ObjectDoesNotExist as ex:

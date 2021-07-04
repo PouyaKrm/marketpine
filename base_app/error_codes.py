@@ -1,7 +1,13 @@
+from typing import Union
+
+
 class ApplicationErrorException(Exception):
 
-    def __init__(self, error_code: dict, original_exception: Exception = None):
-        self.http_message = error_code
+    def __init__(self, error_code_message: Union[dict, str], original_exception: Exception = None):
+        if type(error_code_message) == dict:
+            self.http_message = error_code_message
+        elif type(error_code_message) == str:
+            self.http_message = {'message': error_code_message}
         self.originalException = original_exception
 
 
@@ -21,13 +27,24 @@ class ApplicationErrorCodes:
     KAVENEGAR_CLIENT_MANAGEMENT_ERROR = _get_code_message_dict.__func__(1006, 'خطای مدیریت مشتری از سوی کاونگار')
     BUSINESSMAN_HAS_NO_AUTH_DOCS = _get_code_message_dict.__func__(1007, 'کاربر هیچ مدارک احراز هویتی در سیستم ندارد')
     INVALID_PASSWORD = _get_code_message_dict.__func__(1008, 'کلمه عبور اشتباه')
-    CUSTOMER_ALREADY_ADDED =  _get_code_message_dict.__func__(1009, 'مشتری قبلا اضافه شده')
+    CUSTOMER_ALREADY_ADDED = _get_code_message_dict.__func__(1009, 'مشتری قبلا اضافه شده')
+    PAYMENT_CREATION_FAILED = _get_code_message_dict.__func__(1010, 'پرداخت با خظا مواجه شد')
+    PAYMENT_ALREADY_VERIFIED = _get_code_message_dict.__func__(1011, 'پرداخت قبلا انجام شده')
+    PAYMENT_WAS_NOT_SUCCESSFUL = _get_code_message_dict.__func__(1012, 'پرداخت موفقیت آمیز نبود')
+    PAYMENT_VERIFICATION_FAILED = _get_code_message_dict.__func__(1013, 'بررسی پرداخت با خطا مواجه شد')
+    SMS_PANEL_INCREASE_DECREASE_CREDIT_FAILED = _get_code_message_dict.__func__(1014,
+                                                                                'تغییر اعتبار پنل پیامک با خطا مواجه شد')
+
+    USERNAME_IS_NOT_UNIQUE = _get_code_message_dict.__func__(1015, 'نام کاربری یکتا نیست')
+    EMAIL_IS_NOT_UNIQUE = _get_code_message_dict.__func__(1016, 'ایمیل یکتا نیست')
+    NOT_ENOUGH_WALLET_CREDIT = _get_code_message_dict.__func__(1017, 'اعتبار کیف پول کافی نیست')
 
     @staticmethod
     def get_exception(code: dict, original_exception: Exception = None) -> ApplicationErrorException:
         return ApplicationErrorException(code, original_exception)
 
     @staticmethod
-    def get_field_error(field_name, error_code: dict, original_exception: Exception = None) -> ApplicationErrorException:
+    def get_field_error(field_name, error_code: dict,
+                        original_exception: Exception = None) -> ApplicationErrorException:
         message = {field_name: error_code['message']}
         return ApplicationErrorException(message, original_exception)

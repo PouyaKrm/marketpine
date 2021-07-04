@@ -2,12 +2,12 @@ from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import transaction
 
-from base_app.error_codes import ApplicationErrorCodes
+from base_app.error_codes import ApplicationErrorCodes, ApplicationErrorException
 from common.util.kavenegar_local import APIException
 from common.util.sms_panel.client import ClientManagement, sms_client_management
 from common.util.sms_panel.message import system_sms_message
 from groups.models import BusinessmanGroups
-from panelprofile.models import SMSPanelInfo, SMSPanelStatus, BusinessmanAuthDocs
+from panelprofile.models import SMSPanelInfo, BusinessmanAuthDocs
 from smspanel.models import SMSMessage, UnsentTemplateSMS
 from smspanel.services import sms_message_service
 from users.models import Businessman
@@ -21,7 +21,7 @@ max_message_cost = settings.SMS_PANEL['MAX_MESSAGE_COST']
 
 class SMSPanelInfoService:
 
-    def increase_credit_in_tomans(self, sms_panel_info: SMSPanelInfo, amount_in_tomans: int) -> int:
+    def get_panel_increase_credit_in_tomans(self, user: Businessman, amount_in_tomans: int) -> SMSPanelInfo:
         """
                 a shortcut to increase amount of credit of businessman
                 :param amount: amount on increase of businessman
@@ -29,23 +29,31 @@ class SMSPanelInfoService:
                 :raises APIException If Transaction failed
                 :return: if success in credit increasement returns (true, amount of new credit) else (false, -1)
                 """
+        try:
+            sms_panel_info = self.get_buinessman_sms_panel(user)
+            amount = amount_in_tomans * 10
+            if amount <= 0 or amount < 1000:
+                raise ValueError("amount must be positive and bigger that 1000 Rials")
+            new_credit = client.change_credit(amount, sms_panel_info.api_key, "افزایش اعتبار پنل اسمس")
+            sms_panel_info.credit = new_credit
+            sms_panel_info.save()
+            return sms_panel_info
+        except APIException as ex:
+            raise ApplicationErrorException(ApplicationErrorCodes.SMS_PANEL_INCREASE_DECREASE_CREDIT_FAILED, ex)
 
-        amount = amount_in_tomans * 10
-        if amount <= 0 or amount < 1000:
-            raise ValueError("amount must be positive and bigger that 1000 Rials")
-        new_credit = client.change_credit(amount, sms_panel_info.api_key, "افزایش اعتبار پنل اسمس")
-        sms_panel_info.credit = new_credit
-        sms_panel_info.save()
-        return sms_panel_info.credit
+    def get_panel_decrease_credit_in_tomans(self, user: Businessman, amount_in_tomans: int) -> SMSPanelInfo:
 
-    def decrease_credit_in_tomans(self, sms_panel_info: SMSPanelInfo, amount_in_tomans: int):
-
-        amount_in_tomans = amount_in_tomans * 10
-        if amount_in_tomans < 0 or amount_in_tomans > sms_panel_info.credit:
-            raise ValueError('credit amount_in_tomans is invalid')
-        new_credit = client.change_credit(-amount_in_tomans, sms_panel_info.api_key, 'کاهش اعتبار پنل پیامک')
-        sms_panel_info.credit = new_credit
-        sms_panel_info.save()
+        try:
+            sms_panel_info = self.get_buinessman_sms_panel(user)
+            amount_in_tomans = amount_in_tomans * 10
+            if amount_in_tomans < 0 or amount_in_tomans > sms_panel_info.credit:
+                raise ValueError('credit amount_in_tomans is invalid')
+            new_credit = client.change_credit(-amount_in_tomans, sms_panel_info.api_key, 'کاهش اعتبار پنل پیامک')
+            sms_panel_info.credit = new_credit
+            sms_panel_info.save()
+            return sms_panel_info
+        except APIException as ex:
+            raise ApplicationErrorException(ApplicationErrorCodes.SMS_PANEL_INCREASE_DECREASE_CREDIT_FAILED, ex)
 
     def get_buinessman_sms_panel(self, user: Businessman) -> SMSPanelInfo:
 
