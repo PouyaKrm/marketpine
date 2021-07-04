@@ -150,14 +150,20 @@ class WalletSerializer(BaseModelSerializerWithRequestObj):
             'used_credit',
             'create_date',
             'update_date',
-            'last_credit_increase_date'
+            'last_credit_increase_date',
+            'has_subscription',
+            'subscription_start',
+            'subscription_end',
         ]
         read_only_fields = [
             'available_credit',
             'used_credit',
             'create_date',
             'update_date',
-            'last_credit_increase_date'
+            'last_credit_increase_date',
+            'has_subscription',
+            'subscription_start',
+            'subscription_end',
         ]
 
 

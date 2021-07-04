@@ -29,9 +29,6 @@ class WalletForm(forms.ModelForm):
         has = self.cleaned_data.get('has_subscription')
         start = self.cleaned_data.get('subscription_start')
 
-        if not has:
-            return None
-
         if has and start is None:
             raise ValidationError("تاریخ شروع باید مقدار داشته باشد")
         return start
@@ -40,9 +37,6 @@ class WalletForm(forms.ModelForm):
         has = self.cleaned_data.get('has_subscription')
         start = self.cleaned_data.get('subscription_start')
         end = self.cleaned_data.get('subscription_end')
-
-        if not has:
-            return None
 
         if has and end is None:
             raise ValidationError("تاریخ پایان باید مقدار داشته باشد")
