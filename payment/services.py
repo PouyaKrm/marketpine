@@ -316,7 +316,6 @@ class WalletAndBillingService:
                 jcreate_date__lte=end
             ).values(
                 'customer_added__joined_by',
-                'jcreate_date'
             ).annotate(
                 amount_sum=Sum('amount')
             ).order_by(
@@ -325,7 +324,7 @@ class WalletAndBillingService:
 
             q = list(q)
             mapped = map(
-                lambda x: BillingSummery(x['jcreate_date'].date(), x['customer_added__joined_by'], x['amount_sum']),
+                lambda x: BillingSummery(start.date(), x['customer_added__joined_by'], x['amount_sum']),
                 q
             )
             result.append(list(mapped))
