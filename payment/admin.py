@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .forms import PanelActivationForm
+from .forms import PanelActivationForm, WalletForm
 from .models import Payment, FailedPaymentOperation, PanelActivationPlans, Wallet, Billing
 
 
@@ -15,6 +15,7 @@ class PaymentAdmin(admin.ModelAdmin):
 class WalletModelAdmin(admin.ModelAdmin):
     list_display = ['businessman', 'available_credit', 'used_credit', 'last_credit_increase_date', 'create_date']
     list_display_links = ['businessman', 'available_credit', 'used_credit', 'last_credit_increase_date', 'create_date']
+    form = WalletForm
 
 
 class BillingModelAdmin(admin.ModelAdmin):
