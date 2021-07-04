@@ -10,7 +10,6 @@ from common.util.http_helpers import ok, bad_request
 from common.util.kavenegar_local import APIException
 from panelprofile.serializers import SMSPanelInfoSerializer
 from users.models import Businessman
-from users.permissions import IsPanelActivePermissionPostPutMethod
 from .models import SMSTemplate
 from .permissions import HasValidCreditSendSMSToInviduals, HasValidCreditSendSMSToAll, HasValidCreditResendFailedSMS, \
     HasValidCreditSendSMSToGroup, HasActiveSMSPanel
@@ -33,7 +32,7 @@ def send_message_failed_response(ex: APIException):
 class SMSTemplateCreateListAPIView(BaseListAPIView, mixins.CreateModelMixin):
     serializer_class = SMSTemplateSerializer
     pagination_class = None
-    permission_classes = [permissions.IsAuthenticated, IsPanelActivePermissionPostPutMethod, HasActiveSMSPanel]
+    permission_classes = [permissions.IsAuthenticated, HasActiveSMSPanel]
 
     def get_serializer_context(self):
         return {'user': self.request.user}
@@ -48,7 +47,7 @@ class SMSTemplateCreateListAPIView(BaseListAPIView, mixins.CreateModelMixin):
 class SMSTemplateRetrieveAPIView(generics.RetrieveAPIView, mixins.UpdateModelMixin,
                                  mixins.DestroyModelMixin):
     serializer_class = SMSTemplateSerializer
-    permission_classes = [permissions.IsAuthenticated, IsPanelActivePermissionPostPutMethod, HasActiveSMSPanel]
+    permission_classes = [permissions.IsAuthenticated, HasActiveSMSPanel]
 
     def get_queryset(self):
         return SMSTemplate.objects.filter(businessman=self.request.user)
@@ -66,7 +65,6 @@ class SMSTemplateRetrieveAPIView(generics.RetrieveAPIView, mixins.UpdateModelMix
 class SendPlainSms(APIView):
     permission_classes = [
         permissions.IsAuthenticated,
-        IsPanelActivePermissionPostPutMethod,
         HasActiveSMSPanel,
         HasValidCreditSendSMSToInviduals
     ]
@@ -108,7 +106,7 @@ class SendPlainToAllAPIView(APIView):
      If operation was successful, Response with status code 204
     """
 
-    permission_classes = [permissions.IsAuthenticated, IsPanelActivePermissionPostPutMethod, HasActiveSMSPanel,
+    permission_classes = [permissions.IsAuthenticated, HasActiveSMSPanel,
                           HasValidCreditSendSMSToAll]
 
     def post(self, request: Request):
@@ -129,7 +127,7 @@ class SendPlainToAllAPIView(APIView):
 
 
 class SendByTemplateAPIView(APIView):
-    permission_classes = [permissions.IsAuthenticated, IsPanelActivePermissionPostPutMethod, HasActiveSMSPanel,
+    permission_classes = [permissions.IsAuthenticated, HasActiveSMSPanel,
                           HasValidCreditSendSMSToInviduals]
 
     def post(self, request):
@@ -150,7 +148,7 @@ class SendByTemplateAPIView(APIView):
 
 
 class SendByTemplateToAll(APIView):
-    permission_classes = [permissions.IsAuthenticated, IsPanelActivePermissionPostPutMethod, HasActiveSMSPanel,
+    permission_classes = [permissions.IsAuthenticated, HasActiveSMSPanel,
                           HasValidCreditSendSMSToAll]
 
     def post(self, request: Request, template_id: int):
@@ -165,7 +163,6 @@ class SendByTemplateToAll(APIView):
 class SendPlainSmsToGroup(APIView):
     permission_classes = [
         permissions.IsAuthenticated,
-        IsPanelActivePermissionPostPutMethod,
         HasActiveSMSPanel,
         HasValidCreditSendSMSToGroup
     ]
@@ -186,7 +183,6 @@ class SendPlainSmsToGroup(APIView):
 class SendTemplateSmsToGroup(APIView):
     permission_classes = [
         permissions.IsAuthenticated,
-        IsPanelActivePermissionPostPutMethod,
         HasActiveSMSPanel,
         HasValidCreditSendSMSToGroup
     ]
@@ -210,7 +206,6 @@ class FailedSMSMessagesList(BaseListAPIView):
 class ResendFailedSms(APIView):
     permission_classes = [
         permissions.IsAuthenticated,
-        IsPanelActivePermissionPostPutMethod,
         HasActiveSMSPanel,
         HasValidCreditResendFailedSMS
     ]

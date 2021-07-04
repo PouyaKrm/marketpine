@@ -1,30 +1,28 @@
-from django.core.exceptions import ObjectDoesNotExist
-from rest_framework.exceptions import NotFound
 from rest_framework.pagination import PageNumberPagination
+from django.conf import settings
+from django.shortcuts import get_object_or_404
+from rest_framework import status, permissions
+from rest_framework.decorators import api_view
+from rest_framework.generics import CreateAPIView, RetrieveAPIView
+from rest_framework.mixins import ListModelMixin, UpdateModelMixin
+from rest_framework.pagination import PageNumberPagination
+from rest_framework.parsers import FileUploadParser
 from rest_framework.request import Request
+from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from base_app.error_codes import ApplicationErrorException
 from base_app.views import BaseListAPIView
 from common.util.http_helpers import ok, no_content, bad_request
-from users.permissions import IsPanelActivePermissionPostPutMethod
-from .models import Post
-from django.conf import settings
-from rest_framework.response import Response
-from rest_framework import status, permissions
-from rest_framework.parsers import FileUploadParser
-from rest_framework.decorators import api_view
-from rest_framework.generics import CreateAPIView, ListAPIView, RetrieveAPIView
-from rest_framework.mixins import ListModelMixin, CreateModelMixin, UpdateModelMixin
-from django.shortcuts import get_object_or_404
+from smspanel.permissions import HasActiveSMSPanel
 from users.models import Customer
-
+from .models import Post
+from .permissions import DoesNotHavePendingPostForUpload
 from .serializers import (UploadListPostSerializer, DetailPostSerializer,
                           CommentSerializer, DetailLikeSerializer,
                           SetCommentSerializer, SetLikeSerializer,
                           ContentMarketingCreateRetrieveSerializer
                           )
-from .permissions import DoesNotHavePendingPostForUpload, HasValidCreditForVideoUploadMessage
 from .services import content_marketing_service
 
 video_page_size = settings.CONTENT_MARKETING['VIDEO_PAGINATION_PAGE_SIZE']
@@ -73,9 +71,8 @@ class PostCreateListAPIView(CreateAPIView, ListModelMixin):
     parser_class = (FileUploadParser,)
     serializer_class = UploadListPostSerializer
     permission_classes = [permissions.IsAuthenticated,
-                          IsPanelActivePermissionPostPutMethod,
+                          HasActiveSMSPanel,
                           DoesNotHavePendingPostForUpload,
-                          HasValidCreditForVideoUploadMessage
                           ]
     pagination_class = PageNumberPagination
     pagination_class.page_size = video_page_size

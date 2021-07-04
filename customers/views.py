@@ -1,19 +1,12 @@
-from django.shortcuts import render
-
-from rest_framework import generics, mixins, permissions
-from rest_framework.generics import RetrieveAPIView
+from rest_framework import permissions
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from base_app.error_codes import ApplicationErrorException
 from base_app.pginations import BasePageNumberPagination
-from base_app.views import BaseListAPIView
 from common.util.http_helpers import no_content, bad_request, ok
-from users.models import Customer
-from .permissions import CanAddCustomer
 from .serializers import CustomerSerializer, CustomerListCreateSerializer
-from .paginations import StandardResultsSetPagination
 from .services import customer_service
 
 
@@ -27,7 +20,7 @@ class BusinessmanCustomerListAPIView(APIView):
     """
 
     serializer_class = CustomerListCreateSerializer
-    permission_classes = [permissions.IsAuthenticated, CanAddCustomer]
+    permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request, *args, **kwargs):
 
