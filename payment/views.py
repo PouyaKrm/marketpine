@@ -154,3 +154,46 @@ class PanelActivationPlansListAPIView(generics.ListAPIView):
     serializer_class = PanelActivationPlansSerializer
     queryset = payment_service.get_all_plans()
     pagination_class = None
+
+
+class BillingSummeryAPIView(APIView):
+
+    def get(self, request: Request):
+        m = self._get_month(request)
+        day = self._get_day(request)
+        now = jdatetime.datetime.now()
+        if m is not None:
+            now = now.replace(month=m)
+        if day is not None:
+            now = now.replace(day=day)
+
+        if m is not None and day is not None:
+            result = None
+
+    def _get_month(self, request: Request) -> int:
+        err_message = 'مقدار ماه غیر مجاز است'
+        m = request.query_params.get('month')
+        if m is None:
+            return None
+        try:
+            m = int(m)
+            if m < 0 or m > 12:
+                raise ApplicationErrorException(err_message)
+            return m
+        except ValueError as ex:
+            raise ApplicationErrorException(err_message, ex)
+
+    def _get_day(self, request: Request) -> int:
+        err_message = 'مقدار روز غیر مجاز است'
+        day = request.query_params.get('day')
+        if day is None:
+            return None
+
+        try:
+            day = int(day)
+            if day < 0 or day > 31:
+                raise ApplicationErrorException(err_message)
+
+            return day
+        except ValueError as ex:
+            raise ApplicationErrorException(err_message, ex)

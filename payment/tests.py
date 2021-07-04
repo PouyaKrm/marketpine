@@ -284,6 +284,7 @@ class TestGetMonthBillingsGroupByDay(BaseWalletBillingTestClass):
             self.assertEqual(result[i].create_date.date(), panel_billings[i].jcreate_date.date())
             self.assertEqual(result[i].create_date.date(), app_billings[i].jcreate_date.date())
             self.assertEqual(result[i].create_date.date(), invitation_billings[i].jcreate_date.date())
+            self.assertIsNone(result[i].joined_by)
 
     def test_billings_in_different_months(self):
         now = jdatetime.datetime.now()
@@ -315,6 +316,7 @@ class TestGetMonthBillingsGroupByDay(BaseWalletBillingTestClass):
             self.assertEqual(result[i].amount, panel_billing[i].amount + app_billing[i].amount)
             self.assertEqual(result[i].create_date.date(), panel_billing[i].jcreate_date.date())
             self.assertEqual(result[i].create_date.date(), app_billing[i].jcreate_date.date())
+            self.assertIsNone(result[i].joined_by)
 
 
 class TestGetDayBillingsGroupByDayAndCustomerJoinedByType(BaseWalletBillingTestClass):
@@ -366,14 +368,17 @@ class TestGetDayBillingsGroupByDayAndCustomerJoinedByType(BaseWalletBillingTestC
         r_p = list(filter(lambda x: x.joined_by == BusinessmanCustomer.JOINED_BY_PANEL, result))
         self.assertEqual(len(r_p), 1)
         self.assertEqual(r_p[0].amount, self.fakes_panel[1])
+        self.assertIsNone(r_p[0].create_date)
 
         r_a = list(filter(lambda x: x.joined_by == BusinessmanCustomer.JOINED_BY_CUSTOMER_APP, result))
         self.assertEqual(len(r_a), 1)
         self.assertEqual(r_a[0].amount, self.fakes_app[1])
+        self.assertIsNone(r_a[0].create_date)
 
         r_i = list(filter(lambda x: x.joined_by == BusinessmanCustomer.JOINED_BY_INVITATION, result))
         self.assertEqual(len(r_i), 1)
         self.assertEqual(r_i[0].amount, self.fakes_invitation[1])
+        self.assertIsNone(r_i[0].create_date)
 
 
 class TestGroupBillingsByMonthJoinedByInPresentYear(BaseWalletBillingTestClass):
