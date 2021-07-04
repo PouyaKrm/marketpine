@@ -148,35 +148,8 @@ class BillingSummery:
         self.joined_by = joined_by
         self.amount = amount
 
-
-class DayBillSummery:
-
-    def __init__(self, joined_by: str, amount: int):
-        self.joined_by = joined_by
-        self.amount = amount
-
     def __str__(self):
-        return '{} {}'.format(self.joined_by, self.amount)
-
-
-class MonthBillingSummery:
-    def __init__(self, create_date, amount):
-        self.create_date = create_date
-        self.amount = amount
-
-    def __str__(self):
-        return '{} {}'.format(self.create_date, self.amount)
-
-
-class YearBillSummery:
-
-    def __init__(self, create_date, joined_by: str, amount: int):
-        self.create_date = create_date
-        self.joined_by = joined_by
-        self.amount = amount
-
-    def __str__(self):
-        return '{} {} {}'.format(self.create_date, self.joined_by, self.amount)
+        return self.__dict__.__str__()
 
 
 class WalletAndBillingService:
