@@ -41,7 +41,7 @@ class BusinessCategory(BaseModel):
     def get_top5_category(name: str = None):
         if name is None or name == '':
             return BusinessCategory.objects.all()[:5]
-        return BusinessCategory.objects.filter(name__startswith=name).all()[:5]
+        return BusinessCategory.objects.filter(name__icontains=name).all()[:5]
 
     def __str__(self):
         return self.name
