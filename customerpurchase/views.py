@@ -80,11 +80,13 @@ class CustomerPurchaseUpdateDeleteAPIView(APIView):
 @api_view(['GET'])
 def get_customer_purchases(request: Request, customer_id):
 
-    customer = customer_service.get_customer_by_id_or_404(request.user, customer_id)
     try:
+        customer = customer_service.get_businessman_customer_by_id(request.user, customer_id)
         customer_purchases = purchase_service.get_customer_all_purchases(request.user, customer)
     except ObjectDoesNotExist:
         return Response(status=status.HTTP_404_NOT_FOUND)
+    except ApplicationErrorException as ex:
+        return bad_request(ex.http_message)
 
     paginate = paginators.NumberedPaginator(request, customer_purchases, CustomerPurchaseListSerializer)
 
