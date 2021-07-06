@@ -19,7 +19,7 @@ def phone_validator(value):
 
 
 def fixed_phone_line_validator(value):
-    result = re.match(r'^(\+98|0)\d{4}$', value)
+    result = re.match(r'^(\+98|0)\d{4,}$', value)
 
     if result is None:
         raise ValidationError('phone number is invalid')
