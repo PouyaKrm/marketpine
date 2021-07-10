@@ -1,5 +1,5 @@
 import datetime
-from typing import Tuple, List, Union, Optional
+from typing import Tuple, List, Optional
 
 import jdatetime
 from django.conf import settings
@@ -236,9 +236,7 @@ class WalletAndBillingService:
         b = Billing.objects.create(amount=amount, customer_added=bc, businessman=bc.businessman)
         return b
 
-    def get_billing_summery(self, user: Businessman, month: int = None, day: int = None) -> Union[
-        List[BillingSummery], List[List[BillingSummery]]
-    ]:
+    def get_billing_summery(self, user: Businessman, month: int = None, day: int = None) -> List[BillingSummery]:
         now = jdatetime.datetime.now()
         if month is not None:
             now = now.replace(month=month)

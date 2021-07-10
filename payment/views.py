@@ -167,15 +167,9 @@ class BillingSummeryAPIView(APIView):
                 now = jdatetime.datetime.now().replace(month=m)
                 day = self._get_day(request, now)
             result = wallet_billing_service.get_billing_summery(request.user, m, day)
-            if m is not None:
-                sr = BillingSummerySerializer(result, many=True)
-                return ok(sr.data)
-            else:
-                f = []
-                for i in result:
-                    sr = BillingSummerySerializer(i, many=True)
-                    f.append(sr.data)
-                return ok(f)
+
+            sr = BillingSummerySerializer(result, many=True)
+            return ok(sr.data)
 
         except ApplicationErrorException as ex:
             return bad_request(ex.http_message)
