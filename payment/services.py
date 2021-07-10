@@ -343,20 +343,6 @@ class WalletAndBillingService:
         wallet.save()
         return wallet
 
-    def test_f(self):
-        q = Billing.objects.annotate(
-            joined_by=F('customer_added__joined_by'),
-            amount_f=F('amount'),
-            day=TruncDay('jcreate_date')
-        ).values('joined_by', 'day').annotate(
-            amount_sum=Sum('amount_f')
-        ).order_by(
-
-        )
-
-        for i in q.all():
-            print(i)
-
 
 payment_service = PaymentService()
 wallet_billing_service = WalletAndBillingService()
