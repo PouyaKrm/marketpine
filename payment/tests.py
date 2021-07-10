@@ -254,10 +254,19 @@ class BaseWalletBillingTestClass(BaseTestClass):
 
 class TestGetMonthBillingsGroupByDay(BaseWalletBillingTestClass):
 
-    def _create_billing_with_random_colck(self, create_date, joined_by=BusinessmanCustomer.JOINED_BY_PANEL):
+    def _create_billing_with_random_colck(self, create_date, seed=1, joined_by=BusinessmanCustomer.JOINED_BY_PANEL) -> \
+    Tuple[
+        List[Billing], int
+    ]:
         new_date = create_date.replace(hour=random.randint(0, 23), minute=random.randint(0, 59),
                                        second=random.randint(0, 59))
-        return self._create_billing_with_create_date(new_date, joined_by)
+        result = []
+        amount_sum = 0
+        for i in range(seed):
+            r = self._create_billing_with_create_date(new_date, joined_by)
+            amount_sum = amount_sum + r.amount
+            result.append(r)
+        return result, amount_sum
 
     def test_billings_for_present_month(self):
         panel_billings = []
@@ -268,23 +277,44 @@ class TestGetMonthBillingsGroupByDay(BaseWalletBillingTestClass):
 
         for i in range(count):
             date = now.replace(day=i + 1)
-            b = self._create_billing_with_random_colck(date, BusinessmanCustomer.JOINED_BY_PANEL)
+            b = self._create_billing_with_random_colck(date, random.randint(1, 20), BusinessmanCustomer.JOINED_BY_PANEL)
             panel_billings.append(b)
-            p = self._create_billing_with_random_colck(date, BusinessmanCustomer.JOINED_BY_CUSTOMER_APP)
+            p = self._create_billing_with_random_colck(date, random.randint(1, 20),
+                                                       BusinessmanCustomer.JOINED_BY_CUSTOMER_APP)
             app_billings.append(p)
-            i = self._create_billing_with_random_colck(date, BusinessmanCustomer.JOINED_BY_INVITATION)
+            i = self._create_billing_with_random_colck(date, random.randint(1, 20),
+                                                       BusinessmanCustomer.JOINED_BY_INVITATION)
             invitation_billings.append(i)
 
         result = wallet_billing_service.get_month_billings_group_by_day(self.businessman, now)
+        self.assertEqual(len(result), count * 3)
 
-        self.assertEqual(len(result), count)
+        panels = list(filter(lambda x: x.joined_by == BusinessmanCustomer.JOINED_BY_PANEL, result))
+        apps = list(filter(lambda x: x.joined_by == BusinessmanCustomer.JOINED_BY_CUSTOMER_APP, result))
+        invitations = list(filter(lambda x: x.joined_by == BusinessmanCustomer.JOINED_BY_INVITATION, result))
+
         for i in range(count):
-            self.assertEqual(result[i].amount,
-                             panel_billings[i].amount + app_billings[i].amount + invitation_billings[i].amount)
-            self.assertEqual(result[i].create_date.date(), panel_billings[i].jcreate_date.date())
-            self.assertEqual(result[i].create_date.date(), app_billings[i].jcreate_date.date())
-            self.assertEqual(result[i].create_date.date(), invitation_billings[i].jcreate_date.date())
-            self.assertIsNone(result[i].joined_by)
+            r = panels[i]
+            p = panel_billings[i]
+            self.assertEqual(r.amount,
+                             p[1])
+            self.assertEqual(r.create_date, p[0][0].jcreate_date.date())
+            self.assertEqual(r.joined_by, p[0][0].customer_added.joined_by)
+
+            r = apps[i]
+            a = app_billings[i]
+            self.assertEqual(r.amount,
+                             a[1])
+            self.assertEqual(r.create_date, a[0][0].jcreate_date.date())
+            self.assertEqual(r.joined_by, a[0][0].customer_added.joined_by)
+
+            r = invitations[i]
+            n = invitation_billings[i]
+
+            self.assertEqual(r.amount,
+                             n[1])
+            self.assertEqual(r.create_date, n[0][0].jcreate_date.date())
+            self.assertEqual(r.joined_by, n[0][0].customer_added.joined_by)
 
     def test_billings_in_different_months(self):
         now = jdatetime.datetime.now()
@@ -304,19 +334,33 @@ class TestGetMonthBillingsGroupByDay(BaseWalletBillingTestClass):
 
         for i in range(next_count):
             date = other.replace(day=i + 1)
-            b = self._create_billing_with_random_colck(date)
+            b = self._create_billing_with_random_colck(date, random.randint(1, 30))
             panel_billing.append(b)
-            p = self._create_billing_with_random_colck(date, BusinessmanCustomer.JOINED_BY_CUSTOMER_APP)
+            p = self._create_billing_with_random_colck(date, random.randint(1, 5),
+                                                       BusinessmanCustomer.JOINED_BY_CUSTOMER_APP)
             app_billing.append(p)
 
         result = wallet_billing_service.get_month_billings_group_by_day(self.businessman, other)
-        self.assertEqual(len(result), next_count)
+        self.assertEqual(len(result), next_count * 2)
+
+        panels = list(filter(lambda x: x.joined_by == BusinessmanCustomer.JOINED_BY_PANEL, result))
+        apps = list(filter(lambda x: x.joined_by == BusinessmanCustomer.JOINED_BY_CUSTOMER_APP, result))
+        invitations = list(filter(lambda x: x.joined_by == BusinessmanCustomer.JOINED_BY_INVITATION, result))
 
         for i in range(next_count):
-            self.assertEqual(result[i].amount, panel_billing[i].amount + app_billing[i].amount)
-            self.assertEqual(result[i].create_date.date(), panel_billing[i].jcreate_date.date())
-            self.assertEqual(result[i].create_date.date(), app_billing[i].jcreate_date.date())
-            self.assertIsNone(result[i].joined_by)
+            r = panels[i]
+            p = panel_billing[i]
+            self.assertEqual(r.amount, p[1])
+            self.assertEqual(r.create_date, p[0][0].jcreate_date.date())
+            self.assertEqual(r.joined_by, p[0][0].customer_added.joined_by)
+
+            r = apps[i]
+            a = app_billing[i]
+            self.assertEqual(r.amount, a[1])
+            self.assertEqual(r.create_date, a[0][0].jcreate_date.date())
+            self.assertEqual(r.joined_by, a[0][0].customer_added.joined_by)
+
+        self.assertEqual(len(invitations), 0)
 
 
 class TestGetDayBillingsGroupByDayAndCustomerJoinedByType(BaseWalletBillingTestClass):
@@ -362,6 +406,10 @@ class TestGetDayBillingsGroupByDayAndCustomerJoinedByType(BaseWalletBillingTestC
         )
 
         self._assert_call_result(result)
+
+    def test_f(self):
+        self._create_bulk_billing_in_different_month(1, 3, 2)
+        wallet_billing_service.test_f()
 
     def _assert_call_result(self, result):
         self.assertEqual(len(result), 3)

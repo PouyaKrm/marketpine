@@ -6,6 +6,7 @@ from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import transaction
 from django.db.models.aggregates import Sum
+from django.db.models.expressions import F
 from django.db.models.functions import TruncDay
 from django.urls import reverse
 from django.utils import timezone
@@ -264,16 +265,20 @@ class WalletAndBillingService:
             jcreate_date__gte=start,
             jcreate_date__lte=end
         ).annotate(
+            joined_by=F('customer_added__joined_by'),
+            amount_f=F('amount'),
             day=TruncDay('jcreate_date')
         ).values(
-            'day',
+            'joined_by',
+            'day'
         ).annotate(
-            amount_sum=Sum('amount')
+            amount_sum=Sum('amount_f')
         ).order_by(
+            'joined_by',
             'day'
         )
 
-        mapped = map(lambda x: BillingSummery(x['day'], None, x['amount_sum']), q)
+        mapped = map(lambda x: BillingSummery(x['day'].date(), x['joined_by'], x['amount_sum']), q)
         return list(mapped)
 
     def get_day_billings_group_by_day_and_customer_joined_by_type(self, user: Businessman,
@@ -338,6 +343,20 @@ class WalletAndBillingService:
         wallet.used_credit = wallet.used_credit + amount
         wallet.save()
         return wallet
+
+    def test_f(self):
+        q = Billing.objects.annotate(
+            joined_by=F('customer_added__joined_by'),
+            amount_f=F('amount'),
+            day=TruncDay('jcreate_date')
+        ).values('joined_by', 'day').annotate(
+            amount_sum=Sum('amount_f')
+        ).order_by(
+
+        )
+
+        for i in q.all():
+            print(i)
 
 
 payment_service = PaymentService()
