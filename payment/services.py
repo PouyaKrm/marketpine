@@ -303,8 +303,9 @@ class WalletAndBillingService:
         mapped = map(lambda x: BillingSummery(None, x['customer_added__joined_by'], x['amount_sum']), q)
         return list(mapped)
 
-    def group_billings_by_month_joined_by_in_present_year(self, user: Businessman) -> List[List[BillingSummery]]:
+    def group_billings_by_month_joined_by_in_present_year(self, user: Businessman) -> List[BillingSummery]:
         result = []
+
         month_ranges = self._get_jalali_month_ranges()
         for start, end in month_ranges:
             q = Billing.objects.filter(
@@ -324,7 +325,7 @@ class WalletAndBillingService:
                 lambda x: BillingSummery(start.date(), x['customer_added__joined_by'], x['amount_sum']),
                 q
             )
-            result.append(list(mapped))
+            result = result + list(mapped)
         return result
 
     def _get_jalali_month_ranges(self) -> List[Tuple[datetime.datetime, datetime.datetime]]:

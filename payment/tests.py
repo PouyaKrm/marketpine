@@ -482,6 +482,7 @@ class TestGroupBillingsByMonthJoinedByInPresentYear(BaseWalletBillingTestClass):
 
     def test_billings(self):
         result = wallet_billing_service.group_billings_by_month_joined_by_in_present_year(self.businessman)
+
         self._assert_call_result(result)
 
     def test_billing_in_different_year(self):
@@ -516,24 +517,23 @@ class TestGroupBillingsByMonthJoinedByInPresentYear(BaseWalletBillingTestClass):
         self._assert_call_result(result)
 
     def _assert_call_result(self, result):
-        self.assertEqual(len(result), 12)
-        r_p = result[self.fakes_panel_month - 1]
-        r_p = list(filter(lambda x: x.joined_by == BusinessmanCustomer.JOINED_BY_PANEL, r_p))
-        self.assertEqual(len(r_p), 1)
-        self.assertEqual(r_p[0].create_date.year, self.fakes_panel1[2].date().year)
-        self.assertEqual(r_p[0].create_date.month, self.fakes_panel1[2].date().month)
-        self.assertEqual(r_p[0].amount, self.fakes_panel1[1] + self.fakes_panel2[1])
+        self.assertEqual(len(result), 3)
 
-        r_a = result[self.fakes_app_month - 1]
-        r_a = list(filter(lambda x: x.joined_by == BusinessmanCustomer.JOINED_BY_CUSTOMER_APP, r_a))
-        self.assertEqual(len(r_a), 1)
-        self.assertEqual(r_a[0].create_date.year, self.fakes_app1[2].date().year)
-        self.assertEqual(r_a[0].create_date.month, self.fakes_app1[2].date().month)
-        self.assertEqual(r_a[0].amount, self.fakes_app1[1] + self.fakes_app2[1])
+        panels = list(filter(lambda x: x.joined_by == BusinessmanCustomer.JOINED_BY_PANEL, result))
+        apps = list(filter(lambda x: x.joined_by == BusinessmanCustomer.JOINED_BY_CUSTOMER_APP, result))
+        invitations = list(filter(lambda x: x.joined_by == BusinessmanCustomer.JOINED_BY_INVITATION, result))
 
-        r_i = result[self.fakes_invitation_month - 1]
-        r_i = list(filter(lambda x: x.joined_by == BusinessmanCustomer.JOINED_BY_INVITATION, r_i))
-        self.assertEqual(len(r_i), 1)
-        self.assertEqual(r_i[0].create_date.year, self.fakes_invitation1[2].date().year)
-        self.assertEqual(r_i[0].create_date.month, self.fakes_invitation1[2].date().month)
-        self.assertEqual(r_i[0].amount, self.fakes_invitation1[1] + self.fakes_invitation2[1])
+        self.assertEqual(len(panels), 1)
+        self.assertEqual(panels[0].amount, self.fakes_panel1[1] + self.fakes_panel2[1])
+        self.assertEqual(panels[0].create_date.year, self.fakes_panel1[2].date().year)
+        self.assertEqual(panels[0].create_date.month, self.fakes_panel1[2].date().month)
+
+        self.assertEqual(len(apps), 1)
+        self.assertEqual(apps[0].amount, self.fakes_app1[1] + self.fakes_app2[1])
+        self.assertEqual(apps[0].create_date.year, self.fakes_app1[2].date().year)
+        self.assertEqual(apps[0].create_date.month, self.fakes_app1[2].date().month)
+
+        self.assertEqual(len(invitations), 1)
+        self.assertEqual(invitations[0].amount, self.fakes_invitation1[1] + self.fakes_invitation2[1])
+        self.assertEqual(invitations[0].create_date.year, self.fakes_invitation1[2].date().year)
+        self.assertEqual(invitations[0].create_date.month, self.fakes_invitation1[2].date().month)
