@@ -407,9 +407,6 @@ class TestGetDayBillingsGroupByDayAndCustomerJoinedByType(BaseWalletBillingTestC
 
         self._assert_call_result(result)
 
-    def test_f(self):
-        self._create_bulk_billing_in_different_month(1, 3, 2)
-        wallet_billing_service.test_f()
 
     def _assert_call_result(self, result):
         self.assertEqual(len(result), 3)
