@@ -252,12 +252,12 @@ class BaseWalletBillingTestClass(BaseTestClass):
         )
 
 
-class TestGetMonthBillingsGroupByDay(BaseWalletBillingTestClass):
+class TestGetMonthBillings(BaseWalletBillingTestClass):
 
     def _create_billing_with_random_colck(self, create_date, seed=1, joined_by=BusinessmanCustomer.JOINED_BY_PANEL) -> \
-    Tuple[
-        List[Billing], int
-    ]:
+            Tuple[
+                List[Billing], int
+            ]:
         new_date = create_date.replace(hour=random.randint(0, 23), minute=random.randint(0, 59),
                                        second=random.randint(0, 59))
         result = []
@@ -286,7 +286,7 @@ class TestGetMonthBillingsGroupByDay(BaseWalletBillingTestClass):
                                                        BusinessmanCustomer.JOINED_BY_INVITATION)
             invitation_billings.append(i)
 
-        result = wallet_billing_service.get_month_billings_group_by_day(self.businessman, now)
+        result = wallet_billing_service.get_month_billings(self.businessman, now)
         self.assertEqual(len(result), count * 3)
 
         panels = list(filter(lambda x: x.joined_by == BusinessmanCustomer.JOINED_BY_PANEL, result))
@@ -340,7 +340,7 @@ class TestGetMonthBillingsGroupByDay(BaseWalletBillingTestClass):
                                                        BusinessmanCustomer.JOINED_BY_CUSTOMER_APP)
             app_billing.append(p)
 
-        result = wallet_billing_service.get_month_billings_group_by_day(self.businessman, other)
+        result = wallet_billing_service.get_month_billings(self.businessman, other)
         self.assertEqual(len(result), next_count * 2)
 
         panels = list(filter(lambda x: x.joined_by == BusinessmanCustomer.JOINED_BY_PANEL, result))
@@ -429,7 +429,7 @@ class TestGetDayBillingsGroupByDayAndCustomerJoinedByType(BaseWalletBillingTestC
         self.assertIsNone(r_i[0].create_date)
 
 
-class TestGroupBillingsByMonthJoinedByInPresentYear(BaseWalletBillingTestClass):
+class TestPresentYearBillings(BaseWalletBillingTestClass):
 
     def setUp(self) -> None:
         super().setUp()
@@ -481,7 +481,7 @@ class TestGroupBillingsByMonthJoinedByInPresentYear(BaseWalletBillingTestClass):
         return fakes
 
     def test_billings(self):
-        result = wallet_billing_service.group_billings_by_month_joined_by_in_present_year(self.businessman)
+        result = wallet_billing_service.get_present_year_billings(self.businessman)
 
         self._assert_call_result(result)
 
@@ -495,7 +495,7 @@ class TestGroupBillingsByMonthJoinedByInPresentYear(BaseWalletBillingTestClass):
         self._create_bulk_billing_in_different_year(year, self.fakes_invitation_month, 8, 30,
                                                     BusinessmanCustomer.JOINED_BY_INVITATION)
 
-        result = wallet_billing_service.group_billings_by_month_joined_by_in_present_year(self.businessman)
+        result = wallet_billing_service.get_present_year_billings(self.businessman)
 
         self._assert_call_result(result)
 
@@ -512,7 +512,7 @@ class TestGroupBillingsByMonthJoinedByInPresentYear(BaseWalletBillingTestClass):
                                                      BusinessmanCustomer.JOINED_BY_INVITATION,
                                                      b)
 
-        result = wallet_billing_service.group_billings_by_month_joined_by_in_present_year(self.businessman)
+        result = wallet_billing_service.get_present_year_billings(self.businessman)
 
         self._assert_call_result(result)
 

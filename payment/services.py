@@ -247,12 +247,12 @@ class WalletAndBillingService:
             return self.get_day_billings_group_by_day_and_customer_joined_by_type(user, now)
 
         elif month is not None and day is None:
-            return self.get_month_billings_group_by_day(user, now)
+            return self.get_month_billings(user, now)
 
         else:
-            return self.group_billings_by_month_joined_by_in_present_year(user)
+            return self.get_present_year_billings(user)
 
-    def get_month_billings_group_by_day(self, user: Businessman, date_of_month: jdatetime) -> List[
+    def get_month_billings(self, user: Businessman, date_of_month: jdatetime) -> List[
         BillingSummery]:
         start = date_of_month.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
         end_day = get_end_day_of_jalali_month(date_of_month)
@@ -301,7 +301,7 @@ class WalletAndBillingService:
         mapped = map(lambda x: BillingSummery(None, x['customer_added__joined_by'], x['amount_sum']), q)
         return list(mapped)
 
-    def group_billings_by_month_joined_by_in_present_year(self, user: Businessman) -> List[BillingSummery]:
+    def get_present_year_billings(self, user: Businessman) -> List[BillingSummery]:
         result = []
 
         month_ranges = self._get_jalali_month_ranges()
