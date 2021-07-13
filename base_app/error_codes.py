@@ -31,7 +31,8 @@ class ApplicationErrorCodes:
     PAYMENT_CREATION_FAILED = _get_code_message_dict.__func__(1010, 'پرداخت با خظا مواجه شد')
     PAYMENT_ALREADY_VERIFIED = _get_code_message_dict.__func__(1011, 'پرداخت قبلا انجام شده')
     PAYMENT_WAS_NOT_SUCCESSFUL = _get_code_message_dict.__func__(1012, 'پرداخت موفقیت آمیز نبود')
-    PAYMENT_VERIFICATION_FAILED = _get_code_message_dict.__func__(1013, 'بررسی پرداخت با خطا مواجه شد')
+    PAYMENT_VERIFICATION_FAILED = _get_code_message_dict.__func__(1013,
+                                                                  'بررسی پرداخت با خطا مواجه شد با پشتیبانی تماس بگیرید')
     SMS_PANEL_INCREASE_DECREASE_CREDIT_FAILED = _get_code_message_dict.__func__(1014,
                                                                                 'تغییر اعتبار پنل پیامک با خطا مواجه شد')
 
