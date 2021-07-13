@@ -47,8 +47,7 @@ class VerifyPayment(APIView):
         #     })
 
         try:
-            result = payment_service.verify_payment_by_authority(authority, pay_status)
-            p = result[0]
+            p = payment_service.verify_payment_by_authority(authority, pay_status)
             sr = PaymentResultSerializer(p)
             return ok(sr.data)
         except ApplicationErrorException as ex:

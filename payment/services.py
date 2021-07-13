@@ -15,7 +15,6 @@ from zeep import Client
 from base_app.error_codes import ApplicationErrorException, ApplicationErrorCodes
 from common.util.date_helpers import get_end_day_of_jalali_month
 from customer_return_plan.invitation.services import invitation_service
-from panelprofile.models import SMSPanelInfo
 from panelprofile.services import sms_panel_info_service
 from payment.models import PanelActivationPlans, Payment, PaymentTypes, Wallet, Billing
 from users.models import Businessman, BusinessmanCustomer
@@ -65,7 +64,7 @@ class PaymentService:
 
         return self.create_payment(user, amount_toman, 'افزایش اعتبار کیف پول', Payment.TYPE_WALLET_INCREASE)
 
-    def verify_payment_by_authority(self, authority: str, callback_status: str) -> Tuple[Payment, SMSPanelInfo]:
+    def verify_payment_by_authority(self, authority: str, callback_status: str) -> Payment:
 
         if callback_status != "OK" and callback_status != "NOK":
             raise ValueError('invalid callback status')
@@ -80,7 +79,7 @@ class PaymentService:
                 sms_panel_info_service.get_panel_increase_credit_in_tomans(p.businessman, p.amount)
             elif p.is_payment_type_wallet():
                 wallet_billing_service.increase_credit(p.businessman, p.amount)
-            return p, sms_panel_info_service.get_buinessman_sms_panel(p.businessman)
+            return p
         except Exception as ex:
             if not isinstance(ex, ApplicationErrorException):
                 raise ApplicationErrorException(ApplicationErrorCodes.PAYMENT_VERIFICATION_FAILED, ex)
