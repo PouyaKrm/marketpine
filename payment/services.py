@@ -53,10 +53,10 @@ class PaymentService:
     def create_payment_for_smspanel_credit(self,
                                            request: Request,
                                            user: Businessman,
-                                           amount_tomal: float,
+                                           amount_toman: float,
                                            ):
 
-        return self.create_payment(request, user, amount_tomal, 'افزایش اعتبار پنل اسمس', Payment.TYPE_SMS)
+        return self.create_payment(request, user, amount_toman, 'افزایش اعتبار پنل اسمس', Payment.TYPE_SMS)
 
     def create_payment_for_wallet_credit(self,
                                          request: Request,

@@ -91,6 +91,26 @@ class CreatePaymentTest(PaymentServiceBaseTestClass):
         self.assertEqual(p.payment_type, self.call_params['payment_type'])
 
 
+class TestCreatePaymentSmspanelCredit(PaymentServiceBaseTestClass):
+
+    def setUp(self) -> None:
+        super().setUp()
+        mocked_request = Mock()
+        b = self.create_businessman()
+        self.call_params = {
+            'request': mocked_request,
+            'user': b,
+            'amount_toman': 10,
+        }
+
+    @patch('payment.services.payment_service.create_payment')
+    def test_payment_creation(self, mocked):
+        p = Payment()
+        mocked.return_value = p
+        result = payment_service.create_payment_for_smspanel_credit(**self.call_params)
+        self.assertEqual(result, p)
+
+
 class TestCreatePaymentWallet(PaymentServiceBaseTestClass):
 
     def setUp(self) -> None:
