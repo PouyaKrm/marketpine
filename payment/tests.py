@@ -28,12 +28,20 @@ class PaymentServiceBaseTestClass(BaseTestClass):
         return Payment.objects.create(businessman=b, amount=0, authority=random.randint(0, 200).__str__(), **kwargs)
 
 
-class CreateSMSPanelCreditPaymentTest(PaymentServiceBaseTestClass):
+class CreatePaymentTest(PaymentServiceBaseTestClass):
 
     def setUp(self) -> None:
         super().setUp()
         self.mocked_request = Mock('Http Request')
         self.mocked_request.build_absolute_uri = Mock(return_value="fake url")
+        b = self.create_businessman()
+        self.call_params = {
+            'request': self.mocked_request,
+            'user': b,
+            'amount_toman': 10,
+            'description': 'fake_desc',
+            'payment_type': Payment.TYPE_SMS
+        }
 
     @patch("payment.services.Client")
     def test_client_returns_100(self, mocked_client):
@@ -41,22 +49,24 @@ class CreateSMSPanelCreditPaymentTest(PaymentServiceBaseTestClass):
         pay_request_mock = Mock(name='pay_request_mock',
                                 **{'service.PaymentRequest.return_value': pay_request_mock_result})
         mocked_client.return_value = pay_request_mock
-        b = self.create_businessman()
-        p = payment_service.create_payment_for_smspanel_credit(self.mocked_request, b, 10)
-        self.assertEqual(p.create_status, 100)
-        self.assertEqual(p.payment_type, Payment.TYPE_SMS)
+        p = payment_service.create_payment(**self.call_params)
+        self._assert_created_payment(p, 100)
 
     @patch("payment.services.Client")
     def test_client_returns_non_100_status_code(self, mocked_client):
-        pay_request_mock_result = Mock(name='pay_request_mock_result', Status=200)
+        status = 200
+        pay_request_mock_result = Mock(name='pay_request_mock_result', Status=status)
         pay_request_mock = Mock(name='pay_request_mock',
                                 **{'service.PaymentRequest.return_value': pay_request_mock_result})
         mocked_client.return_value = pay_request_mock
-        b = self.create_businessman()
-        self.assertRaises(ApplicationErrorException, payment_service.create_payment_for_smspanel_credit,
-                          self.mocked_request, b, 10)
+        with self.assertRaises(ApplicationErrorException) as cx:
+            payment_service.create_payment(**self.call_params)
+        ex = cx.exception
+        self.assertEqual(ex.http_message, ApplicationErrorCodes.PAYMENT_CREATION_FAILED)
         count = Payment.objects.count()
         self.assertEqual(count, 1)
+        p = Payment.objects.first()
+        self._assert_created_payment(p, status)
 
     @patch("payment.services.Client")
     def test_client_raises_exception(self, mocked_client):
@@ -65,13 +75,20 @@ class CreateSMSPanelCreditPaymentTest(PaymentServiceBaseTestClass):
             **{'service.PaymentRequest.side_effect': Exception("fake")}
         )
         mocked_client.return_value = pay_request_mock
-        b = self.create_businessman()
-        self.assertRaises(
-            ApplicationErrorException,
-            payment_service.create_payment_for_smspanel_credit,
-            self.mocked_request, b, 10)
+        with self.assertRaises(ApplicationErrorException) as cx:
+            payment_service.create_payment(**self.call_params)
+        ex = cx.exception
+        self.assertEqual(ex.http_message, ApplicationErrorCodes.PAYMENT_CREATION_FAILED)
         count = Payment.objects.count()
         self.assertEqual(count, 0)
+
+    def _assert_created_payment(self, p: Payment, create_status: int):
+        self.assertEqual(p.create_status, create_status)
+        self.assertEqual(p.payment_type, self.call_params['payment_type'])
+        self.assertEqual(p.businessman, self.call_params['user'])
+        self.assertEqual(p.amount, self.call_params['amount_toman'])
+        self.assertEqual(p.description, self.call_params['description'])
+        self.assertEqual(p.payment_type, self.call_params['payment_type'])
 
 
 class TestCreatePaymentWallet(PaymentServiceBaseTestClass):
@@ -437,7 +454,6 @@ class TestGetDayBillingsGroupByDayAndCustomerJoinedByType(BaseWalletBillingTestC
         )
 
         self._assert_call_result(result)
-
 
     def _assert_call_result(self, result):
         self.assertEqual(len(result), 3)
