@@ -65,17 +65,13 @@ class PaymentService:
         p = self._get_payment_by_authority(authority)
         p.call_back_status = callback_status
         p.save()
-        increased_sms_panel_credit = False
         try:
             self._check_payment_verified_before(p)
             self.verify_payment(p)
             if p.is_payment_type_sms():
                 sms_panel_info_service.get_panel_increase_credit_in_tomans(p.businessman, p.amount)
-                increased_sms_panel_credit = True
             return p, sms_panel_info_service.get_buinessman_sms_panel(p.businessman)
         except Exception as ex:
-            if increased_sms_panel_credit:
-                sms_panel_info_service.get_panel_decrease_credit_in_tomans(p.businessman, p.amount)
             if not isinstance(ex, ApplicationErrorException):
                 raise ApplicationErrorException(ApplicationErrorCodes.PAYMENT_VERIFICATION_FAILED, ex)
             else:

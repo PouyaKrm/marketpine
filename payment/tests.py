@@ -19,7 +19,6 @@ class PaymentServiceBaseTestClass(BaseTestClass):
 
     def setUp(self) -> None:
         super().setUp()
-        self.p = self._create_payment()
 
     def _create_payment(self, **kwargs) -> Payment:
         b = self.create_businessman()
@@ -74,6 +73,10 @@ class CreateSMSPanelCreditPaymentTest(PaymentServiceBaseTestClass):
 
 class TestVerifyPayment(PaymentServiceBaseTestClass):
 
+    def setUp(self) -> None:
+        super().setUp()
+        self.p = self._create_payment()
+
     @patch("payment.services.Client")
     def test_payment_verified_before(self, mocked_client):
         p = self._create_payment(refid='fake id')
@@ -120,6 +123,7 @@ class TestVerifyPaymentByAuthority(PaymentServiceBaseTestClass):
 
     def setUp(self) -> None:
         super().setUp()
+        self.p = self._create_payment()
         self.callback_status = "OK"
 
     def test_throws_exception_on_invalid_callback_status(self):
