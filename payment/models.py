@@ -183,6 +183,9 @@ class Payment(models.Model):
     def is_payment_type_sms(self) -> bool:
         return self.payment_type == Payment.TYPE_SMS
 
+    def is_payment_type_wallet(self) -> bool:
+        return self.payment_type == Payment.TYPE_WALLET_INCREASE
+
 
 class FailedPaymentOperation(models.Model):
     businessman = models.ForeignKey(Businessman, on_delete=models.PROTECT)

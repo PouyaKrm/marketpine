@@ -244,6 +244,18 @@ class TestVerifyPaymentByAuthority(PaymentServiceBaseTestClass):
     @patch("payment.services.payment_service.verify_payment")
     @patch("payment.services.sms_panel_info_service.get_panel_decrease_credit_in_tomans")
     @patch("payment.services.sms_panel_info_service.get_buinessman_sms_panel")
+    @patch('payment.services.wallet_billing_service.increase_credit')
+    def test_wallet_payment(self, wallet_increase_mock, get_businessman_sms, panel_decrease, verify_payment,
+                            panel_increase):
+        p = self._create_payment(payment_type=Payment.TYPE_WALLET_INCREASE)
+        result = payment_service.verify_payment_by_authority(p.authority, self.callback_status)
+        self.assertEqual(result[0], p)
+        wallet_increase_mock.assert_called_once_with(p.businessman, p.amount)
+
+    @patch('payment.services.sms_panel_info_service.get_panel_increase_credit_in_tomans')
+    @patch("payment.services.payment_service.verify_payment")
+    @patch("payment.services.sms_panel_info_service.get_panel_decrease_credit_in_tomans")
+    @patch("payment.services.sms_panel_info_service.get_buinessman_sms_panel")
     def test_success_execution(self, get_businessman_sms, panel_decrease, verify_payment, panel_increase):
         info = SMSPanelInfo()
         get_businessman_sms.return_value = info

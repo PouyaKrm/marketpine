@@ -80,6 +80,8 @@ class PaymentService:
             self.verify_payment(p)
             if p.is_payment_type_sms():
                 sms_panel_info_service.get_panel_increase_credit_in_tomans(p.businessman, p.amount)
+            elif p.is_payment_type_wallet():
+                wallet_billing_service.increase_credit(p.businessman, p.amount)
             return p, sms_panel_info_service.get_buinessman_sms_panel(p.businessman)
         except Exception as ex:
             if not isinstance(ex, ApplicationErrorException):
@@ -219,6 +221,12 @@ class WalletAndBillingService:
 
         else:
             raise ApplicationErrorException(error_code)
+
+    def increase_credit(self, user: Businessman, amount_toman: int) -> Wallet:
+        wallet = self.get_businessman_wallet_or_create(user)
+        wallet.available_credit = wallet.available_credit + amount_toman
+        wallet.save()
+        return wallet
 
     def _has_subscription(self, wallet: Wallet) -> bool:
         has = wallet.has_subscription
