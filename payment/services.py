@@ -73,10 +73,10 @@ class PaymentService:
             raise ValueError('invalid callback status')
 
         p = self._get_payment_by_authority(authority)
-        p.call_back_status = callback_status
-        p.save()
         try:
             self._check_payment_verified_before(p)
+            p.call_back_status = callback_status
+            p.save()
             self.verify_payment(p)
             if p.is_payment_type_sms():
                 sms_panel_info_service.get_panel_increase_credit_in_tomans(p.businessman, p.amount)
