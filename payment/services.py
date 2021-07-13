@@ -8,7 +8,6 @@ from django.db import transaction
 from django.db.models.aggregates import Sum
 from django.db.models.expressions import F
 from django.db.models.functions import TruncDay
-from django.urls import reverse
 from django.utils import timezone
 from rest_framework.request import Request
 from zeep import Client
@@ -23,6 +22,7 @@ from users.models import Businessman, BusinessmanCustomer
 
 url = settings.ZARINPAL.get('url')
 setting_merchant = settings.ZARINPAL.get('MERCHANT')
+callback_url = settings.ZARINPAL.get('CALLBACK_URL')
 wallet_initial_available_credit = settings.WALLET['INITIAL_AVAILABLE_CREDIT']
 wallet_minimum_allowed_credit = settings.WALLET['MINIMUM_ALLOWED_CREDIT']
 wallet_minimum_credit_increase = settings.WALLET['MINIMUM_ALLOWED_CREDIT_INCREASE']
@@ -125,7 +125,7 @@ class PaymentService:
                     phone=user.phone,
                     payment_type=payment_type
                 )
-                call_back = request.build_absolute_uri(reverse('payment:verify'), )
+                call_back = callback_url
                 client = Client(url)
                 merchant = setting_merchant
                 result = client.service.PaymentRequest(merchant, p.amount, p.description, p.businessman.email,
