@@ -32,11 +32,8 @@ class CreatePaymentTest(PaymentServiceBaseTestClass):
 
     def setUp(self) -> None:
         super().setUp()
-        self.mocked_request = Mock('Http Request')
-        self.mocked_request.build_absolute_uri = Mock(return_value="fake url")
         b = self.create_businessman()
         self.call_params = {
-            'request': self.mocked_request,
             'user': b,
             'amount_toman': 10,
             'description': 'fake_desc',
@@ -95,10 +92,8 @@ class TestCreatePaymentSmspanelCredit(PaymentServiceBaseTestClass):
 
     def setUp(self) -> None:
         super().setUp()
-        mocked_request = Mock()
         b = self.create_businessman()
         self.call_params = {
-            'request': mocked_request,
             'user': b,
             'amount_toman': 10,
         }
@@ -118,7 +113,7 @@ class TestCreatePaymentWallet(PaymentServiceBaseTestClass):
 
     def test_low_minimum_credit(self):
         with self.assertRaises(ApplicationErrorException) as cx:
-            payment_service.create_payment_for_wallet_credit(Mock(), self.create_businessman(),
+            payment_service.create_payment_for_wallet_credit(self.create_businessman(),
                                                              wallet_minimum_credit_increase - 100)
         ex = cx.exception
         self.assertEqual(ex.http_message, ApplicationErrorCodes.MINIMUM_WALLET_CREDIT_INCREASE)
@@ -126,11 +121,10 @@ class TestCreatePaymentWallet(PaymentServiceBaseTestClass):
     @patch('payment.services.payment_service.create_payment')
     def test_create_payment(self, mocked):
         p = Payment()
-        request = Mock()
         b = self.create_businessman()
         amount = wallet_minimum_credit_increase + 100
         mocked.return_value = p
-        result = payment_service.create_payment_for_wallet_credit(request, b, amount)
+        result = payment_service.create_payment_for_wallet_credit(b, amount)
         self.assertEqual(result, p)
         mocked.assert_called_once()
 

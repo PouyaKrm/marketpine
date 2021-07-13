@@ -114,7 +114,6 @@ def create_payment_sms_credit(request):
 
     try:
         p = payment_service.create_payment_for_smspanel_credit(
-            request,
             request.user,
             serializer.validated_data.get('amount')
         )
@@ -133,10 +132,10 @@ class WalletCreditPaymentCreation(APIView):
         if not sr.is_valid():
             return bad_request(sr.errors)
         try:
-            p = payment_service.create_payment_for_wallet_credit(request,
-                                                                 request.user,
-                                                                 sr.validated_data.get('amount')
-                                                                 )
+            p = payment_service.create_payment_for_wallet_credit(
+                request.user,
+                sr.validated_data.get('amount')
+            )
 
             sr = WalletIncreaseCreditSerializer(p)
             return ok(sr.data)

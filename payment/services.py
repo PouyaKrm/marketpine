@@ -51,21 +51,19 @@ class PaymentService:
         return p
 
     def create_payment_for_smspanel_credit(self,
-                                           request: Request,
                                            user: Businessman,
                                            amount_toman: float,
                                            ):
 
-        return self.create_payment(request, user, amount_toman, 'افزایش اعتبار پنل اسمس', Payment.TYPE_SMS)
+        return self.create_payment(user, amount_toman, 'افزایش اعتبار پنل اسمس', Payment.TYPE_SMS)
 
     def create_payment_for_wallet_credit(self,
-                                         request: Request,
                                          user: Businessman,
                                          amount_toman: int) -> Payment:
         if amount_toman < wallet_minimum_credit_increase:
             raise ApplicationErrorException(ApplicationErrorCodes.MINIMUM_WALLET_CREDIT_INCREASE)
 
-        return self.create_payment(request, user, amount_toman, 'افزایش اعتبار کیف پول', Payment.TYPE_WALLET_INCREASE)
+        return self.create_payment(user, amount_toman, 'افزایش اعتبار کیف پول', Payment.TYPE_WALLET_INCREASE)
 
     def verify_payment_by_authority(self, authority: str, callback_status: str) -> Tuple[Payment, SMSPanelInfo]:
 
@@ -114,7 +112,7 @@ class PaymentService:
         if p.is_verified_before():
             raise ApplicationErrorException(ApplicationErrorCodes.PAYMENT_ALREADY_VERIFIED)
 
-    def create_payment(self, request: Request, user: Businessman, amount_toman: float, description: str,
+    def create_payment(self, user: Businessman, amount_toman: float, description: str,
                        payment_type) -> Payment:
         try:
             with transaction.atomic():
