@@ -25,6 +25,7 @@ url = settings.ZARINPAL.get('url')
 setting_merchant = settings.ZARINPAL.get('MERCHANT')
 wallet_initial_available_credit = settings.WALLET['INITIAL_AVAILABLE_CREDIT']
 wallet_minimum_allowed_credit = settings.WALLET['MINIMUM_ALLOWED_CREDIT']
+wallet_minimum_credit_increase = settings.WALLET['MINIMUM_ALLOWED_CREDIT_INCREASE']
 customer_joined_by_panel_cost = settings.BILLING['CUSTOMER_JOINED_BY_PANEL_COST']
 customer_joined_by_app_cost = settings.BILLING['CUSTOMER_JOINED_BY_APP_COST']
 invited_customer_after_purchase_cost = settings.BILLING['INVITED_CUSTOMER_AFTER_PURCHASE_COST']
@@ -55,7 +56,16 @@ class PaymentService:
                                            amount_tomal: float,
                                            ):
 
-        return self._create_payment(request, user, amount_tomal, 'افزایش اعتبار پنل اسمس', Payment.TYPE_SMS)
+        return self.create_payment(request, user, amount_tomal, 'افزایش اعتبار پنل اسمس', Payment.TYPE_SMS)
+
+    def create_payment_for_wallet_credit(self,
+                                         request: Request,
+                                         user: Businessman,
+                                         amount_toman: int) -> Payment:
+        if amount_toman < wallet_minimum_credit_increase:
+            raise ApplicationErrorException(ApplicationErrorCodes.MINIMUM_WALLET_CREDIT_INCREASE)
+
+        return self.create_payment(request, user, amount_toman, 'افزایش اعتبار کیف پول', Payment.TYPE_WALLET_INCREASE)
 
     def verify_payment_by_authority(self, authority: str, callback_status: str) -> Tuple[Payment, SMSPanelInfo]:
 
@@ -102,8 +112,8 @@ class PaymentService:
         if p.is_verified_before():
             raise ApplicationErrorException(ApplicationErrorCodes.PAYMENT_ALREADY_VERIFIED)
 
-    def _create_payment(self, request: Request, user: Businessman, amount_toman: float, description: str,
-                        payment_type) -> Payment:
+    def create_payment(self, request: Request, user: Businessman, amount_toman: float, description: str,
+                       payment_type) -> Payment:
         try:
             with transaction.atomic():
                 p = Payment.objects.create(

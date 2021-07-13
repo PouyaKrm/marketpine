@@ -38,6 +38,7 @@ class ApplicationErrorCodes:
     USERNAME_IS_NOT_UNIQUE = _get_code_message_dict.__func__(1015, 'نام کاربری یکتا نیست')
     EMAIL_IS_NOT_UNIQUE = _get_code_message_dict.__func__(1016, 'ایمیل یکتا نیست')
     NOT_ENOUGH_WALLET_CREDIT = _get_code_message_dict.__func__(1017, 'اعتبار کیف پول کافی نیست')
+    MINIMUM_WALLET_CREDIT_INCREASE = _get_code_message_dict.__func__(1018, 'مقدار افزایش اعتبار کم است')
 
     @staticmethod
     def get_exception(code: dict, original_exception: Exception = None) -> ApplicationErrorException:

@@ -5,6 +5,7 @@ from unittest.mock import patch, Mock
 
 import jdatetime
 import pytz
+from django.conf import settings
 
 from base_app.error_codes import ApplicationErrorException, ApplicationErrorCodes
 from base_app.tests import BaseTestClass
@@ -13,6 +14,8 @@ from payment.models import Payment, Billing
 from payment.services import payment_service, wallet_billing_service
 # Create your tests here.
 from users.models import BusinessmanCustomer, Businessman
+
+wallet_minimum_credit_increase = settings.WALLET['MINIMUM_ALLOWED_CREDIT_INCREASE']
 
 
 class PaymentServiceBaseTestClass(BaseTestClass):
@@ -69,6 +72,30 @@ class CreateSMSPanelCreditPaymentTest(PaymentServiceBaseTestClass):
             self.mocked_request, b, 10)
         count = Payment.objects.count()
         self.assertEqual(count, 0)
+
+
+class TestCreatePaymentWallet(PaymentServiceBaseTestClass):
+
+    def setUp(self) -> None:
+        super().setUp()
+
+    def test_low_minimum_credit(self):
+        with self.assertRaises(ApplicationErrorException) as cx:
+            payment_service.create_payment_for_wallet_credit(Mock(), self.create_businessman(),
+                                                             wallet_minimum_credit_increase - 100)
+        ex = cx.exception
+        self.assertEqual(ex.http_message, ApplicationErrorCodes.MINIMUM_WALLET_CREDIT_INCREASE)
+
+    @patch('payment.services.payment_service.create_payment')
+    def test_create_payment(self, mocked):
+        p = Payment()
+        request = Mock()
+        b = self.create_businessman()
+        amount = wallet_minimum_credit_increase + 100
+        mocked.return_value = p
+        result = payment_service.create_payment_for_wallet_credit(request, b, amount)
+        self.assertEqual(result, p)
+        mocked.assert_called_once()
 
 
 class TestVerifyPayment(PaymentServiceBaseTestClass):
