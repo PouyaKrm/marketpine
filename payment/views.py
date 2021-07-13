@@ -10,7 +10,7 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.request import Request
 from rest_framework.views import APIView
 
-from base_app.error_codes import ApplicationErrorException, ApplicationErrorCodes
+from base_app.error_codes import ApplicationErrorException
 from base_app.views import BaseListAPIView
 from common.util.date_helpers import get_end_day_of_jalali_month
 from common.util.http_helpers import bad_request, created, ok
@@ -24,7 +24,8 @@ from .models import PaymentTypes
 from .permissions import ActivatePanelPermission
 from .serializers import (SMSCreditPaymentCreationSerializer,
                           PanelActivationPaymentCreationSerializer,
-                          PaymentListSerializer, PanelActivationPlansSerializer, BillingSummerySerializer
+                          PaymentListSerializer, PanelActivationPlansSerializer, BillingSummerySerializer,
+                          WalletIncreaseCreditSerializer, PaymentResultSerializer
                           )
 from .services import payment_service, wallet_billing_service
 
@@ -35,7 +36,6 @@ class VerifyPayment(APIView):
     permission_classes = [permissions.AllowAny]
 
     def get(self, request: Request):
-        current_time = datetime.now()
         pay_status = request.GET.get('Status')
         authority = request.GET.get('Authority')
         if pay_status is None or authority is None:
@@ -49,21 +49,18 @@ class VerifyPayment(APIView):
         try:
             result = payment_service.verify_payment_by_authority(authority, pay_status)
             p = result[0]
-            local_pay_date = jdatetime.date.fromgregorian(date=p.verification_date).strftime("%y/%m/%d %H:%M")
-            if p.payment_type == PaymentTypes.SMS:
-                return render(request, "payment/sms-charge-sucess.html",
-                              {'payment': p, 'credit': result[1].credit,
-                               'verification_date': local_pay_date,
-                               'current_time': current_time})
+            sr = PaymentResultSerializer(p)
+            return ok(sr.data)
         except ApplicationErrorException as ex:
-            if ex.http_message == ApplicationErrorCodes.RECORD_NOT_FOUND:
-                message = 'پرداخت موردنظر پیدا نشد'
-            else:
-                message = ex.http_message['message']
-            return render(request, "payment/payment-failed.html", {'current_time': current_time,
-                                                                   'frontend_url': frontend_url,
-                                                                   'exception_message': message
-                                                                   })
+            return bad_request(ex.http_message)
+            # if ex.http_message == ApplicationErrorCodes.RECORD_NOT_FOUND:
+            #     message = 'پرداخت موردنظر پیدا نشد'
+            # else:
+            #     message = ex.http_message['message']
+            # return render(request, "payment/payment-failed.html", {'current_time': current_time,
+            #                                                        'frontend_url': frontend_url,
+            #                                                        'exception_message': message
+            #                                                        })
 
 
 def verify(request):
@@ -125,6 +122,26 @@ def create_payment_sms_credit(request):
         return ok(serializer.data)
     except ApplicationErrorException as ex:
         return bad_request(ex.http_message)
+
+
+class WalletCreditPaymentCreation(APIView):
+    permission_classes = [permissions.IsAuthenticated, IsBusinessmanAuthorized]
+
+    def post(self, request):
+
+        sr = WalletIncreaseCreditSerializer(data=request.data, request=request)
+        if not sr.is_valid():
+            return bad_request(sr.errors)
+        try:
+            p = payment_service.create_payment_for_wallet_credit(request,
+                                                                 request.user,
+                                                                 sr.validated_data.get('amount')
+                                                                 )
+
+            sr = WalletIncreaseCreditSerializer(p)
+            return ok(sr.data)
+        except ApplicationErrorException as ex:
+            return bad_request(ex.http_message)
 
 
 @api_view(['POST'])

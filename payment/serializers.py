@@ -17,6 +17,28 @@ min_credit_charge = settings.SMS_PANEL['MIN_CREDIT_CHARGE']
 max_allowed_credit = settings.SMS_PANEL['MAX_ALLOWED_CREDIT']
 system_min_credit = settings.SMS_PANEL['SYSTEM_MIN_CREDIT']
 
+wallet_minimum_credit_increase = settings.WALLET['MINIMUM_ALLOWED_CREDIT_INCREASE']
+
+
+class BasePaymentCreationSerializer(BaseModelSerializerWithRequestObj):
+    forward_link = serializers.SerializerMethodField(read_only=True)
+    amount = serializers.IntegerField()
+
+    class Meta:
+        model = Payment
+        fields = [
+            'id',
+            'amount',
+            'authority',
+            'forward_link'
+        ]
+        extra_kwargs = {'id': {'read_only': True},
+                        'authority': {'read_only': True},
+                        'amount': {'required': True},
+                        }
+
+    def get_forward_link(self, obj):
+        return zarinpal_forward_link.format(obj.authority)
 
 
 class SMSCreditPaymentCreationSerializer(serializers.ModelSerializer):
@@ -64,18 +86,39 @@ class SMSCreditPaymentCreationSerializer(serializers.ModelSerializer):
         """create object payment with get amounte and constant businessman,phone,description"""
         request = self.context['request']
         p = Payment.objects.create(businessman=request.user, phone=request.user.phone,
-                                   payment_type=PaymentTypes.SMS,  **validated_data)
+                                   payment_type=PaymentTypes.SMS, **validated_data)
         p.pay(request)
         return p
 
 
-class PanelActivationPlansSerializer(serializers.ModelSerializer):
+class WalletIncreaseCreditSerializer(BasePaymentCreationSerializer):
 
+    def validate_amount(self, value):
+        if value < wallet_minimum_credit_increase:
+            raise serializers.ValidationError(
+                'حداقل میزان افزایش اعتبار {} تومان است'.format(
+                    wallet_minimum_credit_increase
+                )
+            )
+
+        return value
+
+
+class PaymentResultSerializer(BaseModelSerializerWithRequestObj):
+    class Meta:
+        model = Payment
+        fields = [
+            'refid'
+        ]
+
+
+class PanelActivationPlansSerializer(serializers.ModelSerializer):
     class Meta:
         model = PanelActivationPlans
         exclude = [
             'duration'
         ]
+
 
 class PanelActivationPlanField(serializers.RelatedField):
 

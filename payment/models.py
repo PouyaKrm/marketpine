@@ -53,7 +53,7 @@ class Payment(models.Model):
 
     payment_choices = [
         ('SMS', TYPE_SMS),
-        ('ACTIVATION', TYPE_WALLET_INCREASE)
+        ('WALLET', TYPE_WALLET_INCREASE)
     ]
 
     creation_date = models.DateTimeField(auto_now_add=True)
