@@ -33,6 +33,7 @@ class ApplicationErrorCodes:
     PAYMENT_WAS_NOT_SUCCESSFUL = _get_code_message_dict.__func__(1012, 'پرداخت موفقیت آمیز نبود')
     PAYMENT_VERIFICATION_FAILED = _get_code_message_dict.__func__(1013,
                                                                   'بررسی پرداخت با خطا مواجه شد با پشتیبانی تماس بگیرید')
+    PAYMENT_INFORMATION_INCORRECT = _get_code_message_dict.__func__(2000, 'اطلاعات پرداخت اشتباه است')
     SMS_PANEL_INCREASE_DECREASE_CREDIT_FAILED = _get_code_message_dict.__func__(1014,
                                                                                 'تغییر اعتبار پنل پیامک با خطا مواجه شد')
 

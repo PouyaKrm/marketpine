@@ -10,7 +10,7 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.request import Request
 from rest_framework.views import APIView
 
-from base_app.error_codes import ApplicationErrorException
+from base_app.error_codes import ApplicationErrorException, ApplicationErrorCodes
 from base_app.views import BaseListAPIView
 from common.util.date_helpers import get_end_day_of_jalali_month
 from common.util.http_helpers import bad_request, created, ok
@@ -38,28 +38,15 @@ class VerifyPayment(APIView):
     def get(self, request: Request):
         pay_status = request.GET.get('Status')
         authority = request.GET.get('Authority')
-        if pay_status is None or authority is None:
-            return redirect(frontend_url)
-        # if pay_status != 'OK':
-        #     return render(request, "payment/payment-failed.html", {
-        #         'current_time': current_time,
-        #         'frontend_url': frontend_url
-        #     })
 
         try:
+            if (pay_status is None or (pay_status != 'OK' and pay_status != 'NOK')) or authority is None:
+                raise ApplicationErrorException(ApplicationErrorCodes.PAYMENT_INFORMATION_INCORRECT)
             p = payment_service.verify_payment_by_authority(authority, pay_status)
             sr = PaymentResultSerializer(p)
             return ok(sr.data)
         except ApplicationErrorException as ex:
             return bad_request(ex.http_message)
-            # if ex.http_message == ApplicationErrorCodes.RECORD_NOT_FOUND:
-            #     message = 'پرداخت موردنظر پیدا نشد'
-            # else:
-            #     message = ex.http_message['message']
-            # return render(request, "payment/payment-failed.html", {'current_time': current_time,
-            #                                                        'frontend_url': frontend_url,
-            #                                                        'exception_message': message
-            #                                                        })
 
 
 def verify(request):
