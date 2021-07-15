@@ -1,35 +1,52 @@
 from datetime import datetime
 
 import jdatetime
+from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
+from django.http import HttpResponse
 from django.shortcuts import render, redirect
+from rest_framework import generics, permissions
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.request import Request
+from rest_framework.views import APIView
 
+from base_app.error_codes import ApplicationErrorException, ApplicationErrorCodes
 from base_app.views import BaseListAPIView
-from common.util.http_helpers import bad_request, created
+from common.util.date_helpers import get_end_day_of_jalali_month
+from common.util.http_helpers import bad_request, created, ok
 from common.util.kavenegar_local import APIException
-from payment.exceptions import PaymentCreationFailedException, PaymentVerificationFailedException, \
+from payment.exceptions import PaymentVerificationFailedException, \
     PaymentAlreadyVerifiedException, PaymentOperationFailedException
 from smspanel.permissions import HasActiveSMSPanel
 from users.permissions import IsBusinessmanAuthorized
-from .models import PaymentTypes
-from django.http import HttpResponse
-from django.conf import settings
-
 from .models import Payment
+from .models import PaymentTypes
+from .permissions import ActivatePanelPermission
 from .serializers import (SMSCreditPaymentCreationSerializer,
                           PanelActivationPaymentCreationSerializer,
-                          PaymentListSerializer, PanelActivationPlansSerializer
+                          PaymentListSerializer, PanelActivationPlansSerializer, BillingSummerySerializer,
+                          WalletIncreaseCreditSerializer, PaymentResultSerializer
                           )
-
-from .permissions import ActivatePanelPermission
-
-from rest_framework.decorators import api_view, permission_classes
-from rest_framework.response import Response
-from rest_framework import status, generics, permissions
-
-from .services import payment_service
+from .services import payment_service, wallet_billing_service
 
 frontend_url = settings.FRONTEND_URL
+
+
+class VerifyPayment(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request: Request):
+        pay_status = request.GET.get('Status')
+        authority = request.GET.get('Authority')
+
+        try:
+            if (pay_status is None or (pay_status != 'OK' and pay_status != 'NOK')) or authority is None:
+                raise ApplicationErrorException(ApplicationErrorCodes.PAYMENT_INFORMATION_INCORRECT)
+            p = payment_service.verify_payment_by_authority(authority, pay_status)
+            sr = PaymentResultSerializer(p)
+            return ok(sr.data)
+        except ApplicationErrorException as ex:
+            return bad_request(ex.http_message)
 
 
 def verify(request):
@@ -79,13 +96,37 @@ def verify(request):
 def create_payment_sms_credit(request):
     serializer = SMSCreditPaymentCreationSerializer(data=request.data, context={'request': request})
     if not serializer.is_valid():
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        return bad_request(serializer.errors)
 
     try:
-        serializer.save()
-    except PaymentCreationFailedException as e:
-        return Response({'status': e.returned_status}, status=status.HTTP_424_FAILED_DEPENDENCY)
-    return Response(serializer.data, status=status.HTTP_201_CREATED)
+        p = payment_service.create_payment_for_smspanel_credit(
+            request.user,
+            serializer.validated_data.get('amount')
+        )
+        serializer = SMSCreditPaymentCreationSerializer(p)
+        return ok(serializer.data)
+    except ApplicationErrorException as ex:
+        return bad_request(ex.http_message)
+
+
+class WalletCreditPaymentCreation(APIView):
+    permission_classes = [permissions.IsAuthenticated, IsBusinessmanAuthorized]
+
+    def post(self, request):
+
+        sr = WalletIncreaseCreditSerializer(data=request.data, request=request)
+        if not sr.is_valid():
+            return bad_request(sr.errors)
+        try:
+            p = payment_service.create_payment_for_wallet_credit(
+                request.user,
+                sr.validated_data.get('amount')
+            )
+
+            sr = WalletIncreaseCreditSerializer(p)
+            return ok(sr.data)
+        except ApplicationErrorException as ex:
+            return bad_request(ex.http_message)
 
 
 @api_view(['POST'])
@@ -116,3 +157,54 @@ class PanelActivationPlansListAPIView(generics.ListAPIView):
     serializer_class = PanelActivationPlansSerializer
     queryset = payment_service.get_all_plans()
     pagination_class = None
+
+
+class BillingSummeryAPIView(APIView):
+
+    def get(self, request: Request):
+        try:
+            m = self._get_month(request)
+            day = None
+            if m is not None:
+                now = jdatetime.datetime.now().replace(month=m)
+                day = self._get_day(request, now)
+            result = wallet_billing_service.get_billing_summery(request.user, m, day)
+
+            sr = BillingSummerySerializer(result, many=True)
+            return ok(sr.data)
+
+        except ApplicationErrorException as ex:
+            return bad_request(ex.http_message)
+
+    def _get_month(self, request: Request) -> int:
+        err_message = 'مقدار ماه غیر مجاز است'
+        m = request.query_params.get('month')
+        if m is None:
+            return None
+        try:
+            m = int(m)
+            if m <= 0 or m > 12:
+                raise ApplicationErrorException(err_message)
+            return m
+        except ValueError as ex:
+            raise ApplicationErrorException(err_message, ex)
+
+    def _get_day(self, request: Request, month_date: jdatetime.datetime) -> int:
+        err_message = 'مقدار روز غیر مجاز است'
+        day = request.query_params.get('day')
+        if day is None:
+            return None
+
+        try:
+            day = int(day)
+            end_day = get_end_day_of_jalali_month(month_date)
+            if day <= 0 or day > end_day:
+                raise ApplicationErrorException(err_message)
+
+            return day
+        except ValueError as ex:
+            raise ApplicationErrorException(err_message, ex)
+
+    def _get_year_result_dict(self, result) -> dict:
+        print(type(result))
+        return None

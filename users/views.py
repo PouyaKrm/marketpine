@@ -1,25 +1,16 @@
-import jwt
-from django.core.exceptions import ObjectDoesNotExist
-from django.utils import timezone
-from rest_framework import generics, status
-from rest_framework.views import APIView
-from rest_framework.decorators import api_view, permission_classes
-from rest_framework.response import Response
-from rest_framework.request import Request
 from django.contrib.auth import authenticate
-
-from base_app.error_codes import ApplicationErrorException
-from common.util import get_client_ip, custom_login_payload
-from common.util.http_helpers import ok, not_found, dependency_failed, no_content, bad_request
-from users.models import BusinessmanRefreshTokens
-from .serializers import *
+from django.core.exceptions import ObjectDoesNotExist
 # Create your views here.
 from rest_framework import generics
-import os
-from django.conf import settings
-from django.http.response import HttpResponse
-from wsgiref.util import FileWrapper
+from rest_framework import status
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.request import Request
+from rest_framework.response import Response
+
+from base_app.error_codes import ApplicationErrorException
+from common.util.http_helpers import ok, not_found, dependency_failed, no_content, bad_request
 from .permissions import HasValidRefreshToken
+from .serializers import *
 from .services import businessman_service
 
 
@@ -40,14 +31,24 @@ def create_user(request):
     serializer = BusinessmanRegisterSerializer(data=request.data)
 
     if not serializer.is_valid():
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        return bad_request(serializer.errors)
 
-    user = serializer.save()
+    try:
+        user = businessman_service.register_user(
+            serializer.validated_data.get('username'),
+            serializer.validated_data.get('password'),
+            serializer.validated_data.get('phone'),
+            serializer.validated_data.get('email'),
+            serializer.validated_data.get('first_name'),
+            serializer.validated_data.get('last_name')
+        )
 
-    auth_result = businessman_service.login_user(user.username,
-                                                 serializer.validated_data.get('password'),
-                                                 request)
-    return ok(auth_result)
+        auth_result = businessman_service.login_user(user.username,
+                                                     serializer.validated_data.get('password'),
+                                                     request)
+        return ok(auth_result)
+    except ApplicationErrorException as ex:
+        return bad_request(ex.http_message)
 
 
 @api_view(['GET'])

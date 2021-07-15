@@ -14,6 +14,7 @@ class CustomerAppErrors:
     CAN_NOT_JOIN_BUSINESSMAN_THAT_DELETED_CUSTOMER_BEFORE = {'code': '12',
                                                              'message': 'امکان عضویت به فروشگاهی که قبلا شما را از لیست مشتریان خود حذف کرده نیست'}
     USER_NOT_JOINED_BUSINESSMAN = {'code': '13', 'message': 'عضو بیزینس من نیستید'}
+    CAN_NOT_JOIN_BUSINESSMAN = {'code': '14', 'message': 'امکان عضویت به این بیزینس من نیست'}
 
     @staticmethod
     def error_dict(code, error: dict = None):

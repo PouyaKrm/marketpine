@@ -13,7 +13,6 @@ from common.util.http_helpers import ok, bad_request
 from customer_return_plan.invitation.models import FriendInvitation
 from smspanel.permissions import HasActiveSMSPanel
 from users.models import Businessman
-from users.permissions import IsPanelActivePermissionPostPutMethod
 from .serializers import FriendInvitationCreationSerializer, FriendInvitationListSerializer, \
     InvitationBusinessmanListSerializer, InvitationRetrieveSerializer, FriendInvitationSettingsSerializer
 # ToDo this view is jus for test purposes and must not be used in production
@@ -91,7 +90,7 @@ def friend_invitation_retrieve(request: Request, invitation_id):
 
 class FriendInvitationSettingAPIView(APIView):
 
-    permission_classes = [permissions.IsAuthenticated, IsPanelActivePermissionPostPutMethod, HasActiveSMSPanel]
+    permission_classes = [permissions.IsAuthenticated, HasActiveSMSPanel]
 
     def get(self, request):
 

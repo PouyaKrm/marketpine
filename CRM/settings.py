@@ -14,9 +14,9 @@ import logging.config
 import multiprocessing
 import os
 
+from corsheaders.defaults import default_headers
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 from django.conf import settings
-from corsheaders.defaults import default_headers
 from django.utils import timezone
 from django.utils.log import DEFAULT_LOGGING
 
@@ -56,7 +56,7 @@ REFRESH_TOKEN_EXP_DELTA = timezone.timedelta(days=1)
 
 PAGINATION_PAGE_NUM = 25
 
-FRONTEND_URL = "http://panel.foroshgahino.com"
+FRONTEND_URL = "https://panel.foroshgahino.com"
 
 ACTIVATION_ALLOW_REFRESH_DAYS_BEFORE_EXPIRE = timezone.timedelta(days=2)
 ACTIVATION_COST_IN_TOMANS = 1000
@@ -335,11 +335,6 @@ CORS_EXPOSE_HEADERS = [
     'content-type',
 ]
 
-ZARINPAL = {
-    'url': 'https://www.zarinpal.com/pg/services/WebGate/wsdl',
-    "MERCHANT": "7055b6ac-e6dc-11e9-99c1-000c295eb8fc",
-    "FORWARD_LINK": "https://www.zarinpal.com/pg/StartPay/{}/ZarinGate",  # use this string with .format method
-}
 
 PUBLIC_FILE_BASE_PATH = os.path.join(BASE_DIR, '..', 'public/')
 
@@ -389,3 +384,5 @@ except ImportError:
     pass
 
 from .customer_app_settings import *
+
+from .payment_settings import *

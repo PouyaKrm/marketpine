@@ -1,6 +1,6 @@
-from django.core.exceptions import ObjectDoesNotExist
-from django.shortcuts import render, get_object_or_404
 from django.conf import settings
+from django.core.exceptions import ObjectDoesNotExist
+from django.shortcuts import get_object_or_404
 from rest_framework import generics, mixins, permissions
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.request import Request
@@ -8,15 +8,15 @@ from rest_framework.views import APIView
 
 from common.util import create_detail_error
 from common.util.http_helpers import ok, bad_request, no_content
-from customers.serializers import CustomerListCreateSerializer
 from .models import BusinessmanGroups
+from .permissions import CanDeleteGroup, HasValidDefinedGroups
 from .serializers import BusinessmanGroupsCreateListSerializer, BusinessmanGroupsRetrieveSerializer, CustomerSerializer, \
     BusinessmanGroupAddDeleteMemberSerializer
-from .permissions import CanDeleteGroup, HasValidDefinedGroups
 
 # Create your views here.
 
 page_size = settings.PAGINATION_PAGE_NUM
+
 
 class BusinessmanGroupsListCreateAPIView(generics.ListAPIView, mixins.CreateModelMixin):
 

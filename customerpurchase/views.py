@@ -7,7 +7,7 @@ from rest_framework.views import APIView
 
 from base_app.error_codes import ApplicationErrorException
 from common.util import paginators
-from common.util.http_helpers import not_found, no_content, bad_request
+from common.util.http_helpers import not_found, no_content, bad_request, ok
 from customerpurchase.models import CustomerPurchase
 from customers.services import customer_service
 from .serializers import PurchaseCreationUpdateSerializer, PurchaseListSerializer, CustomerPurchaseListSerializer
@@ -27,16 +27,20 @@ class PurchaseListCreateAPIView(APIView):
         return paginate.next_page()
 
     def post(self, request):
-        serializer = PurchaseCreationUpdateSerializer(data=request.data)
+        serializer = PurchaseCreationUpdateSerializer(data=request.data, context={'user': request.user})
 
-        serializer._context = {'user': request.user}
         try:
             if not serializer.is_valid():
                 return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            p = purchase_service.submit_purchase_with_discounts(
+                request.user,
+                serializer.validated_data.get('customer'),
+                serializer.validated_data.get('amount'),
+                serializer.validated_data.get('discounts')
+            )
 
-            obj = serializer.create(serializer.validated_data)
-            serializer.instance = obj
-            return Response(serializer.data, status=status.HTTP_200_OK)
+            serializer = PurchaseCreationUpdateSerializer(p, context={'user': request.user})
+            return ok(serializer.data)
         except ApplicationErrorException as ex:
             return bad_request(ex.http_message)
 

@@ -1,13 +1,10 @@
+from django.contrib.auth.base_user import BaseUserManager
 from django.core.validators import RegexValidator
 from rest_framework import serializers, validators
-from django.contrib.auth.base_user import BaseUserManager
+
+from common.util.custom_validators import password_validator
 from common.util.sms_panel.message import SystemSMSMessage
-from .models import Businessman, VerificationCodes, BusinessCategory
-import secrets, datetime
-from django.conf import settings
-import os
-from common.util.custom_validators import validate_logo_size, password_validator, phone_validator
-from .services import verification_service
+from .models import Businessman, BusinessCategory
 
 PhonenumberValidator = RegexValidator(regex=r'^\+?1?\d{11, 12}$',
                                       message="Phone number must be entered in the format: '+999999999'."
@@ -23,11 +20,9 @@ class BusinessmanRegisterSerializer(serializers.ModelSerializer):
         validators.UniqueValidator(queryset=Businessman.objects.all(), message="this email address is already taken")])
     phone = serializers.CharField(max_length=15, validators=[validators.UniqueValidator(queryset=Businessman.objects.all(), message="phone number must be unique")])
 
-
     class Meta:
         model = Businessman
         fields = [
-
             'username',
             'password',
             'password2',
@@ -37,46 +32,23 @@ class BusinessmanRegisterSerializer(serializers.ModelSerializer):
             'email'
         ]
 
-    def validate(self, attrs):
+        extra_kwargs = {
+            'first_name': {'required': True},
+            'last_name': {'required': True}
+        }
 
+    def validate(self, attrs):
         password2 = attrs.get('password2')
         del attrs['password2']
         password = attrs.get('password')
 
         if password != password2:
-
             raise serializers.ValidationError({'password2': ['passwords must match']})
 
         return attrs
 
     def create(self, validated_data):
-
-        user = Businessman(**validated_data)
-        user.set_password(validated_data['password'])
-        user.is_active = True
-        user.save()
-
-        # code = secrets.randbelow(10000)
-        #
-        # if code < 10000:
-        #     code += 10000
-        #
-        # while VerificationCodes.objects.filter(code=code).count() > 0:
-        #
-        #     code = secrets.randbelow(10000)
-        #
-        #     if code < 10000:
-        #         code += 10000
-        #
-        # expire_time = datetime.datetime.now() + datetime.timedelta(hours=24)
-        #
-        # VerificationCodes.objects.create(businessman=user, code=code, expiration_time=expire_time)
-        #
-        # SystemSMSMessage().send_verification_code(receptor=user.phone, code=code)
-
-        # verification_service.create_send_phone_confirm_verification_code(user)
-
-        return user
+        pass
         
 
 class BusinessmanPasswordResetSerializer(serializers.ModelSerializer):

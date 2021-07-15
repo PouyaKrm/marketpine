@@ -1,29 +1,23 @@
 from django.core.exceptions import ObjectDoesNotExist
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
-from rest_framework import generics, mixins, status, permissions
+from rest_framework import mixins, status, permissions
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from base_app.views import BaseListAPIView
+from common.util import generate_discount_code, DiscountType, create_detail_error
+from common.util import paginators
 from common.util.http_helpers import ok, bad_request, not_found, forbidden, no_content
 from customer_return_plan.festivals.permissions import CanDeleteOrUpdateFestival
 from customer_return_plan.festivals.services import FestivalService
-from smspanel.services import SMSMessageService
+from customers.serializers import CustomerListCreateSerializer
+from smspanel.permissions import HasValidCreditSendSMSToAll, HasActiveSMSPanel
 from users.models import Customer
-from users.permissions import IsPanelActivePermissionPostPutMethod
-from .models import Festival
 from .serializers import FestivalCreationSerializer, FestivalListSerializer, RetrieveFestivalSerializer, \
     FestivalCustomerSerializer
-from common.util import generate_discount_code, DiscountType, create_detail_error
-from common.util import paginators
-
-from customers.serializers import CustomerListCreateSerializer
-
-from smspanel.permissions import HasValidCreditSendSMSToAll, HasActiveSMSPanel
-
 
 # Create your views here.
 
@@ -32,7 +26,7 @@ festival_service = FestivalService()
 
 class FestivalsListAPIView(BaseListAPIView, mixins.CreateModelMixin):
     serializer_class = FestivalCreationSerializer
-    permission_classes = [permissions.IsAuthenticated, IsPanelActivePermissionPostPutMethod, HasActiveSMSPanel]
+    permission_classes = [permissions.IsAuthenticated, HasActiveSMSPanel]
 
     def get_queryset(self):
         return festival_service.get_businessman_all_undeleted_festivals(businessman=self.request.user)
@@ -45,7 +39,7 @@ class FestivalsListAPIView(BaseListAPIView, mixins.CreateModelMixin):
 
 
 class FestivalAPIView(APIView):
-    permission_classes = [permissions.IsAuthenticated, IsPanelActivePermissionPostPutMethod, HasActiveSMSPanel]
+    permission_classes = [permissions.IsAuthenticated, HasActiveSMSPanel]
 
     def get(self, request):
 
