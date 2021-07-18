@@ -8,7 +8,7 @@ from base_app.serializers import BaseModelSerializerWithRequestObj, BaseSerializ
 from common.util.kavenegar_local import APIException
 from common.util.sms_panel.client import sms_client_management
 from common.util.sms_panel.message import system_sms_message
-from .models import Payment, PaymentTypes, PanelActivationPlans, Wallet
+from .models import Payment, PaymentTypes, SubscriptionPlan, Wallet
 from .services import payment_service
 
 zarinpal_forward_link = settings.ZARINPAL.get('FORWARD_LINK')
@@ -114,7 +114,7 @@ class PaymentResultSerializer(BaseModelSerializerWithRequestObj):
 
 class PanelActivationPlansSerializer(serializers.ModelSerializer):
     class Meta:
-        model = PanelActivationPlans
+        model = SubscriptionPlan
         exclude = [
             'duration'
         ]

@@ -1,7 +1,5 @@
 from django.conf import settings
 from django.db import models
-from django.db.models.signals import pre_save
-from django.dispatch.dispatcher import receiver
 from django.urls import reverse
 from django.utils import timezone
 from django_jalali.db import models as jmodels
@@ -18,28 +16,39 @@ url = settings.ZARINPAL.get('url')
 setting_merchant = settings.ZARINPAL.get('MERCHANT')
 
 
-class PanelActivationPlans(BaseModel, PanelDurationBaseModel):
+class SubscriptionPlan(BaseModel):
+    DURATION_1_MONTH = '1_MONTH'
+    DURATION_3_MONTH = '2_MONTH'
+    DURATION_6_MONTH = '6_MONTH'
+    DURATION_1_YEAR = '1_YEAR'
 
+    duration_choices = [
+        (DURATION_1_MONTH, '1 ماهه'),
+        (DURATION_3_MONTH, '3 ماهه'),
+        (DURATION_6_MONTH, '6 ماهه'),
+        (DURATION_1_YEAR, '1 ساله')
+    ]
+
+    duration = models.CharField(max_length=20, choices=duration_choices)
     title = models.CharField(max_length=100)
     description = models.TextField(null=True, blank=True)
     price_in_toman = models.PositiveIntegerField()
-    duration = models.DurationField(null=True, blank=True)
     is_available = models.BooleanField(default=True)
 
-    def set_duration_by_duration_type(self):
-        if self.is_duration_monthly():
-            self.duration = timezone.timedelta(days=30)
+    def is_duration_1_month(self) -> bool:
+        return self.duration == SubscriptionPlan.DURATION_1_MONTH
 
-        elif self.is_duration_yearly():
-            self.duration = timezone.timedelta(days=365)
+    def is_duration_3_month(self) -> bool:
+        return self.duration == SubscriptionPlan.DURATION_3_MONTH
+
+    def is_duration_6_month(self) -> bool:
+        return self.duration == SubscriptionPlan.DURATION_6_MONTH
+
+    def is_duration_1_year(self) -> bool:
+        return self.duration == SubscriptionPlan.DURATION_1_YEAR
 
     def __str__(self):
         return self.title
-
-
-@receiver(pre_save, sender=PanelActivationPlans)
-def set_duration(sender, instance: PanelActivationPlans, *args, **kwargs):
-    instance.set_duration_by_duration_type()
 
 
 class PaymentTypes:
@@ -69,7 +78,7 @@ class Payment(models.Model):
     amount = models.IntegerField()
     verification_date = models.DateTimeField(null=True)
     payment_type = models.CharField(max_length=10, choices=payment_choices, default='0')
-    panel_plan = models.ForeignKey(PanelActivationPlans, on_delete=models.PROTECT, null=True, blank=True)
+    panel_plan = models.ForeignKey(SubscriptionPlan, on_delete=models.PROTECT, null=True, blank=True)
 
     def __str__(self):
         return "{}:{} T,creation_date:{}".format(self.businessman,self.amount,self.creation_date)

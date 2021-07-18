@@ -16,7 +16,7 @@ from base_app.error_codes import ApplicationErrorException, ApplicationErrorCode
 from common.util.date_helpers import get_end_day_of_jalali_month
 from customer_return_plan.invitation.services import invitation_service
 from panelprofile.services import sms_panel_info_service
-from payment.models import PanelActivationPlans, Payment, PaymentTypes, Wallet, Billing
+from payment.models import SubscriptionPlan, Payment, PaymentTypes, Wallet, Billing
 from users.models import Businessman, BusinessmanCustomer
 
 url = settings.ZARINPAL.get('url')
@@ -33,15 +33,15 @@ invited_customer_after_purchase_cost = settings.BILLING['INVITED_CUSTOMER_AFTER_
 class PaymentService:
 
     def get_all_plans(self):
-        return PanelActivationPlans.objects.filter(is_available=True).order_by('duration').all()
+        return SubscriptionPlan.objects.filter(is_available=True).order_by('duration').all()
 
     def plan_exist_by_id(self, plan_id: int) -> bool:
-        return PanelActivationPlans.objects.filter(id=plan_id).exists()
+        return SubscriptionPlan.objects.filter(id=plan_id).exists()
 
-    def get_plan_by_id(self, plan_id) -> PanelActivationPlans:
-        return PanelActivationPlans.objects.get(id=plan_id)
+    def get_plan_by_id(self, plan_id) -> SubscriptionPlan:
+        return SubscriptionPlan.objects.get(id=plan_id)
 
-    def create_panel_activation_payment(self, request: Request, plan: PanelActivationPlans,
+    def create_panel_activation_payment(self, request: Request, plan: SubscriptionPlan,
                                         description: str) -> Payment:
         p = Payment.objects.create(businessman=request.user, payment_type=PaymentTypes.ACTIVATION,
                                    amount=plan.price_in_toman, phone=request.user.phone,

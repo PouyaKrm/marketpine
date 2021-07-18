@@ -2,13 +2,13 @@ from django import forms
 from django.core.exceptions import ValidationError
 from django.forms.models import ModelForm
 
-from payment.models import PanelActivationPlans, Wallet
+from payment.models import SubscriptionPlan, Wallet
 
 
 class PanelActivationForm(ModelForm):
 
     class Meta:
-        model = PanelActivationPlans
+        model = SubscriptionPlan
         exclude = [
             'duration'
         ]
