@@ -1,3 +1,4 @@
+from dateutil.relativedelta import relativedelta
 from django.conf import settings
 from django.db import models
 from django.urls import reverse
@@ -46,6 +47,16 @@ class SubscriptionPlan(BaseModel):
 
     def is_duration_1_year(self) -> bool:
         return self.duration == SubscriptionPlan.DURATION_1_YEAR
+
+    def get_timedelta(self):
+        if self.is_duration_1_month():
+            return relativedelta(months=1)
+        if self.is_duration_3_month():
+            return relativedelta(months=3)
+        if self.is_duration_6_month():
+            return relativedelta(months=6)
+        if self.is_duration_1_year():
+            return relativedelta(years=1)
 
     def __str__(self):
         return self.title
@@ -197,6 +208,9 @@ class Payment(models.Model):
 
     def is_payment_type_wallet(self) -> bool:
         return self.payment_type == Payment.TYPE_WALLET_INCREASE
+
+    def is_payment_type_subscription(self) -> bool:
+        return self.payment_type == Payment.TYPE_SUBSCRIPTION
 
 
 class FailedPaymentOperation(models.Model):

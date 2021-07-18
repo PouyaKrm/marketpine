@@ -243,6 +243,19 @@ class WalletAndBillingService:
         wallet.save()
         return wallet
 
+    def make_subscription_for_businessman(self, user: Businessman, sub: SubscriptionPlan) -> Wallet:
+
+        w = self.get_businessman_wallet_or_create(user)
+        w.has_subscription = True
+        now = timezone.now()
+        if w.subscription_end is not None and w.subscription_end > now:
+            w.subscription_end = w.subscription_end + sub.get_timedelta()
+        else:
+            w.subscription_end = now + sub.get_timedelta()
+            w.subscription_start = now
+        w.save()
+        return w
+
     def is_subscription_ended_or_near(self, user: Businessman) -> bool:
         w = self.get_businessman_wallet_or_create(user)
         has_sub = self._has_subscription(w)

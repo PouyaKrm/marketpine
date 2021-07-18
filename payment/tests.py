@@ -5,6 +5,7 @@ from unittest.mock import patch, Mock
 
 import jdatetime
 import pytz
+from dateutil.relativedelta import relativedelta
 from django.conf import settings
 from django.utils import timezone
 
@@ -301,6 +302,11 @@ class BaseWalletBillingTestClass(BaseTestClass):
         super().setUp()
         self.businessman = self.create_businessman()
 
+    def _create_subscription(self):
+        return SubscriptionPlan.objects.create(duration=SubscriptionPlan.DURATION_6_MONTH,
+                                               price_in_toman=5000, is_available=True, description='desc',
+                                               title='title')
+
     def _create_wallet(self, user: Businessman, has_sub=False, sub_end=None):
         w = Wallet.objects.create(businessman=user, has_subscription=has_sub)
 
@@ -388,6 +394,33 @@ class TestIsSubscriptionEndedOrNear(BaseWalletBillingTestClass):
         self._create_wallet(self.businessman, True, end)
         result = wallet_billing_service.is_subscription_ended_or_near(self.businessman)
         self.assertTrue(result)
+
+
+class TestMakeSubscription(BaseWalletBillingTestClass):
+
+    @patch('payment.services.wallet_billing_service.get_businessman_wallet_or_create')
+    def test_subscription_ended(self, get_wallet_mock):
+        past = self.create_time_in_past()
+        w = self._create_wallet(self.businessman, True, past)
+        now = timezone.now()
+        get_wallet_mock.return_value = w
+        sub = self._create_subscription()
+        wallet = wallet_billing_service.make_subscription_for_businessman(self.businessman, sub)
+        self.assertTrue(wallet.has_subscription)
+        self.assertEqual(wallet.subscription_end, now + sub.get_timedelta())
+        self.assertEqual(wallet.subscription_start, now)
+
+    @patch('payment.services.wallet_billing_service.get_businessman_wallet_or_create')
+    def test_subscription_not_ended(self, get_wallet_mock):
+        end = timezone.now() + relativedelta(days=1)
+        w = self._create_wallet(self.businessman, True, end)
+        get_wallet_mock.return_value = w
+        sub = self._create_subscription()
+        wallet = wallet_billing_service.make_subscription_for_businessman(self.businessman,
+                                                                          sub)
+        self.assertTrue(wallet.has_subscription)
+        self.assertEqual(wallet.subscription_end, end + sub.get_timedelta())
+        self.assertTrue(wallet.subscription_start < timezone.now())
 
 
 class TestGetMonthBillings(BaseWalletBillingTestClass):
