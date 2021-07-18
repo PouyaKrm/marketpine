@@ -33,7 +33,7 @@ invited_customer_after_purchase_cost = settings.BILLING['INVITED_CUSTOMER_AFTER_
 class PaymentService:
 
     def get_all_plans(self):
-        return SubscriptionPlan.objects.filter(is_available=True).order_by('duration').all()
+        return SubscriptionPlan.objects.filter(is_available=True).all()
 
     def plan_exist_by_id(self, plan_id: int) -> bool:
         return SubscriptionPlan.objects.filter(id=plan_id).exists()
@@ -63,6 +63,11 @@ class PaymentService:
             raise ApplicationErrorException(ApplicationErrorCodes.MINIMUM_WALLET_CREDIT_INCREASE)
 
         return self.create_payment(user, amount_toman, 'افزایش اعتبار کیف پول', Payment.TYPE_WALLET_INCREASE)
+
+    def create_payment_for_subscription(self, user: Businessman, sub: SubscriptionPlan) -> Payment:
+        return Payment.objects.create(businessman=user, payment_type=Payment.TYPE_SUBSCRIPTION,
+                                      amount=sub.price_in_toman,
+                                      panel_plan=sub)
 
     def verify_payment_by_authority(self, authority: str, callback_status: str) -> Payment:
 

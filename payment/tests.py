@@ -10,7 +10,7 @@ from django.conf import settings
 from base_app.error_codes import ApplicationErrorException, ApplicationErrorCodes
 from base_app.tests import BaseTestClass
 from panelprofile.models import SMSPanelInfo
-from payment.models import Payment, Billing
+from payment.models import Payment, Billing, SubscriptionPlan
 from payment.services import payment_service, wallet_billing_service
 # Create your tests here.
 from users.models import BusinessmanCustomer, Businessman
@@ -127,6 +127,19 @@ class TestCreatePaymentWallet(PaymentServiceBaseTestClass):
         result = payment_service.create_payment_for_wallet_credit(b, amount)
         self.assertEqual(result, p)
         mocked.assert_called_once()
+
+
+class TestSubscriptionPaymentCreate(PaymentServiceBaseTestClass):
+
+    def test_create_payment(self):
+        sub = SubscriptionPlan.objects.create(duration=SubscriptionPlan.DURATION_6_MONTH,
+                                              price_in_toman=5000, is_available=True, description='desc',
+                                              title='title')
+        b = self.create_businessman()
+        p = payment_service.create_payment_for_subscription(b, sub)
+        self.assertEqual(p.panel_plan, sub)
+        self.assertEqual(p.businessman, b)
+        self.assertEqual(p.payment_type, Payment.TYPE_SUBSCRIPTION)
 
 
 class TestVerifyPayment(PaymentServiceBaseTestClass):
