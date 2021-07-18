@@ -5,7 +5,7 @@ from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
 from django.http import HttpResponse
 from django.shortcuts import render, redirect
-from rest_framework import generics, permissions
+from rest_framework import permissions
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.request import Request
 from rest_framework.views import APIView
@@ -23,8 +23,8 @@ from .models import Payment
 from .models import PaymentTypes
 from .permissions import ActivatePanelPermission
 from .serializers import (SMSCreditPaymentCreationSerializer,
-                          PanelActivationPaymentCreationSerializer,
-                          PaymentListSerializer, PanelActivationPlansSerializer, BillingSummerySerializer,
+                          SubscriptionPaymentCreationSerializer,
+                          PaymentListSerializer, SubscriptionPlansSerializer, BillingSummerySerializer,
                           WalletIncreaseCreditSerializer, PaymentResultSerializer
                           )
 from .services import payment_service, wallet_billing_service
@@ -129,10 +129,33 @@ class WalletCreditPaymentCreation(APIView):
             return bad_request(ex.http_message)
 
 
+class SubscriptionPaymentCreate(APIView):
+    permission_classes = [permissions.IsAuthenticated, IsBusinessmanAuthorized]
+
+    def post(self, request: Request):
+        sr = SubscriptionPaymentCreationSerializer(data=request.data, request=request)
+
+        if not sr.is_valid():
+            return bad_request(sr.errors)
+
+        try:
+            p = payment_service.create_payment_for_subscription(request.user,
+                                                                sr.validated_data.get('plan'))
+            sr = SubscriptionPaymentCreationSerializer(p)
+            return ok(sr.data)
+        except ApplicationErrorException as ex:
+            return bad_request(ex.http_message)
+
+    def get(self, request: Request):
+        plans = payment_service.get_all_plans()
+        sr = SubscriptionPlansSerializer(plans, many=True)
+        return ok(sr.data)
+
+
 @api_view(['POST'])
 @permission_classes([permissions.IsAuthenticated, IsBusinessmanAuthorized, ActivatePanelPermission])
 def panel_activation_payment(request):
-    serializer = PanelActivationPaymentCreationSerializer(data=request.data, context={'request': request})
+    serializer = SubscriptionPaymentCreationSerializer(data=request.data, context={'request': request})
 
     if not serializer.is_valid():
         return bad_request(serializer.errors)
@@ -140,7 +163,7 @@ def panel_activation_payment(request):
     p = payment_service.create_panel_activation_payment(request,
                                                         serializer.validated_data.get('plan'),
                                                         serializer.validated_data.get('description'))
-    serializer = PanelActivationPaymentCreationSerializer(p)
+    serializer = SubscriptionPaymentCreationSerializer(p)
     return created(serializer.data)
 
 
@@ -151,12 +174,6 @@ class ListPayView(BaseListAPIView):
         queryset = Payment.objects.filter(businessman=self.request.user).filter(refid__isnull=False) \
             .order_by('-verification_date')
         return queryset
-
-
-class PanelActivationPlansListAPIView(generics.ListAPIView):
-    serializer_class = PanelActivationPlansSerializer
-    queryset = payment_service.get_all_plans()
-    pagination_class = None
 
 
 class BillingSummeryAPIView(APIView):
@@ -205,6 +222,3 @@ class BillingSummeryAPIView(APIView):
         except ValueError as ex:
             raise ApplicationErrorException(err_message, ex)
 
-    def _get_year_result_dict(self, result) -> dict:
-        print(type(result))
-        return None

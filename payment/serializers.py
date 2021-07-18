@@ -112,7 +112,7 @@ class PaymentResultSerializer(BaseModelSerializerWithRequestObj):
         ]
 
 
-class PanelActivationPlansSerializer(serializers.ModelSerializer):
+class SubscriptionPlansSerializer(serializers.ModelSerializer):
     class Meta:
         model = SubscriptionPlan
         exclude = [
@@ -120,7 +120,7 @@ class PanelActivationPlansSerializer(serializers.ModelSerializer):
         ]
 
 
-class PanelActivationPlanField(serializers.RelatedField):
+class SubscriptionPlanField(serializers.RelatedField):
 
     def to_internal_value(self, data):
 
@@ -138,11 +138,11 @@ class PanelActivationPlanField(serializers.RelatedField):
         return payment_service.get_all_plans()
 
 
-class PanelActivationPaymentCreationSerializer(serializers.ModelSerializer):
+class SubscriptionPaymentCreationSerializer(BasePaymentCreationSerializer):
     "serializer for result payment app with authority"
 
-    forward_link = serializers.SerializerMethodField(read_only=True)
-    plan = PanelActivationPlanField(required=True, write_only=True)
+    amount = serializers.IntegerField(read_only=True)
+    plan = SubscriptionPlanField(required=True, write_only=True)
 
     class Meta:
         model = Payment
@@ -157,11 +157,8 @@ class PanelActivationPaymentCreationSerializer(serializers.ModelSerializer):
         extra_kwargs = {'id': {'read_only': True},
                         'authority': {'read_only': True},
                         'amount': {'read_only': True, 'required': False},
-                        'description': {'required': True},
+                        'description': {'read_only': True}
                         }
-
-    def get_forward_link(self, obj):
-        return zarinpal_forward_link.format(obj.authority)
 
 
 class PaymentListSerializer(serializers.ModelSerializer):
