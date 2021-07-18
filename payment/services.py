@@ -65,9 +65,7 @@ class PaymentService:
         return self.create_payment(user, amount_toman, 'افزایش اعتبار کیف پول', Payment.TYPE_WALLET_INCREASE)
 
     def create_payment_for_subscription(self, user: Businessman, sub: SubscriptionPlan) -> Payment:
-        return Payment.objects.create(businessman=user, payment_type=Payment.TYPE_SUBSCRIPTION,
-                                      amount=sub.price_in_toman,
-                                      panel_plan=sub)
+        return self.create_payment(user, sub.price_in_toman, 'خرید اشتراک', Payment.TYPE_SUBSCRIPTION, sub)
 
     def verify_payment_by_authority(self, authority: str, callback_status: str) -> Payment:
 
@@ -117,7 +115,11 @@ class PaymentService:
             raise ApplicationErrorException(ApplicationErrorCodes.PAYMENT_ALREADY_VERIFIED)
 
     def create_payment(self, user: Businessman, amount_toman: float, description: str,
-                       payment_type) -> Payment:
+                       payment_type, sub: SubscriptionPlan = None) -> Payment:
+
+        if payment_type == Payment.TYPE_SUBSCRIPTION and sub is None:
+            raise ValueError('for subscription payments, sub parameter must be provided')
+
         try:
             with transaction.atomic():
                 p = Payment.objects.create(
@@ -127,6 +129,10 @@ class PaymentService:
                     phone=user.phone,
                     payment_type=payment_type
                 )
+
+                if payment_type == Payment.TYPE_SUBSCRIPTION:
+                    p.panel_plan = sub
+
                 call_back = callback_url
                 client = Client(url)
                 merchant = setting_merchant

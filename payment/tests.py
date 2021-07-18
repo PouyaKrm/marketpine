@@ -40,6 +40,12 @@ class CreatePaymentTest(PaymentServiceBaseTestClass):
             'payment_type': Payment.TYPE_SMS
         }
 
+    def test_raises_exception_if_payment_type_is_sub_and_sub_is_none(self):
+        self.call_params['payment_type'] = Payment.TYPE_SUBSCRIPTION
+
+        with self.assertRaises(ValueError) as cx:
+            payment_service.create_payment(**self.call_params, sub=None)
+
     @patch("payment.services.Client")
     def test_client_returns_100(self, mocked_client):
         pay_request_mock_result = Mock(name='pay_request_mock_result', Status=100, Authority='fake')
@@ -131,15 +137,17 @@ class TestCreatePaymentWallet(PaymentServiceBaseTestClass):
 
 class TestSubscriptionPaymentCreate(PaymentServiceBaseTestClass):
 
-    def test_create_payment(self):
+    @patch('payment.services.payment_service.create_payment')
+    def test_create_payment(self, mocked):
         sub = SubscriptionPlan.objects.create(duration=SubscriptionPlan.DURATION_6_MONTH,
                                               price_in_toman=5000, is_available=True, description='desc',
                                               title='title')
+
+        p = Payment()
+        mocked.return_value = p
         b = self.create_businessman()
-        p = payment_service.create_payment_for_subscription(b, sub)
-        self.assertEqual(p.panel_plan, sub)
-        self.assertEqual(p.businessman, b)
-        self.assertEqual(p.payment_type, Payment.TYPE_SUBSCRIPTION)
+        result = payment_service.create_payment_for_subscription(b, sub)
+        self.assertEqual(result, p)
 
 
 class TestVerifyPayment(PaymentServiceBaseTestClass):
