@@ -89,6 +89,8 @@ class PaymentService:
                 sms_panel_info_service.get_panel_increase_credit_in_tomans(p.businessman, p.amount)
             elif p.is_payment_type_wallet():
                 wallet_billing_service.increase_credit(p.businessman, p.amount)
+            elif p.is_payment_type_subscription():
+                wallet_billing_service.make_subscription_for_businessman(p.businessman, p.panel_plan)
             return p
         except Exception as ex:
             if not isinstance(ex, ApplicationErrorException):

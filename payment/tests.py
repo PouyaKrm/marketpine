@@ -21,7 +21,15 @@ wallet_minimum_credit_increase = settings.WALLET['MINIMUM_ALLOWED_CREDIT_INCREAS
 days_before_sub_end = settings.WALLET['DAYS_BEFORE_SUBSCRIPTION_END_ALLOW_BUY']
 
 
-class PaymentServiceBaseTestClass(BaseTestClass):
+class BasePaymentTestClass(BaseTestClass):
+
+    def _create_subscription(self):
+        return SubscriptionPlan.objects.create(duration=SubscriptionPlan.DURATION_6_MONTH,
+                                               price_in_toman=5000, is_available=True, description='desc',
+                                               title='title')
+
+
+class PaymentServiceBaseTestClass(BasePaymentTestClass):
 
     def setUp(self) -> None:
         super().setUp()
@@ -285,6 +293,16 @@ class TestVerifyPaymentByAuthority(PaymentServiceBaseTestClass):
         self.assertEqual(result, p)
         wallet_increase_mock.assert_called_once_with(p.businessman, p.amount)
 
+    @patch("payment.services.payment_service.verify_payment")
+    @patch('payment.services.wallet_billing_service.make_subscription_for_businessman')
+    def test_subscription_payment(self, make_sub_mock, verify_mock):
+        sub = self._create_subscription()
+        p = self._create_payment(payment_type=Payment.TYPE_SUBSCRIPTION, panel_plan=sub,
+                                 call_back_status=self.callback_status)
+        result = payment_service.verify_payment_by_authority(p.authority, p.call_back_status)
+        self.assertEqual(result, p)
+        make_sub_mock.assert_called_once_with(p.businessman, sub)
+
     @patch('payment.services.sms_panel_info_service.get_panel_increase_credit_in_tomans')
     @patch("payment.services.payment_service.verify_payment")
     @patch("payment.services.sms_panel_info_service.get_panel_decrease_credit_in_tomans")
@@ -297,15 +315,10 @@ class TestVerifyPaymentByAuthority(PaymentServiceBaseTestClass):
         panel_decrease.assert_not_called()
 
 
-class BaseWalletBillingTestClass(BaseTestClass):
+class BaseWalletBillingTestClass(BasePaymentTestClass):
     def setUp(self) -> None:
         super().setUp()
         self.businessman = self.create_businessman()
-
-    def _create_subscription(self):
-        return SubscriptionPlan.objects.create(duration=SubscriptionPlan.DURATION_6_MONTH,
-                                               price_in_toman=5000, is_available=True, description='desc',
-                                               title='title')
 
     def _create_wallet(self, user: Businessman, has_sub=False, sub_end=None):
         w = Wallet.objects.create(businessman=user, has_subscription=has_sub)
