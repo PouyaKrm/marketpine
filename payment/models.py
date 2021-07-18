@@ -59,10 +59,12 @@ class PaymentTypes:
 class Payment(models.Model):
     TYPE_SMS = 'SMS'
     TYPE_WALLET_INCREASE = 'WALLET'
+    TYPE_SUBSCRIPTION = 'SUB'
 
     payment_choices = [
         ('SMS', TYPE_SMS),
-        ('WALLET', TYPE_WALLET_INCREASE)
+        ('WALLET', TYPE_WALLET_INCREASE),
+        ('SUBSCRIPTION', TYPE_SUBSCRIPTION)
     ]
 
     creation_date = models.DateTimeField(auto_now_add=True)
@@ -77,11 +79,11 @@ class Payment(models.Model):
     phone = models.CharField(max_length=15, null=True, blank=True)
     amount = models.IntegerField()
     verification_date = models.DateTimeField(null=True)
-    payment_type = models.CharField(max_length=10, choices=payment_choices, default='0')
+    payment_type = models.CharField(max_length=40, choices=payment_choices, default='0')
     panel_plan = models.ForeignKey(SubscriptionPlan, on_delete=models.PROTECT, null=True, blank=True)
 
     def __str__(self):
-        return "{}:{} T,creation_date:{}".format(self.businessman,self.amount,self.creation_date)
+        return "{}:{} T,creation_date:{}".format(self.businessman, self.amount, self.creation_date)
 
     def is_verified_before(self) -> bool:
         return self.refid is not None
@@ -91,7 +93,8 @@ class Payment(models.Model):
         CallbackURL = request.build_absolute_uri(reverse('payment:verify'))
         client = Client(url)
         merchant = setting_merchant
-        result = client.service.PaymentRequest(merchant, self.amount, self.description, self.businessman.email, self.phone, CallbackURL)
+        result = client.service.PaymentRequest(merchant, self.amount, self.description, self.businessman.email,
+                                               self.phone, CallbackURL)
         self.create_status = result.Status
         if self.create_status == 100:
             self.authority = result.Authority
