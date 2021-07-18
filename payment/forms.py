@@ -12,8 +12,10 @@ class SubscriptionPlanForm(ModelForm):
 
     def clean_duration(self):
         duration = self.cleaned_data.get('duration')
-        exist = SubscriptionPlan.objects.filter(duration=duration, is_available=True).exists()
-        if exist:
+        q = SubscriptionPlan.objects.filter(duration=duration, is_available=True)
+        if self.instance:
+            q = q.exclude(id=self.instance.id)
+        if q.exists():
             raise ValidationError('پلن دیگری با همین بازه زمانی فعال است')
         return duration
 
