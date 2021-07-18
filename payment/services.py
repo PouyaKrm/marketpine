@@ -25,6 +25,7 @@ callback_url = settings.ZARINPAL.get('CALLBACK_URL')
 wallet_initial_available_credit = settings.WALLET['INITIAL_AVAILABLE_CREDIT']
 wallet_minimum_allowed_credit = settings.WALLET['MINIMUM_ALLOWED_CREDIT']
 wallet_minimum_credit_increase = settings.WALLET['MINIMUM_ALLOWED_CREDIT_INCREASE']
+days_before_sub_end = settings.WALLET['DAYS_BEFORE_SUBSCRIPTION_END_ALLOW_BUY']
 customer_joined_by_panel_cost = settings.BILLING['CUSTOMER_JOINED_BY_PANEL_COST']
 customer_joined_by_app_cost = settings.BILLING['CUSTOMER_JOINED_BY_APP_COST']
 invited_customer_after_purchase_cost = settings.BILLING['INVITED_CUSTOMER_AFTER_PURCHASE_COST']
@@ -65,6 +66,12 @@ class PaymentService:
         return self.create_payment(user, amount_toman, 'افزایش اعتبار کیف پول', Payment.TYPE_WALLET_INCREASE)
 
     def create_payment_for_subscription(self, user: Businessman, sub: SubscriptionPlan) -> Payment:
+
+        is_ending = wallet_billing_service.is_subscription_ended_or_near(user)
+
+        if not is_ending:
+            raise ApplicationErrorException(ApplicationErrorCodes.PAYMENT_ALREADY_HAVE_SUBSCRIPTION)
+
         return self.create_payment(user, sub.price_in_toman, 'خرید اشتراک', Payment.TYPE_SUBSCRIPTION, sub)
 
     def verify_payment_by_authority(self, authority: str, callback_status: str) -> Payment:
@@ -235,6 +242,14 @@ class WalletAndBillingService:
         wallet.available_credit = wallet.available_credit + amount_toman
         wallet.save()
         return wallet
+
+    def is_subscription_ended_or_near(self, user: Businessman) -> bool:
+        w = self.get_businessman_wallet_or_create(user)
+        has_sub = self._has_subscription(w)
+
+        if not has_sub:
+            return True
+        return w.subscription_end <= (timezone.now() + timezone.timedelta(days=days_before_sub_end))
 
     def _has_subscription(self, wallet: Wallet) -> bool:
         has = wallet.has_subscription

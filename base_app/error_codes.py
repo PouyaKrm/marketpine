@@ -34,6 +34,8 @@ class ApplicationErrorCodes:
     PAYMENT_VERIFICATION_FAILED = _get_code_message_dict.__func__(1013,
                                                                   'بررسی پرداخت با خطا مواجه شد با پشتیبانی تماس بگیرید')
     PAYMENT_INFORMATION_INCORRECT = _get_code_message_dict.__func__(2000, 'اطلاعات پرداخت اشتباه است')
+    PAYMENT_ALREADY_HAVE_SUBSCRIPTION = _get_code_message_dict.__func__(2000,
+                                                                        'در حال حاضر اشتراک دارید و امکان خرید اشتراک نیست')
     SMS_PANEL_INCREASE_DECREASE_CREDIT_FAILED = _get_code_message_dict.__func__(1014,
                                                                                 'تغییر اعتبار پنل پیامک با خطا مواجه شد')
 

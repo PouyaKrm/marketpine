@@ -6,16 +6,18 @@ from unittest.mock import patch, Mock
 import jdatetime
 import pytz
 from django.conf import settings
+from django.utils import timezone
 
 from base_app.error_codes import ApplicationErrorException, ApplicationErrorCodes
 from base_app.tests import BaseTestClass
 from panelprofile.models import SMSPanelInfo
-from payment.models import Payment, Billing, SubscriptionPlan
+from payment.models import Payment, Billing, SubscriptionPlan, Wallet
 from payment.services import payment_service, wallet_billing_service
 # Create your tests here.
 from users.models import BusinessmanCustomer, Businessman
 
 wallet_minimum_credit_increase = settings.WALLET['MINIMUM_ALLOWED_CREDIT_INCREASE']
+days_before_sub_end = settings.WALLET['DAYS_BEFORE_SUBSCRIPTION_END_ALLOW_BUY']
 
 
 class PaymentServiceBaseTestClass(BaseTestClass):
@@ -137,14 +139,30 @@ class TestCreatePaymentWallet(PaymentServiceBaseTestClass):
 
 class TestSubscriptionPaymentCreate(PaymentServiceBaseTestClass):
 
-    @patch('payment.services.payment_service.create_payment')
-    def test_create_payment(self, mocked):
-        sub = SubscriptionPlan.objects.create(duration=SubscriptionPlan.DURATION_6_MONTH,
-                                              price_in_toman=5000, is_available=True, description='desc',
-                                              title='title')
+    def _create_subscription(self):
+        return SubscriptionPlan.objects.create(duration=SubscriptionPlan.DURATION_6_MONTH,
+                                               price_in_toman=5000, is_available=True, description='desc',
+                                               title='title')
 
+    @patch('payment.services.payment_service.create_payment')
+    @patch('payment.services.wallet_billing_service.is_subscription_ended_or_near')
+    def test_subscription_end_not_near(self, sub_ended_near_mock, create_pay_mock):
+        sub_ended_near_mock.return_value = False
         p = Payment()
-        mocked.return_value = p
+        create_pay_mock.return_value = p
+        sub = self._create_subscription()
+        with self.assertRaises(ApplicationErrorException) as cx:
+            payment_service.create_payment_for_subscription(self.create_businessman(), sub)
+
+        self.assertEqual(cx.exception.http_message, ApplicationErrorCodes.PAYMENT_ALREADY_HAVE_SUBSCRIPTION)
+
+    @patch('payment.services.payment_service.create_payment')
+    @patch('payment.services.wallet_billing_service.is_subscription_ended_or_near')
+    def test_create_payment(self, sub_ended_near_mock, create_pay_mock):
+        sub = self._create_subscription()
+        sub_ended_near_mock.return_value = True
+        p = Payment()
+        create_pay_mock.return_value = p
         b = self.create_businessman()
         result = payment_service.create_payment_for_subscription(b, sub)
         self.assertEqual(result, p)
@@ -283,6 +301,16 @@ class BaseWalletBillingTestClass(BaseTestClass):
         super().setUp()
         self.businessman = self.create_businessman()
 
+    def _create_wallet(self, user: Businessman, has_sub=False, sub_end=None):
+        w = Wallet.objects.create(businessman=user, has_subscription=has_sub)
+
+        if has_sub:
+            start = sub_end - timezone.timedelta(days=32)
+            w.subscription_start = start
+            w.subscription_end = sub_end
+            w.save()
+        return w
+
     def _create_bulk_billing(self, seed: int = 2, joined_by=BusinessmanCustomer.JOINED_BY_PANEL) -> Tuple[
         List[Billing], int]:
         billings = [
@@ -339,6 +367,27 @@ class BaseWalletBillingTestClass(BaseTestClass):
             ),
             amount=10
         )
+
+
+class TestIsSubscriptionEndedOrNear(BaseWalletBillingTestClass):
+
+    def test_not_has_sub(self):
+        self._create_wallet(self.businessman, False)
+        result = wallet_billing_service.is_subscription_ended_or_near(self.businessman)
+        self.assertTrue(result)
+
+    def test_sub_end_not_near(self):
+        end = timezone.now() + timezone.timedelta(days=days_before_sub_end + 2)
+        self._create_wallet(self.businessman, True, end)
+        result = wallet_billing_service.is_subscription_ended_or_near(self.businessman)
+        self.assertFalse(result)
+
+    def test_sub_end_near(self):
+        end = timezone.now() + timezone.timedelta(days=days_before_sub_end)
+        end -= timezone.timedelta(minutes=30)
+        self._create_wallet(self.businessman, True, end)
+        result = wallet_billing_service.is_subscription_ended_or_near(self.businessman)
+        self.assertTrue(result)
 
 
 class TestGetMonthBillings(BaseWalletBillingTestClass):
