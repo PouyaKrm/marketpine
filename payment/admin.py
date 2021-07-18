@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .forms import PanelActivationForm, WalletForm
+from .forms import SubscriptionPlanForm, WalletForm
 from .models import Payment, FailedPaymentOperation, SubscriptionPlan, Wallet, Billing
 
 
@@ -29,7 +29,7 @@ class PaymentOperationFailedAdmin(admin.ModelAdmin):
 
 class SubscriptionPlanModelAdmin(admin.ModelAdmin):
     list_display = ['price_in_toman', 'title', 'duration']
-    form = PanelActivationForm
+    form = SubscriptionPlanForm
 
 
 admin.site.register(Payment, PaymentAdmin)

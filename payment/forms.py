@@ -5,18 +5,22 @@ from django.forms.models import ModelForm
 from payment.models import SubscriptionPlan, Wallet
 
 
-class PanelActivationForm(ModelForm):
-
+class SubscriptionPlanForm(ModelForm):
     class Meta:
         model = SubscriptionPlan
-        exclude = [
-            'duration'
-        ]
+        fields = '__all__'
+
+    def clean_duration(self):
+        duration = self.cleaned_data.get('duration')
+        exist = SubscriptionPlan.objects.filter(duration=duration, is_available=True).exists()
+        if exist:
+            raise ValidationError('پلن دیگری با همین بازه زمانی فعال است')
+        return duration
 
     def clean_price_in_toman(self):
         val = self.cleaned_data.get('price_in_toman')
         if val < 1000:
-            raise ValidationError('price must be bigger than 10000')
+            raise ValidationError('هزینه باید بیش از 1000 تومان باشد')
         return val
 
 
