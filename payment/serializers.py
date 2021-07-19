@@ -115,9 +115,7 @@ class PaymentResultSerializer(BaseModelSerializerWithRequestObj):
 class SubscriptionPlansSerializer(serializers.ModelSerializer):
     class Meta:
         model = SubscriptionPlan
-        exclude = [
-            'duration'
-        ]
+        fields = '__all__'
 
 
 class SubscriptionPlanField(serializers.RelatedField):
