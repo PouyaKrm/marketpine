@@ -234,6 +234,11 @@ class Wallet(BusinessmanOneToOneBaseModel):
         db_table = "wallet"
         ordering = ('-create_date', '-update_date')
 
+    def is_subscription_expired(self):
+        if self.subscription_end is None:
+            return True
+        return self.subscription_end <= timezone.now()
+
 
 class Billing(BusinessmanManyToOneBaseModel):
     objects = jmodels.jManager()
