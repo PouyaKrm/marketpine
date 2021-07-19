@@ -19,7 +19,7 @@ setting_merchant = settings.ZARINPAL.get('MERCHANT')
 
 class SubscriptionPlan(BaseModel):
     DURATION_1_MONTH = '1_MONTH'
-    DURATION_3_MONTH = '2_MONTH'
+    DURATION_3_MONTH = '3_MONTH'
     DURATION_6_MONTH = '6_MONTH'
     DURATION_1_YEAR = '1_YEAR'
 
