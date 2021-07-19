@@ -192,7 +192,8 @@ class WalletSerializer(BaseModelSerializerWithRequestObj):
             'has_subscription',
             'subscription_start',
             'subscription_end',
-            'is_subscription_expired'
+            'is_subscription_expired',
+            'can_resubscribe',
         ]
         read_only_fields = [
             'available_credit',
@@ -203,7 +204,8 @@ class WalletSerializer(BaseModelSerializerWithRequestObj):
             'has_subscription',
             'subscription_start',
             'subscription_end',
-            'is_subscription_expired'
+            'is_subscription_expired',
+            'can_resubscribe',
         ]
 
 

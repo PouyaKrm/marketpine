@@ -15,6 +15,7 @@ from users.models import Businessman, BaseModel, BusinessmanOneToOneBaseModel, B
 
 url = settings.ZARINPAL.get('url')
 setting_merchant = settings.ZARINPAL.get('MERCHANT')
+days_before_sub_end = settings.WALLET['DAYS_BEFORE_SUBSCRIPTION_END_ALLOW_BUY']
 
 
 class SubscriptionPlan(BaseModel):
@@ -238,6 +239,12 @@ class Wallet(BusinessmanOneToOneBaseModel):
         if self.subscription_end is None:
             return True
         return self.subscription_end <= timezone.now()
+
+    def can_resubscribe(self):
+        if self.subscription_end is None:
+            return True
+
+        return self.subscription_end < (timezone.now() + relativedelta(days=days_before_sub_end))
 
 
 class Billing(BusinessmanManyToOneBaseModel):
