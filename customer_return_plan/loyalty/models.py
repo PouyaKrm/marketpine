@@ -2,7 +2,7 @@ from django.db import models
 
 from customer_return_plan.models import BaseDiscountSettings
 # Create your models here.
-from users.models import BaseModel, BusinessmanOneToOneBaseModel, BusinessmanManyToOneBaseModel
+from users.models import BaseModel, BusinessmanOneToOneBaseModel, BusinessmanManyToOneBaseModel, Businessman, Customer
 
 
 class CustomerPurchaseNumberDiscountSettings(BaseModel, BaseDiscountSettings):
@@ -19,3 +19,12 @@ class CustomerLoyaltyDiscountSettings(BaseDiscountSettings, BusinessmanManyToOne
 
     class Meta:
         db_table = 'loyalty_settings'
+
+
+class CustomerPoints(BusinessmanManyToOneBaseModel):
+    customer = models.ForeignKey(Customer, related_name='points', related_query_name='points', on_delete=models.PROTECT)
+    point = models.BigIntegerField(default=0)
+
+    class Meta:
+        db_table = 'customer_points'
+        unique_together = ('businessman', 'customer')
