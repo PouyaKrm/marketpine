@@ -5,6 +5,8 @@ from rest_framework import serializers
 from base_app.serializers import BusinessmanGroupRelatedField
 from common.util.custom_validators import phone_validator
 # from common.util.sms_panel.message import SystemSMSMessage
+from customer_return_plan.loyalty.serializers import CustomerPointsSerializer
+from customer_return_plan.loyalty.services import LoyaltyService
 from customer_return_plan.services import DiscountService, discount_service
 from customerpurchase.services import PurchaseService
 from customers.services import CustomerService
@@ -63,6 +65,7 @@ class CustomerListCreateSerializer(serializers.ModelSerializer):
     date_joined = serializers.SerializerMethodField(read_only=True)
     can_edit_info = serializers.SerializerMethodField(read_only=True)
     is_member_of_group = serializers.SerializerMethodField(read_only=True)
+    points = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = Customer
@@ -75,6 +78,7 @@ class CustomerListCreateSerializer(serializers.ModelSerializer):
             'instagram_id',
             'purchase_sum',
             'purchase_discount_sum',
+            'points',
             'has_discount',
             'invitations_total',
             'used_discounts_total',
@@ -96,6 +100,11 @@ class CustomerListCreateSerializer(serializers.ModelSerializer):
         purchases_total = purchase_service.get_customer_purchase_sum(user, obj)
         p_d = discount_service.get_customer_used_discounts_sum_amount(self.context['user'], obj)
         return purchases_total - p_d
+
+    def get_points(self, obj: Customer):
+        user = self.context['user']
+        points = LoyaltyService.get_instance().get_customer_points(user, obj)
+        return CustomerPointsSerializer(points).data
 
     def get_invitations_total(self, obj: Customer):
         from customer_return_plan.invitation.services import invitation_service
@@ -173,6 +182,7 @@ class CustomerSerializer(CustomerListCreateSerializer):
             'instagram_id',
             'purchase_sum',
             'purchase_discount_sum',
+            'points',
             'invitations_total',
             'used_discounts_total',
             'date_joined',

@@ -3,7 +3,7 @@ from rest_framework import serializers
 from base_app.serializers import BaseModelSerializerWithRequestObj
 from customer_return_plan.serializers import WritableNestedDiscountSettingSerializer
 from .models import CustomerLoyaltyDiscountSettings, CustomerPurchaseAmountDiscountSettings, \
-    CustomerPurchaseNumberDiscountSettings
+    CustomerPurchaseNumberDiscountSettings, CustomerPoints
 from ..validation import validate_discount_value_by_discount_type
 
 
@@ -58,3 +58,9 @@ class LoyaltySettingsSerializer(BaseModelSerializerWithRequestObj):
 
     def update(self, instance: CustomerLoyaltyDiscountSettings, validated_data: dict):
         pass
+
+
+class CustomerPointsSerializer(BaseModelSerializerWithRequestObj):
+    class Meta:
+        model = CustomerPoints
+        exclude = ['businessman']
