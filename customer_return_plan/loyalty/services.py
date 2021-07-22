@@ -2,6 +2,7 @@ from typing import List, Dict
 
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
+from django.db import transaction
 from django.db.models import QuerySet
 
 from customer_return_plan.models import Discount
@@ -72,14 +73,14 @@ class LoyaltyService:
 
         length = len(loyalty_settings)
         db_settings_count = self.get_businessman_loyalty_settings(user).count()
+        with transaction.atomic():
+            if db_settings_count >= length:
+                self._update_when_new_settings_count_smaller(user, loyalty_settings)
 
-        if db_settings_count >= length:
-            result = self._update_when_new_settings_count_smaller(user, loyalty_settings)
+            else:
+                self._update_when_old_settings_are_smaller(user, loyalty_settings)
 
-        else:
-            result = self._update_when_old_settings_are_smaller(user, loyalty_settings)
-
-        return result
+        return self.get_businessman_loyalty_settings(user)
 
     def _update_when_new_settings_count_smaller(self, user: Businessman, loyalty_settings: List[Dict]):
         length = len(loyalty_settings)

@@ -19,4 +19,3 @@ class CustomerLoyaltyDiscountSettings(BaseDiscountSettings, BusinessmanManyToOne
 
     class Meta:
         db_table = 'loyalty_settings'
-        unique_together = [('businessman', 'point')]
