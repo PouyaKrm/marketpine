@@ -46,12 +46,15 @@ class PurchaseService:
                                        discount_ids: [int] = None) -> CustomerPurchase:
 
         from payment.services import wallet_billing_service
+        from customer_return_plan.loyalty.services import LoyaltyService
         purchase = CustomerPurchase(businessman=businessman, amount=amount, customer=customer)
         bc = customer_service.get_businessmancustomer_delete_check(businessman, customer)
         wallet_billing_service.add_payment_if_customer_invited(bc)
         purchase.save()
         if (discount_ids is not None) and len(discount_ids) != 0:
             discount_service.try_apply_discounts(businessman, discount_ids, purchase)
+        LoyaltyService.get_instance().increase_customer_points_by_purchase_amount(businessman, customer,
+                                                                                  purchase.amount)
         return purchase
 
     def get_customer_all_purchases(self, businessman: Businessman, customer: Customer):

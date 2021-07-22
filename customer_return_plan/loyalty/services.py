@@ -1,3 +1,4 @@
+import math
 from typing import List, Dict
 
 from django.conf import settings
@@ -10,7 +11,7 @@ from customer_return_plan.services import discount_service
 from customerpurchase.services import purchase_service
 from users.models import Businessman, Customer
 from .models import (CustomerLoyaltyDiscountSettings, CustomerPurchaseAmountDiscountSettings,
-                     CustomerPurchaseNumberDiscountSettings)
+                     CustomerPurchaseNumberDiscountSettings, CustomerPoints)
 
 # if sys.version_info[0] == 3 and sys.version_info[1] >= 8:
 #     from typing import TypedDict
@@ -18,16 +19,8 @@ from .models import (CustomerLoyaltyDiscountSettings, CustomerPurchaseAmountDisc
 #     from typing_extensions import TypedDict
 
 max_settings_per_businessman = settings.LOYALTY_SETTINGS['MAX_SETTINGS_NUMBER_PER_BUSINESSMAN']
+purchase_for_1_point = settings.LOYALTY_SETTINGS['PURCHASE_AMOUNT_FOR_1']
 
-
-# class LoyaltySetting(TypedDict):
-#     point: int
-#     discount_code: str
-#     discount_type: str
-#     discount_off: int
-#     percent_off: int
-#     flat_rate_off: int
-#
 
 class LoyaltyService:
     _instance = None
@@ -81,6 +74,20 @@ class LoyaltyService:
                 self._update_when_old_settings_are_smaller(user, loyalty_settings)
 
         return self.get_businessman_loyalty_settings(user)
+
+    def increase_customer_points_by_purchase_amount(self, businessman: Businessman, customer: Customer,
+                                                    purchase_amount: int) -> CustomerPoints:
+        points = self.get_customer_points(businessman, customer)
+        added_points = math.floor(purchase_amount / purchase_for_1_point)
+        points.point = points.point + added_points
+        points.save()
+        return points
+
+    def get_customer_points(self, businessman: Businessman, customer: Customer) -> CustomerPoints:
+        try:
+            return CustomerPoints.objects.get(businessman=businessman, customer=customer)
+        except ObjectDoesNotExist:
+            return CustomerPoints.objects.create(businessman=businessman, customer=customer, point=0)
 
     def _update_when_new_settings_count_smaller(self, user: Businessman, loyalty_settings: List[Dict]):
         length = len(loyalty_settings)

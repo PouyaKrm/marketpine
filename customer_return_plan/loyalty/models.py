@@ -28,3 +28,5 @@ class CustomerPoints(BusinessmanManyToOneBaseModel):
     class Meta:
         db_table = 'customer_points'
         unique_together = ('businessman', 'customer')
+        verbose_name = 'Customer points'
+        verbose_name_plural = 'Customer points'
