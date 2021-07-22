@@ -386,3 +386,5 @@ except ImportError:
 from .customer_app_settings import *
 
 from .payment_settings import *
+
+from .return_plan_settings import *

@@ -24,6 +24,10 @@ class BaseDiscountSettings(models.Model):
     def is_flat_discount(self) -> bool:
         return self.discount_type == self.DISCOUNT_TYPE_FLAT_RATE
 
+    def discount_value_by_discount_type(self):
+        if self.is_percent_discount():
+            return self.percent_off
+        return self.flat_rate_off
 
     class Meta:
         abstract = True
