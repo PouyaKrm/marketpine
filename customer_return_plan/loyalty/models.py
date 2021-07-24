@@ -34,6 +34,7 @@ class CustomerLoyaltyDiscountSettings(BaseDiscountSettings, BaseModel):
 
     class Meta:
         db_table = 'loyalty_discount_settings'
+        ordering = ['point']
 
 
 class CustomerPoints(BusinessmanManyToOneBaseModel):

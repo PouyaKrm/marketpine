@@ -1,17 +1,15 @@
 import math
-from typing import List, Dict
+from typing import Dict
 
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
-from django.db import transaction
-from django.db.models import QuerySet
 
 from customer_return_plan.models import Discount
 from customer_return_plan.services import discount_service
 from customerpurchase.services import purchase_service
 from users.models import Businessman, Customer
 from .models import (CustomerLoyaltyDiscountSettings, CustomerPurchaseAmountDiscountSettings,
-                     CustomerPurchaseNumberDiscountSettings, CustomerPoints)
+                     CustomerPurchaseNumberDiscountSettings, CustomerPoints, CustomerLoyaltySettings)
 
 # if sys.version_info[0] == 3 and sys.version_info[1] >= 8:
 #     from typing import TypedDict
@@ -59,21 +57,29 @@ class LoyaltyService:
         s.save()
         return s
 
-    def get_businessman_loyalty_settings(self, businessman: Businessman) -> QuerySet:
-        return CustomerLoyaltyDiscountSettings.objects.filter(businessman=businessman).order_by('point')
+    def get_businessman_loyalty_settings(self, user: Businessman) -> CustomerLoyaltySettings:
+        try:
+            return CustomerLoyaltySettings.objects.get(businessman=user)
+        except ObjectDoesNotExist:
+            return CustomerLoyaltySettings.objects.create(businessman=user)
 
-    def update_businessman_loyalty_settings(self, user: Businessman, loyalty_settings: List[Dict]):
-
-        length = len(loyalty_settings)
-        db_settings_count = self.get_businessman_loyalty_settings(user).count()
-        with transaction.atomic():
-            if db_settings_count >= length:
-                self._update_when_new_settings_count_smaller(user, loyalty_settings)
-
-            else:
-                self._update_when_old_settings_are_smaller(user, loyalty_settings)
-
-        return self.get_businessman_loyalty_settings(user)
+    def update_businessman_loyalty_settings(self, user: Businessman, loyalty_settings: Dict):
+        settings = self.get_businessman_loyalty_settings(user)
+        settings.is_active = loyalty_settings.get('is_active')
+        settings.save()
+        CustomerLoyaltyDiscountSettings.objects.filter(loyalty_settings=settings).delete()
+        cs = [
+            CustomerLoyaltyDiscountSettings(
+                loyalty_settings=settings,
+                point=st['point'],
+                discount_type=st['discount_type'],
+                discount_code=st['discount_code'],
+                percent_off=st['percent_off'],
+                flat_rate_off=st['flat_rate_off']
+            ) for st in loyalty_settings.get('discount_settings')
+        ]
+        CustomerLoyaltyDiscountSettings.objects.bulk_create(cs)
+        return settings
 
     def increase_customer_points_by_purchase_amount(self, businessman: Businessman, customer: Customer,
                                                     purchase_amount: int) -> CustomerPoints:
@@ -88,45 +94,6 @@ class LoyaltyService:
             return CustomerPoints.objects.get(businessman=businessman, customer=customer)
         except ObjectDoesNotExist:
             return CustomerPoints.objects.create(businessman=businessman, customer=customer, point=0)
-
-    def _update_when_new_settings_count_smaller(self, user: Businessman, loyalty_settings: List[Dict]):
-        length = len(loyalty_settings)
-        db_settings = self.get_businessman_loyalty_settings(user).order_by('point')[:length]
-        ids = list(map(lambda e: e.id, db_settings))
-
-        for old_st, new_st in zip(db_settings, loyalty_settings):
-            self._update_settings(old_st, new_st)
-
-        CustomerLoyaltyDiscountSettings.objects.filter(businessman=user).exclude(
-            id__in=ids
-        ).delete()
-
-        return db_settings
-
-    def _update_when_old_settings_are_smaller(self, user: Businessman, loyalty_settings: List[Dict]):
-
-        db_settings_count = self.get_businessman_loyalty_settings(user).count()
-        db_settings = self.get_businessman_loyalty_settings(user).order_by('point')[:db_settings_count]
-        for old_st, new_st in zip(db_settings, loyalty_settings):
-            self._update_settings(old_st, new_st)
-
-        for new_st in loyalty_settings[db_settings_count:]:
-            CustomerLoyaltyDiscountSettings.objects.create(businessman=user,
-                                                           point=new_st['point'],
-                                                           discount_type=new_st['discount_type'],
-                                                           discount_code=new_st['discount_code'],
-                                                           percent_off=new_st['percent_off'],
-                                                           flat_rate_off=new_st['flat_rate_off']
-                                                           )
-        return self.get_businessman_loyalty_settings(user)
-
-    def _update_settings(self, old_settings: CustomerLoyaltyDiscountSettings, new_settings: dict):
-        old_settings.point = new_settings['point']
-        old_settings.discount_code = new_settings['discount_code']
-        old_settings.discount_type = new_settings['discount_type']
-        old_settings.percent_off = new_settings['percent_off']
-        old_settings.flat_rate_off = new_settings['flat_rate_off']
-        old_settings.save()
 
     def create_discount_for_loyalty(self, businessman: Businessman, customer: Customer) -> bool:
         try:
