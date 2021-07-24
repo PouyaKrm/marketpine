@@ -14,12 +14,19 @@ class CustomerPurchaseAmountDiscountSettings(BaseModel, BaseDiscountSettings):
     purchase_amount = models.PositiveIntegerField(default=0)
 
 
+class CustomerLoyaltySettings(BusinessmanOneToOneBaseModel):
+    is_active = models.BooleanField(default=False)
+
+    class Meta:
+        db_table = 'loyalty_settings'
+
+
 class CustomerLoyaltyDiscountSettings(BaseDiscountSettings, BusinessmanManyToOneBaseModel):
     point = models.PositiveIntegerField(default=0)
     discount_code = models.CharField(max_length=20, null=True)
 
     class Meta:
-        db_table = 'loyalty_settings'
+        db_table = 'loyalty_discount_settings'
 
 
 class CustomerPoints(BusinessmanManyToOneBaseModel):
