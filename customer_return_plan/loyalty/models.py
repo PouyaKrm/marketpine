@@ -1,6 +1,6 @@
 from django.db import models
 
-from customer_return_plan.models import BaseDiscountSettings
+from customer_return_plan.models import BaseDiscountSettings, Discount
 # Create your models here.
 from users.models import BaseModel, BusinessmanOneToOneBaseModel, BusinessmanManyToOneBaseModel, Businessman, Customer
 
@@ -30,3 +30,10 @@ class CustomerPoints(BusinessmanManyToOneBaseModel):
         unique_together = ('businessman', 'customer')
         verbose_name = 'Customer points'
         verbose_name_plural = 'Customer points'
+
+
+class CustomerExclusiveDiscount(BaseModel):
+    customer = models.ForeignKey(Customer, on_delete=models.PROTECT, related_name='exclusive_discounts',
+                                 related_query_name='exclusive_discounts')
+    discount = models.ForeignKey(Discount, on_delete=models.PROTECT, related_name='exclusive_customers',
+                                 related_query_name='exclusive_customers')
