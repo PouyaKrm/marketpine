@@ -6,11 +6,12 @@ from typing import Tuple
 
 from django.utils import timezone
 
-from base_app.error_codes import ApplicationErrorException
+from base_app.error_codes import ApplicationErrorException, ApplicationErrorCodes
 from base_app.tests import BaseTestClass
 from customer_return_plan.festivals.models import Festival
 from customer_return_plan.invitation.models import FriendInvitation
-from customer_return_plan.loyalty.models import CustomerExclusiveDiscount, CustomerLoyaltyDiscountSettings
+from customer_return_plan.loyalty.models import CustomerExclusiveDiscount, CustomerLoyaltyDiscountSettings, \
+    CustomerLoyaltySettings
 from customer_return_plan.models import Discount, PurchaseDiscount, BaseDiscountSettings
 from customer_return_plan.services import discount_service, customer_discount_service
 from customerpurchase.models import CustomerPurchase
@@ -90,8 +91,13 @@ class BaseDiscountServiceTestClass(BaseTestClass, ABC):
         CustomerExclusiveDiscount.objects.create(discount=d, businessman_customer=bc)
         return d
 
-    def _create_loyalty_discount_setting(self, businessman: Businessman) -> CustomerLoyaltyDiscountSettings:
-        return CustomerLoyaltyDiscountSettings.objects.create(businessman=businessman,
+    def _create_loyalty_settings(self, businessman: Businessman, is_active=False):
+        return CustomerLoyaltySettings.objects.create(businessman=businessman, is_active=is_active)
+
+    def _create_loyalty_discount_setting(self, businessman: Businessman,
+                                         is_active: bool) -> CustomerLoyaltyDiscountSettings:
+        setting = self._create_loyalty_settings(businessman, is_active)
+        return CustomerLoyaltyDiscountSettings.objects.create(loyalty_settings=setting,
                                                               point=10,
                                                               discount_code='code',
                                                               percent_off=0, flat_rate_off=0,
@@ -112,7 +118,7 @@ class BusinessmanDiscountTest(BaseDiscountServiceTestClass):
         self.assertTrue(result)
 
     def test_create_loyalty_discounts(self):
-        setting = self._create_loyalty_discount_setting(self.businessman)
+        setting = self._create_loyalty_discount_setting(self.businessman, True)
         bc = self.create_customer_with_businessman(self.businessman)
         d = discount_service.create_loyalty_discount(setting, bc.customer, {})
         self.assertEqual(d.used_for, Discount.USED_FOR_LOYALTY)
@@ -124,12 +130,24 @@ class BusinessmanDiscountTest(BaseDiscountServiceTestClass):
         ec = d.exclusive_customers.first()
         self.assertEqual(ec.businessman_customer, bc)
 
+    def test_create_loyalty_discounts_setting_is_disabled(self):
+        setting = self._create_loyalty_discount_setting(self.businessman, False)
+        bc = self.create_customer_with_businessman(self.businessman)
+        with self.assertRaises(ApplicationErrorException) as cx:
+            discount_service.create_loyalty_discount(setting, bc.customer, {})
+        ex = cx.exception
+        self.assertEqual(ex.http_message, ApplicationErrorCodes.OPTION_IS_DISABLED)
+
     def test_create_loyalty_discounts_raises_exception(self):
         bc = self.create_customer_with_businessman(self.businessman)
         self._create_loyalty_discount(bc)
-        setting = self._create_loyalty_discount_setting(self.businessman)
-        with self.assertRaises(ApplicationErrorException):
-            discount_service.create_loyalty_discount(setting, bc.customer, {})
+        setting = self._create_loyalty_discount_setting(self.businessman, True)
+        error_dict = {}
+        with self.assertRaises(ApplicationErrorException) as cx:
+            discount_service.create_loyalty_discount(setting, bc.customer, error_dict)
+
+        ex = cx.exception
+        self.assertEqual(ex.http_message, error_dict)
 
     def test_inviter_discount_with_invited_has_no_purchase(self):
         discounts = discount_service.get_customer_discounts_for_businessman(self.invitation.businessman,

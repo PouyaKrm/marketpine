@@ -6,7 +6,7 @@ from django.db.models.query_utils import Q
 from django.utils import timezone
 from strgen import StringGenerator
 
-from base_app.error_codes import ApplicationErrorException
+from base_app.error_codes import ApplicationErrorException, ApplicationErrorCodes
 from customer_return_plan.festivals.models import Festival
 from customer_return_plan.festivals.services import festival_service
 from customer_return_plan.loyalty.models import CustomerLoyaltyDiscountSettings, CustomerExclusiveDiscount
@@ -92,17 +92,20 @@ class DiscountService:
 
     def create_loyalty_discount(self, discount_settings: CustomerLoyaltyDiscountSettings, customer: Customer,
                                 has_loyalty_discount_error_code: dict) -> Discount:
-        has_loyalty = self.has_customer_loyalty_discounts(discount_settings.businessman, customer)
+        if not discount_settings.loyalty_settings.is_active:
+            raise ApplicationErrorException(ApplicationErrorCodes.OPTION_IS_DISABLED)
+
+        has_loyalty = self.has_customer_loyalty_discounts(discount_settings.loyalty_settings.businessman, customer)
         if has_loyalty:
             raise ApplicationErrorException(has_loyalty_discount_error_code)
 
-        d = self.create_discount(discount_settings.businessman, False,
+        d = self.create_discount(discount_settings.loyalty_settings.businessman, False,
                                  discount_settings.discount_type, False,
                                  discount_settings.percent_off, discount_settings.flat_rate_off,
                                  discount_settings.discount_code)
         d.used_for = Discount.USED_FOR_LOYALTY
         d.save()
-        bc = customer_service.get_businessmancustomer(discount_settings.businessman, customer)
+        bc = customer_service.get_businessmancustomer(discount_settings.loyalty_settings.businessman, customer)
         CustomerExclusiveDiscount.objects.create(discount=d, businessman_customer=bc)
         return d
 
