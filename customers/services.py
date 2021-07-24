@@ -33,10 +33,15 @@ class CustomerService(BaseService):
             self.throw_exception(ApplicationErrorCodes.RECORD_NOT_FOUND, field_name, ex)
 
     def get_businessman_customers(self, user: Businessman):
-        return Customer.objects.filter(businessmans=user, connected_businessmans__is_deleted=False).order_by('-date_joined').all()
+        return Customer.objects.filter(businessmans=user, connected_businessmans__is_deleted=False).order_by(
+            '-date_joined').all()
+
+    def get_businessmancustomer(self, user: Businessman, customer: Customer) -> BusinessmanCustomer:
+        return BusinessmanCustomer.objects.get(businessman=user, customer=customer, is_deleted=False)
 
     def get_bsuinessman_customers_by_ids(self, user: Businessman, customer_ids: [int]):
-        return Customer.objects.filter(businessmans=user, id__in=customer_ids, connected_businessmans__is_deleted=False).all()
+        return Customer.objects.filter(businessmans=user, id__in=customer_ids,
+                                       connected_businessmans__is_deleted=False).all()
 
     def get_customer_by_phone(self, phone: str) -> Customer:
         return Customer.objects.get(phone=phone)

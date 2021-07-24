@@ -6,11 +6,12 @@ from typing import Tuple
 
 from django.utils import timezone
 
+from base_app.error_codes import ApplicationErrorException
 from base_app.tests import BaseTestClass
 from customer_return_plan.festivals.models import Festival
 from customer_return_plan.invitation.models import FriendInvitation
-from customer_return_plan.loyalty.models import CustomerExclusiveDiscount
-from customer_return_plan.models import Discount, PurchaseDiscount
+from customer_return_plan.loyalty.models import CustomerExclusiveDiscount, CustomerLoyaltyDiscountSettings
+from customer_return_plan.models import Discount, PurchaseDiscount, BaseDiscountSettings
 from customer_return_plan.services import discount_service, customer_discount_service
 from customerpurchase.models import CustomerPurchase
 from users.models import Businessman, Customer, BusinessmanCustomer
@@ -89,6 +90,14 @@ class BaseDiscountServiceTestClass(BaseTestClass, ABC):
         CustomerExclusiveDiscount.objects.create(discount=d, businessman_customer=bc)
         return d
 
+    def _create_loyalty_discount_setting(self, businessman: Businessman) -> CustomerLoyaltyDiscountSettings:
+        return CustomerLoyaltyDiscountSettings.objects.create(businessman=businessman,
+                                                              point=10,
+                                                              discount_code='code',
+                                                              percent_off=0, flat_rate_off=0,
+                                                              discount_type=BaseDiscountSettings.DISCOUNT_TYPE_FLAT_RATE,
+                                                              )
+
 
 class BusinessmanDiscountTest(BaseDiscountServiceTestClass):
 
@@ -101,6 +110,26 @@ class BusinessmanDiscountTest(BaseDiscountServiceTestClass):
         code = uuid.uuid4()
         result = discount_service.is_discount_code_unique(self.businessman, code)
         self.assertTrue(result)
+
+    def test_create_loyalty_discounts(self):
+        setting = self._create_loyalty_discount_setting(self.businessman)
+        bc = self.create_customer_with_businessman(self.businessman)
+        d = discount_service.create_loyalty_discount(setting, bc.customer, {})
+        self.assertEqual(d.used_for, Discount.USED_FOR_LOYALTY)
+        self.assertEqual(d.percent_off, d.percent_off)
+        self.assertEqual(d.flat_rate_off, setting.flat_rate_off)
+        self.assertEqual(d.discount_type, setting.discount_type)
+        self.assertEqual(d.discount_code, setting.discount_code)
+        self.assertEqual(d.exclusive_customers.count(), 1)
+        ec = d.exclusive_customers.first()
+        self.assertEqual(ec.businessman_customer, bc)
+
+    def test_create_loyalty_discounts_raises_exception(self):
+        bc = self.create_customer_with_businessman(self.businessman)
+        self._create_loyalty_discount(bc)
+        setting = self._create_loyalty_discount_setting(self.businessman)
+        with self.assertRaises(ApplicationErrorException):
+            discount_service.create_loyalty_discount(setting, bc.customer, {})
 
     def test_inviter_discount_with_invited_has_no_purchase(self):
         discounts = discount_service.get_customer_discounts_for_businessman(self.invitation.businessman,

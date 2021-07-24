@@ -6,8 +6,10 @@ from django.db.models.query_utils import Q
 from django.utils import timezone
 from strgen import StringGenerator
 
+from base_app.error_codes import ApplicationErrorException
 from customer_return_plan.festivals.models import Festival
 from customer_return_plan.festivals.services import festival_service
+from customer_return_plan.loyalty.models import CustomerLoyaltyDiscountSettings, CustomerExclusiveDiscount
 from customer_return_plan.models import Discount, PurchaseDiscount
 from customerpurchase.models import CustomerPurchase
 from customers.services import CustomerService
@@ -87,6 +89,22 @@ class DiscountService:
         discount.used_for = Discount.USED_FOR_INVITATION
         discount.save()
         return discount
+
+    def create_loyalty_discount(self, discount_settings: CustomerLoyaltyDiscountSettings, customer: Customer,
+                                has_loyalty_discount_error_code: dict) -> Discount:
+        has_loyalty = self.has_customer_loyalty_discounts(discount_settings.businessman, customer)
+        if has_loyalty:
+            raise ApplicationErrorException(has_loyalty_discount_error_code)
+
+        d = self.create_discount(discount_settings.businessman, False,
+                                 discount_settings.discount_type, False,
+                                 discount_settings.percent_off, discount_settings.flat_rate_off,
+                                 discount_settings.discount_code)
+        d.used_for = Discount.USED_FOR_LOYALTY
+        d.save()
+        bc = customer_service.get_businessmancustomer(discount_settings.businessman, customer)
+        CustomerExclusiveDiscount.objects.create(discount=d, businessman_customer=bc)
+        return d
 
     def discount_for_loyalty_amount(self, user: Businessman, customer: Customer, expires: bool, discount_type: str,
                                     percent_off: float, flat_rate_off: int,
@@ -252,6 +270,10 @@ class DiscountService:
 
     def has_customer_used_discount(self, discount: Discount, customer: Customer) -> (bool, bool, Discount, Customer):
         return discount.connected_purchases.filter(customer=customer).exists()
+
+    def has_customer_loyalty_discounts(self, businessman: Businessman, customer: Customer) -> bool:
+        discounts = self.get_customer_available_discounts_for_businessman(businessman, customer)
+        return discounts.filter(used_for=Discount.USED_FOR_LOYALTY).exists()
 
     def get_discount_date_used(self, user: Businessman, discount: Discount, customer: Customer):
         query = PurchaseDiscount.objects.filter(discount=discount, discount__businessman=user).filter(
