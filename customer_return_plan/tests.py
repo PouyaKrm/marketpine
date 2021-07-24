@@ -89,6 +89,7 @@ class BaseDiscountServiceTestClass(BaseTestClass, ABC):
         CustomerExclusiveDiscount.objects.create(discount=d, businessman_customer=bc)
         return d
 
+
 class BusinessmanDiscountTest(BaseDiscountServiceTestClass):
 
     def test_is_discount_code_unique_false(self):
@@ -469,3 +470,38 @@ class CustomerDiscountServiceTestClass(BaseDiscountServiceTestClass):
         self.assertTrue(result[0])
         self.assertTrue(result[1])
         self.assertTrue(result[2])
+
+    def test_loyalty_discount(self):
+        bc = self.create_customer_with_businessman(self.businessman)
+        d = self._create_loyalty_discount(bc)
+        discounts = customer_discount_service.get_customer_discounts(bc.customer)
+        self.assertEqual(discounts.count(), 1)
+        self._assert_loyalty_discount_result(discounts, bc)
+
+    def test_loyalty_discount_customer_is_deleted(self):
+        bc = self.create_customer_with_businessman(self.businessman)
+        bc2 = self.create_businessman_with_businessmancustomer(bc.customer)
+        self._create_loyalty_discount(bc)
+        self._create_loyalty_discount(bc2)
+        self.delete_customer_for_businessman(bc.businessman, bc.customer)
+        discounts = customer_discount_service.get_customer_discounts(bc.customer)
+        self.assertEqual(discounts.count(), 1)
+        self._assert_loyalty_discount_result(discounts, bc2)
+
+    def test_loyalty_discount_other_businessman_discount_for_same_customer(self):
+        bc = self.create_customer_with_businessman(self.businessman)
+        bc2 = self.create_businessman_with_businessmancustomer(bc.customer)
+        self._create_loyalty_discount(bc)
+        self._create_loyalty_discount(bc2)
+        discounts = customer_discount_service.get_customer_discounts(bc.customer)
+        self.assertEqual(discounts.count(), 2)
+        self._assert_loyalty_discount_result(discounts, bc)
+        self._assert_loyalty_discount_result(discounts, bc2)
+
+    def _assert_loyalty_discount_result(self, discounts, bc: BusinessmanCustomer):
+        filtered = discounts.filter(exclusive_customers__businessman_customer=bc)
+        self.assertEqual(filtered.count(), 1)
+        self.assertEqual(filtered[0].used_for, Discount.USED_FOR_LOYALTY)
+        c = filtered.first().exclusive_customers
+        self.assertEqual(c.count(), 1)
+        self.assertEqual(c.first().businessman_customer, bc)

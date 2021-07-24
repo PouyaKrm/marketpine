@@ -360,7 +360,14 @@ class CustomerDiscountService:
             festival__businessman__in=joined_businessmans
         )
 
-        return invited_discount | inviter_discount | festival_discount
+        loyalty_discounts = Discount.objects.filter(
+            used_for=Discount.USED_FOR_LOYALTY
+        ).filter(
+            exclusive_customers__businessman_customer__customer=customer,
+            exclusive_customers__businessman_customer__is_deleted=False
+        )
+
+        return invited_discount | inviter_discount | festival_discount | loyalty_discounts
 
     def get_customer_available_discount(self, customer: Customer):
         return self.get_customer_discounts(customer) \
