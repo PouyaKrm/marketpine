@@ -2,13 +2,26 @@ from django import forms
 from django.conf import settings
 from django.core.exceptions import ValidationError
 
-from customer_return_plan.loyalty.models import CustomerLoyaltyDiscountSettings
+from customer_return_plan.loyalty.models import CustomerLoyaltyDiscountSettings, CustomerLoyaltySettings
 from customer_return_plan.validation import validate_discount_value_by_discount_type
 
 max_settings_per_businessman = settings.LOYALTY_SETTINGS['MAX_SETTINGS_NUMBER_PER_BUSINESSMAN']
 
 
-class CustomerLoyaltyAdminForm(forms.ModelForm):
+class CustomerLoyaltySettingsForm(forms.ModelForm):
+    class Meta:
+        model = CustomerLoyaltySettings
+        fields = '__all__'
+
+    def clean_is_active(self):
+        is_active = self.cleaned_data.get('is_active')
+        if (is_active and self.instance is None) or (is_active and self.instance.discount_settings.count() == 0):
+            raise ValidationError('برای فعال کردن حداقل یک تخفیف را اول نتظیم کنید')
+
+        return is_active
+
+
+class CustomerLoyaltyDiscountSettingsAdminForm(forms.ModelForm):
     point = forms.IntegerField(min_value=1)
 
     class Meta:

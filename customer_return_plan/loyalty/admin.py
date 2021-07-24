@@ -1,16 +1,17 @@
 from django.contrib import admin
 
-from .forms import CustomerLoyaltyAdminForm
+from .forms import CustomerLoyaltyDiscountSettingsAdminForm, CustomerLoyaltySettingsForm
 from .models import (CustomerLoyaltyDiscountSettings, CustomerPurchaseNumberDiscountSettings,
                      CustomerPurchaseAmountDiscountSettings, CustomerPoints, CustomerLoyaltySettings)
 
 
 class CustomerLoyaltySettingsAdminModel(admin.ModelAdmin):
+    form = CustomerLoyaltySettingsForm
     list_display = ['businessman', 'is_active', 'create_date', 'update_date']
 
 
 class CustomerLoyaltyDiscountSettingAdminModel(admin.ModelAdmin):
-    form = CustomerLoyaltyAdminForm
+    form = CustomerLoyaltyDiscountSettingsAdminForm
     list_display = ['loyalty_settings', 'create_date', 'point', 'discount_type', 'discount_value_by_discount_type']
 
 
