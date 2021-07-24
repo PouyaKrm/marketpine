@@ -2,7 +2,8 @@ from django.db import models
 
 from customer_return_plan.models import BaseDiscountSettings, Discount
 # Create your models here.
-from users.models import BaseModel, BusinessmanOneToOneBaseModel, BusinessmanManyToOneBaseModel, Businessman, Customer
+from users.models import BaseModel, BusinessmanOneToOneBaseModel, BusinessmanManyToOneBaseModel, Businessman, Customer, \
+    BusinessmanCustomer
 
 
 class CustomerPurchaseNumberDiscountSettings(BaseModel, BaseDiscountSettings):
@@ -33,7 +34,13 @@ class CustomerPoints(BusinessmanManyToOneBaseModel):
 
 
 class CustomerExclusiveDiscount(BaseModel):
-    customer = models.ForeignKey(Customer, on_delete=models.PROTECT, related_name='exclusive_discounts',
-                                 related_query_name='exclusive_discounts')
+    businessman_customer = models.ForeignKey(BusinessmanCustomer, on_delete=models.PROTECT,
+                                             related_name='exclusive_discounts',
+                                             related_query_name='exclusive_discounts',
+                                             null=True)
     discount = models.ForeignKey(Discount, on_delete=models.PROTECT, related_name='exclusive_customers',
-                                 related_query_name='exclusive_customers')
+                                 related_query_name='exclusive_customers',
+                                 null=True)
+
+    class Meta:
+        db_table = 'customer_exclusive_discounts'
