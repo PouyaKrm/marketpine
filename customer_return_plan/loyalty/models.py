@@ -20,6 +20,9 @@ class CustomerLoyaltySettings(BusinessmanOneToOneBaseModel):
     class Meta:
         db_table = 'loyalty_settings'
 
+    def __str__(self):
+        return self.businessman.username
+
 
 class CustomerLoyaltyDiscountSettings(BaseDiscountSettings, BaseModel):
     point = models.PositiveIntegerField(default=0)
