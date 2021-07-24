@@ -84,9 +84,9 @@ class BaseDiscountServiceTestClass(BaseTestClass, ABC):
         c = super().add_customer_to_businessman(businessman, customer)
         return BusinessmanCustomer.objects.get(businessman=businessman, customer=customer)
 
-    def _create_loyalty_discount(self, businessman: Businessman, customer: Customer) -> Discount:
-        d = self._create_discount(businessman, Discount.USED_FOR_LOYALTY)
-        CustomerExclusiveDiscount.objects.create(discount=d, customer=customer)
+    def _create_loyalty_discount(self, bc: BusinessmanCustomer) -> Discount:
+        d = self._create_discount(bc.businessman, Discount.USED_FOR_LOYALTY)
+        CustomerExclusiveDiscount.objects.create(discount=d, businessman_customer=bc)
         return d
 
 class BusinessmanDiscountTest(BaseDiscountServiceTestClass):
@@ -291,34 +291,43 @@ class BusinessmanDiscountTest(BaseDiscountServiceTestClass):
 
     def test_loyalty_discount(self):
         bc = self.create_customer_with_businessman(self.businessman)
-        d = self._create_loyalty_discount(self.businessman, bc.customer)
+        d = self._create_loyalty_discount(bc)
         discounts = discount_service.get_customer_discounts_for_businessman(self.businessman, bc.customer)
-        self._assert_loyalty_discount_result(discounts, bc.customer)
+        self._assert_loyalty_discount_result(discounts, bc)
 
     def test_loyalty_other_customer_have_discount(self):
         bc = self.create_customer_with_businessman(self.businessman)
         bc2 = self.create_customer_with_businessman(self.businessman)
-        d = self._create_loyalty_discount(self.businessman, bc.customer)
-        d2 = self._create_loyalty_discount(self.businessman, bc2.customer)
+        d = self._create_loyalty_discount(bc)
+        d2 = self._create_loyalty_discount(bc2)
         discounts = discount_service.get_customer_discounts_for_businessman(self.businessman, bc.customer)
-        self._assert_loyalty_discount_result(discounts, bc.customer)
+        self._assert_loyalty_discount_result(discounts, bc)
 
     def test_other_businessman_have_loyalty_discount_for_same_customer(self):
         bc = self.create_customer_with_businessman(self.businessman)
         bc2 = self.create_businessman_with_businessmancustomer(bc.customer)
-        d = self._create_loyalty_discount(bc.businessman, bc.customer)
-        self._create_loyalty_discount(bc2.businessman, bc2.customer)
+        d = self._create_loyalty_discount(bc)
+        self._create_loyalty_discount(bc2)
         discounts = discount_service.get_customer_discounts_for_businessman(bc.businessman, bc.customer)
-        self._assert_loyalty_discount_result(discounts, bc.customer)
+        self._assert_loyalty_discount_result(discounts, bc)
         self.assertEqual(discounts[0], d)
 
-    def _assert_loyalty_discount_result(self, discounts, customer: Customer):
+    def test_loyalty_discount_customer_is_deleted(self):
+        bc = self.create_customer_with_businessman(self.businessman)
+        bc2 = self.create_businessman_with_businessmancustomer(bc.customer)
+        d = self._create_loyalty_discount(bc)
+        self._create_loyalty_discount(bc2)
+        self.delete_customer_for_businessman(bc.businessman, bc.customer)
+        discounts = discount_service.get_customer_discounts_for_businessman(bc.businessman, bc.customer)
+        self.assertEqual(discounts.count(), 0)
+
+    def _assert_loyalty_discount_result(self, discounts, bc: BusinessmanCustomer):
         self.assertEqual(len(discounts), 1)
         d = discounts.first()
         self.assertEqual(d.used_for, Discount.USED_FOR_LOYALTY)
         exclusives = list(d.exclusive_customers.all())
         self.assertEqual(len(exclusives), 1)
-        self.assertEqual(exclusives[0].customer, customer)
+        self.assertEqual(exclusives[0].businessman_customer, bc)
         self.assertEqual(exclusives[0].discount, d)
 
 

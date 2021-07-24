@@ -204,7 +204,8 @@ class DiscountService:
             businessman=user,
             used_for=Discount.USED_FOR_LOYALTY
         ).filter(
-            exclusive_customers__customer=customer
+            exclusive_customers__businessman_customer__customer=customer,
+            exclusive_customers__businessman_customer__is_deleted=False
         )
 
         discounts = inviter_discount | invited_discount | festival_discount | loyalty_discount
