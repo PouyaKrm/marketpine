@@ -7,7 +7,7 @@ from .models import (CustomerLoyaltyDiscountSettings, CustomerPurchaseNumberDisc
 
 class CustomerLoyaltyAdminModel(admin.ModelAdmin):
     form = CustomerLoyaltyAdminForm
-    list_display = ['businessman', 'create_date', 'point', 'discount_type', 'discount_value_by_discount_type']
+    list_display = ['loyalty_settings', 'create_date', 'point', 'discount_type', 'discount_value_by_discount_type']
 
 
 class CustomerPointsAdminModel(admin.ModelAdmin):

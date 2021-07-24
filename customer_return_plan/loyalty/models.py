@@ -21,9 +21,16 @@ class CustomerLoyaltySettings(BusinessmanOneToOneBaseModel):
         db_table = 'loyalty_settings'
 
 
-class CustomerLoyaltyDiscountSettings(BaseDiscountSettings, BusinessmanManyToOneBaseModel):
+class CustomerLoyaltyDiscountSettings(BaseDiscountSettings, BaseModel):
     point = models.PositiveIntegerField(default=0)
     discount_code = models.CharField(max_length=20, null=True)
+    loyalty_settings = models.ForeignKey(
+        CustomerLoyaltySettings,
+        on_delete=models.PROTECT,
+        related_name='discount_settings',
+        related_query_name='discount_settings',
+        null=True
+    )
 
     class Meta:
         db_table = 'loyalty_discount_settings'
