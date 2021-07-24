@@ -49,3 +49,7 @@ class BaseTestClass(TestCase, ABC):
                                                    joined_by=BusinessmanCustomer.JOINED_BY_PANEL) -> BusinessmanCustomer:
         c = self.create_customer()
         return BusinessmanCustomer.objects.create(businessman=b, customer=c, joined_by=joined_by)
+
+    def create_businessman_with_businessmancustomer(self, customer: Customer) -> BusinessmanCustomer:
+        b = self.create_businessman()
+        return BusinessmanCustomer.objects.create(businessman=b, customer=customer)

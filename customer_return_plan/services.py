@@ -171,8 +171,6 @@ class DiscountService:
 
     def get_customer_discounts_for_businessman(self, user: Businessman, customer: Customer):
 
-        # customer = customer_service.get_customer_by_id(user, customer_id)
-
         exist = customer_service.customer_exists(user, customer)
 
         if not exist:
@@ -202,25 +200,15 @@ class DiscountService:
 
         festival_discount = Discount.objects.filter(businessman=user, used_for=Discount.USED_FOR_FESTIVAL)
 
-        #        festival_discounts = Discount.objects.annotate(
-        #            purchase_sum_of_invited=Sum('inviter_discount__invited__purchases__amount',
-        #                                        filter=Q(inviter_discount__invited__purchases__businessman=user))).filter(
-        #            businessman=user) \
-        # \
-        #            .filter(Q(used_for=Discount.USED_FOR_FESTIVAL)
-        #                    | Q(used_for=Discount.USED_FOR_INVITATION,
-        #                        inviter_discount__inviter=customer, purchase_sum_of_invited__gt=0)
-        #                    | Q(used_for=Discount.USED_FOR_INVITATION,
-        #                        inviter_discount__inviter=customer, connected_purchases__customer=customer)
-        #                    | Q(used_for=Discount.USED_FOR_INVITATION,
-        #                        invited_discount__invited=customer)).distinct().order_by('-create_date')
-        #
-        #        return festival_discounts
+        loyalty_discount = Discount.objects.filter(
+            businessman=user,
+            used_for=Discount.USED_FOR_LOYALTY
+        ).filter(
+            exclusive_customers__customer=customer
+        )
 
-        discounts = inviter_discount | invited_discount | festival_discount
+        discounts = inviter_discount | invited_discount | festival_discount | loyalty_discount
         return discounts.order_by('-create_date')
-
-    # def get_customer_discount_by_customer
 
     def get_customer_unused_discounts_for_businessman(self, user: Businessman, customer: Customer):
         return self.get_customer_discounts_for_businessman(user, customer) \

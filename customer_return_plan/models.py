@@ -38,15 +38,13 @@ class Discount(BusinessmanManyToOneBaseModel, BaseDiscountSettings):
     USED_FOR_NONE = '0'
     USED_FOR_FESTIVAL = '1'
     USED_FOR_INVITATION = '2'
-    USED_FOR_LOYALTY_AMOUNT = '3'
-    USED_FOR_LOYALTY_NUMBER = '4'
+    USED_FOR_LOYALTY = '3'
 
     used_for_choices = [
         (USED_FOR_NONE, 'None'),
         (USED_FOR_FESTIVAL, 'Festival'),
         (USED_FOR_INVITATION, 'Invitation'),
-        (USED_FOR_LOYALTY_AMOUNT, 'Loyalty Amount'),
-        (USED_FOR_LOYALTY_NUMBER, 'Loyalty Number')
+        (USED_FOR_LOYALTY, 'Loyalty'),
     ]
 
     discount_code = models.CharField(max_length=20)

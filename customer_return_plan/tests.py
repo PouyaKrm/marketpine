@@ -9,6 +9,7 @@ from django.utils import timezone
 from base_app.tests import BaseTestClass
 from customer_return_plan.festivals.models import Festival
 from customer_return_plan.invitation.models import FriendInvitation
+from customer_return_plan.loyalty.models import CustomerExclusiveDiscount
 from customer_return_plan.models import Discount, PurchaseDiscount
 from customer_return_plan.services import discount_service, customer_discount_service
 from customerpurchase.models import CustomerPurchase
@@ -83,6 +84,10 @@ class BaseDiscountServiceTestClass(BaseTestClass, ABC):
         c = super().add_customer_to_businessman(businessman, customer)
         return BusinessmanCustomer.objects.get(businessman=businessman, customer=customer)
 
+    def _create_loyalty_discount(self, businessman: Businessman, customer: Customer) -> Discount:
+        d = self._create_discount(businessman, Discount.USED_FOR_LOYALTY)
+        CustomerExclusiveDiscount.objects.create(discount=d, customer=customer)
+        return d
 
 class BusinessmanDiscountTest(BaseDiscountServiceTestClass):
 
@@ -283,6 +288,38 @@ class BusinessmanDiscountTest(BaseDiscountServiceTestClass):
         self.assertEqual(discounts.count(), 1)
         first = discounts.first()
         self.assertEqual(first.used_for, Discount.USED_FOR_INVITATION)
+
+    def test_loyalty_discount(self):
+        bc = self.create_customer_with_businessman(self.businessman)
+        d = self._create_loyalty_discount(self.businessman, bc.customer)
+        discounts = discount_service.get_customer_discounts_for_businessman(self.businessman, bc.customer)
+        self._assert_loyalty_discount_result(discounts, bc.customer)
+
+    def test_loyalty_other_customer_have_discount(self):
+        bc = self.create_customer_with_businessman(self.businessman)
+        bc2 = self.create_customer_with_businessman(self.businessman)
+        d = self._create_loyalty_discount(self.businessman, bc.customer)
+        d2 = self._create_loyalty_discount(self.businessman, bc2.customer)
+        discounts = discount_service.get_customer_discounts_for_businessman(self.businessman, bc.customer)
+        self._assert_loyalty_discount_result(discounts, bc.customer)
+
+    def test_other_businessman_have_loyalty_discount_for_same_customer(self):
+        bc = self.create_customer_with_businessman(self.businessman)
+        bc2 = self.create_businessman_with_businessmancustomer(bc.customer)
+        d = self._create_loyalty_discount(bc.businessman, bc.customer)
+        self._create_loyalty_discount(bc2.businessman, bc2.customer)
+        discounts = discount_service.get_customer_discounts_for_businessman(bc.businessman, bc.customer)
+        self._assert_loyalty_discount_result(discounts, bc.customer)
+        self.assertEqual(discounts[0], d)
+
+    def _assert_loyalty_discount_result(self, discounts, customer: Customer):
+        self.assertEqual(len(discounts), 1)
+        d = discounts.first()
+        self.assertEqual(d.used_for, Discount.USED_FOR_LOYALTY)
+        exclusives = list(d.exclusive_customers.all())
+        self.assertEqual(len(exclusives), 1)
+        self.assertEqual(exclusives[0].customer, customer)
+        self.assertEqual(exclusives[0].discount, d)
 
 
 class CustomerDiscountServiceTestClass(BaseDiscountServiceTestClass):
