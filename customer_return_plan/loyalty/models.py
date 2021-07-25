@@ -50,6 +50,10 @@ class CustomerPoints(BusinessmanManyToOneBaseModel):
         verbose_name = 'Customer points'
         verbose_name_plural = 'Customer points'
 
+    def decrease_point(self, point: int):
+        self.point -= point
+        self.save()
+
 
 class CustomerExclusiveDiscount(BaseModel):
     businessman_customer = models.ForeignKey(BusinessmanCustomer, on_delete=models.PROTECT,

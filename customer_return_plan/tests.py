@@ -126,6 +126,7 @@ class BusinessmanDiscountTest(BaseDiscountServiceTestClass):
     def test_create_loyalty_discounts(self):
         setting = self._create_loyalty_discount_setting(self.businessman, True)
         bc = self.create_customer_with_businessman(self.businessman)
+        point = self._create_customer_point(self.businessman, bc.customer, setting.point)
         d = discount_service.create_loyalty_discount(setting, bc.customer, {})
         self.assertEqual(d.used_for, Discount.USED_FOR_LOYALTY)
         self.assertEqual(d.percent_off, d.percent_off)
@@ -135,6 +136,7 @@ class BusinessmanDiscountTest(BaseDiscountServiceTestClass):
         self.assertEqual(d.exclusive_customers.count(), 1)
         ec = d.exclusive_customers.first()
         self.assertEqual(ec.businessman_customer, bc)
+        self.assertEqual(bc.customer.points.get(businessman=bc.businessman).point, 0)
 
     def test_create_loyalty_discounts_setting_is_disabled(self):
         setting = self._create_loyalty_discount_setting(self.businessman, False)

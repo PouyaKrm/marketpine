@@ -116,6 +116,7 @@ class DiscountService:
         d.save()
         bc = customer_service.get_businessmancustomer(discount_settings.loyalty_settings.businessman, customer)
         CustomerExclusiveDiscount.objects.create(discount=d, businessman_customer=bc)
+        points.decrease_point(discount_settings.point)
         return d
 
     def discount_for_loyalty_amount(self, user: Businessman, customer: Customer, expires: bool, discount_type: str,
