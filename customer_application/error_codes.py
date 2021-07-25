@@ -15,6 +15,7 @@ class CustomerAppErrors:
                                                              'message': 'امکان عضویت به فروشگاهی که قبلا شما را از لیست مشتریان خود حذف کرده نیست'}
     USER_NOT_JOINED_BUSINESSMAN = {'code': '13', 'message': 'عضو بیزینس من نیستید'}
     CAN_NOT_JOIN_BUSINESSMAN = {'code': '14', 'message': 'امکان عضویت به این بیزینس من نیست'}
+    ALREADY_HAS_LOYALTY_DISCOUNT = {'code': '15', 'message': 'شما هنوز از تخفیف امتیاز خود استفاده نکرده اید'}
 
     @staticmethod
     def error_dict(code, error: dict = None):

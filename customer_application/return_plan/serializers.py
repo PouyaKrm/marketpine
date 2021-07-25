@@ -88,3 +88,29 @@ class CustomerReadonlyDiscountSerializer(ReadOnlyDiscountSerializer, BaseModelSe
             resp['invited_phone'] = obj.inviter_discount.invited.customer.phone
 
         return resp
+
+
+class CreateLoyaltyDiscountSerializer(CustomerReadonlyDiscountSerializer):
+    discount_settings_id = serializers.IntegerField(min_value=1, write_only=True, required=True)
+    businessman_id = serializers.IntegerField(min_value=1, write_only=True, required=True)
+
+    class Meta:
+        model = Discount
+        fields = [
+            'discount_settings_id',
+            'businessman_id',
+            'id',
+            'discount_code',
+            'expires',
+            'expire_date',
+            'discount_type',
+            'used_for',
+            'percent_off',
+            'flat_rate_off',
+            'customers_used_total',
+            'is_invitation_and_usable',
+            'businessman'
+        ]
+        extra_kwargs = {
+            'discount_code': {'read_only': True}
+        }

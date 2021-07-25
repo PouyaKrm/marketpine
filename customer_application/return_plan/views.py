@@ -5,12 +5,14 @@ from rest_framework.request import Request
 
 from base_app.error_codes import ApplicationErrorException
 from common.util.http_helpers import bad_request, ok
-from customer_application.base_views import CustomerAuthenticationSchema, BaseListAPIView
-from customer_application.return_plan.serializers import FriendInvitationSerializer, CustomerReadonlyDiscountSerializer
+from customer_application.base_views import CustomerAuthenticationSchema, BaseListAPIView, BaseAPIView
+from customer_application.return_plan.serializers import FriendInvitationSerializer, CustomerReadonlyDiscountSerializer, \
+    CreateLoyaltyDiscountSerializer
 from customer_application.return_plan.services import return_plan_service, InvitationInfo
 from customer_return_plan.services import customer_discount_service
 
 logger = logging.getLogger(__name__)
+
 
 @api_view(['POST'])
 @authentication_classes([CustomerAuthenticationSchema])
@@ -49,3 +51,21 @@ class CustomerDiscountListAPIView(BaseListAPIView):
 
     serializer_class = CustomerReadonlyDiscountSerializer
 
+
+class CustomerLoyaltyDiscount(BaseAPIView):
+
+    def post(self, request: Request):
+        try:
+            sr = CreateLoyaltyDiscountSerializer(data=request.data, request=request)
+            if not sr.is_valid():
+                return bad_request(sr.errors)
+            discount = return_plan_service.create_loyalty_discount(
+                request.user,
+                sr.validated_data.get('businessman_id'),
+                sr.validated_data.get('discount_settings_id')
+            )
+
+            sr = CreateLoyaltyDiscountSerializer(discount, request=request)
+            return ok(sr.data)
+        except ApplicationErrorException as ex:
+            return bad_request(ex.http_message)

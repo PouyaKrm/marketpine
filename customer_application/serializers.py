@@ -7,9 +7,13 @@ from content_marketing.models import Post
 from customer_application.services import customer_data_service
 from customer_return_plan.festivals.models import Festival
 from customer_return_plan.invitation.services import invitation_service
+from customer_return_plan.loyalty.models import CustomerPoints, CustomerLoyaltySettings, CustomerLoyaltyDiscountSettings
+from customer_return_plan.loyalty.serializers import CustomerPointsSerializer, LoyaltySettingsSerializer, \
+    LoyaltyDiscountSettingsSerializer
+from customer_return_plan.loyalty.services import LoyaltyService
 from customers.services import customer_service
 from mobile_app_conf.models import MobileAppPageConf, MobileAppHeader
-from mobile_app_conf.serializers import MobileAppPageConfSerializer, FileFieldWithLinkRepresentation, \
+from mobile_app_conf.serializers import FileFieldWithLinkRepresentation, \
     ContactInfoSerializer
 from mobile_app_conf.services import mobile_page_conf_service
 from online_menu.serializers import OnlineMenuSerializer
@@ -160,9 +164,44 @@ class BusinessmanPageDataSerializer(serializers.ModelSerializer):
         ]
 
 
+class CustomerAppPointsSerializer(CustomerPointsSerializer):
+    class Meta:
+        model = CustomerPoints
+        exclude = [
+            'businessman',
+            'customer'
+        ]
+
+
+class CustomerAppLoyaltyDiscountSettingsSerializer(LoyaltyDiscountSettingsSerializer):
+    class Meta:
+        model = CustomerLoyaltyDiscountSettings
+        fields = [
+            'id',
+            'point',
+            'discount_type',
+            'discount_code',
+            'percent_off',
+            'flat_rate_off'
+        ]
+
+
+class CustomerAppLoyaltySettingsSerializer(LoyaltySettingsSerializer):
+    discount_settings = CustomerAppLoyaltyDiscountSettingsSerializer(many=True)
+
+    class Meta:
+        model = CustomerLoyaltySettings
+        fields = [
+            'is_active',
+            'discount_settings'
+        ]
+
+
 class BusinessmanRetrieveSerializer(BaseBusinessmanSerializer):
     page_data = serializers.SerializerMethodField(read_only=True)
     menus = serializers.SerializerMethodField(read_only=True)
+    customerloyaltysettings = CustomerAppLoyaltySettingsSerializer(read_only=True)
+    points = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = Businessman
@@ -177,7 +216,9 @@ class BusinessmanRetrieveSerializer(BaseBusinessmanSerializer):
             'customers_total',
             'invitation_discount',
             'page_data',
-            'menus'
+            'menus',
+            'customerloyaltysettings',
+            'points',
         ]
 
     def get_page_data(self, obj: Businessman):
@@ -188,6 +229,10 @@ class BusinessmanRetrieveSerializer(BaseBusinessmanSerializer):
         menus = customer_data_service.get_online_menus_by_businessman_id(obj.id)
         sr = OnlineMenuSerializer(menus, context={'request': self.request}, many=True)
         return sr.data
+
+    def get_points(self, obj: Businessman):
+        points = LoyaltyService.get_instance().get_customer_points(obj, self.request.user)
+        return CustomerAppPointsSerializer(points).data
 
 
 class FestivalNotificationSerializer(BaseModelSerializerWithRequestObj):

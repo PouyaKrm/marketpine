@@ -4,6 +4,7 @@ from typing import Dict
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
 
+from base_app.error_codes import ApplicationErrorException, ApplicationErrorCodes
 from customer_return_plan.models import Discount
 from customer_return_plan.services import discount_service
 from customerpurchase.services import purchase_service
@@ -62,6 +63,14 @@ class LoyaltyService:
             return CustomerLoyaltySettings.objects.get(businessman=user)
         except ObjectDoesNotExist:
             return CustomerLoyaltySettings.objects.create(businessman=user)
+
+    def get_discount_setting(self, businessman: Businessman,
+                             discount_setting_id: int) -> CustomerLoyaltyDiscountSettings:
+        try:
+            return CustomerLoyaltyDiscountSettings.objects.get(id=discount_setting_id,
+                                                               loyalty_settings__businessman=businessman)
+        except ObjectDoesNotExist as ex:
+            raise ApplicationErrorException(ApplicationErrorCodes.RECORD_NOT_FOUND, ex)
 
     def update_businessman_loyalty_settings(self, user: Businessman, loyalty_settings: Dict):
         settings = self.get_businessman_loyalty_settings(user)
