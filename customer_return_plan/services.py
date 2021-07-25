@@ -92,12 +92,21 @@ class DiscountService:
 
     def create_loyalty_discount(self, discount_settings: CustomerLoyaltyDiscountSettings, customer: Customer,
                                 has_loyalty_discount_error_code: dict) -> Discount:
+
+        from .loyalty.services import LoyaltyService
+
         if not discount_settings.loyalty_settings.is_active:
             raise ApplicationErrorException(ApplicationErrorCodes.OPTION_IS_DISABLED)
 
         has_loyalty = self.has_customer_loyalty_discounts(discount_settings.loyalty_settings.businessman, customer)
         if has_loyalty:
             raise ApplicationErrorException(has_loyalty_discount_error_code)
+
+        points = LoyaltyService.get_instance().get_customer_points(discount_settings.loyalty_settings.businessman,
+                                                                   customer)
+
+        if points.point < discount_settings.point:
+            raise ApplicationErrorException(ApplicationErrorCodes.NOT_ENOUGH_POINT_FOR_DISCOUNT)
 
         d = self.create_discount(discount_settings.loyalty_settings.businessman, False,
                                  discount_settings.discount_type, False,

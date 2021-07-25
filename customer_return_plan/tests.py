@@ -11,7 +11,7 @@ from base_app.tests import BaseTestClass
 from customer_return_plan.festivals.models import Festival
 from customer_return_plan.invitation.models import FriendInvitation
 from customer_return_plan.loyalty.models import CustomerExclusiveDiscount, CustomerLoyaltyDiscountSettings, \
-    CustomerLoyaltySettings
+    CustomerLoyaltySettings, CustomerPoints
 from customer_return_plan.models import Discount, PurchaseDiscount, BaseDiscountSettings
 from customer_return_plan.services import discount_service, customer_discount_service
 from customerpurchase.models import CustomerPurchase
@@ -104,6 +104,12 @@ class BaseDiscountServiceTestClass(BaseTestClass, ABC):
                                                               discount_type=BaseDiscountSettings.DISCOUNT_TYPE_FLAT_RATE,
                                                               )
 
+    def _create_customer_point(self, businessman: Businessman, customer: Customer, point: int):
+        return CustomerPoints.objects.create(businessman=businessman,
+                                             customer=customer,
+                                             point=point
+                                             )
+
 
 class BusinessmanDiscountTest(BaseDiscountServiceTestClass):
 
@@ -138,7 +144,16 @@ class BusinessmanDiscountTest(BaseDiscountServiceTestClass):
         ex = cx.exception
         self.assertEqual(ex.http_message, ApplicationErrorCodes.OPTION_IS_DISABLED)
 
-    def test_create_loyalty_discounts_raises_exception(self):
+    def test_create_loyalty_discounts_raises_exception_not_enough_points(self):
+        bc = self.create_customer_with_businessman(self.businessman)
+        setting = self._create_loyalty_discount_setting(self.businessman, True)
+        point = self._create_customer_point(self.businessman, bc.customer, setting.point - 1)
+        with self.assertRaises(ApplicationErrorException) as cx:
+            discount_service.create_loyalty_discount(setting, bc.customer, {})
+        ex = cx.exception
+        self.assertEqual(ex.http_message, ApplicationErrorCodes.NOT_ENOUGH_POINT_FOR_DISCOUNT)
+
+    def test_create_loyalty_discounts_raises_exception_already_discount_exist(self):
         bc = self.create_customer_with_businessman(self.businessman)
         self._create_loyalty_discount(bc)
         setting = self._create_loyalty_discount_setting(self.businessman, True)

@@ -44,6 +44,7 @@ class ApplicationErrorCodes:
     NOT_ENOUGH_WALLET_CREDIT = _get_code_message_dict.__func__(1017, 'اعتبار کیف پول کافی نیست')
     MINIMUM_WALLET_CREDIT_INCREASE = _get_code_message_dict.__func__(1018, 'مقدار افزایش اعتبار کم است')
     OPTION_IS_DISABLED = _get_code_message_dict.__func__(1019, 'این آپشن غیر فعال است')
+    NOT_ENOUGH_POINT_FOR_DISCOUNT = _get_code_message_dict.__func__(1020, 'امتیاز برای تخفیف کافی نیست')
 
     @staticmethod
     def get_exception(code: dict, original_exception: Exception = None) -> ApplicationErrorException:
