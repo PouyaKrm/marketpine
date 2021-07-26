@@ -231,8 +231,10 @@ class BusinessmanRetrieveSerializer(BaseBusinessmanSerializer):
         return sr.data
 
     def get_points(self, obj: Businessman):
-        points = LoyaltyService.get_instance().get_customer_points(obj, self.request.user)
-        return CustomerAppPointsSerializer(points).data
+        if not self.request.user.is_anonymous:
+            points = LoyaltyService.get_instance().get_customer_points(obj, self.request.user)
+            return CustomerAppPointsSerializer(points).data
+        return None
 
 
 class FestivalNotificationSerializer(BaseModelSerializerWithRequestObj):
