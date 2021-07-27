@@ -1,8 +1,11 @@
+from typing import Tuple
+
 from customer_application.error_codes import CustomerAppErrors
 from customer_application.exceptions import CustomerServiceException
 from customer_application.services import customer_data_service
 from customer_return_plan.invitation.services import invitation_service
-from customer_return_plan.loyalty.services import LoyaltyService
+from customer_return_plan.loyalty.models import CustomerPoints
+from customer_return_plan.loyalty.services import LoyaltyService, loyalty_service
 from customer_return_plan.models import Discount
 from customer_return_plan.services import discount_service
 from customers.services import customer_service
@@ -46,11 +49,14 @@ class ReturnPlanService:
         if not invitation_service.is_invitation_enabled(businessman):
             raise CustomerServiceException(CustomerAppErrors.error_dict(CustomerAppErrors.FRIEND_INVITATION_DISABLED))
 
-    def create_loyalty_discount(self, customer: Customer, businessman_id: int, loyalty_discount_id: int) -> Discount:
+    def create_loyalty_discount(self, customer: Customer, businessman_id: int, loyalty_discount_id: int) -> Tuple[
+        Discount, CustomerPoints]:
         businessman = customer_data_service.get_businessman_of_customer_by_id(customer, businessman_id)
         setting = LoyaltyService.get_instance().get_discount_setting(businessman, loyalty_discount_id)
-        return discount_service.create_loyalty_discount(setting, customer,
-                                                        CustomerAppErrors.ALREADY_HAS_LOYALTY_DISCOUNT)
+        d = discount_service.create_loyalty_discount(setting, customer,
+                                                     CustomerAppErrors.ALREADY_HAS_LOYALTY_DISCOUNT)
+        points = loyalty_service.get_customer_points(businessman, customer)
+        return d, points
 
 
 return_plan_service = ReturnPlanService()

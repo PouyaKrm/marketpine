@@ -9,6 +9,7 @@ from customer_application.base_views import CustomerAuthenticationSchema, BaseLi
 from customer_application.return_plan.serializers import FriendInvitationSerializer, CustomerReadonlyDiscountSerializer, \
     CreateLoyaltyDiscountSerializer
 from customer_application.return_plan.services import return_plan_service, InvitationInfo
+from customer_application.serializers import CustomerAppPointsSerializer
 from customer_return_plan.services import customer_discount_service
 
 logger = logging.getLogger(__name__)
@@ -59,13 +60,16 @@ class CustomerLoyaltyDiscount(BaseAPIView):
             sr = CreateLoyaltyDiscountSerializer(data=request.data, request=request)
             if not sr.is_valid():
                 return bad_request(sr.errors)
-            discount = return_plan_service.create_loyalty_discount(
+            result = return_plan_service.create_loyalty_discount(
                 request.user,
                 sr.validated_data.get('businessman_id'),
                 sr.validated_data.get('discount_settings_id')
             )
 
-            sr = CreateLoyaltyDiscountSerializer(discount, request=request)
-            return ok(sr.data)
+            point_sr = CustomerAppPointsSerializer(result[1])
+
+            d_sr = CreateLoyaltyDiscountSerializer(result[0], request=request)
+            resp = {'points': point_sr.data, 'discount': d_sr.data}
+            return ok(resp)
         except ApplicationErrorException as ex:
             return bad_request(ex.http_message)
