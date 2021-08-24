@@ -34,10 +34,10 @@ class BusinessmanService:
         return Businessman.objects.get(mobileapppageconf__page_id=page_id.lower())
 
     def is_page_id_predefined(self, page_id: str) -> bool:
-        return page_id in customer_frontend_paths
+        return page_id.lower() in customer_frontend_paths
 
     def is_page_id_pattern_valid(self, page_id) -> bool:
-        match = re.search(r'^\d*[a-zA-Z_-]+[a-zA-Z0-9_-]*$', page_id)
+        match = re.search(r'^\d*[a-zA-Z_-]+[a-zA-Z0-9_-]*$', page_id.lower())
         return match is not None
 
     def is_phone_unique_for_update(self, user: Businessman, new_phone: str) -> bool:

@@ -150,6 +150,7 @@ class MobileAppPageConfSerializer(BaseModelSerializerWithRequestObj):
 
     def validate_page_id(self, value):
         user = self.request.user
+        value = value.lower()
         if not mobile_page_conf_service.is_page_id_pattern_valid(value):
             raise serializers.ValidationError('فرمت اشتباه')
         elif not mobile_page_conf_service.is_page_id_unique(user, value):

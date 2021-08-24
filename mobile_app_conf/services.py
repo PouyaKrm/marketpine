@@ -26,7 +26,10 @@ class MobileAppPageConfService:
         conf.is_location_set = updated_data.get('is_location_set')
         conf.location_lat = updated_data.get('location_lat')
         conf.location_lng = updated_data.get('location_lng')
-        conf.page_id = updated_data.get('page_id').lower()
+        page_id = updated_data.get('page_id')
+        if page_id is not None:
+            page_id = page_id.lower()
+        conf.page_id = page_id
         conf.instagram_page_url = updated_data.get('instagram_page_url')
         conf.telegram_url = updated_data.get('telegram_url')
         conf.working_time_from = updated_data.get('working_time_from')

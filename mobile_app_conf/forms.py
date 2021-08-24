@@ -16,6 +16,7 @@ class MobileAppPageConfForm(forms.ModelForm):
         if page_id is None:
             return page_id
         user = self.cleaned_data.get('businessman')
+        page_id = page_id.lower()
         if not mobile_page_conf_service.is_page_id_pattern_valid(page_id):
             raise ValidationError('فرمت اشتباه')
         elif not mobile_page_conf_service.is_page_id_unique(user, page_id):
