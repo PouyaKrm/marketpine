@@ -22,7 +22,7 @@ class MobileAppPageConfForm(forms.ModelForm):
             raise ValidationError('این آیدی صفحه قبلا استفاده شده')
         elif mobile_page_conf_service.is_page_id_predefined(page_id):
             raise ValidationError('آیدی غیر مجاز')
-        return page_id
+        return page_id.lower()
 
     def clean_instagram_page_url(self):
         url = self.cleaned_data.get('instagram_page_url')
