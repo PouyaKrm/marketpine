@@ -175,16 +175,18 @@ class CustomerService(BaseService):
         return not BusinessmanCustomer.objects.exclude(businessman=user).filter(customer=c).exists()
 
     def _can_edit_phone_number_value(self, user: Businessman, c: Customer, phone: str) -> bool:
-        is_unique = self.is_phone_number_unique_for_update(c, phone)
+        is_unique = self.is_phone_number_unique_for_update(user, c.id, phone)
         businessmans = self.get_businessmans_of_customer(c)
         if is_unique:
             return businessmans.exclude(id=user.id).count() == 0
 
     def _can_edit_phone_number_by_change_customer(self, user: Businessman, c: Customer, phone: str):
-        return Customer.objects.filter(phone=phone).exclude(connected_businessmans__businessman=user).exclude(id=c.id).exists()
+        return Customer.objects.filter(phone=phone).exclude(connected_businessmans__businessman=user).exclude(
+            id=c.id).exists()
 
-    def is_phone_number_unique_for_update(self, customer: object, phone: object) -> object:
-        return not Customer.objects.filter(phone=phone).exclude(id=customer.id).exists()
+    def is_phone_number_unique_for_update(self, user: Businessman, customer_id: int, phone: str) -> bool:
+        return not user.customers.filter(phone=phone).exclude(id=customer_id,
+                                                              connected_businessmans__is_deleted=False).exists()
 
     def _update_customer_phone_full_name(self, c: Customer, phone: str, full_name: str) -> Customer:
         c.phone = phone

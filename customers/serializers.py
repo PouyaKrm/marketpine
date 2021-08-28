@@ -199,9 +199,15 @@ class CustomerSerializer(CustomerListCreateSerializer):
         sr = BusinessmanGroupsCreateListSerializer(obj.connected_groups, many=True)
         return sr.data
 
+    def validate_phone(self, value):
+        user = self.context['user']
+        customer_id = self.context['customer_id']
+        if not customer_service.is_phone_number_unique_for_update(user, customer_id, value):
+            raise serializers.ValidationError('مشتری دیگری با این شماره تلفن قبلا ثبت شده')
+        return value
+
     def update(self, instance: Customer, validated_data):
-      pass
+        pass
 
     def create(self, validated_data):
         pass
-
