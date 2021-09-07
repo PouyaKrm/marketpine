@@ -227,36 +227,55 @@ USE_TZ = True
 STATIC_URL = '/static/'
 LOG_DIR = os.path.join(BASE_DIR, '..', 'logs')
 
-logging.config.dictConfig({
+LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
     'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
+            'style': '{',
+        },
         'console': {
             'format': '%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
         },
-        'django.server': DEFAULT_LOGGING['formatters']['django.server'],
     },
+
+    'filters': {
+        'require_debug_false': {
+            '()': 'django.utils.log.RequireDebugFalse',
+        }
+    },
+
     'handlers': {
         'console': {
             'class': 'logging.StreamHandler',
             'formatter': 'console',
         },
-        'django.server': DEFAULT_LOGGING['handlers']['django.server'],
+
+        'file': {
+            'level': 'DEBUG',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': os.path.join(BASE_DIR, '..', 'logs/application.log'),
+            'maxBytes': 1024 * 1024 * 5,  # 5 MB
+            'backupCount': 5,
+            'formatter': 'verbose',
+        },
+
+        'mail_admins': {
+            'level': 'ERROR',
+            'filters': ['require_debug_false'],
+            'class': 'django.utils.log.AdminEmailHandler'
+        }
     },
     'loggers': {
-        '': {
-            'level': 'WARNING',
-            'handlers': ['console'],
-        },
-        'CRM': {
+
+        'django': {
             'level': 'INFO',
-            'handlers': ['console'],
+            'handlers': ['console', 'file'],
             # required to avoid double logging with root logger
-            'propagate': False,
-        },
-        'django.server': DEFAULT_LOGGING['loggers']['django.server'],
+        }
     },
-})
+}
 
 
 MAX_LOGO_SIZE = 10000000
@@ -334,7 +353,6 @@ CORS_EXPOSE_HEADERS = [
     'authorization',
     'content-type',
 ]
-
 
 PUBLIC_FILE_BASE_PATH = os.path.join(BASE_DIR, '..', 'public/')
 
