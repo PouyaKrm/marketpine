@@ -19,17 +19,14 @@ class LoyaltySettingsRetrieveUpdateAPIVIew(APIView):
         return ok(serializer.data)
 
     def put(self, request: Request):
-        try:
-            serializer = LoyaltySettingsSerializer(data=request.data)
-            if not serializer.is_valid():
-                return bad_request(serializer.errors)
-            self._validate_loyality_settings_list(serializer)
-            updated = LoyaltyService.get_instance().update_businessman_loyalty_settings(request.user,
-                                                                                        serializer.validated_data)
-            serializer = LoyaltySettingsSerializer(updated)
-            return ok(serializer.data)
-        except ApplicationErrorException as ex:
-            return bad_request(ex.http_message)
+        serializer = LoyaltySettingsSerializer(data=request.data)
+        if not serializer.is_valid():
+            return bad_request(serializer.errors)
+        self._validate_loyality_settings_list(serializer)
+        updated = LoyaltyService.get_instance().update_businessman_loyalty_settings(request.user,
+                                                                                    serializer.validated_data)
+        serializer = LoyaltySettingsSerializer(updated)
+        return ok(serializer.data)
 
     def _validate_loyality_settings_list(self, sr: LoyaltySettingsSerializer):
 
