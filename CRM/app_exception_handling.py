@@ -27,6 +27,8 @@ def custom_exception_handler(exe, context):
     error_code_log = 'error code: {}'.format(error_code)
     if exe.originalException is not None:
         logger.error('following error happened in user request')
+        logger.warning('user ip ' + ip)
+        logger.warning(username)
         logger.error(error_code_log)
         logger.error(exe.originalException)
     else:
