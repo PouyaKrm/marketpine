@@ -23,13 +23,15 @@ def custom_exception_handler(exe, context):
     elif not request.user.is_anonymous and type(request.user) == Customer:
         username = 'customer with phone ' + request.user.phone
 
+    error_code = exe.http_message.get('code')
+    error_code_log = 'error code: {}'.format(error_code)
     if exe.originalException is not None:
         logger.error('following error happened in user request')
-        logger.error('user ip ' + ip)
-        logger.error(username)
-        logger.error(exe.http_message)
+        logger.error(error_code_log)
         logger.error(exe.originalException)
     else:
-        logger.warning(exe.http_message)
+        logger.warning('user ip ' + ip)
+        logger.warning(username)
+        logger.warning(error_code_log)
 
     return bad_request(exe.http_message)
