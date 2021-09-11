@@ -3,7 +3,6 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from base_app.error_codes import ApplicationErrorException
 from base_app.pginations import BasePageNumberPagination
 from common.util.http_helpers import no_content, bad_request, ok
 from .serializers import CustomerSerializer, CustomerListCreateSerializer
@@ -28,16 +27,13 @@ class BusinessmanCustomerListAPIView(APIView):
         if not sr.is_valid():
             return bad_request(sr.errors)
 
-        try:
-            c = customer_service.add_customer(
-                request.user, sr.validated_data.get('phone'),
-                sr.validated_data.get('full_name'),
-                sr.validated_data.get('groups'))
+        c = customer_service.add_customer(
+            request.user, sr.validated_data.get('phone'),
+            sr.validated_data.get('full_name'),
+            sr.validated_data.get('groups'))
 
-            sr = CustomerListCreateSerializer(c, context=self.get_serializer_context())
-            return ok(sr.data)
-        except ApplicationErrorException as ex:
-            return bad_request(ex.http_message)
+        sr = CustomerListCreateSerializer(c, context=self.get_serializer_context())
+        return ok(sr.data)
 
     def get(self, request: Request):
         paginator = BasePageNumberPagination()
@@ -100,12 +96,9 @@ class BusinessmanCustomerRetrieveAPIView(APIView):
         return {'user': self.request.user, 'customer_id': self.kwargs.get('id')}
 
     def get(self, request: Request, customer_id: int):
-        try:
-            c = customer_service.get_businessman_customer_by_id(request.user, customer_id)
-            sr = CustomerSerializer(c, context=self.get_serializer_context())
-            return ok(sr.data)
-        except ApplicationErrorException as ex:
-            return bad_request(ex.http_message)
+        c = customer_service.get_businessman_customer_by_id(request.user, customer_id)
+        sr = CustomerSerializer(c, context=self.get_serializer_context())
+        return ok(sr.data)
 
     def get_object(self):
         c_id = self.kwargs.get('id')
@@ -116,25 +109,20 @@ class BusinessmanCustomerRetrieveAPIView(APIView):
         sr = CustomerSerializer(data=request.data, context=self.get_serializer_context())
         if not sr.is_valid():
             return bad_request(sr.errors)
-        try:
-            c = customer_service.edit_customer_phone_full_name(
-                request.user,
-                customer_id,
-                sr.validated_data.get('phone'),
-                sr.validated_data.get('full_name')
-            )
-            sr = CustomerSerializer(c, context=self.get_serializer_context())
-            return ok(sr.data)
-        except ApplicationErrorException as ex:
-            return bad_request(ex.http_message)
+
+        c = customer_service.edit_customer_phone_full_name(
+            request.user,
+            customer_id,
+            sr.validated_data.get('phone'),
+            sr.validated_data.get('full_name')
+        )
+        sr = CustomerSerializer(c, context=self.get_serializer_context())
+        return ok(sr.data)
 
     def delete(self, request, customer_id):
-        try:
-            c = customer_service.delete_customer_for_businessman(request.user, customer_id)
-            sr = CustomerSerializer(c, context=self.get_serializer_context())
-            return ok(sr.data)
-        except ApplicationErrorException as ex:
-            return bad_request(ex.http_message)
+        c = customer_service.delete_customer_for_businessman(request.user, customer_id)
+        sr = CustomerSerializer(c, context=self.get_serializer_context())
+        return ok(sr.data)
 
     def destroy(self, request: Request, *args, **kwargs) -> Response:
         customer_service.delete_customer_for_businessman(request.user, kwargs.get('id'))
