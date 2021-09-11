@@ -306,7 +306,7 @@ REST_FRAMEWORK = {
         'rest_framework.authentication.SessionAuthentication',
     ),
 
-    'EXCEPTION_HANDLER': 'CRM.middlewares.custom_exception_handler'
+    'EXCEPTION_HANDLER': 'CRM.app_logging.custom_exception_handler'
 
 }
 
