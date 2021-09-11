@@ -5,9 +5,8 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from base_app.error_codes import ApplicationErrorException
 from common.util import paginators
-from common.util.http_helpers import not_found, no_content, bad_request, ok
+from common.util.http_helpers import not_found, no_content, ok
 from customerpurchase.models import CustomerPurchase
 from customers.services import customer_service
 from .serializers import PurchaseCreationUpdateSerializer, PurchaseListSerializer, CustomerPurchaseListSerializer
@@ -19,7 +18,6 @@ from .services import purchase_service
 class PurchaseListCreateAPIView(APIView):
 
     def get(self, request):
-
         purchases = purchase_service.get_businessman_all_purchases(request.user)
 
         paginate = paginators.NumberedPaginator(request, purchases, PurchaseListSerializer)
@@ -29,22 +27,17 @@ class PurchaseListCreateAPIView(APIView):
     def post(self, request):
         serializer = PurchaseCreationUpdateSerializer(data=request.data, context={'user': request.user})
 
-        try:
-            if not serializer.is_valid():
-                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-            p = purchase_service.submit_purchase_with_discounts(
-                request.user,
-                serializer.validated_data.get('customer'),
-                serializer.validated_data.get('amount'),
-                serializer.validated_data.get('discounts')
-            )
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        p = purchase_service.submit_purchase_with_discounts(
+            request.user,
+            serializer.validated_data.get('customer'),
+            serializer.validated_data.get('amount'),
+            serializer.validated_data.get('discounts')
+        )
 
-            serializer = PurchaseCreationUpdateSerializer(p, context={'user': request.user})
-            return ok(serializer.data)
-        except ApplicationErrorException as ex:
-            return bad_request(ex.http_message)
-
-
+        serializer = PurchaseCreationUpdateSerializer(p, context={'user': request.user})
+        return ok(serializer.data)
 
 
 class CustomerPurchaseUpdateDeleteAPIView(APIView):
@@ -83,14 +76,11 @@ class CustomerPurchaseUpdateDeleteAPIView(APIView):
 
 @api_view(['GET'])
 def get_customer_purchases(request: Request, customer_id):
-
     try:
         customer = customer_service.get_businessman_customer_by_id(request.user, customer_id)
         customer_purchases = purchase_service.get_customer_all_purchases(request.user, customer)
     except ObjectDoesNotExist:
         return Response(status=status.HTTP_404_NOT_FOUND)
-    except ApplicationErrorException as ex:
-        return bad_request(ex.http_message)
 
     paginate = paginators.NumberedPaginator(request, customer_purchases, CustomerPurchaseListSerializer)
 
