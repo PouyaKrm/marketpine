@@ -39,14 +39,11 @@ class VerifyPayment(APIView):
         pay_status = request.GET.get('Status')
         authority = request.GET.get('Authority')
 
-        try:
-            if (pay_status is None or (pay_status != 'OK' and pay_status != 'NOK')) or authority is None:
-                raise ApplicationErrorException(ApplicationErrorCodes.PAYMENT_INFORMATION_INCORRECT)
-            p = payment_service.verify_payment_by_authority(authority, pay_status)
-            sr = PaymentResultSerializer(p)
-            return ok(sr.data)
-        except ApplicationErrorException as ex:
-            return bad_request(ex.http_message)
+        if (pay_status is None or (pay_status != 'OK' and pay_status != 'NOK')) or authority is None:
+            raise ApplicationErrorException(ApplicationErrorCodes.PAYMENT_INFORMATION_INCORRECT)
+        p = payment_service.verify_payment_by_authority(authority, pay_status)
+        sr = PaymentResultSerializer(p)
+        return ok(sr.data)
 
 
 def verify(request):
@@ -98,35 +95,29 @@ def create_payment_sms_credit(request):
     if not serializer.is_valid():
         return bad_request(serializer.errors)
 
-    try:
-        p = payment_service.create_payment_for_smspanel_credit(
-            request.user,
-            serializer.validated_data.get('amount')
-        )
-        serializer = SMSCreditPaymentCreationSerializer(p)
-        return ok(serializer.data)
-    except ApplicationErrorException as ex:
-        return bad_request(ex.http_message)
+    p = payment_service.create_payment_for_smspanel_credit(
+        request.user,
+        serializer.validated_data.get('amount')
+    )
+    serializer = SMSCreditPaymentCreationSerializer(p)
+    return ok(serializer.data)
 
 
 class WalletCreditPaymentCreation(APIView):
     permission_classes = [permissions.IsAuthenticated, IsBusinessmanAuthorized]
 
     def post(self, request):
-
         sr = WalletIncreaseCreditSerializer(data=request.data, request=request)
         if not sr.is_valid():
             return bad_request(sr.errors)
-        try:
-            p = payment_service.create_payment_for_wallet_credit(
-                request.user,
-                sr.validated_data.get('amount')
-            )
 
-            sr = WalletIncreaseCreditSerializer(p)
-            return ok(sr.data)
-        except ApplicationErrorException as ex:
-            return bad_request(ex.http_message)
+        p = payment_service.create_payment_for_wallet_credit(
+            request.user,
+            sr.validated_data.get('amount')
+        )
+
+        sr = WalletIncreaseCreditSerializer(p)
+        return ok(sr.data)
 
 
 class SubscriptionPaymentCreate(APIView):
@@ -138,13 +129,10 @@ class SubscriptionPaymentCreate(APIView):
         if not sr.is_valid():
             return bad_request(sr.errors)
 
-        try:
-            p = payment_service.create_payment_for_subscription(request.user,
-                                                                sr.validated_data.get('plan'))
-            sr = SubscriptionPaymentCreationSerializer(p)
-            return ok(sr.data)
-        except ApplicationErrorException as ex:
-            return bad_request(ex.http_message)
+        p = payment_service.create_payment_for_subscription(request.user,
+                                                            sr.validated_data.get('plan'))
+        sr = SubscriptionPaymentCreationSerializer(p)
+        return ok(sr.data)
 
     def get(self, request: Request):
         plans = payment_service.get_all_plans()
@@ -179,19 +167,15 @@ class ListPayView(BaseListAPIView):
 class BillingSummeryAPIView(APIView):
 
     def get(self, request: Request):
-        try:
-            m = self._get_month(request)
-            day = None
-            if m is not None:
-                now = jdatetime.datetime.now().replace(month=m)
-                day = self._get_day(request, now)
-            result = wallet_billing_service.get_billing_summery(request.user, m, day)
+        m = self._get_month(request)
+        day = None
+        if m is not None:
+            now = jdatetime.datetime.now().replace(month=m)
+            day = self._get_day(request, now)
+        result = wallet_billing_service.get_billing_summery(request.user, m, day)
 
-            sr = BillingSummerySerializer(result, many=True)
-            return ok(sr.data)
-
-        except ApplicationErrorException as ex:
-            return bad_request(ex.http_message)
+        sr = BillingSummerySerializer(result, many=True)
+        return ok(sr.data)
 
     def _get_month(self, request: Request) -> int:
         err_message = 'مقدار ماه غیر مجاز است'
