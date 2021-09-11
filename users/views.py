@@ -7,7 +7,6 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.request import Request
 from rest_framework.response import Response
 
-from base_app.error_codes import ApplicationErrorException
 from common.util.http_helpers import ok, not_found, dependency_failed, no_content, bad_request
 from .permissions import HasValidRefreshToken
 from .serializers import *
@@ -33,22 +32,19 @@ def create_user(request):
     if not serializer.is_valid():
         return bad_request(serializer.errors)
 
-    try:
-        user = businessman_service.register_user(
-            serializer.validated_data.get('username'),
-            serializer.validated_data.get('password'),
-            serializer.validated_data.get('phone'),
-            serializer.validated_data.get('email'),
-            serializer.validated_data.get('first_name'),
-            serializer.validated_data.get('last_name')
-        )
+    user = businessman_service.register_user(
+        serializer.validated_data.get('username'),
+        serializer.validated_data.get('password'),
+        serializer.validated_data.get('phone'),
+        serializer.validated_data.get('email'),
+        serializer.validated_data.get('first_name'),
+        serializer.validated_data.get('last_name')
+    )
 
-        auth_result = businessman_service.login_user(user.username,
-                                                     serializer.validated_data.get('password'),
-                                                     request)
-        return ok(auth_result)
-    except ApplicationErrorException as ex:
-        return bad_request(ex.http_message)
+    auth_result = businessman_service.login_user(user.username,
+                                                 serializer.validated_data.get('password'),
+                                                 request)
+    return ok(auth_result)
 
 
 @api_view(['GET'])
@@ -122,24 +118,15 @@ def get_access_token(request):
     """
 
     username = request.data['username']
-
-    try:
-        result = businessman_service.get_access_token_by_username(username)
-        return ok(result)
-    except ApplicationErrorException as ex:
-        return bad_request(ex.http_message)
+    result = businessman_service.get_access_token_by_username(username)
+    return ok(result)
 
 
 @api_view(['PUT'])
 @permission_classes([])
 def verify_user(request, businessman_id, code):
-    try:
-        businessman_service.verify_businessman_phone(businessman_id, code)
-
-    except ApplicationErrorException as e:
-        return bad_request(e.http_message)
-
-    return Response(status=status.HTTP_204_NO_CONTENT)
+    businessman_service.verify_businessman_phone(businessman_id, code)
+    return no_content()
 
 
 @api_view(['PUT'])
