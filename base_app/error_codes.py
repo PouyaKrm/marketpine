@@ -8,7 +8,14 @@ class ApplicationErrorException(Exception):
             self.http_message = error_code_message
         elif type(error_code_message) == str:
             self.http_message = {'message': error_code_message}
+        super().__init__(error_code_message)
         self.originalException = original_exception
+
+    def __str__(self):
+        return super().__str__()
+
+    def log(self, logger):
+        logger.warning(self.http_message)
 
 
 class ApplicationErrorCodes:

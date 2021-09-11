@@ -157,6 +157,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    # 'CRM.middlewares.AppExceptionMiddleware',
 ]
 
 ROOT_URLCONF = 'CRM.urls'
@@ -232,11 +233,11 @@ LOGGING = {
     'disable_existing_loggers': False,
     'formatters': {
         'verbose': {
-            'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
+            'format': u'{levelname} {asctime} {module} {process:d} {thread:d} {message}',
             'style': '{',
         },
         'console': {
-            'format': '%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
+            'format': u'%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
         },
     },
 
@@ -259,6 +260,7 @@ LOGGING = {
             'maxBytes': 1024 * 1024 * 5,  # 5 MB
             'backupCount': 5,
             'formatter': 'verbose',
+            'encoding': 'UTF-8',
         },
 
         'mail_admins': {
@@ -276,7 +278,6 @@ LOGGING = {
         }
     },
 }
-
 
 MAX_LOGO_SIZE = 10000000
 MEDIA_URL = '/media/'
@@ -304,6 +305,8 @@ REST_FRAMEWORK = {
         'rest_framework_jwt.authentication.JSONWebTokenAuthentication',
         'rest_framework.authentication.SessionAuthentication',
     ),
+
+    'EXCEPTION_HANDLER': 'CRM.middlewares.custom_exception_handler'
 
 }
 
