@@ -1,27 +1,3 @@
-from django.http.response import HttpResponse
-from django.core.exceptions import ObjectDoesNotExist
-
-# Create your views here.
-from wsgiref.util import FileWrapper
-
-from rest_framework.decorators import api_view, permission_classes
-from rest_framework import status
-
-from rest_framework import permissions
-from rest_framework.request import Request
-from rest_framework.response import Response
-from rest_framework.views import APIView
-
-from common.util.http_helpers import ok, bad_request, no_content, created
-from panelprofile.permissions import AuthDocsNotUploaded, IsPhoneNotVerified
-from panelprofile.serializers import AuthSerializer, BusinessmanProfileSerializer, UploadImageSerializer, \
-    PhoneChangeSerializer
-from panelprofile.services import business_man_auth_doc_service
-from users.models import Businessman
-
-from users.permissions import IsPhoneVerified, IsProfileComplete
-from users.services import verification_service, businessman_service
-# Create your views here.
 from wsgiref.util import FileWrapper
 
 from django.core.exceptions import ObjectDoesNotExist
