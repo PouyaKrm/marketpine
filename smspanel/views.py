@@ -4,7 +4,6 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from base_app.error_codes import ApplicationErrorException
 from base_app.views import BaseListAPIView
 from common.util.http_helpers import ok, bad_request
 from common.util.kavenegar_local import APIException
@@ -85,16 +84,13 @@ class SendPlainSms(APIView):
         if not serializer.is_valid():
             return bad_request(serializer.errors)
 
-        try:
-            info = sms_message_service.send_plain_sms(
-                request.user,
-                serializer.validated_data.get('customers'),
-                serializer.validated_data.get('content')
-            )
-            sr = SMSPanelInfoSerializer(info)
-            return ok(sr.data)
-        except ApplicationErrorException as e:
-            return bad_request(e.http_message)
+        info = sms_message_service.send_plain_sms(
+            request.user,
+            serializer.validated_data.get('customers'),
+            serializer.validated_data.get('content')
+        )
+        sr = SMSPanelInfoSerializer(info)
+        return ok(sr.data)
 
 
 class SendPlainToAllAPIView(APIView):
@@ -115,15 +111,12 @@ class SendPlainToAllAPIView(APIView):
         if not serializer.is_valid():
             return bad_request(serializer.errors)
 
-        try:
-            info = sms_message_service.send_plain_sms_to_all(
-                request.user,
-                serializer.validated_data.get('content')
-            )
-            sr = SMSPanelInfoSerializer(info)
-            return ok(sr.data)
-        except ApplicationErrorException as ex:
-            return bad_request(ex.http_message)
+        info = sms_message_service.send_plain_sms_to_all(
+            request.user,
+            serializer.validated_data.get('content')
+        )
+        sr = SMSPanelInfoSerializer(info)
+        return ok(sr.data)
 
 
 class SendByTemplateAPIView(APIView):
@@ -135,16 +128,13 @@ class SendByTemplateAPIView(APIView):
         if not serializer.is_valid():
             return bad_request(serializer.errors)
 
-        try:
-            info = sms_message_service.send_by_template(
-                request.user,
-                serializer.validated_data.get('customers'),
-                serializer.validated_data.get('template')
-            )
-            sr = SMSPanelInfoSerializer(info)
-            return ok(sr.data)
-        except ApplicationErrorException as ex:
-            return bad_request(ex.http_message)
+        info = sms_message_service.send_by_template(
+            request.user,
+            serializer.validated_data.get('customers'),
+            serializer.validated_data.get('template')
+        )
+        sr = SMSPanelInfoSerializer(info)
+        return ok(sr.data)
 
 
 class SendByTemplateToAll(APIView):
@@ -152,12 +142,9 @@ class SendByTemplateToAll(APIView):
                           HasValidCreditSendSMSToAll]
 
     def post(self, request: Request, template_id: int):
-        try:
-            info = sms_message_service.send_by_template_to_all(request.user, template_id)
-            sr = SMSPanelInfoSerializer(info)
-            return ok(sr.data)
-        except ApplicationErrorException as ex:
-            return bad_request(ex.http_message)
+        info = sms_message_service.send_by_template_to_all(request.user, template_id)
+        sr = SMSPanelInfoSerializer(info)
+        return ok(sr.data)
 
 
 class SendPlainSmsToGroup(APIView):
@@ -172,12 +159,9 @@ class SendPlainSmsToGroup(APIView):
         if not sr.is_valid():
             return bad_request(sr.errors)
 
-        try:
-            info = sms_message_service.send_plain_to_group(request.user, group_id, sr.validated_data.get('content'))
-            sr = SMSPanelInfoSerializer(info)
-            return ok(sr.data)
-        except ApplicationErrorException as ex:
-            return bad_request(ex.http_message)
+        info = sms_message_service.send_plain_to_group(request.user, group_id, sr.validated_data.get('content'))
+        sr = SMSPanelInfoSerializer(info)
+        return ok(sr.data)
 
 
 class SendTemplateSmsToGroup(APIView):
@@ -188,12 +172,9 @@ class SendTemplateSmsToGroup(APIView):
     ]
 
     def post(self, request: Request, template_id: int, group_id: int):
-        try:
-            info = sms_message_service.send_by_template_to_group(request.user, group_id, template_id)
-            sr = SMSPanelInfoSerializer(info)
-            return ok(sr.data)
-        except ApplicationErrorException as ex:
-            return bad_request(ex.http_message)
+        info = sms_message_service.send_by_template_to_group(request.user, group_id, template_id)
+        sr = SMSPanelInfoSerializer(info)
+        return ok(sr.data)
 
 
 class FailedSMSMessagesList(BaseListAPIView):
@@ -211,13 +192,9 @@ class ResendFailedSms(APIView):
     ]
 
     def post(self, request: Request, sms_id: int):
-
-        try:
-            info = sms_message_service.resend_failed_message(request.user, sms_id)
-            sr = SMSPanelInfoSerializer(info)
-            return ok(sr.data)
-        except ApplicationErrorException as ex:
-            return bad_request(ex.http_message)
+        info = sms_message_service.resend_failed_message(request.user, sms_id)
+        sr = SMSPanelInfoSerializer(info)
+        return ok(sr.data)
 
 
 class SentSMSRetrieveAPIView(BaseListAPIView):
