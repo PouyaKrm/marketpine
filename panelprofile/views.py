@@ -1,31 +1,44 @@
-from django.contrib.auth import authenticate
 from django.http.response import HttpResponse
-from django.shortcuts import render
-from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
 
 # Create your views here.
 from wsgiref.util import FileWrapper
 
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.generics import CreateAPIView, RetrieveAPIView, GenericAPIView, UpdateAPIView
-from rest_framework import mixins, status
+from rest_framework import status
 
 from rest_framework import permissions
 from rest_framework.request import Request
 from rest_framework.response import Response
-from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from base_app.error_codes import ApplicationErrorException
 from common.util.http_helpers import ok, bad_request, no_content, created
 from panelprofile.permissions import AuthDocsNotUploaded, IsPhoneNotVerified
 from panelprofile.serializers import AuthSerializer, BusinessmanProfileSerializer, UploadImageSerializer, \
-    SMSPanelInfoSerializer, PhoneChangeSerializer
-from panelprofile.services import sms_panel_info_service, business_man_auth_doc_service
+    PhoneChangeSerializer
+from panelprofile.services import business_man_auth_doc_service
 from users.models import Businessman
 
-from common.util.custom_permission import HasUploadedAuthDocsAndAuthenticated
+from users.permissions import IsPhoneVerified, IsProfileComplete
+from users.services import verification_service, businessman_service
+# Create your views here.
+from wsgiref.util import FileWrapper
+
+from django.core.exceptions import ObjectDoesNotExist
+from django.http.response import HttpResponse
+from rest_framework import permissions
+from rest_framework import status
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.request import Request
+from rest_framework.response import Response
+from rest_framework.views import APIView
+
+from common.util.http_helpers import ok, bad_request, no_content, created
+from panelprofile.permissions import AuthDocsNotUploaded, IsPhoneNotVerified
+from panelprofile.serializers import AuthSerializer, BusinessmanProfileSerializer, UploadImageSerializer, \
+    PhoneChangeSerializer
+from panelprofile.services import business_man_auth_doc_service
+from users.models import Businessman
 from users.permissions import IsPhoneVerified, IsProfileComplete
 from users.services import verification_service, businessman_service
 
@@ -102,33 +115,23 @@ class SendPhoneVerificationCode(APIView):
         resend = request.query_params.get('resend')
 
         if resend is not None and resend.lower().strip() == 'true':
-            try:
-                verification_service.resend_phone_confirm_code(request.user)
-                return no_content()
-            except ApplicationErrorException as ex:
-                return bad_request(ex.http_message)
+            verification_service.resend_phone_confirm_code(request.user)
+            return no_content()
 
         sr = PhoneChangeSerializer(data=request.data, request=request)
 
         if not sr.is_valid():
             return bad_request(sr.errors)
 
-        try:
-            businessman_service.send_businessman_phone_verification(request.user, sr.validated_data.get('phone'))
-            return no_content()
-        except ApplicationErrorException as e:
-            return bad_request(e.http_message)
+        businessman_service.send_businessman_phone_verification(request.user, sr.validated_data.get('phone'))
+        return no_content()
 
 
 class VerifyPhone(APIView):
     permission_classes = [permissions.IsAuthenticated, IsPhoneNotVerified]
 
     def post(self, request: Request, code: str):
-
-        try:
-            businessman_service.verify_businessman_phone(request.user, code)
-        except ApplicationErrorException as e:
-            return bad_request(e.http_message)
+        businessman_service.verify_businessman_phone(request.user, code)
         serializer = BusinessmanProfileSerializer(request.user, context={'user': request.user, 'request': request})
         return ok(serializer.data)
 
@@ -141,36 +144,24 @@ class PhoneChangeSendVerification(APIView):
         resend = request.query_params.get('resend')
 
         if resend is not None and resend.lower().strip() == 'true':
-            try:
-                verification_service.resend_phone_change_code(request.user)
-                return no_content()
-            except ApplicationErrorException as ex:
-                return bad_request(ex.http_message)
+            verification_service.resend_phone_change_code(request.user)
+            return no_content()
 
         sr = PhoneChangeSerializer(is_phone_required=True, data=request.data, request=request)
         if not sr.is_valid():
             return bad_request(sr.errors)
-        try:
-            businessman_service.send_phone_change_verification(request.user,
-                                                               sr.validated_data.get('phone'))
 
-            return no_content()
-        except ApplicationErrorException as ex:
-            return bad_request(ex.http_message)
+        businessman_service.send_phone_change_verification(request.user, sr.validated_data.get('phone'))
+        return no_content()
 
 
 class PhoneChangeVerify(APIView):
     permission_classes = [permissions.IsAuthenticated, IsPhoneVerified]
 
     def post(self, request: Request, previous_phone_code: str, new_phone_code: str):
-        try:
-            user = businessman_service.change_phone_number(request.user,
-                                                           previous_phone_code,
-                                                           new_phone_code)
-            sr = BusinessmanProfileSerializer(user, request=request)
-            return ok(sr.data)
-        except ApplicationErrorException as ex:
-            return bad_request(ex.http_message)
+        user = businessman_service.change_phone_number(request.user, previous_phone_code, new_phone_code)
+        sr = BusinessmanProfileSerializer(user, request=request)
+        return ok(sr.data)
 
 
 @api_view(['GET'])
@@ -208,15 +199,11 @@ class UploadBusinessmanDocs(APIView):
         if not sr.is_valid():
             return bad_request(sr.errors)
 
-        try:
-            doc = business_man_auth_doc_service.businessman_auth_docs_upload(
-                request.user,
-                sr.validated_data.get('form'),
-                sr.validated_data.get('national_card'),
-                sr.validated_data.get('birth_certificate'),
-                sr.validated_data.get('password')
-            )
-            return created()
-        except ApplicationErrorException as ex:
-            return bad_request(ex.http_message)
-
+        doc = business_man_auth_doc_service.businessman_auth_docs_upload(
+            request.user,
+            sr.validated_data.get('form'),
+            sr.validated_data.get('national_card'),
+            sr.validated_data.get('birth_certificate'),
+            sr.validated_data.get('password')
+        )
+        return created()
