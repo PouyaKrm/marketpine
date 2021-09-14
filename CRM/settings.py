@@ -228,65 +228,6 @@ USE_TZ = True
 STATIC_URL = '/static/'
 LOG_DIR = os.path.join(BASE_DIR, '..', 'logs')
 
-LOG_HANDLERS = ['console']
-if not DEBUG:
-    LOG_HANDLERS = ['console', 'file']
-
-LOGGING = {
-    'version': 1,
-    'disable_existing_loggers': False,
-    'formatters': {
-        'verbose': {
-            'format': u'{levelname} {asctime} {module} {process:d} {thread:d} {message}',
-            'style': '{',
-        },
-        'console': {
-            'format': u'%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
-        },
-    },
-
-    'filters': {
-        'require_debug_false': {
-            '()': 'django.utils.log.RequireDebugFalse',
-        }
-    },
-
-    'handlers': {
-        'console': {
-            'class': 'logging.StreamHandler',
-            'formatter': 'console',
-        },
-
-        'file': {
-            'level': 'DEBUG',
-            'class': 'logging.handlers.TimedRotatingFileHandler',
-            'filename': os.path.join(BASE_DIR, '..', 'logs/application.log'),
-            'when': 'midnight',
-            'interval': 1,
-            # 'maxBytes': 1024 * 1024 * 5,  # 5 MB
-            'backupCount': 20,
-            'formatter': 'verbose',
-            'encoding': 'UTF-8',
-            'delay': False
-        },
-
-        'mail_admins': {
-            'level': 'ERROR',
-            'filters': ['require_debug_false'],
-            'class': 'django.utils.log.AdminEmailHandler'
-        }
-    },
-
-    'loggers': {
-
-        'django': {
-            'level': 'INFO',
-            'handlers': LOG_HANDLERS,
-            # required to avoid double logging with root logger
-        }
-    },
-}
-
 MAX_LOGO_SIZE = 10000000
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, '..', 'uploaded_media/')
