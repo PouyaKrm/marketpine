@@ -228,6 +228,10 @@ USE_TZ = True
 STATIC_URL = '/static/'
 LOG_DIR = os.path.join(BASE_DIR, '..', 'logs')
 
+LOG_HANDLERS = ['console']
+if not DEBUG:
+    LOG_HANDLERS = ['console', 'file']
+
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
@@ -255,12 +259,15 @@ LOGGING = {
 
         'file': {
             'level': 'DEBUG',
-            'class': 'logging.handlers.RotatingFileHandler',
+            'class': 'logging.handlers.TimedRotatingFileHandler',
             'filename': os.path.join(BASE_DIR, '..', 'logs/application.log'),
-            'maxBytes': 1024 * 1024 * 5,  # 5 MB
-            'backupCount': 5,
+            'when': 'midnight',
+            'interval': 1,
+            # 'maxBytes': 1024 * 1024 * 5,  # 5 MB
+            'backupCount': 20,
             'formatter': 'verbose',
             'encoding': 'UTF-8',
+            'delay': False
         },
 
         'mail_admins': {
@@ -269,11 +276,12 @@ LOGGING = {
             'class': 'django.utils.log.AdminEmailHandler'
         }
     },
+
     'loggers': {
 
         'django': {
             'level': 'INFO',
-            'handlers': ['console', 'file'],
+            'handlers': LOG_HANDLERS,
             # required to avoid double logging with root logger
         }
     },
