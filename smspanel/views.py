@@ -219,7 +219,7 @@ class RetrieveUpdateWelcomeMessageApiView(APIView):
         :param request: Contains data of the request
         :return: Response with body of the current settings and 200 status code
         """
-        wm = sms_message_service.get_welcome_message_or_create(request.user)
+        wm = sms_message_service.get_welcome_message(request.user)
         sr = WelcomeMessageSerializer(wm)
         return ok(sr.data)
 
