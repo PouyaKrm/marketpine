@@ -406,15 +406,15 @@ def resend_failed_message(user: Businessman, sms_id: int) -> SMSPanelInfo:
     from panelprofile.services import sms_panel_info_service
     info = sms_panel_info_service.get_buinessman_sms_panel(user)
     sms = _get_message(user=user, sms_id=sms_id, status=SMSMessage.STATUS_FAILED)
-    set_message_to_pending(sms_messsage=sms)
+    set_message_to_pending(sms_message=sms)
     return info
 
 
-def set_message_to_pending(*args, sms_messsage: SMSMessage):
-    if not sms_messsage.has_any_unsent_receivers():
-        sms_messsage.set_done()
-    sms_messsage.reset_to_pending()
-    return sms_messsage
+def set_message_to_pending(*args, sms_message: SMSMessage):
+    if not sms_message.has_any_unsent_receivers():
+        sms_message.set_done()
+    sms_message.reset_to_pending()
+    return sms_message
 
 
 def update_not_pending_message_text(*args, sms_message: SMSMessage, new_message: str):
@@ -447,7 +447,7 @@ def content_marketing_message_status_cancel(*args, template: str, user: Business
 
 
 def set_content_marketing_message_to_pending(*args, sms_message):
-    return set_message_to_pending(sms_messsage=sms_message)
+    return set_message_to_pending(sms_message=sms_message)
 
 
 def festival_message_status_cancel(*args, template: str, user: Businessman) -> SMSMessage:
