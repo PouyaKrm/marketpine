@@ -1,5 +1,5 @@
 from base_app.tests import *
-from smspanel.models import SMSMessage, SMSMessageReceivers
+from smspanel.models import SMSMessage, SMSMessageReceivers, WelcomeMessage
 
 
 @pytest.fixture
@@ -38,3 +38,8 @@ def sms_message_with_receivers(db, sms_message_pending_1, businessman_with_custo
         result.append(s)
 
     return sms_message_pending_1, result
+
+
+@pytest.fixture
+def welcome_message_1(db, businessman_1: Businessman) -> WelcomeMessage:
+    return WelcomeMessage.objects.create(businessman=businessman_1, message='fake', send_message=True)
