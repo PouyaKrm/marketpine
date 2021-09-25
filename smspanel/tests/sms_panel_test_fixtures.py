@@ -1,5 +1,5 @@
 from base_app.tests import *
-from smspanel.models import SMSMessage, SMSMessageReceivers, WelcomeMessage, SentSMS
+from smspanel.models import SMSMessage, SMSMessageReceivers, WelcomeMessage, SentSMS, SMSTemplate
 
 
 @pytest.fixture
@@ -62,3 +62,8 @@ def sent_sms_list_1(db, create_sms_message, businessman_with_customer_tuple) -> 
     )
 
     return list(SentSMS.objects.all())
+
+
+@pytest.fixture
+def sms_template_1(db, businessman_1) -> SMSTemplate:
+    return SMSTemplate.objects.create(businessman=businessman_1, content='content', title='title')
