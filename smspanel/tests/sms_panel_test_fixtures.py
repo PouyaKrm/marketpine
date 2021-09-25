@@ -5,8 +5,12 @@ from smspanel.models import SMSMessage, SMSMessageReceivers, WelcomeMessage, Sen
 @pytest.fixture
 def create_sms_message(db, businessman_with_customer_tuple):
     def create_sms(status: str, failed_attempts: int = 0) -> SMSMessage:
-        return SMSMessage.objects.create(businessman=businessman_with_customer_tuple[0], status=status,
-                                         send_fail_attempts=failed_attempts)
+        return SMSMessage.objects.create(
+            businessman=businessman_with_customer_tuple[0],
+            status=status,
+            send_fail_attempts=failed_attempts,
+            reserved_credit=10
+        )
 
     return create_sms
 

@@ -1,7 +1,7 @@
 from base_app.error_codes import ApplicationErrorException
 from base_app.test_utils import get_model_list_ids, count_model_queryset_by_ids
 from smspanel.selectors import get_failed_messages, get_welcome_message, get_sent_sms, get_pending_messages, \
-    _get_template_by_id
+    _get_template_by_id, get_reserved_credit_of_pending_messages
 
 from smspanel.tests.sms_panel_test_fixtures import *
 
@@ -76,3 +76,11 @@ def test___get_template_by_id__success(mocker, sms_template_1):
     result = _get_template_by_id(user=sms_template_1.businessman, template=sms_template_1.id)
 
     assert result == sms_template_1
+
+
+def test__get_reserved_credit_of_pending_messages__success(mocker, sms_message_pending_list_1):
+    credit_sum = sum(map(lambda e: e.reserved_credit, sms_message_pending_list_1))
+
+    result = get_reserved_credit_of_pending_messages(user=sms_message_pending_list_1[0].businessman)
+
+    assert credit_sum == result
