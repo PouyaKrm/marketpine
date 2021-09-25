@@ -1,7 +1,7 @@
 from base_app.error_codes import ApplicationErrorException
 from base_app.test_utils import get_model_list_ids, count_model_queryset_by_ids
 from smspanel.selectors import get_failed_messages, get_welcome_message, get_sent_sms, get_pending_messages, \
-    _get_template_by_id, get_reserved_credit_of_pending_messages
+    _get_template_by_id, get_reserved_credit_of_pending_messages, has_message_any_receivers
 
 from smspanel.tests.sms_panel_test_fixtures import *
 
@@ -84,3 +84,9 @@ def test__get_reserved_credit_of_pending_messages__success(mocker, sms_message_p
     result = get_reserved_credit_of_pending_messages(user=sms_message_pending_list_1[0].businessman)
 
     assert credit_sum == result
+
+
+def test__has_message_any_receivers(mocker, sms_message_with_receivers):
+    result = has_message_any_receivers(sms_message=sms_message_with_receivers[0])
+
+    assert result
