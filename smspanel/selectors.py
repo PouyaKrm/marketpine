@@ -2,7 +2,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.db.models.aggregates import Sum
 
 from base_app.error_codes import ApplicationErrorCodes
-from smspanel.models import SMSMessage, WelcomeMessage, SentSMS, SMSTemplate
+from smspanel.models import SMSMessage, WelcomeMessage, SentSMS, SMSTemplate, SMSMessageReceivers
 from users.models import Businessman
 
 
@@ -46,6 +46,10 @@ def get_reserved_credit_of_pending_messages(*args, user: Businessman) -> int:
     if r is None:
         return 0
     return r
+
+
+def has_message_any_receivers(*args, sms_message: SMSMessage) -> bool:
+    return SMSMessageReceivers.objects.filter(sms_message=sms_message, is_sent=False).exists()
 
 
 def _get_message(

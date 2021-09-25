@@ -112,12 +112,21 @@ def create_customer(db):
 
 @pytest.fixture
 def customer_1(db, create_customer) -> Customer:
-    return create_customer()
+    return create_customer(phone=random_mobile_phone())
 
 
 @pytest.fixture
 def customer_2(db, create_customer) -> Customer:
-    return create_customer()
+    return create_customer(phone=random_mobile_phone())
+
+
+#
+# @pytest.fixture
+# def customers_list_1(db, create_customer) -> List[Customer]:
+#     result = []
+#     for i in range(10):
+#         result.append(create_customer(phone=random_mobile_phone()))
+#     return result
 
 
 @pytest.fixture

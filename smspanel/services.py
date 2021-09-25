@@ -14,7 +14,7 @@ from panelprofile.models import SMSPanelInfo
 from users.models import Businessman
 from .models import UnsentTemplateSMS, SentSMS, UnsentPlainSMS, SMSMessage, SMSMessageReceivers, WelcomeMessage, \
     SMSTemplate
-from .selectors import get_welcome_message, _get_template_by_id, _get_message
+from .selectors import get_welcome_message, _get_template_by_id, _get_message, has_message_any_receivers
 
 
 def send_template_sms_message_to_all(user: Businessman, template: str):
@@ -411,9 +411,11 @@ def resend_failed_message(user: Businessman, sms_id: int) -> SMSPanelInfo:
 
 
 def set_message_to_pending(*args, sms_message: SMSMessage):
-    if not sms_message.has_any_unsent_receivers():
+    has_receivers = has_message_any_receivers(sms_message=sms_message)
+    if not has_receivers:
         sms_message.set_done()
-    sms_message.reset_to_pending()
+    else:
+        sms_message.reset_to_pending()
     return sms_message
 
 

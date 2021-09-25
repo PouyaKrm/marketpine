@@ -7,7 +7,25 @@ from smspanel import services
 
 from smspanel.models import SMSMessage, SMSMessageReceivers, SMSTemplate
 from smspanel.services import send_by_template, send_by_template_to_all, send_plain_to_group, send_by_template_to_group, \
-    resend_failed_message
+    resend_failed_message, set_message_to_pending
+
+
+@pytest.fixture
+def create_sms_message(db, businessman_1: Businessman):
+    def create_sms(status: str, failed_attempts: int = 0) -> SMSMessage:
+        return SMSMessage.objects.create(businessman=businessman_1, status=status, send_fail_attempts=failed_attempts)
+
+    return create_sms
+
+
+@pytest.fixture
+def sms_message_pending_1(db, create_sms_message) -> SMSMessage:
+    return create_sms_message(status=SMSMessage.STATUS_PENDING)
+
+
+@pytest.fixture
+def sms_message_failed_1(db, create_sms_message) -> SMSMessage:
+    return create_sms_message(status=SMSMessage.STATUS_FAILED, failed_attempts=10)
 
 
 def mock_sms_panel_info(mocker):
@@ -217,3 +235,22 @@ def test_resend_failed_message_success(mocker, businessman_1: Businessman):
     message_mock.assert_called_once_with(user=businessman_1, sms_id=sms_id, status=SMSMessage.STATUS_FAILED)
     set_pending_mock.assert_called_once_with(sms_message=message_mock.return_value)
     assert result == info_mock.return_value
+
+
+def test_set_message_to_pending_set_done(mocker, sms_message_pending_1: SMSMessage):
+    mock = mocker.patch('smspanel.services.has_message_any_receivers', return_value=False)
+
+    result = set_message_to_pending(sms_message=sms_message_pending_1)
+
+    mock.assert_called_once()
+    assert sms_message_pending_1.status == SMSMessage.STATUS_DONE
+
+
+def test_set_message_to_pending_set_pending(mocker, sms_message_failed_1: SMSMessage):
+    mock = mocker.patch('smspanel.services.has_message_any_receivers', return_value=True)
+
+    result = set_message_to_pending(sms_message=sms_message_failed_1)
+
+    mock.assert_called_once()
+    assert sms_message_failed_1.status == SMSMessage.STATUS_PENDING
+    assert sms_message_failed_1.send_fail_attempts == 0
