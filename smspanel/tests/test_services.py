@@ -8,7 +8,7 @@ from smspanel import services
 from smspanel.models import SMSMessage, SMSMessageReceivers, SMSTemplate
 from smspanel.services import send_by_template, send_by_template_to_all, send_plain_to_group, send_by_template_to_group, \
     resend_failed_message, set_message_to_pending, update_not_pending_message_text, \
-    set_content_marketing_message_to_pending, festival_message_status_cancel
+    set_content_marketing_message_to_pending, festival_message_status_cancel, friend_invitation_message
 
 
 @pytest.fixture
@@ -291,3 +291,18 @@ def test_festival_message_status_cancel_success(mocker, businessman_1: Businessm
         used_for=SMSMessage.USED_FOR_FESTIVAL,
         status=SMSMessage.STATUS_CANCLE
     )
+
+
+def test_friend_invitation_message_success(mocker, businessman_with_customer_tuple):
+    mock = mock_send_by_template(mocker)
+    call_params = {
+        'user': businessman_with_customer_tuple[0],
+        'customer': businessman_with_customer_tuple[1][0],
+        'template': 'fake'
+    }
+    mock_call_params = {**call_params, 'used_for': SMSMessage.USED_FOR_FRIEND_INVITATION}
+    mock_call_params['customers'] = [mock_call_params.pop('customer')]
+
+    result = friend_invitation_message(**call_params)
+
+    mock.assert_called_once_with(**mock_call_params)
