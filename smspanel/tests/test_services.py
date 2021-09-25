@@ -7,7 +7,8 @@ from smspanel import services
 
 from smspanel.models import SMSMessage, SMSMessageReceivers, SMSTemplate
 from smspanel.services import send_by_template, send_by_template_to_all, send_plain_to_group, send_by_template_to_group, \
-    resend_failed_message, set_message_to_pending, update_not_pending_message_text
+    resend_failed_message, set_message_to_pending, update_not_pending_message_text, \
+    set_content_marketing_message_to_pending, festival_message_status_cancel
 
 
 @pytest.fixture
@@ -256,14 +257,37 @@ def test_set_message_to_pending_set_pending(mocker, sms_message_failed_1: SMSMes
     assert sms_message_failed_1.send_fail_attempts == 0
 
 
-def test_update_not_pending_message_text_raises_error(sms_message_pending_1: SMSMessage):
+def test_update_not_pending_message_text_raises_error(mocker, sms_message_pending_1: SMSMessage):
     with pytest.raises(ValueError) as cx:
         update_not_pending_message_text(sms_message=sms_message_pending_1, new_message='fake')
 
 
-def test_update_not_pending_message_text_success(sms_message_failed_1: SMSMessage):
+def test_update_not_pending_message_text_success(mocker, sms_message_failed_1: SMSMessage):
     message = 'fake'
 
     result = update_not_pending_message_text(sms_message=sms_message_failed_1, new_message=message)
 
-    assert sms_message_failed_1.message == message
+    exist = SMSMessage.objects.filter(id=sms_message_failed_1.id, message=message).exists()
+    assert exist
+
+
+def test_set_content_marketing_message_to_pending_success(mocker, sms_message_failed_1: SMSMessage):
+    mock = mock_set_sms_message_to_pending(mocker)
+
+    result = set_content_marketing_message_to_pending(sms_message=sms_message_failed_1)
+
+    mock.assert_called_once_with(sms_message=sms_message_failed_1)
+
+
+def test_festival_message_status_cancel_success(mocker, businessman_1: Businessman):
+    mock = mock_send_by_template_to_all(mocker)
+    template = 'template'
+
+    result = festival_message_status_cancel(template=template, user=businessman_1)
+
+    mock.assert_called_once_with(
+        user=businessman_1,
+        template=template,
+        used_for=SMSMessage.USED_FOR_FESTIVAL,
+        status=SMSMessage.STATUS_CANCLE
+    )
