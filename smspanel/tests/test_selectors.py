@@ -1,5 +1,5 @@
-from base_app.test_utils import get_model_ids
-from smspanel.selectors import get_failed_messages, get_welcome_message, get_sent_sms
+from base_app.test_utils import get_model_list_ids, count_model_queryset_by_ids
+from smspanel.selectors import get_failed_messages, get_welcome_message, get_sent_sms, get_pending_messages
 
 from smspanel.tests.sms_panel_test_fixtures import *
 
@@ -9,7 +9,7 @@ def test__get_failed_messages__success(mocker, sms_message_failed_list_1):
 
     result = get_failed_messages(user=b)
 
-    ids = get_model_ids(sms_message_failed_list_1)
+    ids = get_model_list_ids(sms_message_failed_list_1)
     count = result.filter(id__in=ids).count()
     assert count == len(sms_message_failed_list_1)
 
@@ -42,9 +42,19 @@ def test__get_sent_sms__filter(mocker, sent_sms_list_1):
     r = sent_sms_list_1[0].receptor
     b = sent_sms_list_1[0].sms_message.businessman
     filtered = list(filter(lambda e: e.receptor == r, sent_sms_list_1))
-    ids = get_model_ids(filtered)
+    ids = get_model_list_ids(filtered)
 
     result = get_sent_sms(businessman=b, receptor_phone=r)
 
     count = result.filter(id__in=ids).count()
+    assert count == len(ids)
+
+
+def test__get_pending_messages__success(mocker, sms_message_pending_list_1):
+    b = sms_message_pending_list_1[0].businessman
+    ids = get_model_list_ids(sms_message_pending_list_1)
+
+    result = get_pending_messages(user=b)
+
+    count = count_model_queryset_by_ids(result, ids)
     assert count == len(ids)

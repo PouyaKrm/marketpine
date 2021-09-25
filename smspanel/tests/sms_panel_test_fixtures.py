@@ -17,6 +17,14 @@ def sms_message_pending_1(db, create_sms_message) -> SMSMessage:
 
 
 @pytest.fixture
+def sms_message_pending_list_1(db, create_sms_message) -> List[SMSMessage]:
+    result = []
+    for _ in range(10):
+        result.append(create_sms_message(SMSMessage.STATUS_PENDING))
+    return result
+
+
+@pytest.fixture
 def sms_message_failed_1(db, create_sms_message) -> SMSMessage:
     return create_sms_message(status=SMSMessage.STATUS_FAILED, failed_attempts=10)
 
