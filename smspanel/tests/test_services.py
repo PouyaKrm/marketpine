@@ -1,21 +1,26 @@
+from django.conf import settings
+
 from base_app.error_codes import ApplicationErrorException
 from base_app.tests import *
 from panelprofile.models import SMSPanelInfo
 # from smspanel.models import SMSMessage, SMSMessageReceivers
 # from smspanel.services import send_plain_sms
 from smspanel import services
-
 from smspanel.models import SMSMessage, SMSMessageReceivers, SMSTemplate, WelcomeMessage
 from smspanel.services import send_by_template, send_by_template_to_all, send_plain_to_group, send_by_template_to_group, \
     resend_failed_message, set_message_to_pending, update_not_pending_message_text, \
     set_content_marketing_message_to_pending, festival_message_status_cancel, friend_invitation_message, \
-    send_welcome_message, update_welcome_message, _send_by_template_to_all, _send_by_template, _send_plain
+    send_welcome_message, update_welcome_message, _send_by_template_to_all, _send_by_template, _send_plain, \
+    _set_receivers_for_sms_message, _set_reserved_credit_for_sms_message
+
+max_message_cost = settings.SMS_PANEL['MAX_MESSAGE_COST']
 
 
 @pytest.fixture
-def create_sms_message(db, businessman_1: Businessman):
+def create_sms_message(db, businessman_with_customer_tuple):
     def create_sms(status: str, failed_attempts: int = 0) -> SMSMessage:
-        return SMSMessage.objects.create(businessman=businessman_1, status=status, send_fail_attempts=failed_attempts)
+        return SMSMessage.objects.create(businessman=businessman_with_customer_tuple[0], status=status,
+                                         send_fail_attempts=failed_attempts)
 
     return create_sms
 
@@ -29,6 +34,16 @@ def sms_message_pending_1(db, create_sms_message) -> SMSMessage:
 def sms_message_failed_1(db, create_sms_message) -> SMSMessage:
     return create_sms_message(status=SMSMessage.STATUS_FAILED, failed_attempts=10)
 
+
+@pytest.fixture
+def sms_message_with_receivers(db, sms_message_pending_1, businessman_with_customer_tuple) -> Tuple[
+    SMSMessage, List[SMSMessageReceivers]]:
+    result = []
+    for i in businessman_with_customer_tuple[1]:
+        s = SMSMessageReceivers.objects.create(sms_message=sms_message_pending_1, customer=i, is_sent=False)
+        result.append(s)
+
+    return sms_message_pending_1, result
 
 def mock_sms_panel_info(mocker):
     return_val = SMSPanelInfo()
@@ -101,6 +116,10 @@ def mock__set_receivers_for_sms_message(mocker):
 
 def mock_get_businessman_customers(mocker):
     return mocker.patch('customers.services.customer_service.get_businessman_customers', return_value=[Customer()])
+
+
+def mock__set_reserved_credit_for_sms_message(mocker):
+    return mocker.patch('smspanel.services._set_reserved_credit_for_sms_message', return_value=None)
 
 
 def test_send_plain_sms_customer_count_0(mocker, businessman_1: Businessman):
@@ -391,6 +410,7 @@ def test_update_welcome_message_success(mocker, businessman_1: Businessman):
 
 def test__send_by_template_to_all_success(mocker, businessman_with_customer_tuple):
     mock = mock__set_receivers_for_sms_message(mocker)
+    mock_reserved_credit = mock__set_reserved_credit_for_sms_message(mocker)
     customers_mock = mock_get_businessman_customers(mocker)
     b = businessman_with_customer_tuple[0]
     used_for = SMSMessage.USED_FOR_CONTENT_MARKETING
@@ -403,9 +423,11 @@ def test__send_by_template_to_all_success(mocker, businessman_with_customer_tupl
     assert smsq.count() == 1
     assert result == smsq.first()
     mock.assert_called_once_with(sms=result, customers=customers_mock.return_value)
+    mock_reserved_credit.assert_called_once_with(sms_message=result)
 
 
 def test__send_by_template_success(mocker, businessman_with_customer_tuple):
+    mock = mock__set_reserved_credit_for_sms_message(mocker)
     b = businessman_with_customer_tuple[0]
     customers = businessman_with_customer_tuple[1]
     c_ids = list(map(lambda e: e.id, customers))
@@ -425,9 +447,11 @@ def test__send_by_template_success(mocker, businessman_with_customer_tuple):
     assert smsq.count() == 1
     assert result == smsq.first()
     assert receivers.count() == len(c_ids)
+    mock.assert_called_once_with(sms_message=result)
 
 
-def test__send_plain(mocker, businessman_with_customer_tuple):
+def test__send_plain_success(mocker, businessman_with_customer_tuple):
+    mock = mock__set_reserved_credit_for_sms_message(mocker)
     b = businessman_with_customer_tuple[0]
     cs = businessman_with_customer_tuple[1]
     cs_ids = list(map(lambda e: e.id, cs))
@@ -448,3 +472,21 @@ def test__send_plain(mocker, businessman_with_customer_tuple):
     assert smsq.count() == 1
     assert smsq.first() == result
     assert receivers.count() == len(cs_ids)
+    mock.assert_called_once_with(sms_message=result)
+
+
+def test__set_receivers_for_sms_message_success(mocker, sms_message_pending_1, customers_list_1):
+    mock = mock__set_reserved_credit_for_sms_message(mocker)
+
+    _set_receivers_for_sms_message(sms=sms_message_pending_1, customers=customers_list_1)
+
+    receivers = SMSMessageReceivers.objects.filter(customer__in=customers_list_1)
+    assert receivers.count() == len(customers_list_1)
+
+
+def test__set_reserved_credit_for_sms_message_success(mocker, sms_message_with_receivers):
+    _set_reserved_credit_for_sms_message(sms_message=sms_message_with_receivers[0])
+
+    expected_credit = len(sms_message_with_receivers[1]) * max_message_cost
+    sms_message = SMSMessage.objects.get(id=sms_message_with_receivers[0].id)
+    assert sms_message.reserved_credit == expected_credit

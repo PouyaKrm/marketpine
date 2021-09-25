@@ -1,5 +1,6 @@
 from typing import List
 
+from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import QuerySet
 from django.db.models.aggregates import Sum
@@ -15,6 +16,8 @@ from users.models import Businessman, Customer
 from .models import UnsentTemplateSMS, SentSMS, UnsentPlainSMS, SMSMessage, SMSMessageReceivers, WelcomeMessage, \
     SMSTemplate
 from .selectors import get_welcome_message, _get_template_by_id, _get_message, has_message_any_receivers
+
+max_message_cost = settings.SMS_PANEL['MAX_MESSAGE_COST']
 
 
 def send_template_sms_message_to_all(user: Businessman, template: str):
@@ -472,7 +475,7 @@ def _send_by_template_to_all(
     sms = SMSMessage.objects.create(message=template, businessman=user, used_for=used_for,
                                     message_type=SMSMessage.TYPE_TEMPLATE, **kwargs)
     _set_receivers_for_sms_message(sms=sms, customers=customer_service.get_businessman_customers(user))
-
+    _set_reserved_credit_for_sms_message(sms_message=sms)
     return sms
 
 
@@ -490,7 +493,7 @@ def _send_by_template(
     SMSMessageReceivers.objects.bulk_create(
         [SMSMessageReceivers(sms_message=sms, customer=c) for c in customers]
     )
-    sms.set_reserved_credit_by_receivers()
+    _set_reserved_credit_for_sms_message(sms_message=sms)
     return sms
 
 
@@ -508,13 +511,18 @@ def _send_plain(
     SMSMessageReceivers.objects.bulk_create(
         [SMSMessageReceivers(sms_message=sms, customer=c) for c in customers]
     )
-    sms.set_reserved_credit_by_receivers()
+    _set_reserved_credit_for_sms_message(sms_message=sms)
     return sms
 
 
 def _set_receivers_for_sms_message(*args, sms: SMSMessage, customers: QuerySet):
     SMSMessageReceivers.objects.bulk_create(
-        [SMSMessageReceivers(sms_message=sms, customer=c) for c in customers.all()
+        [SMSMessageReceivers(sms_message=sms, customer=c) for c in customers
          ])
     sms.save()
-    sms.set_reserved_credit_by_receivers()
+
+
+def _set_reserved_credit_for_sms_message(*args, sms_message: SMSMessage):
+    count = SMSMessageReceivers.objects.filter(sms_message=sms_message, is_sent=False).count()
+    sms_message.reserved_credit = count * max_message_cost
+    sms_message.save()
