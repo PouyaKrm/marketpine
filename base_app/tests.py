@@ -178,3 +178,10 @@ def businessman_with_customer_tuple(db, create_businessman_with_customers) -> Tu
     bcs = create_businessman_with_customers()
     customers = list(map(lambda e: e.customer, bcs))
     return bcs[0].businessman, customers
+
+
+@pytest.fixture
+def businessman_with_single_customer_tuple(db, create_businessman, create_businessman_new_customer):
+    b = create_businessman()
+    bc = create_businessman_new_customer(b)
+    return b, bc.customer

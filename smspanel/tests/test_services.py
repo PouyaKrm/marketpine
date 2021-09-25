@@ -5,10 +5,11 @@ from panelprofile.models import SMSPanelInfo
 # from smspanel.services import send_plain_sms
 from smspanel import services
 
-from smspanel.models import SMSMessage, SMSMessageReceivers, SMSTemplate
+from smspanel.models import SMSMessage, SMSMessageReceivers, SMSTemplate, WelcomeMessage
 from smspanel.services import send_by_template, send_by_template_to_all, send_plain_to_group, send_by_template_to_group, \
     resend_failed_message, set_message_to_pending, update_not_pending_message_text, \
-    set_content_marketing_message_to_pending, festival_message_status_cancel, friend_invitation_message
+    set_content_marketing_message_to_pending, festival_message_status_cancel, friend_invitation_message, \
+    send_welcome_message
 
 
 @pytest.fixture
@@ -81,6 +82,17 @@ def mock_set_sms_message_to_pending(mocker):
 
 def mock_get_message(mocker):
     return mocker.patch('smspanel.services._get_message', return_value=SMSMessage())
+
+
+def mock_get_welcome_message(mocker, send_message=True):
+    return mocker.patch(
+        'smspanel.services.get_welcome_message',
+        return_value=WelcomeMessage(send_message=send_message, message='fake')
+    )
+
+
+def mock_has_sms_panel_and_is_active(mocker, is_active: bool):
+    return mocker.patch('panelprofile.services.sms_panel_info_service.has_panel_and_is_active', return_value=is_active)
 
 
 def test_send_plain_sms_customer_count_0(mocker, businessman_1: Businessman):
@@ -306,3 +318,50 @@ def test_friend_invitation_message_success(mocker, businessman_with_customer_tup
     result = friend_invitation_message(**call_params)
 
     mock.assert_called_once_with(**mock_call_params)
+
+
+def test_send_welcome_message_not_has_sms_panel(mocker, businessman_with_customer_tuple):
+    welcome_message_mock = mock_get_welcome_message(mocker, True)
+    has_panel_mock = mock_has_sms_panel_and_is_active(mocker, False)
+    businessman = businessman_with_customer_tuple[0]
+    customer = businessman_with_customer_tuple[1][0]
+
+    result = send_welcome_message(user=businessman, customer=customer)
+
+    welcome_message_mock.assert_called_once_with(businessman=businessman)
+    has_panel_mock.assert_called_once_with(businessman)
+    assert result is None
+
+
+def test_send_welcome_message_send_message_is_disable(mocker, businessman_with_single_customer_tuple):
+    welcome_message_mock = mock_get_welcome_message(mocker, False)
+    has_panel_mock = mock_has_sms_panel_and_is_active(mocker, True)
+    b = businessman_with_single_customer_tuple[0]
+    c = businessman_with_single_customer_tuple[1]
+
+    result = send_welcome_message(user=b, customer=c)
+
+    welcome_message_mock.assert_called_once_with(businessman=b)
+    has_panel_mock.assert_called_once_with(b)
+    assert result is None
+
+
+def test_send_welcome_message_success(mocker, businessman_with_single_customer_tuple):
+    welcome_message_mock = mock_get_welcome_message(mocker, True)
+    has_panel_mock = mock_has_sms_panel_and_is_active(mocker, True)
+    send_by_template_mock = mock_send_by_template(mocker)
+    b = businessman_with_single_customer_tuple[0]
+    c = businessman_with_single_customer_tuple[1]
+
+    result = send_welcome_message(user=b, customer=c)
+
+    welcome_message_mock.assert_called_once_with(businessman=b)
+    has_panel_mock.assert_called_once_with(b)
+    send_by_template_mock.assert_called_once_with(
+        user=b,
+        customers=[c],
+        template=welcome_message_mock.return_value.message,
+        used_for=SMSMessage.USED_FOR_WELCOME_MESSAGE
+    )
+
+    assert result is not None

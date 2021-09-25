@@ -454,8 +454,10 @@ def friend_invitation_message(*args, user: Businessman, template: str, customer)
 
 
 def send_welcome_message(*args, user: Businessman, customer) -> SMSMessage:
+    from panelprofile.services import sms_panel_info_service
     wm = get_welcome_message(businessman=user)
-    if not user.has_sms_panel or not wm.send_message:
+    has_sms_panel = sms_panel_info_service.has_panel_and_is_active(user)
+    if not has_sms_panel or not wm.send_message:
         return None
     return _send_by_template(user=user, customers=[customer], template=wm.message,
                              used_for=SMSMessage.USED_FOR_WELCOME_MESSAGE)
