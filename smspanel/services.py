@@ -313,14 +313,6 @@ def create_unsent_template_sms(*args, ex: SendSMSException, template: str, busin
     obj.save()
 
 
-def __set_receivers_for_sms_message(*args, sms: SMSMessage, customers: QuerySet):
-    SMSMessageReceivers.objects.bulk_create(
-        [SMSMessageReceivers(sms_message=sms, customer=c) for c in customers.all()
-         ])
-    sms.save()
-    sms.set_reserved_credit_by_receivers()
-
-
 def send_plain_sms(*args, user: Businessman, customer_ids: List[int], message: str) -> SMSPanelInfo:
     from panelprofile.services import sms_panel_info_service
     from customers.services import customer_service
@@ -479,7 +471,7 @@ def _send_by_template_to_all(
     from customers.services import customer_service
     sms = SMSMessage.objects.create(message=template, businessman=user, used_for=used_for,
                                     message_type=SMSMessage.TYPE_TEMPLATE, **kwargs)
-    __set_receivers_for_sms_message(sms=sms, customers=customer_service.get_businessman_customers(user))
+    _set_receivers_for_sms_message(sms=sms, customers=customer_service.get_businessman_customers(user))
 
     return sms
 
@@ -518,3 +510,11 @@ def _send_plain(
     )
     sms.set_reserved_credit_by_receivers()
     return sms
+
+
+def _set_receivers_for_sms_message(*args, sms: SMSMessage, customers: QuerySet):
+    SMSMessageReceivers.objects.bulk_create(
+        [SMSMessageReceivers(sms_message=sms, customer=c) for c in customers.all()
+         ])
+    sms.save()
+    sms.set_reserved_credit_by_receivers()

@@ -9,7 +9,7 @@ from smspanel.models import SMSMessage, SMSMessageReceivers, SMSTemplate, Welcom
 from smspanel.services import send_by_template, send_by_template_to_all, send_plain_to_group, send_by_template_to_group, \
     resend_failed_message, set_message_to_pending, update_not_pending_message_text, \
     set_content_marketing_message_to_pending, festival_message_status_cancel, friend_invitation_message, \
-    send_welcome_message, update_welcome_message
+    send_welcome_message, update_welcome_message, _send_by_template_to_all
 
 
 @pytest.fixture
@@ -93,6 +93,14 @@ def mock_get_welcome_message(mocker, send_message=True):
 
 def mock_has_sms_panel_and_is_active(mocker, is_active: bool):
     return mocker.patch('panelprofile.services.sms_panel_info_service.has_panel_and_is_active', return_value=is_active)
+
+
+def mock__set_receivers_for_sms_message(mocker):
+    return mocker.patch('smspanel.services._set_receivers_for_sms_message', return_value=[SMSMessageReceivers()])
+
+
+def mock_get_businessman_customers(mocker):
+    return mocker.patch('customers.services.customer_service.get_businessman_customers', return_value=[Customer()])
 
 
 def test_send_plain_sms_customer_count_0(mocker, businessman_1: Businessman):
@@ -379,3 +387,18 @@ def test_update_welcome_message_success(mocker, businessman_1: Businessman):
     mocked_save_method.assert_called_once()
     assert result.message == message
     assert result.send_message == send_message
+
+
+def test__send_by_template_to_all_success(mocker, businessman_with_customer_tuple):
+    mock = mock__set_receivers_for_sms_message(mocker)
+    customers_mock = mock_get_businessman_customers(mocker)
+    b = businessman_with_customer_tuple[0]
+    used_for = SMSMessage.USED_FOR_CONTENT_MARKETING
+    template = 'fake'
+
+    result = _send_by_template_to_all(user=b, template=template, used_for=used_for)
+
+    smsq = SMSMessage.objects.filter(businessman=b, used_for=used_for, message=template,
+                                     message_type=SMSMessage.TYPE_TEMPLATE)
+    assert smsq.count() == 1
+    mock.assert_called_once_with(sms=result, customers=customers_mock.return_value)
