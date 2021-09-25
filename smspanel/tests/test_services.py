@@ -9,7 +9,7 @@ from smspanel.models import SMSMessage, SMSMessageReceivers, SMSTemplate, Welcom
 from smspanel.services import send_by_template, send_by_template_to_all, send_plain_to_group, send_by_template_to_group, \
     resend_failed_message, set_message_to_pending, update_not_pending_message_text, \
     set_content_marketing_message_to_pending, festival_message_status_cancel, friend_invitation_message, \
-    send_welcome_message, update_welcome_message, _send_by_template_to_all, _send_by_template
+    send_welcome_message, update_welcome_message, _send_by_template_to_all, _send_by_template, _send_plain
 
 
 @pytest.fixture
@@ -425,3 +425,26 @@ def test__send_by_template_success(mocker, businessman_with_customer_tuple):
     assert smsq.count() == 1
     assert result == smsq.first()
     assert receivers.count() == len(c_ids)
+
+
+def test__send_plain(mocker, businessman_with_customer_tuple):
+    b = businessman_with_customer_tuple[0]
+    cs = businessman_with_customer_tuple[1]
+    cs_ids = list(map(lambda e: e.id, cs))
+    message = 'fake'
+    used_for = SMSMessage.USED_FOR_CONTENT_MARKETING
+
+    result = _send_plain(user=b, customers=cs, message=message, used_for=used_for)
+
+    smsq = SMSMessage.objects.filter(
+        businessman=b,
+        message=message,
+        used_for=used_for,
+        message_type=SMSMessage.TYPE_PLAIN
+    )
+
+    receivers = SMSMessageReceivers.objects.filter(customer__id__in=cs_ids, sms_message=smsq.first())
+
+    assert smsq.count() == 1
+    assert smsq.first() == result
+    assert receivers.count() == len(cs_ids)
