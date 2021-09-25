@@ -1,7 +1,6 @@
 from django.conf import settings
 
 from base_app.error_codes import ApplicationErrorException
-from base_app.tests import *
 from panelprofile.models import SMSPanelInfo
 # from smspanel.models import SMSMessage, SMSMessageReceivers
 # from smspanel.services import send_plain_sms
@@ -12,38 +11,10 @@ from smspanel.services import send_by_template, send_by_template_to_all, send_pl
     set_content_marketing_message_to_pending, festival_message_status_cancel, friend_invitation_message, \
     send_welcome_message, update_welcome_message, _send_by_template_to_all, _send_by_template, _send_plain, \
     _set_receivers_for_sms_message, _set_reserved_credit_for_sms_message
+from smspanel.tests.sms_panel_test_fixtures import *
 
 max_message_cost = settings.SMS_PANEL['MAX_MESSAGE_COST']
 
-
-@pytest.fixture
-def create_sms_message(db, businessman_with_customer_tuple):
-    def create_sms(status: str, failed_attempts: int = 0) -> SMSMessage:
-        return SMSMessage.objects.create(businessman=businessman_with_customer_tuple[0], status=status,
-                                         send_fail_attempts=failed_attempts)
-
-    return create_sms
-
-
-@pytest.fixture
-def sms_message_pending_1(db, create_sms_message) -> SMSMessage:
-    return create_sms_message(status=SMSMessage.STATUS_PENDING)
-
-
-@pytest.fixture
-def sms_message_failed_1(db, create_sms_message) -> SMSMessage:
-    return create_sms_message(status=SMSMessage.STATUS_FAILED, failed_attempts=10)
-
-
-@pytest.fixture
-def sms_message_with_receivers(db, sms_message_pending_1, businessman_with_customer_tuple) -> Tuple[
-    SMSMessage, List[SMSMessageReceivers]]:
-    result = []
-    for i in businessman_with_customer_tuple[1]:
-        s = SMSMessageReceivers.objects.create(sms_message=sms_message_pending_1, customer=i, is_sent=False)
-        result.append(s)
-
-    return sms_message_pending_1, result
 
 def mock_sms_panel_info(mocker):
     return_val = SMSPanelInfo()
