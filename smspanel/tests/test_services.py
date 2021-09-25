@@ -9,7 +9,7 @@ from smspanel.models import SMSMessage, SMSMessageReceivers, SMSTemplate, Welcom
 from smspanel.services import send_by_template, send_by_template_to_all, send_plain_to_group, send_by_template_to_group, \
     resend_failed_message, set_message_to_pending, update_not_pending_message_text, \
     set_content_marketing_message_to_pending, festival_message_status_cancel, friend_invitation_message, \
-    send_welcome_message
+    send_welcome_message, update_welcome_message
 
 
 @pytest.fixture
@@ -365,3 +365,17 @@ def test_send_welcome_message_success(mocker, businessman_with_single_customer_t
     )
 
     assert result is not None
+
+
+def test_update_welcome_message_success(mocker, businessman_1: Businessman):
+    mock = mock_get_welcome_message(mocker, False)
+    message = 'new message'
+    send_message = True
+    mocked_save_method = mocker.patch.object(WelcomeMessage, 'save', return_value=None)
+
+    result = update_welcome_message(businessman=businessman_1, message=message, send_message=send_message)
+
+    mock.assert_called_once_with(businessman=businessman_1)
+    mocked_save_method.assert_called_once()
+    assert result.message == message
+    assert result.send_message == send_message
