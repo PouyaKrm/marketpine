@@ -1,5 +1,5 @@
 from base_app.tests import *
-from smspanel.models import SMSMessage, SMSMessageReceivers, WelcomeMessage
+from smspanel.models import SMSMessage, SMSMessageReceivers, WelcomeMessage, SentSMS
 
 
 @pytest.fixture
@@ -43,3 +43,14 @@ def sms_message_with_receivers(db, sms_message_pending_1, businessman_with_custo
 @pytest.fixture
 def welcome_message_1(db, businessman_1: Businessman) -> WelcomeMessage:
     return WelcomeMessage.objects.create(businessman=businessman_1, message='fake', send_message=True)
+
+
+@pytest.fixture
+def sent_sms_list_1(db, create_sms_message, businessman_with_customer_tuple) -> List[SentSMS]:
+    sms = create_sms_message(status=SMSMessage.STATUS_DONE)
+
+    SentSMS.objects.bulk_create(
+        [SentSMS(sms_message=sms, message='fake', receptor=c) for c in businessman_with_customer_tuple[1]]
+    )
+
+    return list(SentSMS.objects.all())

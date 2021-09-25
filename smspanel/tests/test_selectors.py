@@ -1,5 +1,5 @@
 from base_app.test_utils import get_model_ids
-from smspanel.selectors import get_failed_messages, get_welcome_message
+from smspanel.selectors import get_failed_messages, get_welcome_message, get_sent_sms
 
 from smspanel.tests.sms_panel_test_fixtures import *
 
@@ -26,3 +26,13 @@ def test__test__get_welcome_message__already_exist(mocker, welcome_message_1: We
     result = get_welcome_message(businessman=b)
 
     assert result == welcome_message_1
+
+
+def test__get_sent_sms__get_all(mocker, sent_sms_list_1):
+    ids = get_model_ids(sent_sms_list_1)
+    b = sent_sms_list_1[0].sms_message.businessman
+
+    result = get_sent_sms(businessman=b)
+
+    count = result.filter(id__in=ids).count()
+    assert count == len(ids)
