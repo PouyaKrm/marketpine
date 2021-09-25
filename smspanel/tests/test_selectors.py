@@ -36,3 +36,15 @@ def test__get_sent_sms__get_all(mocker, sent_sms_list_1):
 
     count = result.filter(id__in=ids).count()
     assert count == len(ids)
+
+
+def test__get_sent_sms__filter(mocker, sent_sms_list_1):
+    r = sent_sms_list_1[0].receptor
+    b = sent_sms_list_1[0].sms_message.businessman
+    filtered = list(filter(lambda e: e.receptor == r, sent_sms_list_1))
+    ids = get_model_ids(filtered)
+
+    result = get_sent_sms(businessman=b, receptor_phone=r)
+
+    count = result.filter(id__in=ids).count()
+    assert count == len(ids)
