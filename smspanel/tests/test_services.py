@@ -7,7 +7,7 @@ from smspanel import services
 
 from smspanel.models import SMSMessage, SMSMessageReceivers, SMSTemplate
 from smspanel.services import send_by_template, send_by_template_to_all, send_plain_to_group, send_by_template_to_group, \
-    resend_failed_message, set_message_to_pending
+    resend_failed_message, set_message_to_pending, update_not_pending_message_text
 
 
 @pytest.fixture
@@ -254,3 +254,16 @@ def test_set_message_to_pending_set_pending(mocker, sms_message_failed_1: SMSMes
     mock.assert_called_once()
     assert sms_message_failed_1.status == SMSMessage.STATUS_PENDING
     assert sms_message_failed_1.send_fail_attempts == 0
+
+
+def test_update_not_pending_message_text_raises_error(sms_message_pending_1: SMSMessage):
+    with pytest.raises(ValueError) as cx:
+        update_not_pending_message_text(sms_message=sms_message_pending_1, new_message='fake')
+
+
+def test_update_not_pending_message_text_success(sms_message_failed_1: SMSMessage):
+    message = 'fake'
+
+    result = update_not_pending_message_text(sms_message=sms_message_failed_1, new_message=message)
+
+    assert sms_message_failed_1.message == message

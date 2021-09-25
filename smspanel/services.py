@@ -426,19 +426,6 @@ def update_not_pending_message_text(*args, sms_message: SMSMessage, new_message:
     sms_message.save()
 
 
-def resend_unsent_template_sms(*args, user: Businessman, unsent_sms: UnsentTemplateSMS):
-    """
-
-    """
-
-    customers = unsent_sms.customers.all()
-    UnsentTemplateSMS.objects.filter(id=unsent_sms.id).delete()
-    try:
-        send_by_template(user=user, customer_ids=customers, template=unsent_sms.template)
-    except APIException as e:
-        raise e
-
-
 def content_marketing_message_status_cancel(*args, template: str, user: Businessman) -> SMSMessage:
     return _send_by_template_to_all(
         user=user,
