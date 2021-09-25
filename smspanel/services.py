@@ -11,7 +11,7 @@ from common.util.sms_panel.helpers import calculate_total_sms_cost
 from common.util.sms_panel.message import ClientBulkToAllToCustomerSMSMessage
 from groups.models import BusinessmanGroups
 from panelprofile.models import SMSPanelInfo
-from users.models import Businessman
+from users.models import Businessman, Customer
 from .models import UnsentTemplateSMS, SentSMS, UnsentPlainSMS, SMSMessage, SMSMessageReceivers, WelcomeMessage, \
     SMSTemplate
 from .selectors import get_welcome_message, _get_template_by_id, _get_message, has_message_any_receivers
@@ -479,7 +479,7 @@ def _send_by_template_to_all(
 def _send_by_template(
         *args,
         user: Businessman,
-        customers: QuerySet,
+        customers: List[Customer],
         template: str,
         used_for=SMSMessage.USED_FOR_NONE, **kwargs) -> SMSMessage:
     sms = SMSMessage.objects.create(
