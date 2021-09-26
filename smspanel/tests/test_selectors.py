@@ -92,34 +92,23 @@ def test__has_message_any_receivers(mocker, sms_message_with_receivers):
     assert result
 
 
-def test___get_message__raises_error__status_none__field_error_none(mocker, businessman_1: Businessman):
+_get_message_error_test_data = [
+    (None, None),
+    ('fake', None),
+    (None, SMSMessage.STATUS_PENDING),
+    ('fake', SMSMessage.STATUS_PENDING)
+]
+
+
+@pytest.mark.parametrize('error_field, status', _get_message_error_test_data)
+def test___get_message__raises_error(mocker, error_field, status, businessman_1: Businessman):
     with pytest.raises(ApplicationErrorException) as cx:
-        _get_message(user=businessman_1, sms_id=1)
+        _get_message(user=businessman_1, sms_id=1, status=status, field_name=error_field)
 
 
-def test___get_message__raises_error__status_none(mocker, businessman_1: Businessman):
-    with pytest.raises(ApplicationErrorException) as cx:
-        _get_message(user=businessman_1, sms_id=1)
-
-
-def test___get_message__raises_error__field_error_none(mocker, businessman_1: Businessman):
-    with pytest.raises(ApplicationErrorException) as cx:
-        _get_message(user=businessman_1, sms_id=1, status=SMSMessage.STATUS_PENDING)
-
-
-def test___get_message__raises_error(mocker, businessman_1: Businessman):
-    with pytest.raises(ApplicationErrorException) as cx:
-        _get_message(user=businessman_1, sms_id=1, status=SMSMessage.STATUS_PENDING, field_name='fake')
-
-
-def test___get_message__success__status_none(mocker, sms_message_pending_1):
-    result = _get_message(user=sms_message_pending_1.businessman, sms_id=sms_message_pending_1.id)
-
-    assert result == sms_message_pending_1
-
-
-def test___get_message__success(mocker, sms_message_pending_1):
+@pytest.mark.parametrize('status', [None, SMSMessage.STATUS_PENDING])
+def test___get_message__success(mocker, status, sms_message_pending_1):
     result = _get_message(user=sms_message_pending_1.businessman, sms_id=sms_message_pending_1.id,
-                          status=sms_message_pending_1.status)
+                          status=status)
 
     assert result == sms_message_pending_1
