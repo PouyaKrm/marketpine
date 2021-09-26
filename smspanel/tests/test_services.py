@@ -5,7 +5,6 @@ from panelprofile.models import SMSPanelInfo
 # from smspanel.models import SMSMessage, SMSMessageReceivers
 # from smspanel.services import send_plain_sms
 from smspanel import services
-from smspanel.models import SMSMessage, SMSMessageReceivers, SMSTemplate, WelcomeMessage
 from smspanel.services import send_by_template, send_by_template_to_all, send_plain_to_group, send_by_template_to_group, \
     resend_failed_message, set_message_to_pending, update_not_pending_message_text, \
     set_content_marketing_message_to_pending, festival_message_status_cancel, friend_invitation_message, \
@@ -99,7 +98,7 @@ def test_send_plain_sms_customer_count_0(mocker, businessman_1: Businessman):
     customer_ids = [i for i in range(1, 10)]
 
     with pytest.raises(ApplicationErrorException):
-        services.send_plain_sms(user=businessman_1, customer_ids=customer_ids, message='fake')
+        services.send_plain_sms(businessman=businessman_1, customer_ids=customer_ids, message='fake')
     mock.assert_called_once()
 
 
@@ -108,7 +107,7 @@ def test_send_plain_sms_success(mocker, businessman_with_customer_tuple):
     customer_ids = list(map(lambda e: e.id, businessman_with_customer_tuple[1]))
     businessman = businessman_with_customer_tuple[0]
     message = 'message'
-    result = services.send_plain_sms(user=businessman, customer_ids=customer_ids, message=message)
+    result = services.send_plain_sms(businessman=businessman, customer_ids=customer_ids, message=message)
     mock_result.assert_called_once()
     smsq = SMSMessage.objects.filter(
         businessman=businessman,
@@ -128,7 +127,7 @@ def test_send_plain_sms_to_all_success(mocker, businessman_with_customer_tuple):
     businessman = businessman_with_customer_tuple[0]
     customer_ids = list(map(lambda e: e.id, businessman_with_customer_tuple[1]))
     message = 'message'
-    result = services.send_plain_sms_to_all(user=businessman, message=message)
+    result = services.send_plain_sms_to_all(businessman=businessman, message=message)
     mock_result.assert_called_once()
     assert result == mock_result.return_value
     smsq = SMSMessage.objects.filter(businessman=businessman, message_type=SMSMessage.TYPE_PLAIN, message=message)
@@ -142,7 +141,7 @@ def test_send_by_template_raises_error(mocker, businessman_1: Businessman):
     template_mock = mock_get_template_by_id(mocker)
     customer_ids = [i for i in range(1, 10)]
     with pytest.raises(ApplicationErrorException) as cx:
-        result = send_by_template(user=businessman_1, customer_ids=customer_ids, template=1)
+        result = send_by_template(businessman=businessman_1, customer_ids=customer_ids, template=1)
     mock_result.assert_called_once()
     template_mock.assert_called_once()
 
@@ -153,7 +152,7 @@ def test_send_by_template_success(mocker, businessman_with_customer_tuple):
     template = template_mock_result.return_value
     businessman = businessman_with_customer_tuple[0]
     customer_ids = list(map(lambda e: e.id, businessman_with_customer_tuple[1]))
-    result = send_by_template(user=businessman, customer_ids=customer_ids, template=1)
+    result = send_by_template(businessman=businessman, customer_ids=customer_ids, template=1)
     mock_result.assert_called_once()
     template_mock_result.assert_called_once()
     assert result == mock_result.return_value
@@ -171,9 +170,9 @@ def test_send_by_template_to_all_success(mocker, businessman_1: Businessman):
     get_by_id_mock_result = mock_get_template_by_id(mocker)
     template_to_all_mock_result = mock_send_by_template_to_all(mocker)
     template = get_by_id_mock_result.return_value
-    result = send_by_template_to_all(user=businessman_1, template=1)
+    result = send_by_template_to_all(businessman=businessman_1, template=1)
     info_mock_result.assert_called_once()
-    template_to_all_mock_result.assert_called_once_with(user=businessman_1, template=template.content,
+    template_to_all_mock_result.assert_called_once_with(businessman=businessman_1, template=template.content,
                                                         used_for=SMSMessage.USED_FOR_NONE)
     assert result == info_mock_result.return_value
 
@@ -184,7 +183,7 @@ def test_send_plain_to_group_raises_error(mocker, businessman_1: Businessman):
     plain_mock_result = mock_send_plain(mocker)
     group_id = 1
     with pytest.raises(ApplicationErrorException) as cx:
-        send_plain_to_group(user=businessman_1, group_id=group_id, message='fake')
+        send_plain_to_group(businessman=businessman_1, group_id=group_id, message='fake')
     info_mock.assert_called_once()
     group_by_id_mock_result.assert_called_once_with(businessman_1, group_id)
     plain_mock_result.assert_not_called()
@@ -196,7 +195,7 @@ def test_send_plain_to_group_success(mocker, businessman_1: Businessman):
     plain_mock = mock_send_plain(mocker)
     group_id = 1
     message = 'fake'
-    result = send_plain_to_group(user=businessman_1, group_id=group_id, message=message)
+    result = send_plain_to_group(businessman=businessman_1, group_id=group_id, message=message)
     info_mock.assert_called_once()
     group_mock.assert_called_once_with(businessman_1, group_id)
     plain_mock.assert_called_once()
@@ -210,7 +209,7 @@ def test_send_by_template_to_group_raises_error(mocker, businessman_1: Businessm
     send_by_template_mock = mock_send_by_template(mocker)
 
     with pytest.raises(ApplicationErrorException) as cx:
-        send_by_template_to_group(user=businessman_1, group_id=1, template_id=1)
+        send_by_template_to_group(businessman=businessman_1, group_id=1, template_id=1)
 
     info_mock.assert_called_once()
     template_mock.assert_called_once()
@@ -219,7 +218,7 @@ def test_send_by_template_to_group_raises_error(mocker, businessman_1: Businessm
 
 
 def test_send_by_template_to_group_success(mocker, businessman_1: Businessman):
-    call_params = {'user': Businessman, 'group_id': 1, 'template_id': 1}
+    call_params = {'businessman': Businessman, 'group_id': 1, 'template_id': 1}
     info_mock = mock_sms_panel_info(mocker)
     template_mock = mock_get_template_by_id(mocker)
     group_mock = mock_get_group_by_id(mocker, False)
@@ -240,7 +239,7 @@ def test_resend_failed_message_success(mocker, businessman_1: Businessman):
     set_pending_mock = mock_set_sms_message_to_pending(mocker)
     sms_id = 1
 
-    result = resend_failed_message(businessman_1, sms_id)
+    result = resend_failed_message(businessman=businessman_1, sms_id=sms_id)
 
     info_mock.assert_called_once()
     message_mock.assert_called_once_with(user=businessman_1, sms_id=sms_id, status=SMSMessage.STATUS_FAILED)
@@ -293,10 +292,10 @@ def test_festival_message_status_cancel_success(mocker, businessman_1: Businessm
     mock = mock_send_by_template_to_all(mocker)
     template = 'template'
 
-    result = festival_message_status_cancel(template=template, user=businessman_1)
+    result = festival_message_status_cancel(businessman=businessman_1, template=template)
 
     mock.assert_called_once_with(
-        user=businessman_1,
+        businessman=businessman_1,
         template=template,
         used_for=SMSMessage.USED_FOR_FESTIVAL,
         status=SMSMessage.STATUS_CANCLE
@@ -306,7 +305,7 @@ def test_festival_message_status_cancel_success(mocker, businessman_1: Businessm
 def test_friend_invitation_message_success(mocker, businessman_with_customer_tuple):
     mock = mock_send_by_template(mocker)
     call_params = {
-        'user': businessman_with_customer_tuple[0],
+        'businessman': businessman_with_customer_tuple[0],
         'customer': businessman_with_customer_tuple[1][0],
         'template': 'fake'
     }
@@ -324,7 +323,7 @@ def test_send_welcome_message_not_has_sms_panel(mocker, businessman_with_custome
     businessman = businessman_with_customer_tuple[0]
     customer = businessman_with_customer_tuple[1][0]
 
-    result = send_welcome_message(user=businessman, customer=customer)
+    result = send_welcome_message(businessman=businessman, customer=customer)
 
     welcome_message_mock.assert_called_once_with(businessman=businessman)
     has_panel_mock.assert_called_once_with(businessman)
@@ -337,7 +336,7 @@ def test_send_welcome_message_send_message_is_disable(mocker, businessman_with_s
     b = businessman_with_single_customer_tuple[0]
     c = businessman_with_single_customer_tuple[1]
 
-    result = send_welcome_message(user=b, customer=c)
+    result = send_welcome_message(businessman=b, customer=c)
 
     welcome_message_mock.assert_called_once_with(businessman=b)
     has_panel_mock.assert_called_once_with(b)
@@ -351,12 +350,12 @@ def test_send_welcome_message_success(mocker, businessman_with_single_customer_t
     b = businessman_with_single_customer_tuple[0]
     c = businessman_with_single_customer_tuple[1]
 
-    result = send_welcome_message(user=b, customer=c)
+    result = send_welcome_message(businessman=b, customer=c)
 
     welcome_message_mock.assert_called_once_with(businessman=b)
     has_panel_mock.assert_called_once_with(b)
     send_by_template_mock.assert_called_once_with(
-        user=b,
+        businessman=b,
         customers=[c],
         template=welcome_message_mock.return_value.message,
         used_for=SMSMessage.USED_FOR_WELCOME_MESSAGE
@@ -387,7 +386,7 @@ def test__send_by_template_to_all_success(mocker, businessman_with_customer_tupl
     used_for = SMSMessage.USED_FOR_CONTENT_MARKETING
     template = 'fake'
 
-    result = _send_by_template_to_all(user=b, template=template, used_for=used_for)
+    result = _send_by_template_to_all(businessman=b, template=template, used_for=used_for)
 
     smsq = SMSMessage.objects.filter(businessman=b, used_for=used_for, message=template,
                                      message_type=SMSMessage.TYPE_TEMPLATE)
@@ -405,7 +404,7 @@ def test__send_by_template_success(mocker, businessman_with_customer_tuple):
     template = 'fake'
     used_for = SMSMessage.USED_FOR_CONTENT_MARKETING
 
-    result = _send_by_template(user=b, customers=customers, template=template,
+    result = _send_by_template(businessman=b, customers=customers, template=template,
                                used_for=used_for)
 
     smsq = SMSMessage.objects.filter(businessman=b,
@@ -429,7 +428,7 @@ def test__send_plain_success(mocker, businessman_with_customer_tuple):
     message = 'fake'
     used_for = SMSMessage.USED_FOR_CONTENT_MARKETING
 
-    result = _send_plain(user=b, customers=cs, message=message, used_for=used_for)
+    result = _send_plain(businessman=b, customers=cs, message=message, used_for=used_for)
 
     smsq = SMSMessage.objects.filter(
         businessman=b,

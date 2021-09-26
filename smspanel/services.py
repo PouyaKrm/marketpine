@@ -316,14 +316,14 @@ def create_unsent_template_sms(*args, ex: SendSMSException, template: str, busin
     obj.save()
 
 
-def send_plain_sms(*args, user: Businessman, customer_ids: List[int], message: str) -> SMSPanelInfo:
+def send_plain_sms(*args, businessman: Businessman, customer_ids: List[int], message: str) -> SMSPanelInfo:
     from panelprofile.services import sms_panel_info_service
     from customers.services import customer_service
-    info = sms_panel_info_service.get_buinessman_sms_panel(user)
-    customers = customer_service.get_bsuinessman_customers_by_ids(user, customer_ids)
+    info = sms_panel_info_service.get_buinessman_sms_panel(businessman)
+    customers = customer_service.get_bsuinessman_customers_by_ids(businessman, customer_ids)
     if customers.count() == 0:
         raise ApplicationErrorCodes.get_exception(ApplicationErrorCodes.RECORD_NOT_FOUND)
-    sms = SMSMessage.objects.create(message=message, businessman=user, message_type=SMSMessage.TYPE_PLAIN,
+    sms = SMSMessage.objects.create(message=message, businessman=businessman, message_type=SMSMessage.TYPE_PLAIN,
                                     status=SMSMessage.STATUS_PENDING)
     SMSMessageReceivers.objects.bulk_create(
         [SMSMessageReceivers(sms_message=sms, customer=c) for c in customers
@@ -333,14 +333,14 @@ def send_plain_sms(*args, user: Businessman, customer_ids: List[int], message: s
     return info
 
 
-def send_plain_sms_to_all(*args, user: Businessman, message: str):
+def send_plain_sms_to_all(*args, businessman: Businessman, message: str):
     from customers.services import customer_service
     from panelprofile.services import sms_panel_info_service
-    info = sms_panel_info_service.get_buinessman_sms_panel(user)
-    sms = SMSMessage.objects.create(message=message, businessman=user, message_type=SMSMessage.TYPE_PLAIN)
+    info = sms_panel_info_service.get_buinessman_sms_panel(businessman)
+    sms = SMSMessage.objects.create(message=message, businessman=businessman, message_type=SMSMessage.TYPE_PLAIN)
     SMSMessageReceivers.objects.bulk_create(
         [SMSMessageReceivers(sms_message=sms, customer=c) for c in
-         customer_service.get_businessman_customers(user).all()
+         customer_service.get_businessman_customers(businessman).all()
          ])
     sms.set_reserved_credit_by_receivers()
     return info
@@ -348,59 +348,60 @@ def send_plain_sms_to_all(*args, user: Businessman, message: str):
 
 def send_by_template(
         *args,
-        user: Businessman, customer_ids: List[int],
+        businessman: Businessman, customer_ids: List[int],
         template: int) -> SMSPanelInfo:
     from customers.services import customer_service
     from panelprofile.services import sms_panel_info_service
-    info = sms_panel_info_service.get_buinessman_sms_panel(user)
-    template = _get_template_by_id(user=user, template=template, error_field_name="template")
-    customers = customer_service.get_bsuinessman_customers_by_ids(user, customer_ids)
+    info = sms_panel_info_service.get_buinessman_sms_panel(businessman)
+    template = _get_template_by_id(user=businessman, template=template, error_field_name="template")
+    customers = customer_service.get_bsuinessman_customers_by_ids(businessman, customer_ids)
     if customers.count() == 0:
         raise ApplicationErrorCodes.get_field_error("customers", ApplicationErrorCodes.RECORD_NOT_FOUND)
-    _send_by_template(user=user, customers=customers, template=template.content, used_for=SMSMessage.USED_FOR_NONE)
+    _send_by_template(businessman=businessman, customers=customers, template=template.content,
+                      used_for=SMSMessage.USED_FOR_NONE)
     return info
 
 
-def send_by_template_to_all(*args, user: Businessman, template: int) -> SMSPanelInfo:
+def send_by_template_to_all(*args, businessman: Businessman, template: int) -> SMSPanelInfo:
     from panelprofile.services import sms_panel_info_service
-    temp = _get_template_by_id(user=user, template=template)
+    temp = _get_template_by_id(user=businessman, template=template)
     sms = _send_by_template_to_all(
-        user=user,
+        businessman=businessman,
         template=temp.content,
         used_for=SMSMessage.USED_FOR_NONE
     )
-    info = sms_panel_info_service.get_buinessman_sms_panel(user)
+    info = sms_panel_info_service.get_buinessman_sms_panel(businessman)
     return info
 
 
-def send_plain_to_group(*args, user: Businessman, group_id: int, message: str) -> SMSPanelInfo:
+def send_plain_to_group(*args, businessman: Businessman, group_id: int, message: str) -> SMSPanelInfo:
     from panelprofile.services import sms_panel_info_service
-    info = sms_panel_info_service.get_buinessman_sms_panel(user)
+    info = sms_panel_info_service.get_buinessman_sms_panel(businessman)
     try:
-        group = BusinessmanGroups.get_group_by_id(user, group_id)
-        _send_plain(user=user, customers=group.get_all_customers(), message=message)
+        group = BusinessmanGroups.get_group_by_id(businessman, group_id)
+        _send_plain(businessman=businessman, customers=group.get_all_customers(), message=message)
         return info
     except ObjectDoesNotExist as ex:
         raise ApplicationErrorCodes.get_exception(ApplicationErrorCodes.RECORD_NOT_FOUND, ex)
 
 
-def send_by_template_to_group(*args, user: Businessman, group_id: int, template_id: int) -> SMSPanelInfo:
+def send_by_template_to_group(*args, businessman: Businessman, group_id: int, template_id: int) -> SMSPanelInfo:
     from panelprofile.services import sms_panel_info_service
-    info = sms_panel_info_service.get_buinessman_sms_panel(user)
-    template = _get_template_by_id(user=user, template=template_id, error_field_name="template_id")
+    info = sms_panel_info_service.get_buinessman_sms_panel(businessman)
+    template = _get_template_by_id(user=businessman, template=template_id, error_field_name="template_id")
     try:
-        group = BusinessmanGroups.get_group_by_id(user, group_id)
+        group = BusinessmanGroups.get_group_by_id(businessman, group_id)
     except ObjectDoesNotExist as ex:
         raise ApplicationErrorCodes.get_field_error("group_id", ApplicationErrorCodes.RECORD_NOT_FOUND, ex)
 
-    _send_by_template(user=user, customers=group.get_all_customers(), template=template.content)
+    _send_by_template(businessman=businessman, customers=group.get_all_customers(), template=template.content)
     return info
 
 
-def resend_failed_message(user: Businessman, sms_id: int) -> SMSPanelInfo:
+def resend_failed_message(*args, businessman: Businessman, sms_id: int) -> SMSPanelInfo:
     from panelprofile.services import sms_panel_info_service
-    info = sms_panel_info_service.get_buinessman_sms_panel(user)
-    sms = _get_message(user=user, sms_id=sms_id, status=SMSMessage.STATUS_FAILED)
+    info = sms_panel_info_service.get_buinessman_sms_panel(businessman)
+    sms = _get_message(user=businessman, sms_id=sms_id, status=SMSMessage.STATUS_FAILED)
     set_message_to_pending(sms_message=sms)
     return info
 
@@ -421,40 +422,40 @@ def update_not_pending_message_text(*args, sms_message: SMSMessage, new_message:
     sms_message.save()
 
 
-def content_marketing_message_status_cancel(*args, template: str, user: Businessman) -> SMSMessage:
+def content_marketing_message_status_cancel(*args, businessman: Businessman, template: str) -> SMSMessage:
     return _send_by_template_to_all(
-        user=user,
+        businessman=businessman,
         template=template,
         used_for=SMSMessage.USED_FOR_CONTENT_MARKETING,
         status=SMSMessage.STATUS_CANCLE
     )
 
 
-def set_content_marketing_message_to_pending(*args, sms_message):
+def set_content_marketing_message_to_pending(*args, sms_message: SMSMessage):
     return set_message_to_pending(sms_message=sms_message)
 
 
-def festival_message_status_cancel(*args, template: str, user: Businessman) -> SMSMessage:
+def festival_message_status_cancel(*args, businessman: Businessman, template: str) -> SMSMessage:
     return _send_by_template_to_all(
-        user=user,
+        businessman=businessman,
         template=template,
         used_for=SMSMessage.USED_FOR_FESTIVAL,
         status=SMSMessage.STATUS_CANCLE
     )
 
 
-def friend_invitation_message(*args, user: Businessman, template: str, customer):
-    return _send_by_template(user=user, customers=[customer], template=template,
+def friend_invitation_message(*args, businessman: Businessman, template: str, customer):
+    return _send_by_template(businessman=businessman, customers=[customer], template=template,
                              used_for=SMSMessage.USED_FOR_FRIEND_INVITATION)
 
 
-def send_welcome_message(*args, user: Businessman, customer) -> SMSMessage:
+def send_welcome_message(*args, businessman: Businessman, customer) -> SMSMessage:
     from panelprofile.services import sms_panel_info_service
-    wm = get_welcome_message(businessman=user)
-    has_sms_panel = sms_panel_info_service.has_panel_and_is_active(user)
+    wm = get_welcome_message(businessman=businessman)
+    has_sms_panel = sms_panel_info_service.has_panel_and_is_active(businessman)
     if not has_sms_panel or not wm.send_message:
         return None
-    return _send_by_template(user=user, customers=[customer], template=wm.message,
+    return _send_by_template(businessman=businessman, customers=[customer], template=wm.message,
                              used_for=SMSMessage.USED_FOR_WELCOME_MESSAGE)
 
 
@@ -468,26 +469,27 @@ def update_welcome_message(*args, businessman: Businessman, message: str, send_m
 
 def _send_by_template_to_all(
         *args,
-        user: Businessman, template: str,
+        businessman: Businessman,
+        template: str,
         used_for=SMSMessage.USED_FOR_NONE,
         **kwargs) -> SMSMessage:
     from customers.services import customer_service
-    sms = SMSMessage.objects.create(message=template, businessman=user, used_for=used_for,
+    sms = SMSMessage.objects.create(message=template, businessman=businessman, used_for=used_for,
                                     message_type=SMSMessage.TYPE_TEMPLATE, **kwargs)
-    _set_receivers_for_sms_message(sms=sms, customers=customer_service.get_businessman_customers(user))
+    _set_receivers_for_sms_message(sms=sms, customers=customer_service.get_businessman_customers(businessman))
     _set_reserved_credit_for_sms_message(sms_message=sms)
     return sms
 
 
 def _send_by_template(
         *args,
-        user: Businessman,
+        businessman: Businessman,
         customers: List[Customer],
         template: str,
         used_for=SMSMessage.USED_FOR_NONE, **kwargs) -> SMSMessage:
     sms = SMSMessage.objects.create(
         message=template,
-        businessman=user,
+        businessman=businessman,
         message_type=SMSMessage.TYPE_TEMPLATE,
         used_for=used_for, **kwargs)
     SMSMessageReceivers.objects.bulk_create(
@@ -499,13 +501,13 @@ def _send_by_template(
 
 def _send_plain(
         *args,
-        user: Businessman,
+        businessman: Businessman,
         customers: QuerySet,
         message: str,
         used_for: str = SMSMessage.USED_FOR_NONE, **kwargs) -> SMSMessage:
     sms = SMSMessage.objects.create(
         message=message,
-        businessman=user,
+        businessman=businessman,
         message_type=SMSMessage.TYPE_PLAIN,
         used_for=used_for, **kwargs)
     SMSMessageReceivers.objects.bulk_create(
