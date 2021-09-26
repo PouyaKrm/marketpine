@@ -242,7 +242,7 @@ def test_resend_failed_message_success(mocker, businessman_1: Businessman):
     result = resend_failed_message(businessman=businessman_1, sms_id=sms_id)
 
     info_mock.assert_called_once()
-    message_mock.assert_called_once_with(user=businessman_1, sms_id=sms_id, status=SMSMessage.STATUS_FAILED)
+    message_mock.assert_called_once_with(businessman=businessman_1, sms_id=sms_id, status=SMSMessage.STATUS_FAILED)
     set_pending_mock.assert_called_once_with(sms_message=message_mock.return_value)
     assert result == info_mock.return_value
 

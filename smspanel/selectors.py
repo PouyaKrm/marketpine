@@ -6,8 +6,8 @@ from smspanel.models import SMSMessage, WelcomeMessage, SentSMS, SMSTemplate, SM
 from users.models import Businessman
 
 
-def get_failed_messages(*args, user: Businessman):
-    return SMSMessage.objects.filter(businessman=user, status=SMSMessage.STATUS_FAILED).order_by('-create_date')
+def get_failed_messages(*args, businessman: Businessman):
+    return SMSMessage.objects.filter(businessman=businessman, status=SMSMessage.STATUS_FAILED).order_by('-create_date')
 
 
 def get_welcome_message(*args, businessman: Businessman) -> WelcomeMessage:
@@ -26,13 +26,13 @@ def get_sent_sms(*args, businessman: Businessman, receptor_phone: str = None):
     return q.filter(receptor=receptor_phone)
 
 
-def get_pending_messages(*args, user: Businessman):
-    return SMSMessage.objects.filter(businessman=user, status=SMSMessage.STATUS_PENDING)
+def get_pending_messages(*args, businessman: Businessman):
+    return SMSMessage.objects.filter(businessman=businessman, status=SMSMessage.STATUS_PENDING)
 
 
-def _get_template_by_id(*args, user: Businessman, template: int, error_field_name: str = None) -> SMSTemplate:
+def _get_template_by_id(*args, businessman: Businessman, template: int, error_field_name: str = None) -> SMSTemplate:
     try:
-        return SMSTemplate.objects.get(businessman=user, id=template)
+        return SMSTemplate.objects.get(businessman=businessman, id=template)
     except ObjectDoesNotExist as ex:
         if error_field_name is not None:
             raise ApplicationErrorCodes.get_field_error(error_field_name, ApplicationErrorCodes.RECORD_NOT_FOUND,
@@ -41,8 +41,8 @@ def _get_template_by_id(*args, user: Businessman, template: int, error_field_nam
             raise ApplicationErrorCodes.get_exception(ApplicationErrorCodes.RECORD_NOT_FOUND, ex)
 
 
-def get_reserved_credit_of_pending_messages(*args, user: Businessman) -> int:
-    r = get_pending_messages(user=user).aggregate(Sum('reserved_credit'))['reserved_credit__sum']
+def get_reserved_credit_of_pending_messages(*args, businessman: Businessman) -> int:
+    r = get_pending_messages(businessman=businessman).aggregate(Sum('reserved_credit'))['reserved_credit__sum']
     if r is None:
         return 0
     return r
@@ -54,13 +54,13 @@ def has_message_any_receivers(*args, sms_message: SMSMessage) -> bool:
 
 def _get_message(
         *args,
-        user: Businessman,
+        businessman: Businessman,
         sms_id: int,
         status: str = None,
         field_name: str = None) -> SMSMessage:
     if status is not None:
         try:
-            return SMSMessage.objects.get(businessman=user, id=sms_id, status=status)
+            return SMSMessage.objects.get(businessman=businessman, id=sms_id, status=status)
         except ObjectDoesNotExist as ex:
             if field_name is not None:
                 raise ApplicationErrorCodes.get_field_error(field_name, ApplicationErrorCodes.RECORD_NOT_FOUND, ex)
@@ -68,7 +68,7 @@ def _get_message(
                 raise ApplicationErrorCodes.get_exception(ApplicationErrorCodes.RECORD_NOT_FOUND)
     else:
         try:
-            return SMSMessage.objects.get(businessman=user, id=sms_id)
+            return SMSMessage.objects.get(businessman=businessman, id=sms_id)
         except ObjectDoesNotExist as ex:
             if field_name is not None:
                 raise ApplicationErrorCodes.get_field_error(field_name, ApplicationErrorCodes.RECORD_NOT_FOUND, ex)

@@ -353,7 +353,7 @@ def send_by_template(
     from customers.services import customer_service
     from panelprofile.services import sms_panel_info_service
     info = sms_panel_info_service.get_buinessman_sms_panel(businessman)
-    template = _get_template_by_id(user=businessman, template=template, error_field_name="template")
+    template = _get_template_by_id(businessman=businessman, template=template, error_field_name="template")
     customers = customer_service.get_bsuinessman_customers_by_ids(businessman, customer_ids)
     if customers.count() == 0:
         raise ApplicationErrorCodes.get_field_error("customers", ApplicationErrorCodes.RECORD_NOT_FOUND)
@@ -364,7 +364,7 @@ def send_by_template(
 
 def send_by_template_to_all(*args, businessman: Businessman, template: int) -> SMSPanelInfo:
     from panelprofile.services import sms_panel_info_service
-    temp = _get_template_by_id(user=businessman, template=template)
+    temp = _get_template_by_id(businessman=businessman, template=template)
     sms = _send_by_template_to_all(
         businessman=businessman,
         template=temp.content,
@@ -388,7 +388,7 @@ def send_plain_to_group(*args, businessman: Businessman, group_id: int, message:
 def send_by_template_to_group(*args, businessman: Businessman, group_id: int, template_id: int) -> SMSPanelInfo:
     from panelprofile.services import sms_panel_info_service
     info = sms_panel_info_service.get_buinessman_sms_panel(businessman)
-    template = _get_template_by_id(user=businessman, template=template_id, error_field_name="template_id")
+    template = _get_template_by_id(businessman=businessman, template=template_id, error_field_name="template_id")
     try:
         group = BusinessmanGroups.get_group_by_id(businessman, group_id)
     except ObjectDoesNotExist as ex:
@@ -401,7 +401,7 @@ def send_by_template_to_group(*args, businessman: Businessman, group_id: int, te
 def resend_failed_message(*args, businessman: Businessman, sms_id: int) -> SMSPanelInfo:
     from panelprofile.services import sms_panel_info_service
     info = sms_panel_info_service.get_buinessman_sms_panel(businessman)
-    sms = _get_message(user=businessman, sms_id=sms_id, status=SMSMessage.STATUS_FAILED)
+    sms = _get_message(businessman=businessman, sms_id=sms_id, status=SMSMessage.STATUS_FAILED)
     set_message_to_pending(sms_message=sms)
     return info
 

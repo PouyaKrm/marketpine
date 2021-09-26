@@ -9,7 +9,7 @@ from smspanel.tests.sms_panel_test_fixtures import *
 def test__get_failed_messages__success(mocker, sms_message_failed_list_1):
     b = sms_message_failed_list_1[0].businessman
 
-    result = get_failed_messages(user=b)
+    result = get_failed_messages(businessman=b)
 
     ids = get_model_list_ids(sms_message_failed_list_1)
     count = result.filter(id__in=ids).count()
@@ -56,7 +56,7 @@ def test__get_pending_messages__success(mocker, sms_message_pending_list_1):
     b = sms_message_pending_list_1[0].businessman
     ids = get_model_list_ids(sms_message_pending_list_1)
 
-    result = get_pending_messages(user=b)
+    result = get_pending_messages(businessman=b)
 
     count = count_model_queryset_by_ids(result, ids)
     assert count == len(ids)
@@ -64,16 +64,16 @@ def test__get_pending_messages__success(mocker, sms_message_pending_list_1):
 
 def test___get_template_by_id__does_not_exist_with_field_error(mocker, businessman_1: Businessman):
     with pytest.raises(ApplicationErrorException) as cx:
-        _get_template_by_id(user=businessman_1, template=1, error_field_name='field')
+        _get_template_by_id(businessman=businessman_1, template=1, error_field_name='field')
 
 
 def test___get_template_by_id__does_not_exist_without_field_error(mocker, businessman_1: Businessman):
     with pytest.raises(ApplicationErrorException) as cx:
-        _get_template_by_id(user=businessman_1, template=1)
+        _get_template_by_id(businessman=businessman_1, template=1)
 
 
 def test___get_template_by_id__success(mocker, sms_template_1):
-    result = _get_template_by_id(user=sms_template_1.businessman, template=sms_template_1.id)
+    result = _get_template_by_id(businessman=sms_template_1.businessman, template=sms_template_1.id)
 
     assert result == sms_template_1
 
@@ -81,7 +81,7 @@ def test___get_template_by_id__success(mocker, sms_template_1):
 def test__get_reserved_credit_of_pending_messages__success(mocker, sms_message_pending_list_1):
     credit_sum = sum(map(lambda e: e.reserved_credit, sms_message_pending_list_1))
 
-    result = get_reserved_credit_of_pending_messages(user=sms_message_pending_list_1[0].businessman)
+    result = get_reserved_credit_of_pending_messages(businessman=sms_message_pending_list_1[0].businessman)
 
     assert credit_sum == result
 
@@ -103,12 +103,12 @@ _get_message_error_test_data = [
 @pytest.mark.parametrize('error_field, status', _get_message_error_test_data)
 def test___get_message__raises_error(mocker, error_field, status, businessman_1: Businessman):
     with pytest.raises(ApplicationErrorException) as cx:
-        _get_message(user=businessman_1, sms_id=1, status=status, field_name=error_field)
+        _get_message(businessman=businessman_1, sms_id=1, status=status, field_name=error_field)
 
 
 @pytest.mark.parametrize('status', [None, SMSMessage.STATUS_PENDING])
 def test___get_message__success(mocker, status, sms_message_pending_1):
-    result = _get_message(user=sms_message_pending_1.businessman, sms_id=sms_message_pending_1.id,
+    result = _get_message(businessman=sms_message_pending_1.businessman, sms_id=sms_message_pending_1.id,
                           status=status)
 
     assert result == sms_message_pending_1
