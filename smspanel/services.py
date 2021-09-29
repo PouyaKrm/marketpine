@@ -15,7 +15,7 @@ from panelprofile.models import SMSPanelInfo
 from users.models import Businessman, Customer
 from .models import UnsentTemplateSMS, SentSMS, UnsentPlainSMS, SMSMessage, SMSMessageReceivers, WelcomeMessage, \
     SMSTemplate
-from .selectors import get_welcome_message, _get_template_by_id, _get_message, has_message_any_receivers
+from .selectors import get_welcome_message, get_sms_template_by_id, _get_message, has_message_any_receivers
 
 max_message_cost = settings.SMS_PANEL['MAX_MESSAGE_COST']
 
@@ -353,7 +353,7 @@ def send_by_template(
     from customers.services import customer_service
     from panelprofile.services import sms_panel_info_service
     info = sms_panel_info_service.get_buinessman_sms_panel(businessman)
-    template = _get_template_by_id(businessman=businessman, template=template, error_field_name="template")
+    template = get_sms_template_by_id(businessman=businessman, template_id=template, error_field_name="template")
     customers = customer_service.get_bsuinessman_customers_by_ids(businessman, customer_ids)
     if customers.count() == 0:
         raise ApplicationErrorCodes.get_field_error("customers", ApplicationErrorCodes.RECORD_NOT_FOUND)
@@ -364,7 +364,7 @@ def send_by_template(
 
 def send_by_template_to_all(*args, businessman: Businessman, template: int) -> SMSPanelInfo:
     from panelprofile.services import sms_panel_info_service
-    temp = _get_template_by_id(businessman=businessman, template=template)
+    temp = get_sms_template_by_id(businessman=businessman, template_id=template)
     sms = _send_by_template_to_all(
         businessman=businessman,
         template=temp.content,
@@ -388,7 +388,7 @@ def send_plain_to_group(*args, businessman: Businessman, group_id: int, message:
 def send_by_template_to_group(*args, businessman: Businessman, group_id: int, template_id: int) -> SMSPanelInfo:
     from panelprofile.services import sms_panel_info_service
     info = sms_panel_info_service.get_buinessman_sms_panel(businessman)
-    template = _get_template_by_id(businessman=businessman, template=template_id, error_field_name="template_id")
+    template = get_sms_template_by_id(businessman=businessman, template_id=template_id, error_field_name="template_id")
     try:
         group = BusinessmanGroups.get_group_by_id(businessman, group_id)
     except ObjectDoesNotExist as ex:
@@ -472,7 +472,7 @@ def create_sms_template(*args, businessman: Businessman, title: str, content: st
 
 
 def update_sms_template(*args, businessman: Businessman, template_id: int, title: str, content: str) -> SMSTemplate:
-    template = _get_template_by_id(businessman=businessman, template=template_id)
+    template = get_sms_template_by_id(businessman=businessman, template_id=template_id)
     template.title = title
     template.content = content
     template.save()
@@ -480,7 +480,7 @@ def update_sms_template(*args, businessman: Businessman, template_id: int, title
 
 
 def delete_sms_template(*args, businessman: Businessman, template_id: int) -> SMSTemplate:
-    template = _get_template_by_id(businessman=businessman, template=template_id)
+    template = get_sms_template_by_id(businessman=businessman, template_id=template_id)
     template.delete()
     return template
 

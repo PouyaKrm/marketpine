@@ -30,9 +30,10 @@ def get_pending_messages(*args, businessman: Businessman):
     return SMSMessage.objects.filter(businessman=businessman, status=SMSMessage.STATUS_PENDING)
 
 
-def _get_template_by_id(*args, businessman: Businessman, template: int, error_field_name: str = None) -> SMSTemplate:
+def get_sms_template_by_id(*args, businessman: Businessman, template_id: int,
+                           error_field_name: str = None) -> SMSTemplate:
     try:
-        return SMSTemplate.objects.get(businessman=businessman, id=template)
+        return SMSTemplate.objects.get(businessman=businessman, id=template_id)
     except ObjectDoesNotExist as ex:
         if error_field_name is not None:
             raise ApplicationErrorCodes.get_field_error(error_field_name, ApplicationErrorCodes.RECORD_NOT_FOUND,

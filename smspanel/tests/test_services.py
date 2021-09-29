@@ -26,7 +26,7 @@ def mock_sms_panel_info(mocker):
 def mock_get_template_by_id(mocker, return_val: Optional[SMSTemplate] = None):
     if return_val is None:
         return_val = SMSTemplate(content='fake template')
-    mock = mocker.patch('smspanel.services._get_template_by_id', return_value=return_val)
+    mock = mocker.patch('smspanel.services.get_sms_template_by_id', return_value=return_val)
     return mock
 
 
@@ -408,7 +408,7 @@ def test__delete_sms_template__success(mocker, businessman_1, sms_template_1):
 
     result = delete_sms_template(businessman=businessman_1, template_id=sms_template_1.id)
 
-    mock.assert_called_once_with(businessman=businessman_1, template=sms_template_1.id)
+    mock.assert_called_once_with(businessman=businessman_1, template_id=sms_template_1.id)
     assert not SMSTemplate.objects.filter(id=sms_template_1.id)
     assert result == sms_template_1
 
