@@ -16,7 +16,7 @@ from .selectors import get_sms_templates
 from .serializers import SMSMessageListSerializer, WelcomeMessageSerializer, SentSMSSerializer
 from .serializers import SMSTemplateSerializer, SendSMSSerializer, SendPlainSMSToAllSerializer, \
     SendByTemplateSerializer, SendPlainToGroup
-from .services import sms_message_service
+from .services import sms_message_service, create_sms_template
 
 page_size = settings.PAGINATION_PAGE_NUM
 
@@ -37,20 +37,18 @@ class SMSTemplateList(APIView):
         sr = SMSTemplateSerializer(templates, many=True)
         return ok(sr.data)
 
+    def post(self, request: Request):
+        print('d')
+        sr = SMSTemplateSerializer(data=request.data, context={'user': request.user})
+        if not sr.is_valid():
+            return bad_request(sr.errors)
 
-class SMSTemplateCreateListAPIView(BaseListAPIView, mixins.CreateModelMixin):
-    serializer_class = SMSTemplateSerializer
-    pagination_class = None
-    permission_classes = [permissions.IsAuthenticated, HasActiveSMSPanel]
-
-    def get_serializer_context(self):
-        return {'user': self.request.user}
-
-    def get_queryset(self):
-        return SMSTemplate.objects.filter(businessman=self.request.user)
-
-    def post(self, request, *args, **kwargs):
-        return self.create(request, *args, **kwargs)
+        template = create_sms_template(businessman=request.user,
+                                       title=sr.validated_data.get('title'),
+                                       content=sr.validated_data.get('content')
+                                       )
+        sr = SMSTemplateSerializer(template, context={'user': request.user})
+        return ok(sr.data)
 
 
 class SMSTemplateRetrieveAPIView(generics.RetrieveAPIView, mixins.UpdateModelMixin,

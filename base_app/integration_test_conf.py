@@ -13,5 +13,6 @@ def auth_client(businessman_1):
     url = reverse('businessman_login')
     response = client.post(url, {'username': businessman_1.username, 'password': password})
     token = response.data['access_token']['token']
+    client = APIClient()
     client.credentials(HTTP_AUTHORIZATION='JWT ' + token)
     return client

@@ -1,5 +1,11 @@
+from django.conf import settings
+
 from base_app.tests import *
+from panelprofile.models import SMSPanelInfo
 from smspanel.models import SMSMessage, SMSMessageReceivers, WelcomeMessage, SentSMS, SMSTemplate
+
+min_credit = settings.SMS_PANEL['MIN_CREDIT']
+max_message_const = settings.SMS_PANEL['MAX_MESSAGE_COST']
 
 
 @pytest.fixture
@@ -85,3 +91,12 @@ def sms_template_list(db, businessman_1) -> List[SMSTemplate]:
     for _ in range(10):
         result.append(create_sms_template(businessman_1))
     return result
+
+
+@pytest.fixture
+def active_sms_panel_info_1(db, businessman_1) -> SMSPanelInfo:
+    return SMSPanelInfo.objects.create(businessman=businessman_1, status=SMSPanelInfo.STATUS_ACTIVE_LOGIN,
+                                       credit=min_credit + 1000,
+                                       sms_farsi_cost=100,
+                                       sms_english_cost=max_message_const
+                                       )
