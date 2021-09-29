@@ -1,3 +1,5 @@
+from typing import Optional
+
 from base_app.error_codes import ApplicationErrorException
 # from smspanel.models import SMSMessage, SMSMessageReceivers
 # from smspanel.services import send_plain_sms
@@ -6,7 +8,7 @@ from smspanel.services import send_by_template, send_by_template_to_all, send_pl
     resend_failed_message, set_message_to_pending, update_not_pending_message_text, \
     set_content_marketing_message_to_pending, festival_message_status_cancel, friend_invitation_message, \
     send_welcome_message, update_welcome_message, _send_by_template_to_all, _send_by_template, _send_plain, \
-    _set_receivers_for_sms_message, _set_reserved_credit_for_sms_message
+    _set_receivers_for_sms_message, _set_reserved_credit_for_sms_message, update_sms_template, delete_sms_template
 from smspanel.tests.sms_panel_test_fixtures import *
 
 max_message_cost = settings.SMS_PANEL['MAX_MESSAGE_COST']
@@ -21,8 +23,9 @@ def mock_sms_panel_info(mocker):
     return mock
 
 
-def mock_get_template_by_id(mocker):
-    return_val = SMSTemplate(content='fake template')
+def mock_get_template_by_id(mocker, return_val: Optional[SMSTemplate] = None):
+    if return_val is None:
+        return_val = SMSTemplate(content='fake template')
     mock = mocker.patch('smspanel.services._get_template_by_id', return_value=return_val)
     return mock
 
@@ -386,6 +389,29 @@ def test__create_sms_template__success(mocker, businessman_1):
     template = SMSTemplate.objects.filter(businessman=businessman_1, title=title, content=content)
     assert template.exists()
     assert template.first() == result
+
+
+def test__update_sms_template__success(mocker, businessman_1, sms_template_1):
+    mock = mock_get_template_by_id(mocker, sms_template_1)
+    title = 'title'
+    content = 'content'
+
+    result = update_sms_template(businessman=businessman_1, template_id=sms_template_1.id, title=title, content=content)
+
+    assert result.title == title
+    assert result.content == content
+    mock.assert_called_once()
+
+
+def test__delete_sms_template__success(mocker, businessman_1, sms_template_1):
+    mock = mock_get_template_by_id(mocker, sms_template_1)
+
+    result = delete_sms_template(businessman=businessman_1, template_id=sms_template_1.id)
+
+    mock.assert_called_once_with(businessman=businessman_1, template=sms_template_1.id)
+    assert not SMSTemplate.objects.filter(id=sms_template_1.id)
+    assert result == sms_template_1
+
 
 def test__send_by_template_to_all_success(mocker, businessman_with_customer_tuple):
     mock = mock__set_receivers_for_sms_message(mocker)

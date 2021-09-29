@@ -471,6 +471,20 @@ def create_sms_template(*args, businessman: Businessman, title: str, content: st
     return SMSTemplate.objects.create(businessman=businessman, title=title, content=content)
 
 
+def update_sms_template(*args, businessman: Businessman, template_id: int, title: str, content: str) -> SMSTemplate:
+    template = _get_template_by_id(businessman=businessman, template=template_id)
+    template.title = title
+    template.content = content
+    template.save()
+    return template
+
+
+def delete_sms_template(*args, businessman: Businessman, template_id: int) -> SMSTemplate:
+    template = _get_template_by_id(businessman=businessman, template=template_id)
+    template.delete()
+    return template
+
+
 def _send_by_template_to_all(
         *args,
         businessman: Businessman,

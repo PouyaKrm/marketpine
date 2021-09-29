@@ -1,7 +1,7 @@
 from django.core.exceptions import ObjectDoesNotExist
 from django.db.models.aggregates import Sum
 
-from base_app.error_codes import ApplicationErrorCodes, ApplicationErrorException
+from base_app.error_codes import ApplicationErrorCodes
 from smspanel.models import SMSMessage, WelcomeMessage, SentSMS, SMSTemplate, SMSMessageReceivers
 from users.models import Businessman
 
@@ -78,10 +78,3 @@ def _get_message(
 
 def get_sms_templates(*args, businessman: Businessman):
     return SMSTemplate.objects.filter(businessman=businessman).order_by('-create_date')
-
-
-def get_sms_template_by_id(*args, businessman: Businessman, template_id: int) -> SMSTemplate:
-    try:
-        return SMSTemplate.objects.get(businessman=businessman, id=template_id)
-    except ObjectDoesNotExist:
-        raise ApplicationErrorException(ApplicationErrorCodes.RECORD_NOT_FOUND)
