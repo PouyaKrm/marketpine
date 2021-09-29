@@ -467,6 +467,10 @@ def update_welcome_message(*args, businessman: Businessman, message: str, send_m
     return w
 
 
+def create_sms_template(*args, businessman: Businessman, title: str, content: str) -> SMSTemplate:
+    return SMSTemplate.objects.create(businessman=businessman, title=title, content=content)
+
+
 def _send_by_template_to_all(
         *args,
         businessman: Businessman,

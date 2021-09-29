@@ -378,6 +378,17 @@ def test_update_welcome_message_success(mocker, businessman_1: Businessman):
     assert result.send_message == send_message
 
 
+def test__create_sms_template__success(mocker, businessman_1):
+    title = 'title'
+    content = 'content'
+
+    result = services.create_sms_template(businessman=businessman_1, title=title, content=content)
+
+    template = SMSTemplate.objects.filter(businessman=businessman_1, title=title, content=content)
+    assert template.exists()
+    assert template.first() == result
+
+
 def test__send_by_template_to_all_success(mocker, businessman_with_customer_tuple):
     mock = mock__set_receivers_for_sms_message(mocker)
     mock_reserved_credit = mock__set_reserved_credit_for_sms_message(mocker)
