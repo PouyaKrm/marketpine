@@ -34,3 +34,42 @@ def test_create_sms_template(mocker, auth_client, active_sms_panel_info_1, busin
     assert q.exists()
     d = SMSTemplateSerializer(q.first()).data
     assert response.data == d
+
+
+def test_retrieve_sms_template(mocker, auth_client, sms_template_1, active_sms_panel_info_1):
+    mock_fetch_panel_profile(mocker, active_sms_panel_info_1)
+    url = reverse('sms_template_retrieve', kwargs={'template_id': sms_template_1.id})
+
+    response = auth_client.get(url)
+
+    assert response.status_code == status.HTTP_200_OK
+    sr = SMSTemplateSerializer(sms_template_1)
+    assert response.data == sr.data
+
+
+def test_update_sms_template(mocker, auth_client, sms_template_1, active_sms_panel_info_1):
+    mock_fetch_panel_profile(mocker, active_sms_panel_info_1)
+    t_id = sms_template_1.id
+    url = reverse('sms_template_retrieve', kwargs={'template_id': t_id})
+    title = fake.text()[:20].strip()
+    content = fake.text()[:20].strip()
+
+    response = auth_client.put(url, {'title': title, 'content': content}, format='json')
+
+    assert response.status_code == status.HTTP_200_OK
+    assert response.data['id'] == t_id
+    assert response.data['title'] == title
+    assert response.data['content'] == content
+    assert SMSTemplate.objects.filter(id=t_id, title=title, content=content).exists()
+
+
+def test_delete_sms_template(mocker, auth_client, sms_template_1, active_sms_panel_info_1):
+    mock_fetch_panel_profile(mocker, active_sms_panel_info_1)
+    url = reverse('sms_template_retrieve', kwargs={'template_id': sms_template_1.id})
+
+    response = auth_client.delete(url)
+
+    assert response.status_code == status.HTTP_200_OK
+    assert not SMSTemplate.objects.filter(id=sms_template_1.id).exists()
+    sr = SMSTemplateSerializer(sms_template_1)
+    assert response.data == sr.data

@@ -1,5 +1,5 @@
 from django.conf import settings
-from rest_framework import generics, mixins, permissions, status
+from rest_framework import permissions, status
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -9,14 +9,13 @@ from common.util.http_helpers import ok, bad_request
 from common.util.kavenegar_local import APIException
 from panelprofile.serializers import SMSPanelInfoSerializer
 from users.models import Businessman
-from .models import SMSTemplate
 from .permissions import HasValidCreditSendSMSToInviduals, HasValidCreditSendSMSToAll, HasValidCreditResendFailedSMS, \
     HasValidCreditSendSMSToGroup, HasActiveSMSPanel
-from .selectors import get_sms_templates
+from .selectors import get_sms_templates, get_sms_template_by_id
 from .serializers import SMSMessageListSerializer, WelcomeMessageSerializer, SentSMSSerializer
 from .serializers import SMSTemplateSerializer, SendSMSSerializer, SendPlainSMSToAllSerializer, \
     SendByTemplateSerializer, SendPlainToGroup
-from .services import sms_message_service, create_sms_template
+from .services import sms_message_service, create_sms_template, update_sms_template, delete_sms_template
 
 page_size = settings.PAGINATION_PAGE_NUM
 
@@ -51,22 +50,30 @@ class SMSTemplateList(APIView):
         return ok(sr.data)
 
 
-class SMSTemplateRetrieveAPIView(generics.RetrieveAPIView, mixins.UpdateModelMixin,
-                                 mixins.DestroyModelMixin):
-    serializer_class = SMSTemplateSerializer
+class SMSTemplateRetrieveAPIView(APIView):
     permission_classes = [permissions.IsAuthenticated, HasActiveSMSPanel]
 
-    def get_queryset(self):
-        return SMSTemplate.objects.filter(businessman=self.request.user)
+    def get(self, request: Request, template_id: int):
+        t = get_sms_template_by_id(businessman=request.user, template_id=template_id)
+        sr = SMSTemplateSerializer(t, context={'user': self.request.user})
+        return ok(sr.data)
 
-    def put(self, request, *args, **kwargs):
-        return self.update(request, *args, **kwargs)
+    def put(self, request: Request, template_id: int):
+        sr = SMSTemplateSerializer(data=request.data, context={'user': self.request.user})
+        if not sr.is_valid():
+            return bad_request(sr.errors)
+        t = update_sms_template(businessman=request.user,
+                                template_id=template_id,
+                                title=sr.validated_data.get('title'),
+                                content=sr.validated_data.get('content')
+                                )
+        sr = SMSTemplateSerializer(t, context={'user': self.request.user})
+        return ok(sr.data)
 
-    def delete(self, request, *args, **kwargs):
-        return self.destroy(request, *args, **kwargs)
-
-    def get_serializer_context(self):
-        return {'user': self.request.user}
+    def delete(self, request, template_id: int):
+        t = delete_sms_template(businessman=request.user, template_id=template_id)
+        sr = SMSTemplateSerializer(t, context={'user': self.request.user})
+        return ok(sr.data)
 
 
 class SendPlainSms(APIView):
@@ -86,7 +93,6 @@ class SendPlainSms(APIView):
     """
 
     def post(self, request: Request):
-
         serializer = SendSMSSerializer(data=request.data, context={'user': request.user})
 
         if not serializer.is_valid():
