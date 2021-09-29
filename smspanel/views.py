@@ -37,7 +37,6 @@ class SMSTemplateList(APIView):
         return ok(sr.data)
 
     def post(self, request: Request):
-        print('d')
         sr = SMSTemplateSerializer(data=request.data, context={'user': request.user})
         if not sr.is_valid():
             return bad_request(sr.errors)
@@ -55,11 +54,11 @@ class SMSTemplateRetrieveAPIView(APIView):
 
     def get(self, request: Request, template_id: int):
         t = get_sms_template_by_id(businessman=request.user, template_id=template_id)
-        sr = SMSTemplateSerializer(t, context={'user': self.request.user})
+        sr = SMSTemplateSerializer(t, context={'user': request.user})
         return ok(sr.data)
 
     def put(self, request: Request, template_id: int):
-        sr = SMSTemplateSerializer(data=request.data, context={'user': self.request.user})
+        sr = SMSTemplateSerializer(data=request.data, context={'user': request.user})
         if not sr.is_valid():
             return bad_request(sr.errors)
         t = update_sms_template(businessman=request.user,
@@ -67,12 +66,12 @@ class SMSTemplateRetrieveAPIView(APIView):
                                 title=sr.validated_data.get('title'),
                                 content=sr.validated_data.get('content')
                                 )
-        sr = SMSTemplateSerializer(t, context={'user': self.request.user})
+        sr = SMSTemplateSerializer(t, context={'user': request.user})
         return ok(sr.data)
 
     def delete(self, request, template_id: int):
         t = delete_sms_template(businessman=request.user, template_id=template_id)
-        sr = SMSTemplateSerializer(t, context={'user': self.request.user})
+        sr = SMSTemplateSerializer(t, context={'user': request.user})
         return ok(sr.data)
 
 
