@@ -3,7 +3,7 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
-    path('templates/', views.SMSTemplateCreateListAPIView.as_view(), name='smspanel_templates'),
+    path('templates/', views.SMSTemplateList.as_view(), name='smspanel_templates'),
     path('templates/<int:pk>/', views.SMSTemplateRetrieveAPIView.as_view()),
     path('send-sms/plain/', views.SendPlainSms.as_view()),
     path('send-sms/plain/to-all/', views.SendPlainToAllAPIView.as_view()),

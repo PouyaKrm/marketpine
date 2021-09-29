@@ -74,3 +74,7 @@ def _get_message(
                 raise ApplicationErrorCodes.get_field_error(field_name, ApplicationErrorCodes.RECORD_NOT_FOUND, ex)
             else:
                 raise ApplicationErrorCodes.get_exception(ApplicationErrorCodes.RECORD_NOT_FOUND)
+
+
+def get_sms_templates(*args, businessman: Businessman):
+    return SMSTemplate.objects.filter(businessman=businessman).order_by('-create_date')

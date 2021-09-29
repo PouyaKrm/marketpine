@@ -12,6 +12,7 @@ from users.models import Businessman
 from .models import SMSTemplate
 from .permissions import HasValidCreditSendSMSToInviduals, HasValidCreditSendSMSToAll, HasValidCreditResendFailedSMS, \
     HasValidCreditSendSMSToGroup, HasActiveSMSPanel
+from .selectors import get_sms_templates
 from .serializers import SMSMessageListSerializer, WelcomeMessageSerializer, SentSMSSerializer
 from .serializers import SMSTemplateSerializer, SendSMSSerializer, SendPlainSMSToAllSerializer, \
     SendByTemplateSerializer, SendPlainToGroup
@@ -26,6 +27,15 @@ def create_sms_sent_success_response(user: Businessman):
 
 def send_message_failed_response(ex: APIException):
     return Response({'status': ex.status, 'message': ex.message}, status=status.HTTP_424_FAILED_DEPENDENCY)
+
+
+class SMSTemplateList(APIView):
+    permission_classes = [permissions.IsAuthenticated, HasActiveSMSPanel]
+
+    def get(self, request: Request):
+        templates = get_sms_templates(businessman=request.user)
+        sr = SMSTemplateSerializer(templates, many=True)
+        return ok(sr.data)
 
 
 class SMSTemplateCreateListAPIView(BaseListAPIView, mixins.CreateModelMixin):

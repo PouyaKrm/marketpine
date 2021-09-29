@@ -1,7 +1,8 @@
 from base_app.error_codes import ApplicationErrorException
 from base_app.test_utils import get_model_list_ids, count_model_queryset_by_ids
 from smspanel.selectors import get_failed_messages, get_welcome_message, get_sent_sms, get_pending_messages, \
-    _get_template_by_id, get_reserved_credit_of_pending_messages, has_message_any_receivers, _get_message
+    _get_template_by_id, get_reserved_credit_of_pending_messages, has_message_any_receivers, _get_message, \
+    get_sms_templates
 
 from smspanel.tests.sms_panel_test_fixtures import *
 
@@ -112,3 +113,9 @@ def test___get_message__success(mocker, status, sms_message_pending_1):
                           status=status)
 
     assert result == sms_message_pending_1
+
+
+def test__get_smm_templates__success(mocker, businessman_1, sms_template_list):
+    result = get_sms_templates(businessman=businessman_1)
+
+    assert all(e in result for e in sms_template_list)
