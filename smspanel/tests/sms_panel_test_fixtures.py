@@ -68,6 +68,20 @@ def sent_sms_list_1(db, create_sms_message, businessman_with_customer_tuple) -> 
     return list(SentSMS.objects.all())
 
 
+def create_sms_template(businessman: Businessman) -> SMSTemplate:
+    name = fake.text()[:20]
+    text = fake.text()[:40]
+    return SMSTemplate.objects.create(businessman=businessman, content=text, title=name)
+
+
 @pytest.fixture
 def sms_template_1(db, businessman_1) -> SMSTemplate:
-    return SMSTemplate.objects.create(businessman=businessman_1, content='content', title='title')
+    return create_sms_template(businessman_1)
+
+
+@pytest.fixture
+def sms_template_list(db, businessman_1) -> List[SMSTemplate]:
+    result = []
+    for _ in range(10):
+        result.append(create_sms_template(businessman_1))
+    return result

@@ -68,6 +68,18 @@ def random_mobile_phone() -> str:
     return result
 
 
+def create_b() -> Businessman:
+    profile = fake.profile()
+    fake_email = fake.email()
+    return Businessman.objects.create(
+        username=profile['username'],
+        email=fake_email,
+        is_active=True,
+        business_name='business_name',
+        phone=random_mobile_phone()
+    )
+
+
 @pytest.fixture
 def create_businessman(db):
     profile = fake.profile()
@@ -184,3 +196,14 @@ def businessman_with_single_customer_tuple(db, create_businessman, create_busine
     b = create_businessman()
     bc = create_businessman_new_customer(b)
     return b, bc.customer
+
+# # @pytest.mark.django_db
+# @pytest.fixture(scope='session')
+# def businessman_session(django_db_setup, django_db_blocker) -> Businessman:
+#     with django_db_blocker.unblock():
+#         return create_b()
+
+
+# @pytest.fixture(scope='session')
+# def django_db_setup(r):
+#
