@@ -1,13 +1,11 @@
+from django.conf import settings
 from django.template import TemplateSyntaxError
 from rest_framework import serializers
 
 from base_app.serializers import BaseModelSerializerWithRequestObj
-from common.util.custom_validators import sms_not_contains_link
-from customers.serializers import CustomerReadIdListRepresentRelatedField
-from .models import SMSTemplate, SentSMS, UnsentPlainSMS, UnsentTemplateSMS, SMSMessage, WelcomeMessage
 from common.util.custom_templates import render_template, get_fake_context, render_template_with_customer_data
-from .services import SMSMessageService
-from django.conf import settings
+from common.util.custom_validators import sms_not_contains_link
+from .models import SMSTemplate, SentSMS, UnsentPlainSMS, UnsentTemplateSMS, SMSMessage, WelcomeMessage
 
 persian_max_chars = settings.SMS_PANEL['PERSIAN_MAX_CHARS']
 send_plain_max_customers = settings.SMS_PANEL['SEND_PLAIN_CUSTOMERS_MAX_NUMBER']
@@ -43,8 +41,7 @@ class SMSTemplateSerializer(serializers.ModelSerializer):
         return value
 
     def create(self, validated_data: dict):
-
-        return SMSTemplate.objects.create(businessman=self.context['user'], **validated_data)
+        pass
 
 
 class SendSMSSerializer(serializers.ModelSerializer):

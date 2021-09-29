@@ -2,10 +2,11 @@ from base_app.error_codes import ApplicationErrorException
 from base_app.test_utils import get_model_list_ids, count_model_queryset_by_ids
 from smspanel.selectors import get_failed_messages, get_welcome_message, get_sent_sms, get_pending_messages, \
     _get_template_by_id, get_reserved_credit_of_pending_messages, has_message_any_receivers, _get_message, \
-    get_sms_templates
+    get_sms_templates, get_sms_template_by_id
 
 from smspanel.tests.sms_panel_test_fixtures import *
 
+pytestmark = pytest.mark.unit
 
 def test__get_failed_messages__success(mocker, sms_message_failed_list_1):
     b = sms_message_failed_list_1[0].businessman
@@ -115,7 +116,17 @@ def test___get_message__success(mocker, status, sms_message_pending_1):
     assert result == sms_message_pending_1
 
 
-def test__get_smm_templates__success(mocker, businessman_1, sms_template_list):
+def test__get_sms_templates__success(mocker, businessman_1, sms_template_list):
     result = get_sms_templates(businessman=businessman_1)
 
     assert all(e in result for e in sms_template_list)
+
+
+def test__get_sms_template_by_id__raises_error(businessman_1):
+    with pytest.raises(ApplicationErrorException):
+        get_sms_template_by_id(businessman=businessman_1, template_id=1)
+
+
+def test__get_sms_template_by_id__success(businessman_1, sms_template_1):
+    result = get_sms_template_by_id(businessman=businessman_1, template_id=sms_template_1.id)
+    assert result == sms_template_1

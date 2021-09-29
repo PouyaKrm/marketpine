@@ -1,7 +1,4 @@
-from django.conf import settings
-
 from base_app.error_codes import ApplicationErrorException
-from panelprofile.models import SMSPanelInfo
 # from smspanel.models import SMSMessage, SMSMessageReceivers
 # from smspanel.services import send_plain_sms
 from smspanel import services
@@ -13,6 +10,8 @@ from smspanel.services import send_by_template, send_by_template_to_all, send_pl
 from smspanel.tests.sms_panel_test_fixtures import *
 
 max_message_cost = settings.SMS_PANEL['MAX_MESSAGE_COST']
+
+pytestmark = pytest.mark.unit
 
 
 def mock_sms_panel_info(mocker):
@@ -387,7 +386,6 @@ def test__create_sms_template__success(mocker, businessman_1):
     template = SMSTemplate.objects.filter(businessman=businessman_1, title=title, content=content)
     assert template.exists()
     assert template.first() == result
-
 
 def test__send_by_template_to_all_success(mocker, businessman_with_customer_tuple):
     mock = mock__set_receivers_for_sms_message(mocker)
