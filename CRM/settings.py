@@ -57,6 +57,7 @@ REFRESH_TOKEN_EXP_DELTA = timezone.timedelta(days=1)
 PAGINATION_PAGE_NUM = 25
 
 FRONTEND_URL = "https://panel.foroshgahino.com"
+CUSTOMER_APP_FRONTEND_URL = "https://moshtarino.app"
 
 ACTIVATION_ALLOW_REFRESH_DAYS_BEFORE_EXPIRE = timezone.timedelta(days=2)
 ACTIVATION_COST_IN_TOMANS = 1000

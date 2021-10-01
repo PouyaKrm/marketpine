@@ -14,35 +14,34 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 
+from background_task.models import Task
+from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import path, include
 from rest_framework_swagger.views import get_swagger_view
-from django.conf import settings
-from django.conf.urls.static import static
 
+from content_marketing import urls as content_url
+from customer_application import urls as customer_auth_urls
+from customer_return_plan import urls as plan_url
+from customerpurchase import urls as purchase_url
+from customers import urls as customer_url
+from dashboard import urls as dashboard_url
+from device import urls as device_url
+from download import urls as download_url
+from educations import urls as education_url
+from groups import urls as group_url
+from mobile_app_conf import urls as mobile_conf_urls
+from online_menu import urls as menu_url
+from panelmodulus import urls as modulus_url
+from panelprofile import urls as profile_url
+from payment import urls as payment_url
+from smspanel import urls as smspanel_url
 from smspanel.background_jobs.invitate_welcome_sms import run_send_invite_sms_task
 from smspanel.background_jobs.sms_send_script import run_send_sms_task
 from users import urls as salesman_url
-from customers import urls as customer_url
-from groups import urls as group_url
-from smspanel import urls as smspanel_url
-from customer_return_plan import urls as plan_url
-from dashboard import urls as dashboard_url
-from customerpurchase import urls as purchase_url
-from panelmodulus import urls as modulus_url
-from panelprofile import urls as profile_url
-from download import urls as download_url
-from payment import urls as payment_url
-from device import urls as device_url
-from content_marketing import urls as content_url
-from online_menu import urls as menu_url
-from mobile_app_conf import urls as mobile_conf_urls
-from educations import urls as education_url
-from background_task.models import Task
-
-from customer_application import urls as customer_auth_urls
 
 schema_view = get_swagger_view(title='Pastebin API')
+from django.conf import settings
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -76,3 +75,5 @@ if settings.DEBUG:
 if not Task.objects.exists():
     run_send_invite_sms_task(repeat=10)
     run_send_sms_task(repeat=10)
+
+print(settings.CUSTOMER_APP_FRONTEND_URL)
