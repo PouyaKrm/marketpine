@@ -1,13 +1,14 @@
+from django.conf import settings
 from rest_framework import status
 
 from base_app.integration_test_conf import *
 from base_app.test_utils import get_model_list_ids
 from common.util.sms_panel.client import ClientManagement
-from groups.tests.fixtures import *
 from panelprofile.serializers import SMSPanelInfoSerializer
 from smspanel.serializers import SMSTemplateSerializer, SMSMessageListSerializer, SentSMSSerializer, \
     WelcomeMessageSerializer
 from smspanel.tests.sms_panel_test_fixtures import *
+from groups.tests.fixtures import group_1, group_1_customer_tuple
 
 message_cost = settings.SMS_PANEL['MAX_MESSAGE_COST']
 
