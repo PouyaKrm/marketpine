@@ -64,10 +64,13 @@ Pyrogram==0.8.0
 pyrsistent==0.15.4
 PySocks==1.6.8
 pytest==6.2.5
+pytest-django==4.4.0
+pytest-mock==3.6.1
 python-dateutil==2.8.0
 python-telegram-bot==11.1.0
 pytz==2019.1
 PyYAML==5.1
+redis==3.5.3
 requests==2.21.0
 requests-toolbelt==0.9.1
 rope==0.14.0
