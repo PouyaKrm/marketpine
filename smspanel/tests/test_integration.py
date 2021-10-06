@@ -120,3 +120,4 @@ def test_send_plain_to_all(sms_fetch_user_api_key_mock, businessman_1_with_custo
                                                      customer__businessmans=businessman_1_with_customer_tuple[0])
     assert receivers_q.count() == len(businessman_1_with_customer_tuple[1])
     assert_sms_panel_info(response.data, active_sms_panel_info_1)
+
