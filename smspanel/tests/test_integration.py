@@ -1,13 +1,15 @@
+from django.conf import settings
 from rest_framework import status
 
 from base_app.integration_test_conf import *
 from base_app.test_utils import get_model_list_ids
 from common.util.sms_panel.client import ClientManagement
-from groups.tests.fixtures import *
 from panelprofile.serializers import SMSPanelInfoSerializer
 from smspanel.serializers import SMSTemplateSerializer, SMSMessageListSerializer, SentSMSSerializer, \
     WelcomeMessageSerializer
 from smspanel.tests.sms_panel_test_fixtures import *
+
+message_cost = settings.SMS_PANEL['MAX_MESSAGE_COST']
 
 pytestmark = pytest.mark.integration
 
@@ -25,6 +27,10 @@ def mock_fetch_panel_profile(mocker, sms_panel_info):
 def assert_sms_panel_info(response_data, sms_panel_model: SMSPanelInfo):
     sr = SMSPanelInfoSerializer(sms_panel_model)
     assert response_data == sr.data
+
+
+def assert_sms_message_reserved_credit(sms_message: SMSMessage, receivers_count: int):
+    assert sms_message.reserved_credit == receivers_count * max_message_const
 
 
 def test_template_list(mocker, auth_client, sms_template_list):
@@ -102,9 +108,10 @@ def test_send_plain_sms(sms_fetch_user_api_key_mock, businessman_1_with_customer
                                      businessman=businessman_1_with_customer_tuple[0])
     assert smsq.exists()
     sms = smsq.first()
-    receivers_q = SMSMessageReceivers.objects.filter(customer_id__in=customer_ids, sms_message=sms)
-    assert receivers_q.count() == len(customer_ids)
+    receivers_count = SMSMessageReceivers.objects.filter(customer_id__in=customer_ids, sms_message=sms).count()
+    assert receivers_count == len(customer_ids)
     assert_sms_panel_info(response.data, active_sms_panel_info_1)
+    assert_sms_message_reserved_credit(sms, receivers_count)
 
 
 def test_send_plain_to_all(sms_fetch_user_api_key_mock, businessman_1_with_customer_tuple, active_sms_panel_info_1,
@@ -119,10 +126,12 @@ def test_send_plain_to_all(sms_fetch_user_api_key_mock, businessman_1_with_custo
                                       message_type=SMSMessage.TYPE_PLAIN,
                                       message=message)
     assert sms_q.exists()
-    receivers_q = SMSMessageReceivers.objects.filter(sms_message=sms_q.first(),
-                                                     customer__businessmans=businessman_1_with_customer_tuple[0])
-    assert receivers_q.count() == len(businessman_1_with_customer_tuple[1])
+    receivers_count = SMSMessageReceivers.objects.filter(sms_message=sms_q.first(),
+                                                         customer__businessmans=businessman_1_with_customer_tuple[
+                                                             0]).count()
+    assert receivers_count == len(businessman_1_with_customer_tuple[1])
     assert_sms_panel_info(response.data, active_sms_panel_info_1)
+    assert_sms_message_reserved_credit(sms_q.first(), receivers_count)
 
 
 def test_send_template_sms(sms_fetch_user_api_key_mock, sms_template_1, businessman_1_with_customer_tuple,
@@ -139,9 +148,11 @@ def test_send_template_sms(sms_fetch_user_api_key_mock, sms_template_1, business
                                       )
 
     assert sms_q.exists()
-    receivers_q = SMSMessageReceivers.objects.filter(sms_message=sms_q.first(), customer_id__in=customer_ids)
-    assert receivers_q.count() == len(customer_ids)
+    receivers_count = SMSMessageReceivers.objects.filter(sms_message=sms_q.first(),
+                                                         customer_id__in=customer_ids).count()
+    assert receivers_count == len(customer_ids)
     assert_sms_panel_info(response.data, active_sms_panel_info_1)
+    assert_sms_message_reserved_credit(sms_q.first(), receivers_count)
 
 
 def test_send_by_template_to_all(sms_fetch_user_api_key_mock, businessman_1_with_customer_tuple, sms_template_1,
@@ -157,10 +168,12 @@ def test_send_by_template_to_all(sms_fetch_user_api_key_mock, businessman_1_with
                                       )
 
     assert sms_q.exists()
-    receivers_q = SMSMessageReceivers.objects.filter(sms_message=sms_q.first(),
-                                                     customer__in=businessman_1_with_customer_tuple[1])
-    assert receivers_q.count() == len(businessman_1_with_customer_tuple[1])
+    receivers_count = SMSMessageReceivers.objects.filter(sms_message=sms_q.first(),
+                                                         customer__in=businessman_1_with_customer_tuple[1]
+                                                         ).count()
+    assert receivers_count == len(businessman_1_with_customer_tuple[1])
     assert_sms_panel_info(response.data, active_sms_panel_info_1)
+    assert_sms_message_reserved_credit(sms_q.first(), receivers_count)
 
 
 def test_send_plain_sms_to_group(sms_fetch_user_api_key_mock, group_1_customer_tuple, active_sms_panel_info_1,
@@ -175,10 +188,10 @@ def test_send_plain_sms_to_group(sms_fetch_user_api_key_mock, group_1_customer_t
     assert response.status_code == status.HTTP_200_OK
     sms_q = SMSMessage.objects.filter(businessman=g.businessman, message=message, message_type=SMSMessage.TYPE_PLAIN)
     assert sms_q.exists()
-    receivers_q = SMSMessageReceivers.objects.filter(sms_message=sms_q.first(), customer__in=customers)
-    assert receivers_q.count() == len(customers)
+    receivers_count = SMSMessageReceivers.objects.filter(sms_message=sms_q.first(), customer__in=customers).count()
+    assert receivers_count == len(customers)
     assert_sms_panel_info(response.data, active_sms_panel_info_1)
-
+    assert_sms_message_reserved_credit(sms_q.first(), receivers_count)
 
 def test_send_template_sms_to_group(sms_fetch_user_api_key_mock, group_1_customer_tuple, sms_template_1,
                                     active_sms_panel_info_1, auth_client):
@@ -192,9 +205,10 @@ def test_send_template_sms_to_group(sms_fetch_user_api_key_mock, group_1_custome
     sms_q = SMSMessage.objects.filter(businessman=g.businessman, message_type=SMSMessage.TYPE_TEMPLATE,
                                       message=sms_template_1.content)
     assert sms_q.exists()
-    receivers_q = SMSMessageReceivers.objects.filter(sms_message=sms_q.first(), customer__in=customers)
-    assert receivers_q.count() == len(customers)
+    receivers_count = SMSMessageReceivers.objects.filter(sms_message=sms_q.first(), customer__in=customers).count()
+    assert receivers_count == len(customers)
     assert_sms_panel_info(response.data, active_sms_panel_info_1)
+    assert_sms_message_reserved_credit(sms_q.first(), receivers_count)
 
 
 def test_failed_sms_list(sms_fetch_user_api_key_mock, sms_message_failed_list_1, active_sms_panel_info_1, auth_client):
