@@ -4,7 +4,8 @@ from base_app.integration_test_conf import *
 from base_app.test_utils import get_model_list_ids
 from common.util.sms_panel.client import ClientManagement
 from panelprofile.serializers import SMSPanelInfoSerializer
-from smspanel.serializers import SMSTemplateSerializer, SMSMessageListSerializer, SentSMSSerializer
+from smspanel.serializers import SMSTemplateSerializer, SMSMessageListSerializer, SentSMSSerializer, \
+    WelcomeMessageSerializer
 from smspanel.tests.sms_panel_test_fixtures import *
 
 pytestmark = pytest.mark.integration
@@ -228,3 +229,25 @@ def test_sent_sms_list(sms_fetch_user_api_key_mock, sent_sms_list_1, active_sms_
     result = response.data['results']
     expected = SentSMSSerializer(sent_sms_list_1, many=True).data
     assert all(e in result for e in expected)
+
+
+def test_retrieve_welcome_message(sms_fetch_user_api_key_mock, welcome_message_1, active_sms_panel_info_1, auth_client):
+    url = reverse('welcome_message')
+
+    response = auth_client.get(url)
+
+    sr = WelcomeMessageSerializer(welcome_message_1)
+    assert response.data == sr.data
+
+
+def test_update_welcome_message(sms_fetch_user_api_key_mock, active_sms_panel_info_1, auth_client):
+    data = {'message': 'fake message', 'send_message': True}
+    url = reverse('welcome_message')
+
+    response = auth_client.put(url, data=data)
+
+    assert response.status_code == status.HTTP_200_OK
+    query = WelcomeMessage.objects.filter(businessman=active_sms_panel_info_1.businessman, **data)
+    assert query.exists()
+    result = response.data
+    assert data.items() <= result.items()

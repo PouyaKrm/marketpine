@@ -11,13 +11,13 @@ from panelprofile.serializers import SMSPanelInfoSerializer
 from users.models import Businessman
 from .permissions import HasValidCreditSendSMSToInviduals, HasValidCreditSendSMSToAll, HasValidCreditResendFailedSMS, \
     HasValidCreditSendSMSToGroup, HasActiveSMSPanel
-from .selectors import get_sms_templates, get_sms_template_by_id, get_failed_messages, get_sent_sms
+from .selectors import get_sms_templates, get_sms_template_by_id, get_failed_messages, get_sent_sms, get_welcome_message
 from .serializers import SMSMessageListSerializer, WelcomeMessageSerializer, SentSMSSerializer
 from .serializers import SMSTemplateSerializer, SendSMSSerializer, SendPlainSMSToAllSerializer, \
     SendByTemplateSerializer, SendPlainToGroup
-from .services import sms_message_service, create_sms_template, update_sms_template, delete_sms_template, \
+from .services import create_sms_template, update_sms_template, delete_sms_template, \
     send_plain_sms, send_plain_sms_to_all, send_by_template, send_by_template_to_all, send_plain_to_group, \
-    send_by_template_to_group, resend_failed_message
+    send_by_template_to_group, resend_failed_message, update_welcome_message
 
 page_size = settings.PAGINATION_PAGE_NUM
 
@@ -222,7 +222,7 @@ class SentSMSListAPIView(BaseListAPIView):
         return get_sent_sms(businessman=self.request.user, receptor_phone=phone)
 
 
-class RetrieveUpdateWelcomeMessageApiView(APIView):
+class RetrieveUpdateWelcomeMessageAPIView(APIView):
     """
     Retrieves and updates data of the panel setting
     """
@@ -235,7 +235,7 @@ class RetrieveUpdateWelcomeMessageApiView(APIView):
         :param request: Contains data of the request
         :return: Response with body of the current settings and 200 status code
         """
-        wm = sms_message_service.get_welcome_message(request.user)
+        wm = get_welcome_message(businessman=request.user)
         sr = WelcomeMessageSerializer(wm)
         return ok(sr.data)
 
@@ -252,6 +252,6 @@ class RetrieveUpdateWelcomeMessageApiView(APIView):
             return bad_request(sr.errors)
         message = sr.validated_data.get('message')
         send_message = sr.validated_data.get('send_message')
-        wm = sms_message_service.update_welcome_message(request.user, message, send_message)
+        wm = update_welcome_message(businessman=request.user, message=message, send_message=send_message)
         sr = WelcomeMessageSerializer(wm)
         return ok(sr.data)
