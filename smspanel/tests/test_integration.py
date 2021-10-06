@@ -3,6 +3,7 @@ from rest_framework import status
 from base_app.integration_test_conf import *
 from base_app.test_utils import get_model_list_ids
 from common.util.sms_panel.client import ClientManagement
+from groups.tests.fixtures import *
 from panelprofile.serializers import SMSPanelInfoSerializer
 from smspanel.serializers import SMSTemplateSerializer, SMSMessageListSerializer, SentSMSSerializer, \
     WelcomeMessageSerializer

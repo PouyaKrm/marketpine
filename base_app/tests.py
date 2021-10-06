@@ -82,17 +82,15 @@ def create_b() -> Businessman:
 
 @pytest.fixture
 def create_businessman(db):
-    profile = fake.profile()
-    fake_email = fake.email()
 
     def create_user(
-            username=profile['username'],
-            email=fake_email,
             is_active=True,
             business_name=fake.name()
     ) -> Businessman:
+        profile = fake.profile()
+        fake_email = fake.email()
         return Businessman.objects.create(
-            username=username, email=email,
+            username=profile['username'], email=fake_email,
             is_active=is_active,
             business_name=business_name,
             phone=random_mobile_phone()

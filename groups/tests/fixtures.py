@@ -4,7 +4,7 @@ from groups.models import BusinessmanGroups, Membership
 
 @pytest.fixture
 def group_1(businessman_1_with_customer_tuple) -> BusinessmanGroups:
-    g = BusinessmanGroups.objects.create(businessman=businessman_1_with_customer_tuple[0], title='fake group')
+    g = BusinessmanGroups.objects.create(businessman=businessman_1_with_customer_tuple[0], title=fake.text()[:10])
 
     for c in businessman_1_with_customer_tuple[1]:
         Membership.objects.create(group=g, customer=c)
