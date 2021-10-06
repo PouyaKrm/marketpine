@@ -18,6 +18,6 @@ urlpatterns = [
     # path('resend-sms/template/<int:unsent_sms_id>/', views.resend_template_sms),
     path('failed/', views.FailedSMSMessagesList.as_view(), name='failed_sms'),
     path('failed/<int:sms_id>/resend/', views.ResendFailedSmsAPIView.as_view(), name='resend_failed_sms'),
-    path('sent-sms/', views.SentSMSRetrieveAPIView.as_view(), name='sent_sms_retrieve'),
+    path('sent-sms/', views.SentSMSListAPIView.as_view(), name='sent_sms_retrieve'),
     path('welcome-message/', views.RetrieveUpdateWelcomeMessageApiView.as_view()),
 ]

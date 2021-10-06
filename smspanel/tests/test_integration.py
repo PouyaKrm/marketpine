@@ -4,7 +4,7 @@ from base_app.integration_test_conf import *
 from base_app.test_utils import get_model_list_ids
 from common.util.sms_panel.client import ClientManagement
 from panelprofile.serializers import SMSPanelInfoSerializer
-from smspanel.serializers import SMSTemplateSerializer, SMSMessageListSerializer
+from smspanel.serializers import SMSTemplateSerializer, SMSMessageListSerializer, SentSMSSerializer
 from smspanel.tests.sms_panel_test_fixtures import *
 
 pytestmark = pytest.mark.integration
@@ -217,3 +217,14 @@ def test_resend_failed_sms(sms_fetch_user_api_key_mock, sms_message_failed_list_
     sms_q = SMSMessage.objects.filter(id=sms.id, status=SMSMessage.STATUS_DONE, send_fail_attempts=0)
     assert sms_q.exists()
     assert_sms_panel_info(response.data, active_sms_panel_info_1)
+
+
+def test_sent_sms_list(sms_fetch_user_api_key_mock, sent_sms_list_1, active_sms_panel_info_1, auth_client):
+    url = reverse('sent_sms_retrieve')
+
+    response = auth_client.get(url)
+
+    assert response.status_code == status.HTTP_200_OK
+    result = response.data['results']
+    expected = SentSMSSerializer(sent_sms_list_1, many=True).data
+    assert all(e in result for e in expected)

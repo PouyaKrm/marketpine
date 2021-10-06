@@ -11,7 +11,7 @@ from panelprofile.serializers import SMSPanelInfoSerializer
 from users.models import Businessman
 from .permissions import HasValidCreditSendSMSToInviduals, HasValidCreditSendSMSToAll, HasValidCreditResendFailedSMS, \
     HasValidCreditSendSMSToGroup, HasActiveSMSPanel
-from .selectors import get_sms_templates, get_sms_template_by_id, get_failed_messages
+from .selectors import get_sms_templates, get_sms_template_by_id, get_failed_messages, get_sent_sms
 from .serializers import SMSMessageListSerializer, WelcomeMessageSerializer, SentSMSSerializer
 from .serializers import SMSTemplateSerializer, SendSMSSerializer, SendPlainSMSToAllSerializer, \
     SendByTemplateSerializer, SendPlainToGroup
@@ -213,13 +213,13 @@ class ResendFailedSmsAPIView(APIView):
         return ok(sr.data)
 
 
-class SentSMSRetrieveAPIView(BaseListAPIView):
+class SentSMSListAPIView(BaseListAPIView):
     permission_classes = [permissions.IsAuthenticated, HasActiveSMSPanel]
     serializer_class = SentSMSSerializer
 
     def get_queryset(self):
         phone = self.request.query_params.get('phone')
-        return sms_message_service.get_sent_sms(self.request.user, phone)
+        return get_sent_sms(businessman=self.request.user, receptor_phone=phone)
 
 
 class RetrieveUpdateWelcomeMessageApiView(APIView):
