@@ -140,3 +140,22 @@ def test_send_template_sms(sms_fetch_user_api_key_mock, sms_template_1, business
     receivers_q = SMSMessageReceivers.objects.filter(sms_message=sms_q.first(), customer_id__in=customer_ids)
     assert receivers_q.count() == len(customer_ids)
     assert_sms_panel_info(response.data, active_sms_panel_info_1)
+
+
+def test_send_by_template_to_all(sms_fetch_user_api_key_mock, businessman_1_with_customer_tuple, sms_template_1,
+                                 active_sms_panel_info_1, auth_client):
+    url = reverse('send_sms_by_template_to_all', kwargs={'template_id': sms_template_1.id})
+
+    response = auth_client.post(url)
+
+    assert response.status_code == status.HTTP_200_OK
+    sms_q = SMSMessage.objects.filter(businessman=businessman_1_with_customer_tuple[0],
+                                      message=sms_template_1.content,
+                                      message_type=SMSMessage.TYPE_TEMPLATE
+                                      )
+
+    assert sms_q.exists()
+    receivers_q = SMSMessageReceivers.objects.filter(sms_message=sms_q.first(),
+                                                     customer__in=businessman_1_with_customer_tuple[1])
+    assert receivers_q.count() == len(businessman_1_with_customer_tuple[1])
+    assert_sms_panel_info(response.data, active_sms_panel_info_1)

@@ -16,7 +16,7 @@ from .serializers import SMSMessageListSerializer, WelcomeMessageSerializer, Sen
 from .serializers import SMSTemplateSerializer, SendSMSSerializer, SendPlainSMSToAllSerializer, \
     SendByTemplateSerializer, SendPlainToGroup
 from .services import sms_message_service, create_sms_template, update_sms_template, delete_sms_template, \
-    send_plain_sms, send_plain_sms_to_all, send_by_template
+    send_plain_sms, send_plain_sms_to_all, send_by_template, send_by_template_to_all
 
 page_size = settings.PAGINATION_PAGE_NUM
 
@@ -156,7 +156,7 @@ class SendByTemplateToAll(APIView):
                           HasValidCreditSendSMSToAll]
 
     def post(self, request: Request, template_id: int):
-        info = sms_message_service.send_by_template_to_all(request.user, template_id)
+        info = send_by_template_to_all(businessman=request.user, template=template_id)
         sr = SMSPanelInfoSerializer(info)
         return ok(sr.data)
 
