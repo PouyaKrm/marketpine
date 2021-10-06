@@ -4,7 +4,7 @@ from base_app.integration_test_conf import *
 from base_app.test_utils import get_model_list_ids
 from common.util.sms_panel.client import ClientManagement
 from panelprofile.serializers import SMSPanelInfoSerializer
-from smspanel.serializers import SMSTemplateSerializer
+from smspanel.serializers import SMSTemplateSerializer, SMSMessageListSerializer
 from smspanel.tests.sms_panel_test_fixtures import *
 
 pytestmark = pytest.mark.integration
@@ -193,3 +193,14 @@ def test_send_template_sms_to_group(sms_fetch_user_api_key_mock, group_1_custome
     receivers_q = SMSMessageReceivers.objects.filter(sms_message=sms_q.first(), customer__in=customers)
     assert receivers_q.count() == len(customers)
     assert_sms_panel_info(response.data, active_sms_panel_info_1)
+
+
+def test_failed_sms_list(sms_fetch_user_api_key_mock, sms_message_failed_list_1, active_sms_panel_info_1, auth_client):
+    url = reverse('failed_sms')
+
+    response = auth_client.get(url)
+
+    assert response.status_code == status.HTTP_200_OK
+    result = response.data['results']
+    expected = SMSMessageListSerializer(sms_message_failed_list_1, many=True).data
+    assert all(e in result for e in expected)

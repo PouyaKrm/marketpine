@@ -16,7 +16,7 @@ urlpatterns = [
     path('send-sms/template/<int:template_id>/to-group/<int:group_id>/', views.SendTemplateSmsToGroupAPIView.as_view(),
          name='send_sms_by_template_to_group'),
     # path('resend-sms/template/<int:unsent_sms_id>/', views.resend_template_sms),
-    path('failed/', views.FailedSMSMessagesList.as_view()),
+    path('failed/', views.FailedSMSMessagesList.as_view(), name='failed_sms'),
     path('failed/<int:sms_id>/resend/', views.ResendFailedSms.as_view()),
     path('sent-sms/', views.SentSMSRetrieveAPIView.as_view(), name='sent_sms_retrieve'),
     path('welcome-message/', views.RetrieveUpdateWelcomeMessageApiView.as_view()),

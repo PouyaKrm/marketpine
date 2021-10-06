@@ -9,10 +9,10 @@ max_message_const = settings.SMS_PANEL['MAX_MESSAGE_COST']
 
 
 @pytest.fixture
-def create_sms_message(db, businessman_with_customer_tuple):
+def create_sms_message(db, businessman_1_with_customer_tuple):
     def create_sms(status: str, failed_attempts: int = 0) -> SMSMessage:
         return SMSMessage.objects.create(
-            businessman=businessman_with_customer_tuple[0],
+            businessman=businessman_1_with_customer_tuple[0],
             status=status,
             send_fail_attempts=failed_attempts,
             reserved_credit=10
@@ -64,11 +64,11 @@ def welcome_message_1(db, businessman_1: Businessman) -> WelcomeMessage:
 
 
 @pytest.fixture
-def sent_sms_list_1(db, create_sms_message, businessman_with_customer_tuple) -> List[SentSMS]:
+def sent_sms_list_1(db, create_sms_message, businessman_1_with_customer_tuple) -> List[SentSMS]:
     sms = create_sms_message(status=SMSMessage.STATUS_DONE)
 
     SentSMS.objects.bulk_create(
-        [SentSMS(sms_message=sms, message='fake', receptor=c) for c in businessman_with_customer_tuple[1]]
+        [SentSMS(sms_message=sms, message='fake', receptor=c) for c in businessman_1_with_customer_tuple[1]]
     )
 
     return list(SentSMS.objects.all())
