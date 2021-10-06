@@ -16,7 +16,7 @@ from .serializers import SMSMessageListSerializer, WelcomeMessageSerializer, Sen
 from .serializers import SMSTemplateSerializer, SendSMSSerializer, SendPlainSMSToAllSerializer, \
     SendByTemplateSerializer, SendPlainToGroup
 from .services import sms_message_service, create_sms_template, update_sms_template, delete_sms_template, \
-    send_plain_sms, send_plain_sms_to_all
+    send_plain_sms, send_plain_sms_to_all, send_by_template
 
 page_size = settings.PAGINATION_PAGE_NUM
 
@@ -142,10 +142,10 @@ class SendByTemplateAPIView(APIView):
         if not serializer.is_valid():
             return bad_request(serializer.errors)
 
-        info = sms_message_service.send_by_template(
-            request.user,
-            serializer.validated_data.get('customers'),
-            serializer.validated_data.get('template')
+        info = send_by_template(
+            businessman=request.user,
+            customer_ids=serializer.validated_data.get('customers'),
+            template=serializer.validated_data.get('template')
         )
         sr = SMSPanelInfoSerializer(info)
         return ok(sr.data)

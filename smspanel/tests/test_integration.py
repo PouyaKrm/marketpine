@@ -1,6 +1,7 @@
 from rest_framework import status
 
 from base_app.integration_test_conf import *
+from base_app.test_utils import get_model_list_ids
 from common.util.sms_panel.client import ClientManagement
 from panelprofile.serializers import SMSPanelInfoSerializer
 from smspanel.serializers import SMSTemplateSerializer
@@ -121,3 +122,21 @@ def test_send_plain_to_all(sms_fetch_user_api_key_mock, businessman_1_with_custo
     assert receivers_q.count() == len(businessman_1_with_customer_tuple[1])
     assert_sms_panel_info(response.data, active_sms_panel_info_1)
 
+
+def test_send_template_sms(sms_fetch_user_api_key_mock, sms_template_1, businessman_1_with_customer_tuple,
+                           active_sms_panel_info_1, auth_client):
+    url = reverse('send_sms_by_template')
+    customer_ids = get_model_list_ids(businessman_1_with_customer_tuple[1])
+
+    response = auth_client.post(url, data={'customers': customer_ids, 'template': sms_template_1.id})
+
+    assert response.status_code == status.HTTP_200_OK
+    sms_q = SMSMessage.objects.filter(businessman=businessman_1_with_customer_tuple[0],
+                                      message_type=SMSMessage.TYPE_TEMPLATE,
+                                      message=sms_template_1.content
+                                      )
+
+    assert sms_q.exists()
+    receivers_q = SMSMessageReceivers.objects.filter(sms_message=sms_q.first(), customer_id__in=customer_ids)
+    assert receivers_q.count() == len(customer_ids)
+    assert_sms_panel_info(response.data, active_sms_panel_info_1)
