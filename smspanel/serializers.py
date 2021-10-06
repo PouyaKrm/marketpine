@@ -65,7 +65,7 @@ class SendSMSSerializer(serializers.ModelSerializer):
 
     def validate_content(self, value):
         if(len(value) > persian_max_chars):
-            raise serializers.ValidationError("طول پیام بیش از حئ مجاز است")
+            raise serializers.ValidationError("طول پیام بیش از حد مجاز است")
         return value
 
     def create(self, validated_data: dict):

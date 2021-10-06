@@ -93,10 +93,17 @@ def sms_template_list(db, businessman_1) -> List[SMSTemplate]:
     return result
 
 
+def get_sms_panel_info_object() -> SMSPanelInfo:
+    return SMSPanelInfo(status=SMSPanelInfo.STATUS_ACTIVE_LOGIN,
+                        credit=min_credit + 1000,
+                        sms_farsi_cost=100,
+                        sms_english_cost=max_message_const
+                        )
+
+
 @pytest.fixture
 def active_sms_panel_info_1(db, businessman_1) -> SMSPanelInfo:
-    return SMSPanelInfo.objects.create(businessman=businessman_1, status=SMSPanelInfo.STATUS_ACTIVE_LOGIN,
-                                       credit=min_credit + 1000,
-                                       sms_farsi_cost=100,
-                                       sms_english_cost=max_message_const
-                                       )
+    sms = get_sms_panel_info_object()
+    sms.businessman = businessman_1
+    sms.save()
+    return sms

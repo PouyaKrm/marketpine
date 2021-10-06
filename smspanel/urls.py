@@ -5,7 +5,7 @@ from . import views
 urlpatterns = [
     path('templates/', views.SMSTemplateList.as_view(), name='smspanel_templates'),
     path('templates/<int:template_id>/', views.SMSTemplateRetrieveAPIView.as_view(), name='sms_template_retrieve'),
-    path('send-sms/plain/', views.SendPlainSms.as_view()),
+    path('send-sms/plain/', views.SendPlainSms.as_view(), name='send_plain_sms'),
     path('send-sms/plain/to-all/', views.SendPlainToAllAPIView.as_view()),
     path('send-sms/plain/to-group/<int:group_id>/', views.SendPlainSmsToGroup.as_view()),
     path('resend-sms/<int:sms_id>/', views.ResendFailedSms),

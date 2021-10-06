@@ -1,15 +1,27 @@
 from rest_framework import status
 
 from base_app.integration_test_conf import *
+from common.util.sms_panel.client import ClientManagement
+from panelprofile.serializers import SMSPanelInfoSerializer
 from smspanel.serializers import SMSTemplateSerializer
 from smspanel.tests.sms_panel_test_fixtures import *
 
 pytestmark = pytest.mark.integration
 
 
+@pytest.fixture
+def sms_fetch_user_api_key_mock(mocker):
+    return mocker.patch.object(ClientManagement, 'fetch_user_by_api_key', return_value=get_sms_panel_info_object())
+
+
 def mock_fetch_panel_profile(mocker, sms_panel_info):
     return mocker.patch('panelprofile.services.sms_client_management.fetch_user_by_api_key',
                         return_value=sms_panel_info)
+
+
+def assert_sms_panel_info(response_data, sms_panel_model: SMSPanelInfo):
+    sr = SMSPanelInfoSerializer(sms_panel_model)
+    assert response_data == sr.data
 
 
 def test_template_list(mocker, auth_client, sms_template_list):
@@ -63,8 +75,7 @@ def test_update_sms_template(mocker, auth_client, sms_template_1, active_sms_pan
     assert SMSTemplate.objects.filter(id=t_id, title=title, content=content).exists()
 
 
-def test_delete_sms_template(mocker, auth_client, sms_template_1, active_sms_panel_info_1):
-    mock_fetch_panel_profile(mocker, active_sms_panel_info_1)
+def test_delete_sms_template(mocker, sms_fetch_user_api_key_mock, auth_client, sms_template_1, active_sms_panel_info_1):
     url = reverse('sms_template_retrieve', kwargs={'template_id': sms_template_1.id})
 
     response = auth_client.delete(url)
@@ -73,3 +84,21 @@ def test_delete_sms_template(mocker, auth_client, sms_template_1, active_sms_pan
     assert not SMSTemplate.objects.filter(id=sms_template_1.id).exists()
     sr = SMSTemplateSerializer(sms_template_1)
     assert response.data == sr.data
+
+
+def test_send_plain_sms(sms_fetch_user_api_key_mock, businessman_1_with_customer_tuple, active_sms_panel_info_1,
+                        auth_client):
+    url = reverse('send_plain_sms')
+    customer_ids = list(map(lambda e: e.id, businessman_1_with_customer_tuple[1]))
+    message = 'test message'
+
+    response = auth_client.post(url, data={'customers': customer_ids, 'content': message})
+
+    assert response.status_code == status.HTTP_200_OK
+    smsq = SMSMessage.objects.filter(message=message, message_type=SMSMessage.TYPE_PLAIN,
+                                     businessman=businessman_1_with_customer_tuple[0])
+    assert smsq.exists()
+    sms = smsq.first()
+    receivers_q = SMSMessageReceivers.objects.filter(customer_id__in=customer_ids, sms_message=sms)
+    assert receivers_q.count() == len(customer_ids)
+    assert_sms_panel_info(response.data, active_sms_panel_info_1)

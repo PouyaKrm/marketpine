@@ -192,6 +192,17 @@ def businessman_with_customer_tuple(db, create_businessman_with_customers) -> Tu
 
 
 @pytest.fixture
+def businessman_1_with_customer_tuple(db, create_businessman_new_customer, businessman_1) -> Tuple[
+    Businessman, List[Customer]]:
+    customers = []
+    for _ in range(10):
+        bc = create_businessman_new_customer(businessman_1, False)
+        customers.append(bc.customer)
+
+    return businessman_1, customers
+
+
+@pytest.fixture
 def businessman_with_single_customer_tuple(db, create_businessman, create_businessman_new_customer):
     b = create_businessman()
     bc = create_businessman_new_customer(b)

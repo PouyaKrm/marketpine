@@ -90,7 +90,7 @@ SMS_PANEL = {
     'SEND_THREADS_NUMBER': multiprocessing.cpu_count(),
     'MAX_SEND_FAIL_ATTEMPTS': 3,
     'SEND_TEMPLATE_PAGE_SIZE': 150,
-    "SEND_PLAIN_CUSTOMERS_MAX_NUMBER": 3,  # allowed number of customer in selecting specific customer for plain send
+    "SEND_PLAIN_CUSTOMERS_MAX_NUMBER": 30,  # allowed number of customer in selecting specific customer for plain send
     "SEND_PLAIN_CUSTOMERS_PAGE_SIZE": 2,
     'SEND_TEMPLATE_MAX_CUSTOMERS': 5,  # allowed number of customer in selecting specific customer for template send
     'MAX_ALLOWED_DEFINED_TEMPLATES': 7,  # defines how many sms templates that user can define
