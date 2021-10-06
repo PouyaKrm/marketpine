@@ -3,7 +3,6 @@ from rest_framework import status
 from base_app.integration_test_conf import *
 from base_app.test_utils import get_model_list_ids
 from common.util.sms_panel.client import ClientManagement
-from groups.tests.fixtures import *
 from panelprofile.serializers import SMSPanelInfoSerializer
 from smspanel.serializers import SMSTemplateSerializer
 from smspanel.tests.sms_panel_test_fixtures import *
@@ -173,6 +172,23 @@ def test_send_plain_sms_to_group(sms_fetch_user_api_key_mock, group_1_customer_t
 
     assert response.status_code == status.HTTP_200_OK
     sms_q = SMSMessage.objects.filter(businessman=g.businessman, message=message, message_type=SMSMessage.TYPE_PLAIN)
+    assert sms_q.exists()
+    receivers_q = SMSMessageReceivers.objects.filter(sms_message=sms_q.first(), customer__in=customers)
+    assert receivers_q.count() == len(customers)
+    assert_sms_panel_info(response.data, active_sms_panel_info_1)
+
+
+def test_send_template_sms_to_group(sms_fetch_user_api_key_mock, group_1_customer_tuple, sms_template_1,
+                                    active_sms_panel_info_1, auth_client):
+    g = group_1_customer_tuple[0]
+    customers = group_1_customer_tuple[1]
+    url = reverse('send_sms_by_template_to_group', kwargs={'template_id': sms_template_1.id, 'group_id': g.id})
+
+    response = auth_client.post(url)
+
+    assert response.status_code == status.HTTP_200_OK
+    sms_q = SMSMessage.objects.filter(businessman=g.businessman, message_type=SMSMessage.TYPE_TEMPLATE,
+                                      message=sms_template_1.content)
     assert sms_q.exists()
     receivers_q = SMSMessageReceivers.objects.filter(sms_message=sms_q.first(), customer__in=customers)
     assert receivers_q.count() == len(customers)
