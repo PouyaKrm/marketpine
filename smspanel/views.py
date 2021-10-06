@@ -1,5 +1,5 @@
 from django.conf import settings
-from rest_framework import generics, mixins, permissions, status
+from rest_framework import permissions, status
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -9,13 +9,15 @@ from common.util.http_helpers import ok, bad_request
 from common.util.kavenegar_local import APIException
 from panelprofile.serializers import SMSPanelInfoSerializer
 from users.models import Businessman
-from .models import SMSTemplate
 from .permissions import HasValidCreditSendSMSToInviduals, HasValidCreditSendSMSToAll, HasValidCreditResendFailedSMS, \
     HasValidCreditSendSMSToGroup, HasActiveSMSPanel
+from .selectors import get_sms_templates, get_sms_template_by_id, get_failed_messages, get_sent_sms, get_welcome_message
 from .serializers import SMSMessageListSerializer, WelcomeMessageSerializer, SentSMSSerializer
 from .serializers import SMSTemplateSerializer, SendSMSSerializer, SendPlainSMSToAllSerializer, \
     SendByTemplateSerializer, SendPlainToGroup
-from .services import sms_message_service
+from .services import create_sms_template, update_sms_template, delete_sms_template, \
+    send_plain_sms, send_plain_sms_to_all, send_by_template, send_by_template_to_all, send_plain_to_group, \
+    send_by_template_to_group, resend_failed_message, update_welcome_message
 
 page_size = settings.PAGINATION_PAGE_NUM
 
@@ -28,37 +30,51 @@ def send_message_failed_response(ex: APIException):
     return Response({'status': ex.status, 'message': ex.message}, status=status.HTTP_424_FAILED_DEPENDENCY)
 
 
-class SMSTemplateCreateListAPIView(BaseListAPIView, mixins.CreateModelMixin):
-    serializer_class = SMSTemplateSerializer
-    pagination_class = None
+class SMSTemplateList(APIView):
     permission_classes = [permissions.IsAuthenticated, HasActiveSMSPanel]
 
-    def get_serializer_context(self):
-        return {'user': self.request.user}
+    def get(self, request: Request):
+        templates = get_sms_templates(businessman=request.user)
+        sr = SMSTemplateSerializer(templates, many=True)
+        return ok(sr.data)
 
-    def get_queryset(self):
-        return SMSTemplate.objects.filter(businessman=self.request.user)
+    def post(self, request: Request):
+        sr = SMSTemplateSerializer(data=request.data, context={'user': request.user})
+        if not sr.is_valid():
+            return bad_request(sr.errors)
 
-    def post(self, request, *args, **kwargs):
-        return self.create(request, *args, **kwargs)
+        template = create_sms_template(businessman=request.user,
+                                       title=sr.validated_data.get('title'),
+                                       content=sr.validated_data.get('content')
+                                       )
+        sr = SMSTemplateSerializer(template, context={'user': request.user})
+        return ok(sr.data)
 
 
-class SMSTemplateRetrieveAPIView(generics.RetrieveAPIView, mixins.UpdateModelMixin,
-                                 mixins.DestroyModelMixin):
-    serializer_class = SMSTemplateSerializer
+class SMSTemplateRetrieveAPIView(APIView):
     permission_classes = [permissions.IsAuthenticated, HasActiveSMSPanel]
 
-    def get_queryset(self):
-        return SMSTemplate.objects.filter(businessman=self.request.user)
+    def get(self, request: Request, template_id: int):
+        t = get_sms_template_by_id(businessman=request.user, template_id=template_id)
+        sr = SMSTemplateSerializer(t, context={'user': request.user})
+        return ok(sr.data)
 
-    def put(self, request, *args, **kwargs):
-        return self.update(request, *args, **kwargs)
+    def put(self, request: Request, template_id: int):
+        sr = SMSTemplateSerializer(data=request.data, context={'user': request.user})
+        if not sr.is_valid():
+            return bad_request(sr.errors)
+        t = update_sms_template(businessman=request.user,
+                                template_id=template_id,
+                                title=sr.validated_data.get('title'),
+                                content=sr.validated_data.get('content')
+                                )
+        sr = SMSTemplateSerializer(t, context={'user': request.user})
+        return ok(sr.data)
 
-    def delete(self, request, *args, **kwargs):
-        return self.destroy(request, *args, **kwargs)
-
-    def get_serializer_context(self):
-        return {'user': self.request.user}
+    def delete(self, request, template_id: int):
+        t = delete_sms_template(businessman=request.user, template_id=template_id)
+        sr = SMSTemplateSerializer(t, context={'user': request.user})
+        return ok(sr.data)
 
 
 class SendPlainSms(APIView):
@@ -78,16 +94,15 @@ class SendPlainSms(APIView):
     """
 
     def post(self, request: Request):
-
         serializer = SendSMSSerializer(data=request.data, context={'user': request.user})
 
         if not serializer.is_valid():
             return bad_request(serializer.errors)
 
-        info = sms_message_service.send_plain_sms(
-            request.user,
-            serializer.validated_data.get('customers'),
-            serializer.validated_data.get('content')
+        info = send_plain_sms(
+            businessman=request.user,
+            customer_ids=serializer.validated_data.get('customers'),
+            message=serializer.validated_data.get('content')
         )
         sr = SMSPanelInfoSerializer(info)
         return ok(sr.data)
@@ -111,9 +126,9 @@ class SendPlainToAllAPIView(APIView):
         if not serializer.is_valid():
             return bad_request(serializer.errors)
 
-        info = sms_message_service.send_plain_sms_to_all(
-            request.user,
-            serializer.validated_data.get('content')
+        info = send_plain_sms_to_all(
+            businessman=request.user,
+            message=serializer.validated_data.get('content')
         )
         sr = SMSPanelInfoSerializer(info)
         return ok(sr.data)
@@ -128,10 +143,10 @@ class SendByTemplateAPIView(APIView):
         if not serializer.is_valid():
             return bad_request(serializer.errors)
 
-        info = sms_message_service.send_by_template(
-            request.user,
-            serializer.validated_data.get('customers'),
-            serializer.validated_data.get('template')
+        info = send_by_template(
+            businessman=request.user,
+            customer_ids=serializer.validated_data.get('customers'),
+            template=serializer.validated_data.get('template')
         )
         sr = SMSPanelInfoSerializer(info)
         return ok(sr.data)
@@ -142,12 +157,12 @@ class SendByTemplateToAll(APIView):
                           HasValidCreditSendSMSToAll]
 
     def post(self, request: Request, template_id: int):
-        info = sms_message_service.send_by_template_to_all(request.user, template_id)
+        info = send_by_template_to_all(businessman=request.user, template=template_id)
         sr = SMSPanelInfoSerializer(info)
         return ok(sr.data)
 
 
-class SendPlainSmsToGroup(APIView):
+class SendPlainSmsToGroupAPIView(APIView):
     permission_classes = [
         permissions.IsAuthenticated,
         HasActiveSMSPanel,
@@ -159,12 +174,13 @@ class SendPlainSmsToGroup(APIView):
         if not sr.is_valid():
             return bad_request(sr.errors)
 
-        info = sms_message_service.send_plain_to_group(request.user, group_id, sr.validated_data.get('content'))
+        info = send_plain_to_group(businessman=request.user, group_id=group_id,
+                                   message=sr.validated_data.get('content'))
         sr = SMSPanelInfoSerializer(info)
         return ok(sr.data)
 
 
-class SendTemplateSmsToGroup(APIView):
+class SendTemplateSmsToGroupAPIView(APIView):
     permission_classes = [
         permissions.IsAuthenticated,
         HasActiveSMSPanel,
@@ -172,7 +188,7 @@ class SendTemplateSmsToGroup(APIView):
     ]
 
     def post(self, request: Request, template_id: int, group_id: int):
-        info = sms_message_service.send_by_template_to_group(request.user, group_id, template_id)
+        info = send_by_template_to_group(businessman=request.user, group_id=group_id, template_id=template_id)
         sr = SMSPanelInfoSerializer(info)
         return ok(sr.data)
 
@@ -181,10 +197,10 @@ class FailedSMSMessagesList(BaseListAPIView):
     serializer_class = SMSMessageListSerializer
 
     def get_queryset(self):
-        return sms_message_service.get_failed_messages(self.request.user)
+        return get_failed_messages(businessman=self.request.user)
 
 
-class ResendFailedSms(APIView):
+class ResendFailedSmsAPIView(APIView):
     permission_classes = [
         permissions.IsAuthenticated,
         HasActiveSMSPanel,
@@ -192,21 +208,21 @@ class ResendFailedSms(APIView):
     ]
 
     def post(self, request: Request, sms_id: int):
-        info = sms_message_service.resend_failed_message(request.user, sms_id)
+        info = resend_failed_message(businessman=request.user, sms_id=sms_id)
         sr = SMSPanelInfoSerializer(info)
         return ok(sr.data)
 
 
-class SentSMSRetrieveAPIView(BaseListAPIView):
+class SentSMSListAPIView(BaseListAPIView):
     permission_classes = [permissions.IsAuthenticated, HasActiveSMSPanel]
     serializer_class = SentSMSSerializer
 
     def get_queryset(self):
         phone = self.request.query_params.get('phone')
-        return sms_message_service.get_sent_sms(self.request.user, phone)
+        return get_sent_sms(businessman=self.request.user, receptor_phone=phone)
 
 
-class RetrieveUpdateWelcomeMessageApiView(APIView):
+class RetrieveUpdateWelcomeMessageAPIView(APIView):
     """
     Retrieves and updates data of the panel setting
     """
@@ -219,7 +235,7 @@ class RetrieveUpdateWelcomeMessageApiView(APIView):
         :param request: Contains data of the request
         :return: Response with body of the current settings and 200 status code
         """
-        wm = sms_message_service.get_welcome_message_or_create(request.user)
+        wm = get_welcome_message(businessman=request.user)
         sr = WelcomeMessageSerializer(wm)
         return ok(sr.data)
 
@@ -236,6 +252,6 @@ class RetrieveUpdateWelcomeMessageApiView(APIView):
             return bad_request(sr.errors)
         message = sr.validated_data.get('message')
         send_message = sr.validated_data.get('send_message')
-        wm = sms_message_service.update_welcome_message(request.user, message, send_message)
+        wm = update_welcome_message(businessman=request.user, message=message, send_message=send_message)
         sr = WelcomeMessageSerializer(wm)
         return ok(sr.data)

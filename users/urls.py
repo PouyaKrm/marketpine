@@ -1,12 +1,14 @@
-from django.conf.urls import url
-from django.urls import path, re_path
+from django.urls import path
 from . import views
-from rest_framework_jwt.views import obtain_jwt_token
+from django.urls import path
+
+from . import views
+
 urlpatterns = [
     path('salesman/create/', views.create_user),
     # path('salesman/verify/resend/<int:user_id>/', views.resend_verification_code),
     # re_path(r'^salesman/verify/(?P<businessman_id>\d+)/(?P<code>\d{5})/$', views.verify_user),
-    path('salesman/login/', views.login_api_view),
+    path('salesman/login/', views.login_api_view, name='businessman_login'),
     path('salesman/refresh/', views.get_access_token),
     path('salesman/resetpassword/', views.reset_user_password),
     path('salesman/forgetpassword/', views.user_forget_password),

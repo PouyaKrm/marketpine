@@ -1,28 +1,25 @@
-import os
-from os.path import dirname, abspath
-import time
 import threading
 import logging
-import sys
+import threading
 
 from background_task import background
+from django.conf import settings
 from django.db.models import QuerySet
+from django.db.models.query_utils import Q
+
+from common.util.kavenegar_local import APIException, KavenegarMessageStatus
+from common.util.sms_panel import messanging
+from smspanel.models import SMSMessage, SMSMessageReceivers, SentSMS
+from smspanel.selectors import has_message_any_receivers
+from smspanel.template_renderers import get_renderer_object_based_on_sms_message_used
+from users.models import Businessman
+
 
 # sys.path.append(dirname(dirname(abspath(__file__))))
 # os.environ['DJANGO_SETTINGS_MODULE'] = 'CRM.settings'
 # import django
 #
 # django.setup()
-
-from django.conf import settings
-from django.db.models.query_utils import Q
-
-from common.util.kavenegar_local import APIException, KavenegarMessageStatus
-from smspanel.models import SMSMessage, SMSMessageReceivers, SentSMS
-from users.models import Businessman
-from common.util.sms_panel import messanging
-from common.util.sms_panel.helpers import message_id_receptor_cost_sms
-from smspanel.template_renderers import get_renderer_object_based_on_sms_message_used
 
 
 class BaseSendMessageThread(threading.Thread):
@@ -196,7 +193,7 @@ class SendMessageTaskQueue:
         sms_message = self._get_oldest_pending_message()
         if sms_message is None:
             return
-        if not sms_message.has_any_unsent_receivers():
+        if not has_message_any_receivers(sms_message=sms_message):
             sms_message.set_done()
             return
 
