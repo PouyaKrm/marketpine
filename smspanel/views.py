@@ -16,7 +16,7 @@ from .serializers import SMSMessageListSerializer, WelcomeMessageSerializer, Sen
 from .serializers import SMSTemplateSerializer, SendSMSSerializer, SendPlainSMSToAllSerializer, \
     SendByTemplateSerializer, SendPlainToGroup
 from .services import sms_message_service, create_sms_template, update_sms_template, delete_sms_template, \
-    send_plain_sms, send_plain_sms_to_all, send_by_template, send_by_template_to_all
+    send_plain_sms, send_plain_sms_to_all, send_by_template, send_by_template_to_all, send_plain_to_group
 
 page_size = settings.PAGINATION_PAGE_NUM
 
@@ -161,7 +161,7 @@ class SendByTemplateToAll(APIView):
         return ok(sr.data)
 
 
-class SendPlainSmsToGroup(APIView):
+class SendPlainSmsToGroupAPIView(APIView):
     permission_classes = [
         permissions.IsAuthenticated,
         HasActiveSMSPanel,
@@ -173,7 +173,8 @@ class SendPlainSmsToGroup(APIView):
         if not sr.is_valid():
             return bad_request(sr.errors)
 
-        info = sms_message_service.send_plain_to_group(request.user, group_id, sr.validated_data.get('content'))
+        info = send_plain_to_group(businessman=request.user, group_id=group_id,
+                                   message=sr.validated_data.get('content'))
         sr = SMSPanelInfoSerializer(info)
         return ok(sr.data)
 
