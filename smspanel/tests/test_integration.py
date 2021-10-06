@@ -102,3 +102,21 @@ def test_send_plain_sms(sms_fetch_user_api_key_mock, businessman_1_with_customer
     receivers_q = SMSMessageReceivers.objects.filter(customer_id__in=customer_ids, sms_message=sms)
     assert receivers_q.count() == len(customer_ids)
     assert_sms_panel_info(response.data, active_sms_panel_info_1)
+
+
+def test_send_plain_to_all(sms_fetch_user_api_key_mock, businessman_1_with_customer_tuple, active_sms_panel_info_1,
+                           auth_client):
+    url = reverse('send_plain_sms_to_all')
+    message = 'test message'
+
+    response = auth_client.post(url, data={'content': message})
+
+    assert response.status_code == status.HTTP_200_OK
+    sms_q = SMSMessage.objects.filter(businessman=businessman_1_with_customer_tuple[0],
+                                      message_type=SMSMessage.TYPE_PLAIN,
+                                      message=message)
+    assert sms_q.exists()
+    receivers_q = SMSMessageReceivers.objects.filter(sms_message=sms_q.first(),
+                                                     customer__businessmans=businessman_1_with_customer_tuple[0])
+    assert receivers_q.count() == len(businessman_1_with_customer_tuple[1])
+    assert_sms_panel_info(response.data, active_sms_panel_info_1)
