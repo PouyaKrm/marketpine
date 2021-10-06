@@ -17,7 +17,7 @@ from .serializers import SMSTemplateSerializer, SendSMSSerializer, SendPlainSMST
     SendByTemplateSerializer, SendPlainToGroup
 from .services import sms_message_service, create_sms_template, update_sms_template, delete_sms_template, \
     send_plain_sms, send_plain_sms_to_all, send_by_template, send_by_template_to_all, send_plain_to_group, \
-    send_by_template_to_group
+    send_by_template_to_group, resend_failed_message
 
 page_size = settings.PAGINATION_PAGE_NUM
 
@@ -200,7 +200,7 @@ class FailedSMSMessagesList(BaseListAPIView):
         return get_failed_messages(businessman=self.request.user)
 
 
-class ResendFailedSms(APIView):
+class ResendFailedSmsAPIView(APIView):
     permission_classes = [
         permissions.IsAuthenticated,
         HasActiveSMSPanel,
@@ -208,7 +208,7 @@ class ResendFailedSms(APIView):
     ]
 
     def post(self, request: Request, sms_id: int):
-        info = sms_message_service.resend_failed_message(request.user, sms_id)
+        info = resend_failed_message(businessman=request.user, sms_id=sms_id)
         sr = SMSPanelInfoSerializer(info)
         return ok(sr.data)
 

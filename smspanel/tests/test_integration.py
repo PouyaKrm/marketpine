@@ -204,3 +204,16 @@ def test_failed_sms_list(sms_fetch_user_api_key_mock, sms_message_failed_list_1,
     result = response.data['results']
     expected = SMSMessageListSerializer(sms_message_failed_list_1, many=True).data
     assert all(e in result for e in expected)
+
+
+def test_resend_failed_sms(sms_fetch_user_api_key_mock, sms_message_failed_list_1, active_sms_panel_info_1,
+                           auth_client):
+    sms = sms_message_failed_list_1[0]
+    url = reverse('resend_failed_sms', kwargs={'sms_id': sms.id})
+
+    response = auth_client.post(url)
+
+    assert response.status_code == status.HTTP_200_OK
+    sms_q = SMSMessage.objects.filter(id=sms.id, status=SMSMessage.STATUS_DONE, send_fail_attempts=0)
+    assert sms_q.exists()
+    assert_sms_panel_info(response.data, active_sms_panel_info_1)
