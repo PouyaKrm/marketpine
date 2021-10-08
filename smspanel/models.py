@@ -6,6 +6,7 @@ from django.db import models
 from django.db.models import QuerySet
 from django.utils import timezone
 
+from groups.models import BusinessmanGroups
 from users.models import Businessman, Customer, BusinessmanManyToOneBaseModel, BusinessmanOneToOneBaseModel, BaseModel
 from django.conf import settings
 
@@ -123,6 +124,21 @@ class SMSMessage(models.Model):
 
     def __str__(self):
         return '{} - {}'.format(self.id, self.businessman.username)
+
+
+class SMSMessageReceiverGroup(BaseModel):
+    sms_message = models.OneToOneField(
+        SMSMessage,
+        on_delete=models.CASCADE,
+        related_name='related_receiver_group',
+        related_query_name='related_receiver_group'
+    )
+    group = models.ForeignKey(
+        BusinessmanGroups,
+        on_delete=models.CASCADE,
+        related_name='related_sms_message',
+        related_query_name='related_sms_message'
+    )
 
 
 class SentSMS(BaseModel):
