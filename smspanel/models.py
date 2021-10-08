@@ -78,6 +78,8 @@ class SMSMessage(models.Model):
     update_date = models.DateTimeField(auto_now=True)
     status = models.CharField(max_length=2, choices=message_send_status, default='1')
     used_for = models.CharField(max_length=2, choices=message_used_for_choices, default='0')
+    current_receiver_id = models.BigIntegerField(default=0)
+    last_receiver_id = models.BigIntegerField(default=0)
 
     def set_done(self):
         self.status = SMSMessage.STATUS_DONE
