@@ -25,7 +25,6 @@ from smspanel.template_renderers import get_renderer_object_based_on_sms_message
 from users.models import Businessman, Customer
 
 
-
 class BaseSendMessageThread(threading.Thread):
     def __init__(self, api_key: str, sms_message: SMSMessage, receivers: list, message: str):
         super().__init__()
@@ -171,9 +170,13 @@ class SendMessageTaskQueue:
     def _get_oldest_pending_message(self) -> SMSMessage:
         if not self.any_pending_message_remained():
             return None
-        return SMSMessage.objects.filter(status=SMSMessage.STATUS_PENDING).order_by('create_date') \
-            .exclude(Q(used_for=SMSMessage.USED_FOR_FRIEND_INVITATION)
-                     | Q(used_for=SMSMessage.USED_FOR_WELCOME_MESSAGE)).first()
+        return SMSMessage.objects.filter(
+            status=SMSMessage.STATUS_PENDING
+        ).order_by(
+            'create_date'
+        ).filter(
+            used_for=SMSMessage.USED_FOR_NONE
+        ).first()
 
     def __create_sent_messages(self, sms_message: SMSMessage, result: list, businessman: Businessman):
         sent = []
@@ -252,15 +255,14 @@ send_sms_task = configure()
 def run_send_sms_task():
     send_sms_task.run_send_threads()
 
-
 # task = None
+# #
+# if __name__ == '__main__':
+#     task = configure()
 #
-if __name__ == '__main__':
-    task = configure()
-
-while True:
-    task.run_send_threads()
-    time.sleep(10)
+# while True:
+#     task.run_send_threads()
+#     time.sleep(10)
 
 # def run_sms():
 #     task = configure()

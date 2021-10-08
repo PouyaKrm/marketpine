@@ -2,6 +2,8 @@ import os
 import sys
 from os.path import dirname, abspath
 
+from django.db.models.query_utils import Q
+
 from smspanel.background_jobs.sms_send_script import SendPlainMessageThread, SendTemplateMessageThread
 from smspanel.services import increase_send_failed_attempts, create_sent_sms_from_send_array_result
 
@@ -11,7 +13,7 @@ import django
 
 django.setup()
 
-from typing import List
+from typing import List, Optional
 
 from django.db.models import QuerySet
 
@@ -69,12 +71,22 @@ def slice_receivers(sms_message: SMSMessage) -> List[List[Customer]]:
     return receivers
 
 
-def get_pending_message():
-    return SMSMessage.objects.get(id=2)
+def get_pending_message() -> Optional[SMSMessage]:
+    return SMSMessage.objects.order_by(
+        'create_date'
+    ).filter(
+        status=SMSMessage.STATUS_PENDING
+    ).filter(
+        Q(used_for=SMSMessage.USED_FOR_SEND_TO_ALL)
+        | Q(used_for=SMSMessage.USED_FOR_CONTENT_MARKETING)
+        | Q(used_for=SMSMessage.USED_FOR_FESTIVAL)
+    ).first()
 
 
 def send():
     sms = get_pending_message()
+    if sms is None:
+        return
     receivers = slice_receivers(sms)
     threads = []
     if sms.is_message_type_plain():

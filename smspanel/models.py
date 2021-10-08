@@ -43,6 +43,7 @@ class SMSMessage(models.Model):
     USED_FOR_INSTAGRAM_MARKETING = '3'
     USED_FOR_WELCOME_MESSAGE = '4'
     USED_FOR_FRIEND_INVITATION = '5'
+    USED_FOR_SEND_TO_ALL = '6'
 
     message_type_choices = [
         (TYPE_PLAIN, 'PLAIN'),
@@ -63,7 +64,8 @@ class SMSMessage(models.Model):
         (USED_FOR_CONTENT_MARKETING, 'CONTENT MARKETING'),
         (USED_FOR_INSTAGRAM_MARKETING, 'INSTAGRAM MARKETING'),
         (USED_FOR_WELCOME_MESSAGE, 'WELCOME MESSAGE'),
-        (USED_FOR_FRIEND_INVITATION, 'FRIEND INVITATION')
+        (USED_FOR_FRIEND_INVITATION, 'FRIEND INVITATION'),
+        (USED_FOR_SEND_TO_ALL, 'SEND TO ALL')
     ]
 
     businessman = models.ForeignKey(Businessman, on_delete=models.PROTECT)

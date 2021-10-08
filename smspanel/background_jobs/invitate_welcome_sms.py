@@ -24,7 +24,8 @@ class WelcomeInviteSmsMessage(SendMessageTaskQueue):
         return SMSMessage.objects.order_by('send_fail_attempts', 'create_date').filter(
             status=SMSMessage.STATUS_PENDING).filter(
             Q(used_for=SMSMessage.USED_FOR_WELCOME_MESSAGE)
-            | Q(used_for=SMSMessage.USED_FOR_FRIEND_INVITATION)).first()
+            | Q(used_for=SMSMessage.USED_FOR_FRIEND_INVITATION)
+        ).first()
 
     def _set_message_status_and_empty_threads(self, sms_message: SMSMessage):
 
