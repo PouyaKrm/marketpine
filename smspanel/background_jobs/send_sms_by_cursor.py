@@ -43,7 +43,10 @@ class SendTemplateByCursorThread(SendTemplateMessageThread):
 def slice_receivers(sms_message: SMSMessage) -> List[List[Customer]]:
     receiver_customers = Customer.objects.filter(
         businessmans=sms_message.businessman
-    ).order_by(
+    )
+    if sms_message.used_for == SMSMessage.USED_FOR_SEND_TO_GROUP:
+        receiver_customers = receiver_customers.filter(connected_groups=sms_message.related_receiver_group.group)
+    receiver_customers.order_by(
         'id'
     ).filter(
         id__gte=sms_message.current_receiver_id,
@@ -80,6 +83,7 @@ def get_pending_message() -> Optional[SMSMessage]:
         Q(used_for=SMSMessage.USED_FOR_SEND_TO_ALL)
         | Q(used_for=SMSMessage.USED_FOR_CONTENT_MARKETING)
         | Q(used_for=SMSMessage.USED_FOR_FESTIVAL)
+        | Q(used_for=SMSMessage.USED_FOR_SEND_TO_GROUP)
     ).first()
 
 

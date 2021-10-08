@@ -45,6 +45,7 @@ class SMSMessage(models.Model):
     USED_FOR_WELCOME_MESSAGE = '4'
     USED_FOR_FRIEND_INVITATION = '5'
     USED_FOR_SEND_TO_ALL = '6'
+    USED_FOR_SEND_TO_GROUP = '7'
 
     message_type_choices = [
         (TYPE_PLAIN, 'PLAIN'),
@@ -66,6 +67,7 @@ class SMSMessage(models.Model):
         (USED_FOR_INSTAGRAM_MARKETING, 'INSTAGRAM MARKETING'),
         (USED_FOR_WELCOME_MESSAGE, 'WELCOME MESSAGE'),
         (USED_FOR_FRIEND_INVITATION, 'FRIEND INVITATION'),
+        (USED_FOR_SEND_TO_GROUP, 'SEND TO GROUP'),
         (USED_FOR_SEND_TO_ALL, 'SEND TO ALL')
     ]
 
