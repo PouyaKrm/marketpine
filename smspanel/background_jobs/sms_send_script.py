@@ -1,4 +1,14 @@
+import os
+import sys
 import threading
+from os.path import dirname, abspath
+
+sys.path.append(dirname(dirname(abspath(__file__))))
+os.environ['DJANGO_SETTINGS_MODULE'] = 'CRM.settings'
+import django
+
+django.setup()
+
 import logging
 import threading
 
@@ -12,14 +22,8 @@ from common.util.sms_panel import messanging
 from smspanel.models import SMSMessage, SMSMessageReceivers, SentSMS
 from smspanel.selectors import has_message_any_receivers
 from smspanel.template_renderers import get_renderer_object_based_on_sms_message_used
-from users.models import Businessman
+from users.models import Businessman, Customer
 
-
-# sys.path.append(dirname(dirname(abspath(__file__))))
-# os.environ['DJANGO_SETTINGS_MODULE'] = 'CRM.settings'
-# import django
-#
-# django.setup()
 
 
 class BaseSendMessageThread(threading.Thread):
@@ -27,8 +31,9 @@ class BaseSendMessageThread(threading.Thread):
         super().__init__()
         self.api_key = api_key
         self.sms_message = sms_message
+        self._set_receivers_phones(receivers)
         self.receivers = receivers
-        self.phones = [rec.customer.phone for rec in receivers]
+        self._set_receivers_phones(receivers)
         self.message = message
         self.success_finish = False
         self.failed = False
@@ -39,6 +44,12 @@ class BaseSendMessageThread(threading.Thread):
 
     def run(self):
         raise NotImplemented('run method must be implemented')
+
+    def _set_receivers_phones(self, receivers):
+        self.phones = [self._get_customer_from_receiver(rec).phone for rec in receivers]
+
+    def _get_customer_from_receiver(self, r) -> Customer:
+        raise NotImplemented('method must be implemented')
 
 
 class SendPlainMessageThread(BaseSendMessageThread):
@@ -60,6 +71,9 @@ class SendPlainMessageThread(BaseSendMessageThread):
             if isinstance(e, APIException) and e.status == KavenegarMessageStatus.NOT_ENOUGH_CREDIT:
                 self.failed_on_low_credit = True
 
+    def _get_customer_from_receiver(self, r) -> Customer:
+        return r.customer
+
 
 class SendTemplateMessageThread(BaseSendMessageThread):
 
@@ -71,10 +85,10 @@ class SendTemplateMessageThread(BaseSendMessageThread):
     def __render_messages(self):
         renderer = get_renderer_object_based_on_sms_message_used(self.sms_message)
         for r in self.receivers:
-            message = renderer.render(r)
+            message = renderer.render(self._get_customer_from_receiver(r))
             if message is not None:
                 self.messages.append(message)
-                self.phones.append(r.customer.phone)
+                self.phones.append(self._get_customer_from_receiver(r).phone)
 
     def run(self):
 
@@ -94,6 +108,9 @@ class SendTemplateMessageThread(BaseSendMessageThread):
                 self.failed_on_low_credit = True
             self.failed = True
             self.fail_exception = e
+
+    def _get_customer_from_receiver(self, r) -> Customer:
+        return r.customer
 
 
 class SendMessageTaskQueue:
@@ -235,15 +252,15 @@ send_sms_task = configure()
 def run_send_sms_task():
     send_sms_task.run_send_threads()
 
+
 # task = None
 #
-# if __name__ == '__main__':
-#     task = configure()
-#
-# while True:
-#     task.run_send_threads()
-#     time.sleep(10)
+if __name__ == '__main__':
+    task = configure()
 
+while True:
+    task.run_send_threads()
+    time.sleep(10)
 
 # def run_sms():
 #     task = configure()

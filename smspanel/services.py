@@ -18,7 +18,7 @@ from .models import UnsentTemplateSMS, SentSMS, UnsentPlainSMS, SMSMessage, SMSM
 from .selectors import get_welcome_message, get_sms_template_by_id, _get_message, has_message_any_receivers
 
 max_message_cost = settings.SMS_PANEL['MAX_MESSAGE_COST']
-
+send_max_fail_attempts = settings.SMS_PANEL['MAX_SEND_FAIL_ATTEMPTS']
 
 def send_template_sms_message_to_all(user: Businessman, template: str):
     """
@@ -546,3 +546,27 @@ def _set_reserved_credit_for_sms_message(*args, sms_message: SMSMessage):
     count = SMSMessageReceivers.objects.filter(sms_message=sms_message, is_sent=False).count()
     sms_message.reserved_credit = count * max_message_cost
     sms_message.save()
+
+
+def create_sent_sms_from_send_array_result(*args, sms_message: SMSMessage, result: list) -> int:
+    sent = []
+    total_cost = 0
+    for c in result:
+        total_cost += c['cost']
+        sms = SentSMS(sms_message=sms_message, message_id=c['messageid'],
+                      receptor=c['receptor'], message=c['message'],
+                      sender=c['sender'], cost=c['cost'],
+                      status=c['status'], status_text=c['statustext'],
+                      date=c['date']
+                      )
+        sent.append(sms)
+    SentSMS.objects.bulk_create(sent)
+    return total_cost
+
+
+def increase_send_failed_attempts(*args, sms_message: SMSMessage) -> SMSMessage:
+    sms_message.send_fail_attempts = sms_message.send_fail_attempts + 1
+    if sms_message.send_fail_attempts >= send_max_fail_attempts:
+        sms_message.status = SMSMessage.STATUS_FAILED
+    sms_message.save()
+    return sms_message

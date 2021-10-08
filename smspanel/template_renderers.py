@@ -51,9 +51,9 @@ class BaseTemplateRenderer:
 
         return re.sub('#([A-Za-z0-9_]+)', replace, template).replace(u'\xa0', u' ')
 
-    def render(self, receiver: SMSMessageReceivers):
+    def render(self, customer: Customer):
         return self._render(self._sms_message.message, {**self._businessman_key_value(),
-                                                        **self._customer_key_value(receiver.customer)
+                                                        **self._customer_key_value(customer)
                                                         })
 
 
@@ -67,13 +67,13 @@ class ContentMarketingTemplateRenderer(BaseTemplateRenderer):
         except ObjectDoesNotExist:
             raise ValueError('no record with provided sms message found')
 
-    def render(self, receiver: SMSMessageReceivers):
+    def render(self, customer: Customer):
 
         return self._render(
             self._sms_message.message,
             {'video_link': video_page_url.format(self.__post.id.__str__()),
              **self._businessman_key_value(),
-             **self._customer_key_value(receiver.customer)
+             **self._customer_key_value(customer)
              })
 
 
@@ -86,7 +86,7 @@ class FestivalTemplateRenderer(BaseTemplateRenderer):
         except ObjectDoesNotExist:
             raise ValueError('no festival with provided sms_message found')
 
-    def render(self, receiver: SMSMessageReceivers):
+    def render(self, customer: Customer):
         start_date_j = gregorian_to_jalali_str(self.__festival.start_date)
         end_date_j = gregorian_to_jalali_str(self.__festival.end_date)
         festival_context = {
@@ -100,7 +100,7 @@ class FestivalTemplateRenderer(BaseTemplateRenderer):
 
         return self._render(self._sms_message.message,
                             {**festival_context,
-                             **self._all_key_values(receiver.customer)
+                             **self._all_key_values(customer)
                              })
 
 
@@ -113,7 +113,7 @@ class FriendInvitationTemplateRenderer(BaseTemplateRenderer):
         except ObjectDoesNotExist:
             raise ValueError('no record exist on invitation with provided sms message')
 
-    def render(self, receiver: SMSMessageReceivers):
+    def render(self, customer: Customer):
         invited_discount = self.invitation.invited_discount
         invite_date = gregorian_to_jalali_str(self.invitation.create_date)
         if invited_discount.is_percent_discount():
@@ -138,7 +138,7 @@ class FriendInvitationTemplateRenderer(BaseTemplateRenderer):
 
         return self._render(self._sms_message.message, {
             **invite_context,
-            **self._all_key_values(receiver.customer)}
+            **self._all_key_values(customer)}
                             )
 
 

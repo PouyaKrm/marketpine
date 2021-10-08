@@ -116,6 +116,9 @@ class SMSMessage(models.Model):
         self.status = SMSMessage.STATUS_FAILED
         self.save()
 
+    def is_message_type_plain(self) -> bool:
+        return self.message_type == SMSMessage.TYPE_PLAIN
+
     def __str__(self):
         return '{} - {}'.format(self.id, self.businessman.username)
 
