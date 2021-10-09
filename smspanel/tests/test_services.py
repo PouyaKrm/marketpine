@@ -99,6 +99,14 @@ def mocked_set_reserved_credit(mocker):
     return mocker.patch('smspanel.services._set_reserved_credit_for_sms_message', return_value=None)
 
 
+@pytest.fixture
+def mocked_set_last_receiver_id(mocker):
+    def side_effect_func(sms_message):
+        return sms_message
+
+    return mocker.patch('smspanel.services._set_last_receiver_id', side_effect=side_effect_func)
+
+
 def test_send_plain_sms_customer_count_0(mocker, businessman_1: Businessman):
     mock = mock_sms_panel_info(mocker)
 
@@ -429,20 +437,33 @@ def test__delete_sms_template__success(mocker, businessman_1, sms_template_1):
     assert result == sms_template_1
 
 
-def test__send_by_template_to_all_success(mocker, businessman_with_customer_tuple, mocked_set_reserved_credit):
-    mock = mock__set_receivers_for_sms_message(mocker)
-    customers_mock = mock_get_businessman_customers(mocker)
+@pytest.mark.parametrize('used_for', [
+    SMSMessage.USED_FOR_NONE,
+    SMSMessage.USED_FOR_FRIEND_INVITATION,
+    SMSMessage.USED_FOR_WELCOME_MESSAGE
+])
+def test___send_by_template_to_all__raises_error(used_for, businessman_1):
+    with pytest.raises(ValueError) as cx:
+        _send_by_template_to_all(businessman=businessman_1, template='fake', used_for=used_for)
+
+
+def test__send_by_template_to_all_success(mocker, businessman_with_customer_tuple, mocked_set_reserved_credit,
+                                          mocked_set_last_receiver_id):
     b = businessman_with_customer_tuple[0]
     used_for = SMSMessage.USED_FOR_CONTENT_MARKETING
     template = 'fake'
 
     result = _send_by_template_to_all(businessman=b, template=template, used_for=used_for)
 
-    smsq = SMSMessage.objects.filter(businessman=b, used_for=used_for, message=template,
-                                     message_type=SMSMessage.TYPE_TEMPLATE)
+    smsq = SMSMessage.objects.filter(businessman=b,
+                                     used_for=used_for,
+                                     message=template,
+                                     message_type=SMSMessage.TYPE_TEMPLATE,
+                                     current_receiver_id=0
+                                     )
     assert smsq.count() == 1
     assert result == smsq.first()
-    mock.assert_called_once_with(sms=result, customers=customers_mock.return_value)
+    mocked_set_last_receiver_id.assert_called_once_with(sms_message=result)
     mocked_set_reserved_credit.assert_called_once_with(sms_message=result)
 
 
@@ -512,8 +533,8 @@ def test__set_reserved_credit_for_sms_message__used_for_group(mocker, sms_messag
 
 def test__set_reserved_credit_for_sms_message__used_for_all(mocker, sms_message_used_for_all_1):
     qs = MockSet(
-        MockModel(mock_name='c 1'),
-        MockModel(mock_name='c 2')
+        MockModel(mock_name='c1'),
+        MockModel(mock_name='c2')
     )
     mocker.patch('customers.services.customer_service.get_businessman_customers', return_value=qs)
 

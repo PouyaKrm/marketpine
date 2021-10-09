@@ -21,6 +21,7 @@ from .selectors import get_welcome_message, get_sms_template_by_id, _get_message
 max_message_cost = settings.SMS_PANEL['MAX_MESSAGE_COST']
 send_max_fail_attempts = settings.SMS_PANEL['MAX_SEND_FAIL_ATTEMPTS']
 
+
 def send_template_sms_message_to_all(user: Businessman, template: str):
     """
     Because send to all by template does not have any serailizer, this helper method is created.
@@ -498,9 +499,13 @@ def _send_by_template_to_all(
         **kwargs) -> SMSMessage:
     if used_for == SMSMessage.USED_FOR_WELCOME_MESSAGE or used_for == SMSMessage.USED_FOR_NONE or used_for == SMSMessage.USED_FOR_FRIEND_INVITATION:
         raise ValueError('invalid used_for argument on sending to all')
-    from customers.services import customer_service
-    sms = SMSMessage.objects.create(message=template, businessman=businessman, used_for=used_for,
-                                    message_type=SMSMessage.TYPE_TEMPLATE, **kwargs)
+    sms = SMSMessage.objects.create(
+        message=template,
+        businessman=businessman,
+        used_for=used_for,
+        message_type=SMSMessage.TYPE_TEMPLATE,
+        **kwargs
+    )
     _set_last_receiver_id(sms_message=sms)
     _set_reserved_credit_for_sms_message(sms_message=sms)
     sms.save()
