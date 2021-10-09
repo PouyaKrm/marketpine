@@ -1,12 +1,14 @@
 from typing import Optional
 
 from django_mock_queries.query import MockSet, MockModel
+from mock import Mock
 
 from base_app.error_codes import ApplicationErrorException
 # from smspanel.models import SMSMessage, SMSMessageReceivers
 # from smspanel.services import send_plain_sms
 from base_app.test_utils import get_model_list_ids
 from smspanel import services
+from smspanel.models import SMSMessageReceiverGroup
 from smspanel.services import send_by_template, send_by_template_to_all, send_plain_to_group, send_by_template_to_group, \
     resend_failed_message, set_message_to_pending, update_not_pending_message_text, \
     set_content_marketing_message_to_pending, festival_message_status_cancel, friend_invitation_message, \
@@ -14,6 +16,7 @@ from smspanel.services import send_by_template, send_by_template_to_all, send_pl
     _set_receivers_for_sms_message, _set_reserved_credit_for_sms_message, update_sms_template, delete_sms_template, \
     _set_last_receiver_id, check_used_for_needs_last_receiver_id_set, check_used_for_needs_receivers_set
 from smspanel.tests.sms_panel_test_fixtures import *
+from groups.tests.fixtures import *
 
 max_message_cost = settings.SMS_PANEL['MAX_MESSAGE_COST']
 
@@ -562,6 +565,20 @@ def test__set_reserved_credit_for_sms_message__used_for_none_welcome_invitation(
     assert sms_message_pending_1.reserved_credit == qs.count() * max_message_cost
 
 
+def test___set_last_receiver_id__raises_error(mocker, sms_message_used_for_group_1):
+    with pytest.raises(ValueError) as cx:
+        _set_last_receiver_id(sms_message=sms_message_used_for_group_1)
+
+
+def test___set_last_receiver_id__used_for_group(mocker, sms_message_used_for_group_1, group_1):
+    last_id = group_1.customers.last().id
+
+    _set_last_receiver_id(sms_message=sms_message_used_for_group_1, group=group_1)
+
+    assert sms_message_used_for_group_1.last_receiver_id == last_id
+    assert SMSMessageReceiverGroup.objects.filter(sms_message=sms_message_used_for_group_1, group=group_1).exists()
+
+
 def test___set_last_receiver_id__last_is_none(mocker, sms_message_pending_1):
     qs = MockSet()
     mocker.patch('customers.services.customer_service.get_businessman_customers', return_value=qs)
@@ -571,7 +588,7 @@ def test___set_last_receiver_id__last_is_none(mocker, sms_message_pending_1):
     assert sms_message_pending_1.last_receiver_id == 0
 
 
-def test___set_last_receiver_id(mocker, sms_message_pending_1):
+def test___set_last_receiver_id__used_for_not_group(mocker, sms_message_pending_1):
     last_id = 5
     qs = MockSet(
         MockModel(mock_name='c1', id=last_id)

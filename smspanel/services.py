@@ -14,7 +14,7 @@ from groups.models import BusinessmanGroups
 from panelprofile.models import SMSPanelInfo
 from users.models import Businessman, Customer
 from .models import UnsentTemplateSMS, SentSMS, UnsentPlainSMS, SMSMessage, SMSMessageReceivers, WelcomeMessage, \
-    SMSTemplate
+    SMSTemplate, SMSMessageReceiverGroup
 from .selectors import get_welcome_message, get_sms_template_by_id, _get_message, has_message_any_receivers, \
     get_receiver_group_member_count, get_sms_message_receivers
 
@@ -597,9 +597,15 @@ def increase_send_failed_attempts(*args, sms_message: SMSMessage) -> SMSMessage:
     return sms_message
 
 
-def _set_last_receiver_id(*args, sms_message: SMSMessage) -> SMSMessage:
-    from customers.services import customer_service
-    last = customer_service.get_businessman_customers(sms_message.businessman).last()
+def _set_last_receiver_id(*args, sms_message: SMSMessage, group: BusinessmanGroups = None) -> SMSMessage:
+    if sms_message.used_for_send_group() and group is None:
+        raise ValueError('on used_for = group, group parameter must be provided')
+    elif sms_message.used_for_send_group() and group is not None:
+        SMSMessageReceiverGroup.objects.create(sms_message=sms_message, group=group)
+        last = group.customers.order_by('id').last()
+    else:
+        from customers.services import customer_service
+        last = customer_service.get_businessman_customers(sms_message.businessman).last()
     if last is not None:
         sms_message.last_receiver_id = last.id
     else:
