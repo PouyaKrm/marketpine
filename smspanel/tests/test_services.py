@@ -3,6 +3,7 @@ from typing import Optional
 from base_app.error_codes import ApplicationErrorException
 # from smspanel.models import SMSMessage, SMSMessageReceivers
 # from smspanel.services import send_plain_sms
+from base_app.test_utils import get_model_list_ids
 from smspanel import services
 from smspanel.services import send_by_template, send_by_template_to_all, send_plain_to_group, send_by_template_to_group, \
     resend_failed_message, set_message_to_pending, update_not_pending_message_text, \
@@ -127,15 +128,25 @@ def test_send_plain_sms_success(mocker, businessman_with_customer_tuple):
 def test_send_plain_sms_to_all_success(mocker, businessman_with_customer_tuple):
     mock_result = mock_sms_panel_info(mocker)
     businessman = businessman_with_customer_tuple[0]
-    customer_ids = list(map(lambda e: e.id, businessman_with_customer_tuple[1]))
+    customers = businessman_with_customer_tuple[1]
+    customer_ids = get_model_list_ids(customers)
+    last_customer = sorted(customers, key=lambda c: c.id)[-1]
+    mocker.patch('customers.services.customer_service.get_last_customer_ordered_by_id', return_value=last_customer)
     message = 'message'
+
     result = services.send_plain_sms_to_all(businessman=businessman, message=message)
+
     mock_result.assert_called_once()
     assert result == mock_result.return_value
-    smsq = SMSMessage.objects.filter(businessman=businessman, message_type=SMSMessage.TYPE_PLAIN, message=message)
+    smsq = SMSMessage.objects.filter(businessman=businessman,
+                                     message_type=SMSMessage.TYPE_PLAIN,
+                                     message=message,
+                                     used_for=SMSMessage.USED_FOR_SEND_TO_ALL,
+                                     last_receiver_id=last_customer.id
+                                     )
     assert smsq.exists()
     count = SMSMessageReceivers.objects.filter(sms_message=smsq.first(), customer__id__in=customer_ids).count()
-    assert count == len(customer_ids)
+    assert count == 0
 
 
 def test_send_by_template_raises_error(mocker, businessman_1: Businessman):

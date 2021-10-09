@@ -24,8 +24,8 @@ import logging
 
 logger = logging.getLogger('django')
 
-threads_num = 2
-page_size = 1
+threads_num = settings.SMS_PANEL['SEND_THREADS_NUMBER']
+page_size = settings.SMS_PANEL['SEND_TEMPLATE_PAGE_SIZE']
 
 
 class SendPlainByCursorThread(SendPlainMessageThread):

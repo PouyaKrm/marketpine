@@ -337,12 +337,16 @@ def send_plain_sms_to_all(*args, businessman: Businessman, message: str):
     from customers.services import customer_service
     from panelprofile.services import sms_panel_info_service
     info = sms_panel_info_service.get_buinessman_sms_panel(businessman)
-    sms = SMSMessage.objects.create(message=message, businessman=businessman, message_type=SMSMessage.TYPE_PLAIN)
-    SMSMessageReceivers.objects.bulk_create(
-        [SMSMessageReceivers(sms_message=sms, customer=c) for c in
-         customer_service.get_businessman_customers(businessman).all()
-         ])
-    sms.set_reserved_credit_by_receivers()
+    last_id = customer_service.get_last_customer_ordered_by_id(businessman).id
+    sms = SMSMessage.objects.create(
+        message=message,
+        businessman=businessman,
+        message_type=SMSMessage.TYPE_PLAIN,
+        used_for=SMSMessage.USED_FOR_SEND_TO_ALL,
+        last_receiver_id=last_id
+    )
+
+    _set_reserved_credit_for_sms_message(sms_message=sms)
     return info
 
 

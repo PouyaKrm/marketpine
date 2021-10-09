@@ -36,6 +36,9 @@ class CustomerService(BaseService):
         return Customer.objects.filter(businessmans=user, connected_businessmans__is_deleted=False).order_by(
             '-date_joined').all()
 
+    def get_last_customer_ordered_by_id(self, user: Businessman) -> Customer:
+        return Customer.objects.filter(businessmans=user).order_by('id').last()
+
     def get_businessmancustomer(self, user: Businessman, customer: Customer) -> BusinessmanCustomer:
         return BusinessmanCustomer.objects.get(businessman=user, customer=customer, is_deleted=False)
 
