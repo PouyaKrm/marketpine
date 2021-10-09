@@ -104,7 +104,7 @@ def mocked_set_reserved_credit(mocker):
 
 @pytest.fixture
 def mocked_set_last_receiver_id(mocker):
-    def side_effect_func(sms_message, group):
+    def side_effect_func(sms_message, group=None):
         return sms_message
 
     return mocker.patch('smspanel.services._set_last_receiver_id', side_effect=side_effect_func)
