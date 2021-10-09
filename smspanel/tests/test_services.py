@@ -104,7 +104,7 @@ def mocked_set_reserved_credit(mocker):
 
 @pytest.fixture
 def mocked_set_last_receiver_id(mocker):
-    def side_effect_func(sms_message):
+    def side_effect_func(sms_message, group):
         return sms_message
 
     return mocker.patch('smspanel.services._set_last_receiver_id', side_effect=side_effect_func)
@@ -227,16 +227,20 @@ def test_send_plain_to_group_raises_error(mocker, businessman_1: Businessman):
     plain_mock_result.assert_not_called()
 
 
-def test_send_plain_to_group_success(mocker, businessman_1: Businessman):
+def test_send_plain_to_group_success(mocker, businessman_1: Businessman, mocked_set_last_receiver_id,
+                                     mocked_set_reserved_credit):
     info_mock = mock_sms_panel_info(mocker)
     group_mock = mock_get_group_by_id(mocker, False)
-    plain_mock = mock_send_plain(mocker)
     group_id = 1
     message = 'fake'
     result = send_plain_to_group(businessman=businessman_1, group_id=group_id, message=message)
+    sms_q = SMSMessage.objects.filter(businessman=businessman_1, message=message,
+                                      used_for=SMSMessage.USED_FOR_SEND_TO_GROUP)
+    assert sms_q.exists()
     info_mock.assert_called_once()
     group_mock.assert_called_once_with(businessman_1, group_id)
-    plain_mock.assert_called_once()
+    mocked_set_last_receiver_id.assert_called_once_with(sms_message=sms_q.first(), group=group_mock.return_value)
+    mocked_set_reserved_credit.assert_called_once_with(sms_message=sms_q.first())
     assert result == info_mock.return_value
 
 
@@ -255,20 +259,25 @@ def test_send_by_template_to_group_raises_error(mocker, businessman_1: Businessm
     send_by_template_mock.assert_not_called()
 
 
-def test_send_by_template_to_group_success(mocker, businessman_1: Businessman):
-    call_params = {'businessman': Businessman, 'group_id': 1, 'template_id': 1}
+def test_send_by_template_to_group_success(mocker, businessman_1: Businessman, mocked_set_reserved_credit,
+                                           mocked_set_last_receiver_id):
+    call_params = {'businessman': businessman_1, 'group_id': 1, 'template_id': 1}
     info_mock = mock_sms_panel_info(mocker)
     template_mock = mock_get_template_by_id(mocker)
     group_mock = mock_get_group_by_id(mocker, False)
-    send_by_template_mock = mock_send_by_template(mocker)
 
     result = send_by_template_to_group(**call_params)
 
+    sms_q = SMSMessage.objects.filter(businessman=businessman_1, message_type=SMSMessage.TYPE_TEMPLATE,
+                                      used_for=SMSMessage.USED_FOR_SEND_TO_GROUP, status=SMSMessage.STATUS_PENDING)
+
+    assert sms_q.exists()
     assert result == info_mock.return_value
     info_mock.assert_called_once()
     template_mock.assert_called_once()
     group_mock.assert_called_once()
-    send_by_template_mock.assert_called_once()
+    mocked_set_reserved_credit.assert_called_once_with(sms_message=sms_q.first())
+    mocked_set_last_receiver_id.assert_called_once_with(sms_message=sms_q.first(), group=group_mock.return_value)
 
 
 def test_resend_failed_message_success(mocker, businessman_1: Businessman):

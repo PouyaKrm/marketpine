@@ -388,7 +388,15 @@ def send_plain_to_group(*args, businessman: Businessman, group_id: int, message:
     info = sms_panel_info_service.get_buinessman_sms_panel(businessman)
     try:
         group = BusinessmanGroups.get_group_by_id(businessman, group_id)
-        _send_plain(businessman=businessman, customers=group.get_all_customers(), message=message)
+        sms = SMSMessage.objects.create(
+            businessman=businessman,
+            message=message,
+            message_type=SMSMessage.TYPE_PLAIN,
+            used_for=SMSMessage.USED_FOR_SEND_TO_GROUP,
+            status=SMSMessage.STATUS_PENDING
+        )
+        _set_last_receiver_id(sms_message=sms, group=group)
+        _set_reserved_credit_for_sms_message(sms_message=sms)
         return info
     except ObjectDoesNotExist as ex:
         raise ApplicationErrorCodes.get_exception(ApplicationErrorCodes.RECORD_NOT_FOUND, ex)
@@ -403,7 +411,15 @@ def send_by_template_to_group(*args, businessman: Businessman, group_id: int, te
     except ObjectDoesNotExist as ex:
         raise ApplicationErrorCodes.get_field_error("group_id", ApplicationErrorCodes.RECORD_NOT_FOUND, ex)
 
-    _send_by_template(businessman=businessman, customers=group.get_all_customers(), template=template.content)
+    sms = SMSMessage.objects.create(
+        businessman=businessman,
+        message_type=SMSMessage.TYPE_TEMPLATE,
+        used_for=SMSMessage.USED_FOR_SEND_TO_GROUP,
+        status=SMSMessage.STATUS_PENDING,
+        message=template.content
+    )
+    _set_last_receiver_id(sms_message=sms, group=group)
+    _set_reserved_credit_for_sms_message(sms_message=sms)
     return info
 
 
