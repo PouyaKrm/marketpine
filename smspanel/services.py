@@ -373,7 +373,7 @@ def send_by_template_to_all(*args, businessman: Businessman, template: int) -> S
     sms = _send_by_template_to_all(
         businessman=businessman,
         template=temp.content,
-        used_for=SMSMessage.USED_FOR_NONE
+        used_for=SMSMessage.USED_FOR_SEND_TO_ALL
     )
     info = sms_panel_info_service.get_buinessman_sms_panel(businessman)
     return info
@@ -494,13 +494,16 @@ def _send_by_template_to_all(
         *args,
         businessman: Businessman,
         template: str,
-        used_for=SMSMessage.USED_FOR_NONE,
+        used_for=SMSMessage.USED_FOR_SEND_TO_ALL,
         **kwargs) -> SMSMessage:
+    if used_for == SMSMessage.USED_FOR_WELCOME_MESSAGE or used_for == SMSMessage.USED_FOR_NONE or used_for == SMSMessage.USED_FOR_FRIEND_INVITATION:
+        raise ValueError('invalid used_for argument on sending to all')
     from customers.services import customer_service
     sms = SMSMessage.objects.create(message=template, businessman=businessman, used_for=used_for,
                                     message_type=SMSMessage.TYPE_TEMPLATE, **kwargs)
-    _set_receivers_for_sms_message(sms=sms, customers=customer_service.get_businessman_customers(businessman))
+    _set_last_receiver_id(sms_message=sms)
     _set_reserved_credit_for_sms_message(sms_message=sms)
+    sms.save()
     return sms
 
 
@@ -580,4 +583,14 @@ def increase_send_failed_attempts(*args, sms_message: SMSMessage) -> SMSMessage:
     if sms_message.send_fail_attempts >= send_max_fail_attempts:
         sms_message.status = SMSMessage.STATUS_FAILED
     sms_message.save()
+    return sms_message
+
+
+def _set_last_receiver_id(*args, sms_message: SMSMessage) -> SMSMessage:
+    from customers.services import customer_service
+    last = customer_service.get_businessman_customers(sms_message.businessman).last()
+    if last is not None:
+        sms_message.last_receiver_id = last.id
+    else:
+        sms_message.last_receiver_id = 0
     return sms_message
