@@ -211,7 +211,7 @@ def test_send_by_template_to_all_success(mocker, businessman_1: Businessman):
     result = send_by_template_to_all(businessman=businessman_1, template=1)
     info_mock_result.assert_called_once()
     template_to_all_mock_result.assert_called_once_with(businessman=businessman_1, template=template.content,
-                                                        used_for=SMSMessage.USED_FOR_NONE)
+                                                        used_for=SMSMessage.USED_FOR_SEND_TO_ALL)
     assert result == info_mock_result.return_value
 
 
