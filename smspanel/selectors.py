@@ -2,7 +2,9 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.db.models.aggregates import Sum
 
 from base_app.error_codes import ApplicationErrorCodes
-from smspanel.models import SMSMessage, WelcomeMessage, SentSMS, SMSTemplate, SMSMessageReceivers
+from groups.models import BusinessmanGroups
+from smspanel.models import SMSMessage, WelcomeMessage, SentSMS, SMSTemplate, SMSMessageReceivers, \
+    SMSMessageReceiverGroup
 from users.models import Businessman
 
 
@@ -79,3 +81,11 @@ def _get_message(
 
 def get_sms_templates(*args, businessman: Businessman):
     return SMSTemplate.objects.filter(businessman=businessman).order_by('-create_date')
+
+
+def get_receiver_group_member_count(*args, sms_message: SMSMessage) -> int:
+    return SMSMessageReceiverGroup.objects.get(sms_message=sms_message).group.customers.count()
+
+
+def get_sms_message_receivers(*args, sms_message: SMSMessage):
+    return SMSMessageReceivers.objects.filter(sms_message=sms_message, is_sent=False)

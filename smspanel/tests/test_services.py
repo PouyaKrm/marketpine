@@ -1,5 +1,7 @@
 from typing import Optional
 
+from django_mock_queries.query import MockSet, MockModel
+
 from base_app.error_codes import ApplicationErrorException
 # from smspanel.models import SMSMessage, SMSMessageReceivers
 # from smspanel.services import send_plain_sms
@@ -500,9 +502,34 @@ def test__set_receivers_for_sms_message_success(mocker, sms_message_pending_1, c
     assert receivers.count() == len(customers_list_1)
 
 
-def test__set_reserved_credit_for_sms_message_success(mocker, sms_message_with_receivers):
-    _set_reserved_credit_for_sms_message(sms_message=sms_message_with_receivers[0])
+def test__set_reserved_credit_for_sms_message__used_for_group(mocker, sms_message_used_for_group_1):
+    count = 10
+    mocker.patch('smspanel.services.get_receiver_group_member_count', return_value=count)
 
-    expected_credit = len(sms_message_with_receivers[1]) * max_message_cost
-    sms_message = SMSMessage.objects.get(id=sms_message_with_receivers[0].id)
-    assert sms_message.reserved_credit == expected_credit
+    _set_reserved_credit_for_sms_message(sms_message=sms_message_used_for_group_1)
+
+    assert sms_message_used_for_group_1.reserved_credit == count * max_message_cost
+
+
+def test__set_reserved_credit_for_sms_message__used_for_all(mocker, sms_message_used_for_all_1):
+    qs = MockSet(
+        MockModel(mock_name='c 1'),
+        MockModel(mock_name='c 2')
+    )
+    mocker.patch('customers.services.customer_service.get_businessman_customers', return_value=qs)
+
+    _set_reserved_credit_for_sms_message(sms_message=sms_message_used_for_all_1)
+
+    assert sms_message_used_for_all_1.reserved_credit == qs.count() * max_message_cost
+
+
+def test__set_reserved_credit_for_sms_message__used_for_none_welcome_invitation(mocker, sms_message_pending_1):
+    qs = MockSet(
+        MockModel(mock_name='r1'),
+        MockModel(mock_name='r2')
+    )
+    mocker.patch('smspanel.services.get_sms_message_receivers', return_value=qs)
+
+    _set_reserved_credit_for_sms_message(sms_message=sms_message_pending_1)
+
+    assert sms_message_pending_1.reserved_credit == qs.count() * max_message_cost

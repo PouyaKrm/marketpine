@@ -127,6 +127,27 @@ class SMSMessage(models.Model):
     def __str__(self):
         return '{} - {}'.format(self.id, self.businessman.username)
 
+    def used_for_send_group(self) -> bool:
+        return self.used_for == SMSMessage.USED_FOR_SEND_TO_GROUP
+
+    def used_for_send_all(self) -> bool:
+        return self.used_for == SMSMessage.USED_FOR_SEND_TO_ALL
+
+    def used_for_festival(self) -> bool:
+        return self.used_for == SMSMessage.USED_FOR_FESTIVAL
+
+    def used_for_content_marketing(self) -> bool:
+        return self.used_for == SMSMessage.USED_FOR_CONTENT_MARKETING
+
+    def used_for_invitation(self) -> bool:
+        return self.used_for == SMSMessage.USED_FOR_FRIEND_INVITATION
+
+    def used_for_welcome_message(self) -> bool:
+        return self.used_for == SMSMessage.USED_FOR_WELCOME_MESSAGE
+
+    def used_for_instagram_marketing(self) -> bool:
+        return self.used_for == SMSMessage.USED_FOR_INSTAGRAM_MARKETING
+
 
 class SMSMessageReceiverGroup(BaseModel):
     sms_message = models.OneToOneField(

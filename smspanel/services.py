@@ -15,7 +15,8 @@ from panelprofile.models import SMSPanelInfo
 from users.models import Businessman, Customer
 from .models import UnsentTemplateSMS, SentSMS, UnsentPlainSMS, SMSMessage, SMSMessageReceivers, WelcomeMessage, \
     SMSTemplate
-from .selectors import get_welcome_message, get_sms_template_by_id, _get_message, has_message_any_receivers
+from .selectors import get_welcome_message, get_sms_template_by_id, _get_message, has_message_any_receivers, \
+    get_receiver_group_member_count, get_sms_message_receivers
 
 max_message_cost = settings.SMS_PANEL['MAX_MESSAGE_COST']
 send_max_fail_attempts = settings.SMS_PANEL['MAX_SEND_FAIL_ATTEMPTS']
@@ -547,7 +548,13 @@ def _set_receivers_for_sms_message(*args, sms: SMSMessage, customers: QuerySet):
 
 
 def _set_reserved_credit_for_sms_message(*args, sms_message: SMSMessage):
-    count = SMSMessageReceivers.objects.filter(sms_message=sms_message, is_sent=False).count()
+    from customers.services import customer_service
+    if sms_message.used_for_send_group():
+        count = get_receiver_group_member_count(sms_message=sms_message)
+    elif sms_message.used_for_festival() or sms_message.used_for_send_all() or sms_message.used_for_content_marketing():
+        count = customer_service.get_businessman_customers(sms_message.businessman).count()
+    else:
+        count = get_sms_message_receivers(sms_message=sms_message).count()
     sms_message.reserved_credit = count * max_message_cost
     sms_message.save()
 

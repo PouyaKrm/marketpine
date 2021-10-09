@@ -10,12 +10,13 @@ max_message_const = settings.SMS_PANEL['MAX_MESSAGE_COST']
 
 @pytest.fixture
 def create_sms_message(db, businessman_1_with_customer_tuple):
-    def create_sms(status: str, failed_attempts: int = 0) -> SMSMessage:
+    def create_sms(status: str, failed_attempts: int = 0, used_for=SMSMessage.USED_FOR_NONE) -> SMSMessage:
         return SMSMessage.objects.create(
             businessman=businessman_1_with_customer_tuple[0],
             status=status,
             send_fail_attempts=failed_attempts,
-            reserved_credit=10
+            reserved_credit=10,
+            used_for=used_for
         )
 
     return create_sms
@@ -24,6 +25,16 @@ def create_sms_message(db, businessman_1_with_customer_tuple):
 @pytest.fixture
 def sms_message_pending_1(db, create_sms_message) -> SMSMessage:
     return create_sms_message(status=SMSMessage.STATUS_PENDING)
+
+
+@pytest.fixture
+def sms_message_used_for_group_1(create_sms_message) -> SMSMessage:
+    return create_sms_message(status=SMSMessage.STATUS_PENDING, used_for=SMSMessage.USED_FOR_SEND_TO_GROUP)
+
+
+@pytest.fixture
+def sms_message_used_for_all_1(create_sms_message) -> SMSMessage:
+    return create_sms_message(status=SMSMessage.STATUS_PENDING, used_for=SMSMessage.USED_FOR_SEND_TO_ALL)
 
 
 @pytest.fixture
