@@ -339,14 +339,14 @@ def send_plain_sms_to_all(*args, businessman: Businessman, message: str):
     from customers.services import customer_service
     from panelprofile.services import sms_panel_info_service
     info = sms_panel_info_service.get_buinessman_sms_panel(businessman)
-    last_id = customer_service.get_last_customer_ordered_by_id(businessman).id
     sms = SMSMessage.objects.create(
         message=message,
         businessman=businessman,
         message_type=SMSMessage.TYPE_PLAIN,
-        used_for=SMSMessage.USED_FOR_SEND_TO_ALL,
-        last_receiver_id=last_id
+        used_for=SMSMessage.USED_FOR_SEND_TO_ALL
     )
+    _set_last_receiver_id(sms_message=sms)
+    sms.save()
 
     _set_reserved_credit_for_sms_message(sms_message=sms)
     return info
@@ -363,8 +363,11 @@ def send_by_template(
     customers = customer_service.get_bsuinessman_customers_by_ids(businessman, customer_ids)
     if customers.count() == 0:
         raise ApplicationErrorCodes.get_field_error("customers", ApplicationErrorCodes.RECORD_NOT_FOUND)
-    _send_by_template(businessman=businessman, customers=customers, template=template.content,
-                      used_for=SMSMessage.USED_FOR_NONE)
+    _send_by_template(
+        businessman=businessman,
+        customers=customers, template=template.content,
+        used_for=SMSMessage.USED_FOR_NONE
+    )
     return info
 
 
@@ -497,8 +500,7 @@ def _send_by_template_to_all(
         template: str,
         used_for=SMSMessage.USED_FOR_SEND_TO_ALL,
         **kwargs) -> SMSMessage:
-    if used_for == SMSMessage.USED_FOR_WELCOME_MESSAGE or used_for == SMSMessage.USED_FOR_NONE or used_for == SMSMessage.USED_FOR_FRIEND_INVITATION:
-        raise ValueError('invalid used_for argument on sending to all')
+    check_used_for_needs_last_receiver_id_set(used_for=used_for)
     sms = SMSMessage.objects.create(
         message=template,
         businessman=businessman,
@@ -518,6 +520,7 @@ def _send_by_template(
         customers: List[Customer],
         template: str,
         used_for=SMSMessage.USED_FOR_NONE, **kwargs) -> SMSMessage:
+    check_used_for_needs_receivers_set(used_for=used_for)
     sms = SMSMessage.objects.create(
         message=template,
         businessman=businessman,
@@ -536,11 +539,14 @@ def _send_plain(
         customers: QuerySet,
         message: str,
         used_for: str = SMSMessage.USED_FOR_NONE, **kwargs) -> SMSMessage:
+    check_used_for_needs_receivers_set(used_for=used_for)
+
     sms = SMSMessage.objects.create(
         message=message,
         businessman=businessman,
         message_type=SMSMessage.TYPE_PLAIN,
-        used_for=used_for, **kwargs)
+        used_for=used_for,
+        **kwargs)
     SMSMessageReceivers.objects.bulk_create(
         [SMSMessageReceivers(sms_message=sms, customer=c) for c in customers]
     )
@@ -599,3 +605,15 @@ def _set_last_receiver_id(*args, sms_message: SMSMessage) -> SMSMessage:
     else:
         sms_message.last_receiver_id = 0
     return sms_message
+
+
+def check_used_for_needs_last_receiver_id_set(*args, used_for: str):
+    if used_for == SMSMessage.USED_FOR_SEND_TO_ALL or used_for == SMSMessage.USED_FOR_CONTENT_MARKETING or used_for == SMSMessage.USED_FOR_FESTIVAL or used_for == SMSMessage.USED_FOR_SEND_TO_GROUP:
+        return
+    raise ValueError('invalid used_for argument on sending to all')
+
+
+def check_used_for_needs_receivers_set(*args, used_for: str):
+    if used_for == SMSMessage.USED_FOR_WELCOME_MESSAGE or used_for == SMSMessage.USED_FOR_NONE or used_for == SMSMessage.USED_FOR_FRIEND_INVITATION:
+        return
+    raise ValueError("invalid used_for argument")

@@ -12,7 +12,7 @@ from smspanel.services import send_by_template, send_by_template_to_all, send_pl
     set_content_marketing_message_to_pending, festival_message_status_cancel, friend_invitation_message, \
     send_welcome_message, update_welcome_message, _send_by_template_to_all, _send_by_template, _send_plain, \
     _set_receivers_for_sms_message, _set_reserved_credit_for_sms_message, update_sms_template, delete_sms_template, \
-    _set_last_receiver_id
+    _set_last_receiver_id, check_used_for_needs_last_receiver_id_set, check_used_for_needs_receivers_set
 from smspanel.tests.sms_panel_test_fixtures import *
 
 max_message_cost = settings.SMS_PANEL['MAX_MESSAGE_COST']
@@ -107,6 +107,16 @@ def mocked_set_last_receiver_id(mocker):
     return mocker.patch('smspanel.services._set_last_receiver_id', side_effect=side_effect_func)
 
 
+@pytest.fixture
+def mocked_needs_last_receiver_id_set(mocker):
+    return mocker.patch('smspanel.services.check_used_for_needs_last_receiver_id_set', return_value=None)
+
+
+@pytest.fixture
+def mocked_needs_receivers_set(mocker):
+    return mocker.patch('smspanel.services.check_used_for_needs_receivers_set', return_value=None)
+
+
 def test_send_plain_sms_customer_count_0(mocker, businessman_1: Businessman):
     mock = mock_sms_panel_info(mocker)
 
@@ -137,13 +147,12 @@ def test_send_plain_sms_success(mocker, businessman_with_customer_tuple):
     assert result == mock_result.return_value
 
 
-def test_send_plain_sms_to_all_success(mocker, businessman_with_customer_tuple, mocked_set_reserved_credit):
+def test_send_plain_sms_to_all_success(mocker, businessman_with_customer_tuple, mocked_set_reserved_credit,
+                                       mocked_set_last_receiver_id):
     mock_result = mock_sms_panel_info(mocker)
     businessman = businessman_with_customer_tuple[0]
     customers = businessman_with_customer_tuple[1]
     customer_ids = get_model_list_ids(customers)
-    last_customer = sorted(customers, key=lambda c: c.id)[-1]
-    mocker.patch('customers.services.customer_service.get_last_customer_ordered_by_id', return_value=last_customer)
     message = 'message'
 
     result = services.send_plain_sms_to_all(businessman=businessman, message=message)
@@ -154,12 +163,12 @@ def test_send_plain_sms_to_all_success(mocker, businessman_with_customer_tuple, 
                                      message_type=SMSMessage.TYPE_PLAIN,
                                      message=message,
                                      used_for=SMSMessage.USED_FOR_SEND_TO_ALL,
-                                     last_receiver_id=last_customer.id
                                      )
     assert smsq.exists()
     count = SMSMessageReceivers.objects.filter(sms_message=smsq.first(), customer__id__in=customer_ids).count()
     assert count == 0
     mocked_set_reserved_credit.assert_called_once()
+    mocked_set_last_receiver_id.assert_called_once()
 
 
 def test_send_by_template_raises_error(mocker, businessman_1: Businessman):
@@ -437,18 +446,8 @@ def test__delete_sms_template__success(mocker, businessman_1, sms_template_1):
     assert result == sms_template_1
 
 
-@pytest.mark.parametrize('used_for', [
-    SMSMessage.USED_FOR_NONE,
-    SMSMessage.USED_FOR_FRIEND_INVITATION,
-    SMSMessage.USED_FOR_WELCOME_MESSAGE
-])
-def test___send_by_template_to_all__raises_error(used_for, businessman_1):
-    with pytest.raises(ValueError) as cx:
-        _send_by_template_to_all(businessman=businessman_1, template='fake', used_for=used_for)
-
-
 def test__send_by_template_to_all_success(mocker, businessman_with_customer_tuple, mocked_set_reserved_credit,
-                                          mocked_set_last_receiver_id):
+                                          mocked_set_last_receiver_id, mocked_needs_last_receiver_id_set):
     b = businessman_with_customer_tuple[0]
     used_for = SMSMessage.USED_FOR_CONTENT_MARKETING
     template = 'fake'
@@ -465,9 +464,14 @@ def test__send_by_template_to_all_success(mocker, businessman_with_customer_tupl
     assert result == smsq.first()
     mocked_set_last_receiver_id.assert_called_once_with(sms_message=result)
     mocked_set_reserved_credit.assert_called_once_with(sms_message=result)
+    mocked_needs_last_receiver_id_set.assert_called_once_with(used_for=used_for)
 
 
-def test__send_by_template_success(mocker, businessman_with_customer_tuple, mocked_set_reserved_credit):
+def test__send_by_template_success(mocker,
+                                   businessman_with_customer_tuple,
+                                   mocked_set_reserved_credit,
+                                   mocked_needs_receivers_set
+                                   ):
     b = businessman_with_customer_tuple[0]
     customers = businessman_with_customer_tuple[1]
     c_ids = list(map(lambda e: e.id, customers))
@@ -488,9 +492,11 @@ def test__send_by_template_success(mocker, businessman_with_customer_tuple, mock
     assert result == smsq.first()
     assert receivers.count() == len(c_ids)
     mocked_set_reserved_credit.assert_called_once_with(sms_message=result)
+    mocked_needs_receivers_set.assert_called_once_with(used_for=used_for)
 
 
-def test__send_plain_success(mocker, businessman_with_customer_tuple, mocked_set_reserved_credit):
+def test__send_plain_success(mocker, businessman_with_customer_tuple, mocked_set_reserved_credit,
+                             mocked_needs_receivers_set):
     b = businessman_with_customer_tuple[0]
     cs = businessman_with_customer_tuple[1]
     cs_ids = list(map(lambda e: e.id, cs))
@@ -512,6 +518,7 @@ def test__send_plain_success(mocker, businessman_with_customer_tuple, mocked_set
     assert smsq.first() == result
     assert receivers.count() == len(cs_ids)
     mocked_set_reserved_credit.assert_called_once_with(sms_message=result)
+    mocked_needs_receivers_set.assert_called_once_with(used_for=used_for)
 
 
 def test__set_receivers_for_sms_message_success(mocker, sms_message_pending_1, customers_list_1,
@@ -574,3 +581,39 @@ def test___set_last_receiver_id(mocker, sms_message_pending_1):
     _set_last_receiver_id(sms_message=sms_message_pending_1)
 
     assert sms_message_pending_1.last_receiver_id == last_id
+
+
+used_for_needs_receivers_id_set = [
+    SMSMessage.USED_FOR_CONTENT_MARKETING,
+    SMSMessage.USED_FOR_FESTIVAL,
+    SMSMessage.USED_FOR_SEND_TO_GROUP,
+    SMSMessage.USED_FOR_SEND_TO_ALL
+]
+
+used_for_needs_receivers_set = [
+    SMSMessage.USED_FOR_NONE,
+    SMSMessage.USED_FOR_WELCOME_MESSAGE,
+    SMSMessage.USED_FOR_FRIEND_INVITATION
+]
+
+
+@pytest.mark.parametrize('used_for', used_for_needs_receivers_set)
+def test__check_used_for_needs_last_receiver_id_set__raises_error(used_for):
+    with pytest.raises(ValueError) as cx:
+        check_used_for_needs_last_receiver_id_set(used_for=used_for)
+
+
+@pytest.mark.parametrize('used_for', used_for_needs_receivers_id_set)
+def test__check_used_for_needs_last_receiver_id_set__success(used_for):
+    check_used_for_needs_last_receiver_id_set(used_for=used_for)
+
+
+@pytest.mark.parametrize('used_for', used_for_needs_receivers_id_set)
+def test__check_used_for_needs_receivers_set__raises_error(used_for):
+    with pytest.raises(ValueError):
+        check_used_for_needs_receivers_set(used_for=used_for)
+
+
+@pytest.mark.parametrize('used_for', used_for_needs_receivers_set)
+def test__check_used_for_needs_receivers_set__success(used_for):
+    check_used_for_needs_receivers_set(used_for=used_for)
