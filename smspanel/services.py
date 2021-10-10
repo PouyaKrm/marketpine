@@ -618,7 +618,7 @@ def _set_last_receiver_id(*args, sms_message: SMSMessage, group: BusinessmanGrou
         raise ValueError('on used_for = group, group parameter must be provided')
     elif sms_message.used_for_send_group() and group is not None:
         SMSMessageReceiverGroup.objects.create(sms_message=sms_message, group=group)
-        last = group.customers.order_by('id').last()
+        last = group.get_all_customers().order_by('id').last()
     else:
         from customers.services import customer_service
         last = customer_service.get_last_customer_ordered_by_id(sms_message.businessman)

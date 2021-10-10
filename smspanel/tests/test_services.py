@@ -581,7 +581,7 @@ def test___set_last_receiver_id__raises_error(mocker, sms_message_used_for_group
 
 
 def test___set_last_receiver_id__used_for_group(mocker, sms_message_used_for_group_1, group_1):
-    last_id = group_1.customers.last().id
+    last_id = group_1.get_all_customers().order_by('id').last().id
 
     _set_last_receiver_id(sms_message=sms_message_used_for_group_1, group=group_1)
 

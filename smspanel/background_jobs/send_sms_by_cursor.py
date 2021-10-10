@@ -5,6 +5,7 @@ from os.path import dirname, abspath
 from background_task import background
 from django.db.models.query_utils import Q
 
+from customers.services import customer_service
 from smspanel.background_jobs.sms_send_script import SendPlainMessageThread, SendTemplateMessageThread
 from smspanel.services import increase_send_failed_attempts, create_sent_sms_from_send_array_result
 #
@@ -42,9 +43,7 @@ class SendTemplateByCursorThread(SendTemplateMessageThread):
 
 
 def slice_receivers(sms_message: SMSMessage) -> List[List[Customer]]:
-    receiver_customers = Customer.objects.filter(
-        businessmans=sms_message.businessman
-    )
+    receiver_customers = customer_service.get_businessman_customers(sms_message.businessman)
     if sms_message.used_for == SMSMessage.USED_FOR_SEND_TO_GROUP:
         receiver_customers = receiver_customers.filter(connected_groups=sms_message.related_receiver_group.group)
     receiver_customers = receiver_customers.order_by(
