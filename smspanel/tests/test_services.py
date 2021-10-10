@@ -589,24 +589,19 @@ def test___set_last_receiver_id__used_for_group(mocker, sms_message_used_for_gro
 
 
 def test___set_last_receiver_id__last_is_none(mocker, sms_message_pending_1):
-    qs = MockSet()
-    mocker.patch('customers.services.customer_service.get_businessman_customers', return_value=qs)
+    mocker.patch('customers.services.customer_service.get_last_customer_ordered_by_id', return_value=None)
 
     _set_last_receiver_id(sms_message=sms_message_pending_1)
 
     assert sms_message_pending_1.last_receiver_id == 0
 
 
-def test___set_last_receiver_id__used_for_not_group(mocker, sms_message_pending_1):
-    last_id = 5
-    qs = MockSet(
-        MockModel(mock_name='c1', id=last_id)
-    )
-    mocker.patch('customers.services.customer_service.get_businessman_customers', return_value=qs)
+def test___set_last_receiver_id__used_for_not_group(mocker, customer_1, sms_message_pending_1):
+    mocker.patch('customers.services.customer_service.get_last_customer_ordered_by_id', return_value=customer_1)
 
     _set_last_receiver_id(sms_message=sms_message_pending_1)
 
-    assert sms_message_pending_1.last_receiver_id == last_id
+    assert sms_message_pending_1.last_receiver_id == customer_1.id
 
 
 used_for_needs_receivers_id_set = [
