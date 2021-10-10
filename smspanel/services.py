@@ -621,7 +621,7 @@ def _set_last_receiver_id(*args, sms_message: SMSMessage, group: BusinessmanGrou
         last = group.customers.order_by('id').last()
     else:
         from customers.services import customer_service
-        last = customer_service.get_businessman_customers(sms_message.businessman).last()
+        last = customer_service.get_last_customer_ordered_by_id(sms_message.businessman)
     if last is not None:
         sms_message.last_receiver_id = last.id
     else:

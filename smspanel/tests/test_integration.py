@@ -30,6 +30,10 @@ def assert_sms_panel_info(response_data, sms_panel_model: SMSPanelInfo):
     assert response_data == sr.data
 
 
+def get_last_customer_sorted_by_id(customers: List[Customer]) -> Customer:
+    return sorted(customers, key=lambda e: e.id)[-1]
+
+
 def assert_sms_message_reserved_credit(sms_message: SMSMessage, receivers_count: int):
     assert sms_message.reserved_credit == receivers_count * max_message_const
 
@@ -119,6 +123,7 @@ def test_send_plain_to_all(sms_fetch_user_api_key_mock, businessman_1_with_custo
                            auth_client):
     url = reverse('send_plain_sms_to_all')
     message = 'test message'
+    last_id = get_last_customer_sorted_by_id(businessman_1_with_customer_tuple[1]).id
 
     response = auth_client.post(url, data={'content': message})
 
@@ -126,13 +131,11 @@ def test_send_plain_to_all(sms_fetch_user_api_key_mock, businessman_1_with_custo
     sms_q = SMSMessage.objects.filter(businessman=businessman_1_with_customer_tuple[0],
                                       message_type=SMSMessage.TYPE_PLAIN,
                                       message=message)
+
     assert sms_q.exists()
-    receivers_count = SMSMessageReceivers.objects.filter(sms_message=sms_q.first(),
-                                                         customer__businessmans=businessman_1_with_customer_tuple[
-                                                             0]).count()
-    assert receivers_count == len(businessman_1_with_customer_tuple[1])
+    assert sms_q.first().last_receiver_id == last_id
     assert_sms_panel_info(response.data, active_sms_panel_info_1)
-    assert_sms_message_reserved_credit(sms_q.first(), receivers_count)
+    assert_sms_message_reserved_credit(sms_q.first(), last_id)
 
 
 def test_send_template_sms(sms_fetch_user_api_key_mock, sms_template_1, businessman_1_with_customer_tuple,
@@ -159,57 +162,64 @@ def test_send_template_sms(sms_fetch_user_api_key_mock, sms_template_1, business
 def test_send_by_template_to_all(sms_fetch_user_api_key_mock, businessman_1_with_customer_tuple, sms_template_1,
                                  active_sms_panel_info_1, auth_client):
     url = reverse('send_sms_by_template_to_all', kwargs={'template_id': sms_template_1.id})
+    last_id = get_last_customer_sorted_by_id(businessman_1_with_customer_tuple[1]).id
 
     response = auth_client.post(url)
 
     assert response.status_code == status.HTTP_200_OK
     sms_q = SMSMessage.objects.filter(businessman=businessman_1_with_customer_tuple[0],
                                       message=sms_template_1.content,
-                                      message_type=SMSMessage.TYPE_TEMPLATE
+                                      message_type=SMSMessage.TYPE_TEMPLATE,
+                                      last_receiver_id=last_id
                                       )
 
     assert sms_q.exists()
-    receivers_count = SMSMessageReceivers.objects.filter(sms_message=sms_q.first(),
-                                                         customer__in=businessman_1_with_customer_tuple[1]
-                                                         ).count()
-    assert receivers_count == len(businessman_1_with_customer_tuple[1])
     assert_sms_panel_info(response.data, active_sms_panel_info_1)
-    assert_sms_message_reserved_credit(sms_q.first(), receivers_count)
+    assert_sms_message_reserved_credit(sms_q.first(), last_id)
 
 
 def test_send_plain_sms_to_group(sms_fetch_user_api_key_mock, group_1_customer_tuple, active_sms_panel_info_1,
                                  auth_client):
     g = group_1_customer_tuple[0]
     customers = group_1_customer_tuple[1]
+    customers_count = len(group_1_customer_tuple[1])
+    last_id = get_last_customer_sorted_by_id(group_1_customer_tuple[1]).id
     url = reverse('send_plain_sms_to_group', kwargs={'group_id': g.id})
     message = 'fake message'
 
     response = auth_client.post(url, data={'content': message})
 
     assert response.status_code == status.HTTP_200_OK
-    sms_q = SMSMessage.objects.filter(businessman=g.businessman, message=message, message_type=SMSMessage.TYPE_PLAIN)
+    sms_q = SMSMessage.objects.filter(
+        businessman=g.businessman,
+        message=message,
+        message_type=SMSMessage.TYPE_PLAIN,
+        last_receiver_id=last_id
+    )
     assert sms_q.exists()
-    receivers_count = SMSMessageReceivers.objects.filter(sms_message=sms_q.first(), customer__in=customers).count()
-    assert receivers_count == len(customers)
     assert_sms_panel_info(response.data, active_sms_panel_info_1)
-    assert_sms_message_reserved_credit(sms_q.first(), receivers_count)
+    assert_sms_message_reserved_credit(sms_q.first(), customers_count)
+
 
 def test_send_template_sms_to_group(sms_fetch_user_api_key_mock, group_1_customer_tuple, sms_template_1,
                                     active_sms_panel_info_1, auth_client):
     g = group_1_customer_tuple[0]
     customers = group_1_customer_tuple[1]
+    customers_count = len(customers)
+    last_id = get_last_customer_sorted_by_id(customers).id
+
     url = reverse('send_sms_by_template_to_group', kwargs={'template_id': sms_template_1.id, 'group_id': g.id})
 
     response = auth_client.post(url)
 
     assert response.status_code == status.HTTP_200_OK
     sms_q = SMSMessage.objects.filter(businessman=g.businessman, message_type=SMSMessage.TYPE_TEMPLATE,
-                                      message=sms_template_1.content)
+                                      message=sms_template_1.content,
+                                      last_receiver_id=last_id
+                                      )
     assert sms_q.exists()
-    receivers_count = SMSMessageReceivers.objects.filter(sms_message=sms_q.first(), customer__in=customers).count()
-    assert receivers_count == len(customers)
     assert_sms_panel_info(response.data, active_sms_panel_info_1)
-    assert_sms_message_reserved_credit(sms_q.first(), receivers_count)
+    assert_sms_message_reserved_credit(sms_q.first(), customers_count)
 
 
 def test_failed_sms_list(sms_fetch_user_api_key_mock, sms_message_failed_list_1, active_sms_panel_info_1, auth_client):
