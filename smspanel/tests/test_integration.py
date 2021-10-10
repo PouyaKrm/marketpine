@@ -279,13 +279,14 @@ def test_update_welcome_message(sms_fetch_user_api_key_mock, active_sms_panel_in
     assert data.items() <= result.items()
 
 
-def test_deliver_callback(sent_sms_list_1, auth_client):
+def test_deliver_callback(sent_sms_list_1):
     sent_sms = sent_sms_list_1[0]
     new_status = 100
+    client = APIClient()
     data = {'messageid': sent_sms.message_id, 'status': new_status}
     url = reverse('sms_delivery_callback')
 
-    response = auth_client.post(url, data=data, format='multipart')
+    response = client.post(url, data=data, format='multipart')
 
     assert response.status_code == status.HTTP_200_OK
     sent_sms = SentSMS.objects.get(message_id=sent_sms.message_id)
