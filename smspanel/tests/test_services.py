@@ -14,7 +14,8 @@ from smspanel.services import send_by_template, send_by_template_to_all, send_pl
     set_content_marketing_message_to_pending, festival_message_status_cancel, friend_invitation_message, \
     send_welcome_message, update_welcome_message, _send_by_template_to_all, _send_by_template, _send_plain, \
     _set_receivers_for_sms_message, _set_reserved_credit_for_sms_message, update_sms_template, delete_sms_template, \
-    _set_last_receiver_id, check_used_for_needs_last_receiver_id_set, check_used_for_needs_receivers_set
+    _set_last_receiver_id, check_used_for_needs_last_receiver_id_set, check_used_for_needs_receivers_set, \
+    update_sent_sms_status
 from smspanel.tests.sms_panel_test_fixtures import *
 from groups.tests.fixtures import *
 
@@ -638,3 +639,24 @@ def test__check_used_for_needs_receivers_set__raises_error(used_for):
 @pytest.mark.parametrize('used_for', used_for_needs_receivers_set)
 def test__check_used_for_needs_receivers_set__success(used_for):
     check_used_for_needs_receivers_set(used_for=used_for)
+
+
+def test__update_sent_sms_status__sent_sms_is_none(mocker):
+    mock = mocker.patch('smspanel.services.get_sent_sms_by_messageid', return_value=None)
+    messageid = 'message'
+
+    update_sent_sms_status(messageid=messageid, status='status')
+
+    mock.assert_called_once_with(messageid=messageid)
+
+
+def test__test__update_sent_sms_status(mocker):
+    mock_model = MockModel(mock_name='sent1', status='fake')
+    messageid = 'messageid'
+    status = 'new status'
+    mock = mocker.patch('smspanel.services.get_sent_sms_by_messageid', return_value=mock_model)
+
+    update_sent_sms_status(messageid=messageid, status=status)
+
+    mock.assert_called_once_with(messageid=messageid)
+    assert mock_model.status == status

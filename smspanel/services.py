@@ -16,7 +16,7 @@ from users.models import Businessman, Customer
 from .models import UnsentTemplateSMS, SentSMS, UnsentPlainSMS, SMSMessage, SMSMessageReceivers, WelcomeMessage, \
     SMSTemplate, SMSMessageReceiverGroup
 from .selectors import get_welcome_message, get_sms_template_by_id, _get_message, has_message_any_receivers, \
-    get_receiver_group_member_count, get_sms_message_receivers
+    get_receiver_group_member_count, get_sms_message_receivers, get_sent_sms_by_messageid
 
 max_message_cost = settings.SMS_PANEL['MAX_MESSAGE_COST']
 send_max_fail_attempts = settings.SMS_PANEL['MAX_SEND_FAIL_ATTEMPTS']
@@ -639,3 +639,11 @@ def check_used_for_needs_receivers_set(*args, used_for: str):
     if used_for == SMSMessage.USED_FOR_WELCOME_MESSAGE or used_for == SMSMessage.USED_FOR_NONE or used_for == SMSMessage.USED_FOR_FRIEND_INVITATION:
         return
     raise ValueError("invalid used_for argument")
+
+
+def update_sent_sms_status(*args, messageid: str, status: int) -> None:
+    m = get_sent_sms_by_messageid(messageid=messageid)
+    if m is None:
+        return
+    m.status = status
+    m.save()

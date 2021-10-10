@@ -1,3 +1,5 @@
+from typing import Optional
+
 from django.core.exceptions import ObjectDoesNotExist
 from django.db.models.aggregates import Sum
 
@@ -89,3 +91,10 @@ def get_receiver_group_member_count(*args, sms_message: SMSMessage) -> int:
 
 def get_sms_message_receivers(*args, sms_message: SMSMessage):
     return SMSMessageReceivers.objects.filter(sms_message=sms_message, is_sent=False)
+
+
+def get_sent_sms_by_messageid(*args, messageid: str) -> Optional[SentSMS]:
+    try:
+        return SentSMS.objects.get(message_id=messageid)
+    except ObjectDoesNotExist:
+        return None

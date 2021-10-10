@@ -1,12 +1,23 @@
+from django_mock_queries.query import MockSet, MockModel
+
 from base_app.error_codes import ApplicationErrorException
 from base_app.test_utils import get_model_list_ids, count_model_queryset_by_ids
 from smspanel.selectors import get_failed_messages, get_welcome_message, get_sent_sms, get_pending_messages, \
     get_sms_template_by_id, get_reserved_credit_of_pending_messages, has_message_any_receivers, _get_message, \
-    get_sms_templates
+    get_sms_templates, get_sent_sms_by_messageid
 
 from smspanel.tests.sms_panel_test_fixtures import *
 
 pytestmark = pytest.mark.unit
+
+
+@pytest.fixture
+def mocked_sent_sms(mocker) -> MockSet:
+    qs = MockSet(
+        MockModel(mock_name='m1', message_id='fake')
+    )
+    mocker.patch('smspanel.models.SentSMS.objects', qs)
+    return qs
 
 
 def test__get_failed_messages__success(mocker, sms_message_failed_list_1):
@@ -121,3 +132,19 @@ def test__get_sms_templates__success(mocker, businessman_1, sms_template_list):
     result = get_sms_templates(businessman=businessman_1)
 
     assert all(e in result for e in sms_template_list)
+
+
+def test__get_sent_sms_by_messageid__not_found(mocked_sent_sms):
+    first = mocked_sent_sms.first()
+
+    result = get_sent_sms_by_messageid(messageid=first.message_id + '1')
+
+    assert result is None
+
+
+def test__get_sent_sms_by_messageid__success(mocked_sent_sms):
+    first = mocked_sent_sms.first()
+
+    result = get_sent_sms_by_messageid(messageid=first.message_id)
+
+    assert result == first

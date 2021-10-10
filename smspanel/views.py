@@ -1,4 +1,8 @@
+import logging
+
 from django.conf import settings
+from django.http.response import HttpResponse
+from django.views.generic.base import View
 from rest_framework import permissions, status
 from rest_framework.request import Request
 from rest_framework.response import Response
@@ -17,9 +21,11 @@ from .serializers import SMSTemplateSerializer, SendSMSSerializer, SendPlainSMST
     SendByTemplateSerializer, SendPlainToGroup
 from .services import create_sms_template, update_sms_template, delete_sms_template, \
     send_plain_sms, send_plain_sms_to_all, send_by_template, send_by_template_to_all, send_plain_to_group, \
-    send_by_template_to_group, resend_failed_message, update_welcome_message
+    send_by_template_to_group, resend_failed_message, update_welcome_message, update_sent_sms_status
 
 page_size = settings.PAGINATION_PAGE_NUM
+
+logger = logging.getLogger('django')
 
 
 def create_sms_sent_success_response(user: Businessman):
@@ -255,3 +261,16 @@ class RetrieveUpdateWelcomeMessageAPIView(APIView):
         wm = update_welcome_message(businessman=request.user, message=message, send_message=send_message)
         sr = WelcomeMessageSerializer(wm)
         return ok(sr.data)
+
+
+class DeliveryCallbackView(View):
+
+    def post(self, request):
+        messageid = request.POST.get('messageid')
+        try:
+            new_status = int(request.POST.get('status'))
+            update_sent_sms_status(messageid=messageid, status=new_status)
+        except ValueError as ex:
+            logger.error(ex)
+            return HttpResponse(content='ok', status=200)
+        return HttpResponse(content='ok', status=200)

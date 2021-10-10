@@ -1,3 +1,5 @@
+import secrets
+
 from django.conf import settings
 
 from base_app.tests import *
@@ -77,10 +79,14 @@ def welcome_message_1(db, businessman_1: Businessman) -> WelcomeMessage:
 @pytest.fixture
 def sent_sms_list_1(db, create_sms_message, businessman_1_with_customer_tuple) -> List[SentSMS]:
     sms = create_sms_message(status=SMSMessage.STATUS_DONE)
+    count = 0
+    sent = []
+    for c in businessman_1_with_customer_tuple[1]:
+        s = SentSMS(sms_message=sms, message='fake', receptor=c, message_id=count + 1)
+        count = count + 1
+        sent.append(s)
 
-    SentSMS.objects.bulk_create(
-        [SentSMS(sms_message=sms, message='fake', receptor=c) for c in businessman_1_with_customer_tuple[1]]
-    )
+    SentSMS.objects.bulk_create(sent)
 
     return list(SentSMS.objects.all())
 
