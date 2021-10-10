@@ -2,16 +2,17 @@ import os
 import sys
 from os.path import dirname, abspath
 
+from background_task import background
 from django.db.models.query_utils import Q
 
 from smspanel.background_jobs.sms_send_script import SendPlainMessageThread, SendTemplateMessageThread
 from smspanel.services import increase_send_failed_attempts, create_sent_sms_from_send_array_result
-
-sys.path.append(dirname(dirname(abspath(__file__))))
-os.environ['DJANGO_SETTINGS_MODULE'] = 'CRM.settings'
+#
+# sys.path.append(dirname(dirname(abspath(__file__))))
+# os.environ['DJANGO_SETTINGS_MODULE'] = 'CRM.settings'
 import django
 
-django.setup()
+# django.setup()
 
 from typing import List, Optional
 
@@ -46,7 +47,7 @@ def slice_receivers(sms_message: SMSMessage) -> List[List[Customer]]:
     )
     if sms_message.used_for == SMSMessage.USED_FOR_SEND_TO_GROUP:
         receiver_customers = receiver_customers.filter(connected_groups=sms_message.related_receiver_group.group)
-    receiver_customers.order_by(
+    receiver_customers = receiver_customers.order_by(
         'id'
     ).filter(
         id__gte=sms_message.current_receiver_id,
@@ -87,11 +88,15 @@ def get_pending_message() -> Optional[SMSMessage]:
     ).first()
 
 
-def send():
+@background()
+def send_sms_by_cursor():
     sms = get_pending_message()
     if sms is None:
         return
     receivers = slice_receivers(sms)
+    if len(receivers) == 0:
+        sms.set_done()
+        return
     threads = []
     if sms.is_message_type_plain():
         for i in receivers:
@@ -142,6 +147,6 @@ def send():
             sms.current_receiver_id = last_id + 1
         sms.save()
 
-
-if __name__ == '__main__':
-    send()
+#
+# if __name__ == '__main__':
+#     send_sms_by_cursor()

@@ -37,6 +37,7 @@ from panelprofile import urls as profile_url
 from payment import urls as payment_url
 from smspanel import urls as smspanel_url
 from smspanel.background_jobs.invitate_welcome_sms import run_send_invite_sms_task
+from smspanel.background_jobs.send_sms_by_cursor import send_sms_by_cursor
 from smspanel.background_jobs.sms_send_script import run_send_sms_task
 from users import urls as salesman_url
 
@@ -75,5 +76,4 @@ if settings.DEBUG:
 if not Task.objects.exists():
     run_send_invite_sms_task(repeat=10)
     run_send_sms_task(repeat=10)
-
-print(settings.CUSTOMER_APP_FRONTEND_URL)
+    send_sms_by_cursor(repeat=10)
