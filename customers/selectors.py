@@ -1,4 +1,7 @@
+from typing import Optional
+
 from django.core.exceptions import ObjectDoesNotExist
+from django.db.models import QuerySet
 
 from base_app.error_codes import ApplicationErrorCodes
 from base_app.services import throw_exception
@@ -6,7 +9,7 @@ from users.models import Businessman, Customer, BusinessmanCustomer
 
 
 def customer_exists_by_phone(*args, businessman: Businessman, phone: str) -> bool:
-    return BusinessmanCustomer.objects.filter(customer=businessman, customer__phone=phone, is_deleted=False).exists()
+    return BusinessmanCustomer.objects.filter(businessman=businessman, customer__phone=phone, is_deleted=False).exists()
 
 
 def customer_exists(*args, businessman: Businessman, customer: Customer) -> bool:
@@ -14,12 +17,17 @@ def customer_exists(*args, businessman: Businessman, customer: Customer) -> bool
 
 
 def customer_exists_by_id(*args, businessman: Businessman, customer_id: int) -> bool:
-    return BusinessmanCustomer.objects.filter(businessman=businessman, customer__id=customer_id,
-                                              is_deleted=False).exists()
+    return BusinessmanCustomer.objects.filter(businessman=businessman,
+                                              customer__id=customer_id,
+                                              is_deleted=False
+                                              ).exists()
 
 
 def get_customer(*args, businessman: Businessman, phone: str) -> Customer:
-    return Customer.objects.get(businessman=businessman, phone=phone, connected_businessmans__is_deleted=False)
+    return Customer.objects.get(businessman=businessman,
+                                phone=phone,
+                                connected_businessmans__is_deleted=False
+                                )
 
 
 def get_customer_by_id(*args, customer_id: int) -> Customer:
@@ -29,7 +37,10 @@ def get_customer_by_id(*args, customer_id: int) -> Customer:
 def get_businessman_customer_by_id(*args, businessman: Businessman, customer_id: int,
                                    field_name: str = None) -> Customer:
     try:
-        bc = BusinessmanCustomer.objects.get(businessman=businessman, customer_id=customer_id, is_deleted=False)
+        bc = BusinessmanCustomer.objects.get(businessman=businessman,
+                                             customer_id=customer_id,
+                                             is_deleted=False
+                                             )
         return bc.customer
     except ObjectDoesNotExist as ex:
         throw_exception(error_code=ApplicationErrorCodes.RECORD_NOT_FOUND, field_name=field_name, original_exception=ex)
@@ -49,8 +60,10 @@ def get_businessmancustomer(*args, businessman: Businessman, customer: Customer)
 
 
 def get_bsuinessman_customers_by_ids(*args, businessman: Businessman, customer_ids: [int]):
-    return Customer.objects.filter(businessmans=businessman, id__in=customer_ids,
-                                   connected_businessmans__is_deleted=False).all()
+    return Customer.objects.filter(businessmans=businessman,
+                                   id__in=customer_ids,
+                                   connected_businessmans__is_deleted=False
+                                   ).all()
 
 
 def get_customer_by_phone(*args, phone: str) -> Customer:
@@ -59,7 +72,10 @@ def get_customer_by_phone(*args, phone: str) -> Customer:
 
 def get_customer_by_businessman_and_phone(*args, businessman: Businessman, phone: str) -> Customer:
     try:
-        bc = BusinessmanCustomer.objects.get(businessman=businessman, customer__phone=phone, is_deleted=False)
+        bc = BusinessmanCustomer.objects.get(businessman=businessman,
+                                             customer__phone=phone,
+                                             is_deleted=False
+                                             )
         return bc.customer
     except ObjectDoesNotExist as ex:
         raise ApplicationErrorCodes.get_exception(ApplicationErrorCodes.RECORD_NOT_FOUND, ex)
