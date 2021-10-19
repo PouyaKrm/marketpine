@@ -20,5 +20,5 @@ urlpatterns = [
     path('failed/<int:sms_id>/resend/', views.ResendFailedSmsAPIView.as_view(), name='resend_failed_sms'),
     path('sent-sms/', views.SentSMSListAPIView.as_view(), name='sent_sms_retrieve'),
     path('welcome-message/', views.RetrieveUpdateWelcomeMessageAPIView.as_view(), name='welcome_message'),
-    path('sent-sms/delivery-callback', views.DeliveryCallbackView.as_view(), name='sms_delivery_callback')
+    # path('sent-sms/delivery-callback', views.DeliveryCallbackView.as_view(), name='sms_delivery_callback')
 ]
