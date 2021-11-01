@@ -6,7 +6,7 @@ from base_app.tests import *
 from customers.tests.test_conf import *
 from customers.selectors import customer_exists_by_phone, customer_exists, customer_exists_by_id, get_customer, \
     get_customer_by_id, get_customer_by_businessman_and_phone, get_date_joined, is_phone_number_unique_for_register, \
-    is_phone_number_unique, get_businessmancustomer_delete_check
+    is_phone_number_unique, get_businessmancustomer_delete_check, get_businessmans_of_customer
 
 pytestmark = pytest.mark.unit
 
@@ -137,3 +137,10 @@ def test__get_businessmancustomer_delete_check__success(mocked_customer):
                                                   customer=mocked_customer.customer)
 
     assert result == mocked_customer.businessman_customer
+
+
+def test__get_businessmans_of_customer__success(mocked_customer):
+    result = get_businessmans_of_customer(customer=mocked_customer.customer)
+
+    assert result.count() == 1
+    assert result.first() == mocked_customer.businessman

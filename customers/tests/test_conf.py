@@ -56,8 +56,9 @@ def create_mocked_customer(mocker):
     def create_mock(is_deleted) -> BusinessmanCustomerMockResult:
         mock_bc = MockModel(mock_name='businessman customer 1', is_deleted=is_deleted, businessman=None, customer=None,
                             joined_by=BusinessmanCustomer.JOINED_BY_PANEL, create_date=timezone.now())
-        b = MockModel(mock_name='businessman 1', customers=None)
-        c = MockModel(mock_name='customer 1', phone='123', connected_businessmans=mock_bc, businessman=b, id=1)
+        b = MockModel(mock_name='businessman 1', customers=None, connected_customers=mock_bc)
+        c = MockModel(mock_name='customer 1', phone='123', connected_businessmans=mock_bc, businessmans=MockSet(b),
+                      id=1)
         qs = MockSet(c)
         mock_bc.businessman = b
         mock_bc.customer = c
