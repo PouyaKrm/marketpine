@@ -261,6 +261,13 @@ def add_customer(*args, businessman: Businessman, phone: str, full_name='', grou
     return c
 
 
+def get_customer_by_phone_or_create(*args, phone) -> Customer:
+    try:
+        return get_customer_by_phone(phone=phone)
+    except ObjectDoesNotExist:
+        return Customer.objects.create(phone=phone)
+
+
 def _join_customer_to_businessman(*args, businessman: Businessman, customer: Customer, joined_by,
                                   groups: list, low_credit_error_code: dict = None) -> Customer:
     from payment.services import wallet_billing_service

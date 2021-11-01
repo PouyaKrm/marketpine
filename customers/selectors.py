@@ -24,10 +24,13 @@ def customer_exists_by_id(*args, businessman: Businessman, customer_id: int) -> 
 
 
 def get_customer(*args, businessman: Businessman, phone: str) -> Customer:
-    return Customer.objects.get(businessman=businessman,
-                                phone=phone,
-                                connected_businessmans__is_deleted=False
-                                )
+    try:
+        return Customer.objects.get(connected_businessmans__businessman=businessman,
+                                    phone=phone,
+                                    connected_businessmans__is_deleted=False
+                                    )
+    except ObjectDoesNotExist as ex:
+        throw_exception(error_code=ApplicationErrorCodes.RECORD_NOT_FOUND, original_exception=ex)
 
 
 def get_customer_by_id(*args, customer_id: int) -> Customer:
@@ -107,13 +110,6 @@ def get_businessmancustomer_delete_check(*args, businessman: Businessman, custom
 
 def get_businessmans_of_customer(*args, customer: Customer) -> QuerySet:
     return customer.businessmans.filter(connected_customers__is_deleted=False).all()
-
-
-def get_customer_by_phone_or_create(*args, phone) -> Customer:
-    try:
-        return get_customer_by_phone(phone=phone)
-    except ObjectDoesNotExist:
-        return Customer.objects.create(phone=phone)
 
 
 def _get_businessman_customer_relation(*args, businessman: Businessman, customer: Customer) -> Optional[

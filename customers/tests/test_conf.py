@@ -28,30 +28,6 @@ def mocked_businessman(mocker) -> MockSet:
 
 
 @pytest.fixture
-def create_mocked_businessman_customer(mocker):
-    def create_mock(is_deleted):
-        b = MockModel(mock_name='businessman')
-        c1 = MockModel(mock_name='customer1', phone='123', id=1)
-        qs = MockSet(
-            MockModel(mock_name="c1", businessman=b, is_deleted=is_deleted, customer=c1)
-        )
-        mock = mocker.patch('users.models.BusinessmanCustomer.objects', qs)
-        return BusinessmanCustomerMockResult(b, c1, qs, mock)
-
-    return create_mock
-
-
-@pytest.fixture
-def mocked_businessmancustomer(create_mocked_businessman_customer) -> BusinessmanCustomerMockResult:
-    return create_mocked_businessman_customer(False)
-
-
-@pytest.fixture
-def mocked_businessmancustomer_deleted(create_mocked_businessman_customer) -> BusinessmanCustomerMockResult:
-    return create_mocked_businessman_customer(True)
-
-
-@pytest.fixture
 def create_mocked_customer(mocker):
     def create_mock(is_deleted) -> BusinessmanCustomerMockResult:
         mock_bc = MockModel(mock_name='businessman customer 1', is_deleted=is_deleted, businessman=None, customer=None,
