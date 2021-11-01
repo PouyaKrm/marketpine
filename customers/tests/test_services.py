@@ -1,6 +1,7 @@
 import pytest
+from django.core.exceptions import ObjectDoesNotExist
 
-from customers.services import add_customer
+from customers.services import add_customer, get_customer_by_phone_or_create
 from users.models import Customer, BusinessmanCustomer
 from customers.tests.test_conf import *
 
@@ -62,3 +63,23 @@ def test__add_customer__customer_is_created(mocker, mocked_customer_deleted, moc
         low_credit_error_code=None
     )
     assert result == create_customer_mock.return_value
+
+
+def test__get_customer_by_phone_or_create__return_already_created_customer(mocker, mocked_customer):
+    mock = mocker.patch('customers.services.get_customer_by_phone', return_value=mocked_customer.customer)
+
+    result = get_customer_by_phone_or_create(phone=mocked_customer.customer.phone)
+
+    mock.assert_called_once_with(phone=mocked_customer.customer.phone)
+    assert result == mocked_customer.customer
+
+
+def test__get_customer_by_phone_or_create__creates_new_customer(mocker, mocked_customer):
+    phone = 'fake'
+    mock = mocker.patch('customers.services.get_customer_by_phone', side_effect=ObjectDoesNotExist())
+
+    result = get_customer_by_phone_or_create(phone=phone)
+
+    mock.assert_called_once_with(phone=phone)
+    obj = Customer.objects.get(phone=phone)
+    assert result == obj

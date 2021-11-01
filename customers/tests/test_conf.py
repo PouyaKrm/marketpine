@@ -5,7 +5,7 @@ from django.utils import timezone
 from django_mock_queries.query import MockModel, MockSet
 from faker import Faker
 
-from users.models import BusinessmanCustomer
+from users.models import BusinessmanCustomer, Customer
 
 
 class BusinessmanCustomerMockResult:
@@ -35,7 +35,7 @@ def create_mocked_customer(mocker):
         b = MockModel(mock_name='businessman 1', customers=None, connected_customers=mock_bc)
         c = MockModel(mock_name='customer 1', phone='123', connected_businessmans=mock_bc, businessmans=MockSet(b),
                       id=1)
-        qs = MockSet(c)
+        qs = MockSet(c, model=Customer)
         mock_bc.businessman = b
         mock_bc.customer = c
         mock_bc.save()
