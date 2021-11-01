@@ -6,7 +6,7 @@ from base_app.tests import *
 from customers.tests.test_conf import *
 from customers.selectors import customer_exists_by_phone, customer_exists, customer_exists_by_id, get_customer, \
     get_customer_by_id, get_customer_by_businessman_and_phone, get_date_joined, is_phone_number_unique_for_register, \
-    is_phone_number_unique
+    is_phone_number_unique, get_businessmancustomer_delete_check
 
 pytestmark = pytest.mark.unit
 
@@ -125,3 +125,15 @@ def test__is_phone_number_unique__returns_true(mocked_customer):
     result = is_phone_number_unique(phone=random_mobile_phone())
 
     assert result
+
+
+def test__get_businessmancustomer_delete_check__raises__error(mocked_customer, mocked_businessman):
+    with pytest.raises(ApplicationErrorException):
+        get_businessmancustomer_delete_check(businessman=mocked_businessman.first(), customer=mocked_customer.customer)
+
+
+def test__get_businessmancustomer_delete_check__success(mocked_customer):
+    result = get_businessmancustomer_delete_check(businessman=mocked_customer.businessman,
+                                                  customer=mocked_customer.customer)
+
+    assert result == mocked_customer.businessman_customer
