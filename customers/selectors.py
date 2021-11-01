@@ -78,19 +78,24 @@ def get_customer_by_businessman_and_phone(*args, businessman: Businessman, phone
                                              )
         return bc.customer
     except ObjectDoesNotExist as ex:
-        raise ApplicationErrorCodes.get_exception(ApplicationErrorCodes.RECORD_NOT_FOUND, ex)
+        throw_exception(error_code=ApplicationErrorCodes.RECORD_NOT_FOUND, original_exception=ex)
 
 
-def get_date_joined(*args, customer: Customer, businessman=Businessman):
-    return BusinessmanCustomer.objects.get(customer=customer, businessman=businessman).create_date
+def get_date_joined(*args, businessman: Businessman, customer: Customer):
+    try:
+        return BusinessmanCustomer.objects.get(customer=customer, businessman=businessman).create_date
+    except ObjectDoesNotExist as ex:
+        throw_exception(error_code=ApplicationErrorCodes.RECORD_NOT_FOUND, original_exception=ex)
 
 
 def is_phone_number_unique_for_register(*args, businessman: Businessman, phone: str) -> bool:
-    return not businessman.customers.filter(phone=phone, connected_businessmans__is_deleted=False).exists()
+    return not BusinessmanCustomer.objects.filter(businessman=businessman, customer__phone=phone,
+                                                  is_deleted=False).exists()
+    # return not businessman.customers.filter(phone=phone, connected_businessmans__is_deleted=False).exists()
 
 
 def is_phone_number_unique(*args, phone: str) -> bool:
-    return Customer.objects.filter(phone=phone).exists()
+    return not Customer.objects.filter(phone=phone).exists()
 
 
 def get_businessmancustomer_delete_check(*args, businessman: Businessman, customer: Customer) -> BusinessmanCustomer:
