@@ -2,7 +2,7 @@ import pytest
 from django.core.exceptions import ObjectDoesNotExist
 
 from customers.services import add_customer, get_customer_by_phone_or_create, _join_customer_to_businessman, \
-    _create_customer_join_to_businessman
+    _create_customer_join_to_businessman, _reset_customer_group_send_welcome_message
 from users.models import Customer, BusinessmanCustomer
 from customers.tests.test_conf import *
 from base_app.tests import *
@@ -35,6 +35,11 @@ def mocked_wallet_payment_for_customer_added(mocker):
 @pytest.fixture
 def mocked__reset_customer_group_send_welcome_message(mocker):
     return mocker.patch('customers.services._reset_customer_group_send_welcome_message', return_value=None)
+
+
+@pytest.fixture
+def mocked_send_welcome_message(mocker):
+    return mocker.patch('customers.services.send_welcome_message')
 
 
 def test__add_customer__customer_already_deleted(mocker,
@@ -202,3 +207,29 @@ def test___create_customer_join_to_businessman(businessman_1,
     mocked__reset_customer_group_send_welcome_message.assert_called_once_with(businessman=businessman_1,
                                                                               customer=cq.first(),
                                                                               groups=groups)
+
+
+def test___reset_customer_group_send_welcome_message__groups_is_none(mocker, businessman_1, customer_1,
+                                                                     mocked_send_welcome_message):
+    reset_mock = mocker.patch('customers.services.reset_customer_groups')
+
+    result = _reset_customer_group_send_welcome_message(businessman=businessman_1,
+                                                        customer=customer_1)
+
+    mocked_send_welcome_message.assert_called_once_with(businessman=businessman_1, customer=customer_1)
+    reset_mock.assert_not_called()
+    assert result == customer_1
+
+
+def test___reset_customer_group_send_welcome_message__groups_is_not_none(mocker,
+                                                                         businessman_1,
+                                                                         customer_1,
+                                                                         mocked_send_welcome_message):
+    reset_mock = mocker.patch('customers.services.reset_customer_groups')
+    groups = [1]
+
+    result = _reset_customer_group_send_welcome_message(businessman=businessman_1, customer=customer_1, groups=groups)
+
+    mocked_send_welcome_message.assert_called_once_with(businessman=businessman_1, customer=customer_1)
+    reset_mock.assert_called_once_with(businessman=businessman_1, customer=customer_1, groups=groups)
+    assert result == customer_1

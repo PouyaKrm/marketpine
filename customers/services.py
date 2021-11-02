@@ -8,7 +8,7 @@ from base_app.error_codes import ApplicationErrorCodes
 from base_app.services import BaseService, throw_exception
 from customers.selectors import _get_businessman_customer_relation, get_businessman_customers, get_customer_by_phone, \
     get_businessman_customer_by_id, get_businessmans_of_customer, is_phone_number_unique_for_register
-from smspanel.services import sms_message_service
+from smspanel.services import sms_message_service, send_welcome_message
 from users.models import Customer, Businessman, BusinessmanCustomer
 
 
@@ -298,7 +298,7 @@ def _create_customer_join_to_businessman(*args, businessman: Businessman, joined
 
 def _reset_customer_group_send_welcome_message(*args, businessman: Businessman, customer: Customer,
                                                groups: list = None):
-    sms_message_service.send_welcome_message(businessman, customer)
+    send_welcome_message(businessman=businessman, customer=customer)
     if groups is not None:
         reset_customer_groups(businessman=businessman, customer=customer, groups=groups)
     return customer
