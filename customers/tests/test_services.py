@@ -4,6 +4,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from customers.services import add_customer, get_customer_by_phone_or_create
 from users.models import Customer, BusinessmanCustomer
 from customers.tests.test_conf import *
+from base_app.tests import *
 
 pytestmark = pytest.mark.unit
 
@@ -25,25 +26,31 @@ def mocked_phone_number_unique_for_register(mocker):
     mocker.patch('customers.services._check_is_phone_number_unique_for_register', return_value=None)
 
 
-def test__add_customer__customer_already_deleted(mocker, mocked_customer_deleted,
+def test__add_customer__customer_already_deleted(mocker,
+                                                 businessman_1_with_deleted_customer_tuple,
                                                  mocked_phone_number_unique_for_register):
-    relation_mock = mock__get_businessman_customer_relation(mocker, mocked_customer_deleted.businessman_customer)
-    join_mock = mock__join_customer_to_businessman(mocker, mocked_customer_deleted.customer)
+    businessman = businessman_1_with_deleted_customer_tuple[0]
+    customer = businessman_1_with_deleted_customer_tuple[1][0]
+    bc = businessman_1_with_deleted_customer_tuple[2][0]
+    relation_mock = mock__get_businessman_customer_relation(mocker, bc)
+    join_mock = mock__join_customer_to_businessman(mocker, customer)
     create_customer_mock = mock__create_customer_join_to_businessman(mocker)
 
-    result = add_customer(businessman=mocked_customer_deleted.businessman, phone=mocked_customer_deleted.customer.phone)
+    result = add_customer(businessman=businessman, phone=customer.phone)
 
-    relation_mock.assert_called_once_with(businessman=mocked_customer_deleted.businessman,
-                                          customer=mocked_customer_deleted.customer)
+    relation_mock.assert_called_once_with(
+        businessman=businessman,
+        customer=customer
+    )
     join_mock.assert_not_called()
     create_customer_mock.assert_not_called()
-    assert not mocked_customer_deleted.businessman_customer.is_deleted
-    assert result == mocked_customer_deleted.customer
+    assert not bc.is_deleted
+    assert result == customer
 
 
-def test__add_customer__customer_is_created(mocker, mocked_customer_deleted, mocked_businessman,
+def test__add_customer__customer_is_created(mocker, businessman_1,
                                             mocked_phone_number_unique_for_register):
-    b = mocked_businessman.first()
+    b = businessman_1
     phone = 'fake'
     full_name = ''
     relation_mock = mock__get_businessman_customer_relation(mocker, None)
@@ -65,16 +72,16 @@ def test__add_customer__customer_is_created(mocker, mocked_customer_deleted, moc
     assert result == create_customer_mock.return_value
 
 
-def test__get_customer_by_phone_or_create__return_already_created_customer(mocker, mocked_customer):
-    mock = mocker.patch('customers.services.get_customer_by_phone', return_value=mocked_customer.customer)
+def test__get_customer_by_phone_or_create__return_already_created_customer(mocker, customer_1):
+    mock = mocker.patch('customers.services.get_customer_by_phone', return_value=customer_1)
 
-    result = get_customer_by_phone_or_create(phone=mocked_customer.customer.phone)
+    result = get_customer_by_phone_or_create(phone=customer_1.phone)
 
-    mock.assert_called_once_with(phone=mocked_customer.customer.phone)
-    assert result == mocked_customer.customer
+    mock.assert_called_once_with(phone=customer_1.phone)
+    assert result == customer_1
 
 
-def test__get_customer_by_phone_or_create__creates_new_customer(mocker, mocked_customer):
+def test__get_customer_by_phone_or_create__creates_new_customer(db, mocker):
     phone = 'fake'
     mock = mocker.patch('customers.services.get_customer_by_phone', side_effect=ObjectDoesNotExist())
 
