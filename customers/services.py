@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Optional
 
 from django.core.exceptions import ObjectDoesNotExist
@@ -304,11 +305,11 @@ def _reset_customer_group_send_welcome_message(*args, businessman: Businessman, 
     return customer
 
 
-def customer_registered_in_date(*args, businessman: Businessman, date):
+def customer_registered_in_date(*args, businessman: Businessman, create_date: datetime) -> QuerySet:
     return get_businessman_customers(businessman=businessman).filter(
-        connected_businessmans__create_date__year=date.year,
-        connected_businessmans__create_date__month=date.month,
-        connected_businessmans__create_date__day=date.day
+        connected_businessmans__create_date__year=create_date.year,
+        connected_businessmans__create_date__month=create_date.month,
+        connected_businessmans__create_date__day=create_date.day
     )
 
 

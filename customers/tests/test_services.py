@@ -2,7 +2,7 @@ import pytest
 from django.core.exceptions import ObjectDoesNotExist
 
 from customers.services import add_customer, get_customer_by_phone_or_create, _join_customer_to_businessman, \
-    _create_customer_join_to_businessman, _reset_customer_group_send_welcome_message
+    _create_customer_join_to_businessman, _reset_customer_group_send_welcome_message, customer_registered_in_date
 from users.models import Customer, BusinessmanCustomer
 from customers.tests.test_conf import *
 from base_app.tests import *
@@ -233,3 +233,13 @@ def test___reset_customer_group_send_welcome_message__groups_is_not_none(mocker,
     mocked_send_welcome_message.assert_called_once_with(businessman=businessman_1, customer=customer_1)
     reset_mock.assert_called_once_with(businessman=businessman_1, customer=customer_1, groups=groups)
     assert result == customer_1
+
+
+def test__customer_registered_in_date(businessman_1_with_customer_tuple):
+    d = businessman_1_with_customer_tuple[2][0].create_date
+
+    result = customer_registered_in_date(businessman=businessman_1_with_customer_tuple[0], create_date=d)
+
+    result = list(result)
+    t = TestCase()
+    t.assertCountEqual(list(result), businessman_1_with_customer_tuple[1])
