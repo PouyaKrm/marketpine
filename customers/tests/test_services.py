@@ -1,7 +1,8 @@
 import pytest
 from django.core.exceptions import ObjectDoesNotExist
 
-from customers.services import add_customer, get_customer_by_phone_or_create
+from customers.services import add_customer, get_customer_by_phone_or_create, _join_customer_to_businessman, \
+    _create_customer_join_to_businessman
 from users.models import Customer, BusinessmanCustomer
 from customers.tests.test_conf import *
 from base_app.tests import *
@@ -24,6 +25,16 @@ def mock__create_customer_join_to_businessman(mocker):
 @pytest.fixture
 def mocked_phone_number_unique_for_register(mocker):
     mocker.patch('customers.services._check_is_phone_number_unique_for_register', return_value=None)
+
+
+@pytest.fixture
+def mocked_wallet_payment_for_customer_added(mocker):
+    return mocker.patch('payment.services.wallet_billing_service.payment_for_customer_added', return_value=None)
+
+
+@pytest.fixture
+def mocked__reset_customer_group_send_welcome_message(mocker):
+    return mocker.patch('customers.services._reset_customer_group_send_welcome_message', return_value=None)
 
 
 def test__add_customer__customer_already_deleted(mocker,
@@ -90,3 +101,104 @@ def test__get_customer_by_phone_or_create__creates_new_customer(db, mocker):
     mock.assert_called_once_with(phone=phone)
     obj = Customer.objects.get(phone=phone)
     assert result == obj
+
+
+def test___join_customer_to_businessman__transaction(mocked__reset_customer_group_send_welcome_message,
+                                                     mocked_wallet_payment_for_customer_added,
+                                                     businessman_1,
+                                                     customer_1):
+    mocked_wallet_payment_for_customer_added.side_effect = Exception('fake')
+    with pytest.raises(Exception):
+        _join_customer_to_businessman(businessman=businessman_1,
+                                      customer=customer_1,
+                                      joined_by=BusinessmanCustomer.JOINED_BY_PANEL,
+                                      groups=[],
+                                      low_credit_error_code=None)
+
+    exists = BusinessmanCustomer.objects.filter(
+        businessman=businessman_1,
+        customer=customer_1,
+        joined_by=BusinessmanCustomer.JOINED_BY_PANEL
+    ).exists()
+
+    assert not exists
+
+
+def test___join_customer_to_businessman__success(customer_1, businessman_1,
+                                                 mocked__reset_customer_group_send_welcome_message,
+                                                 mocked_wallet_payment_for_customer_added
+                                                 ):
+    joined_by = BusinessmanCustomer.JOINED_BY_PANEL
+    groups = []
+    low_credit_error_code = None
+
+    _join_customer_to_businessman(
+        businessman=businessman_1,
+        customer=customer_1,
+        joined_by=joined_by,
+        groups=groups,
+        low_credit_error_code=low_credit_error_code
+    )
+
+    q = BusinessmanCustomer.objects.filter(
+        businessman=businessman_1,
+        customer=customer_1,
+        joined_by=BusinessmanCustomer.JOINED_BY_PANEL
+    )
+    assert q.exists()
+    mocked_wallet_payment_for_customer_added.assert_called_once_with(q.first(), low_credit_error_code)
+    mocked__reset_customer_group_send_welcome_message.assert_called_once_with(
+        businessman=businessman_1,
+        customer=customer_1,
+        groups=groups
+    )
+
+
+def test___create_customer_join_to_businessman__transaction(
+        mocked_wallet_payment_for_customer_added,
+        mocked__reset_customer_group_send_welcome_message,
+        businessman_1, customer_1):
+    mocked_wallet_payment_for_customer_added.side_effect = Exception('fast')
+    phone = 'fake'
+    with pytest.raises(Exception):
+        _create_customer_join_to_businessman(
+            businessman=businessman_1,
+            joined_by=BusinessmanCustomer.JOINED_BY_CUSTOMER_APP,
+            phone=phone
+        )
+
+    q = BusinessmanCustomer.objects.filter(
+        businessman=businessman_1,
+        businessman__phone=phone
+    )
+
+    assert not q.exists()
+
+
+def test___create_customer_join_to_businessman(businessman_1,
+                                               mocked_wallet_payment_for_customer_added,
+                                               mocked__reset_customer_group_send_welcome_message
+                                               ):
+    phone = 'fake'
+    joined_by = 'joined_by'
+    full_name = 'full name'
+    groups = None
+    low_error_code = None
+
+    result = _create_customer_join_to_businessman(businessman=businessman_1,
+                                                  joined_by=joined_by,
+                                                  phone=phone,
+                                                  full_name=full_name,
+                                                  groups=groups,
+                                                  low_credit_error_code=low_error_code
+                                                  )
+
+    cq = Customer.objects.filter(phone=phone, full_name=full_name)
+    bcq = BusinessmanCustomer.objects.filter(businessman=businessman_1, customer=cq.first(), joined_by=joined_by)
+    assert cq.exists()
+    assert result == cq.first()
+    assert bcq.exists()
+    mocked_wallet_payment_for_customer_added.assert_called_once_with(bcq.first(), low_error_code)
+    mocked__reset_customer_group_send_welcome_message.assert_called_once_with(businessman=businessman_1,
+                                                                              customer=cq.first(),
+                                                                              groups=groups)

@@ -268,8 +268,14 @@ def get_customer_by_phone_or_create(*args, phone) -> Customer:
         return Customer.objects.create(phone=phone)
 
 
-def _join_customer_to_businessman(*args, businessman: Businessman, customer: Customer, joined_by,
-                                  groups: list, low_credit_error_code: dict = None) -> Customer:
+def _join_customer_to_businessman(
+        *args,
+        businessman: Businessman,
+        customer: Customer,
+        joined_by,
+        groups: list,
+        low_credit_error_code: dict = None
+) -> Customer:
     from payment.services import wallet_billing_service
     with transaction.atomic():
         bc = BusinessmanCustomer.objects.create(customer=customer, businessman=businessman, joined_by=joined_by)
@@ -278,9 +284,9 @@ def _join_customer_to_businessman(*args, businessman: Businessman, customer: Cus
         return customer
 
 
-def _create_customer_join_to_businessman(*args, businessman: Businessman, joined_by, phone: str,
-                                         full_name: str = None, groups: list = None,
-                                         low_credit_error_code: dict = None) -> Customer:
+def _create_customer_join_to_businessman(*args, businessman: Businessman, joined_by,
+                                         phone: str, full_name: str = None,
+                                         groups: list = None, low_credit_error_code: dict = None) -> Customer:
     from payment.services import wallet_billing_service
     with transaction.atomic():
         c = Customer.objects.create(phone=phone, full_name=full_name)
@@ -404,5 +410,3 @@ def _check_is_phone_number_unique_for_register(*args, businessman: Businessman, 
     is_unique = is_phone_number_unique_for_register(businessman=businessman, phone=phone)
     if not is_unique:
         raise ApplicationErrorCodes.get_exception(ApplicationErrorCodes.PHONE_NUMBER_IS_NOT_UNIQUE)
-
-
