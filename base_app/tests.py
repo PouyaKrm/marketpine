@@ -82,7 +82,6 @@ def create_b() -> Businessman:
 
 @pytest.fixture
 def create_businessman(db):
-
     def create_user(
             is_active=True,
             business_name=fake.name()
@@ -191,13 +190,28 @@ def businessman_with_customer_tuple(db, create_businessman_with_customers) -> Tu
 
 @pytest.fixture
 def businessman_1_with_customer_tuple(db, create_businessman_new_customer, businessman_1) -> Tuple[
-    Businessman, List[Customer]]:
+    Businessman, List[Customer], List[BusinessmanCustomer]]:
     customers = []
+    bcs = []
     for _ in range(10):
         bc = create_businessman_new_customer(businessman_1, False)
         customers.append(bc.customer)
+        bcs.append(bc)
 
-    return businessman_1, customers
+    return businessman_1, customers, bcs
+
+
+@pytest.fixture
+def businessman_1_with_deleted_customer_tuple(db, create_businessman_new_customer, businessman_1) -> Tuple[
+    Businessman, List[Customer], List[BusinessmanCustomer]]:
+    customers = []
+    bcs = []
+    for _ in range(10):
+        bc = create_businessman_new_customer(businessman_1, True)
+        customers.append(bc.customer)
+        bcs.append(bc)
+
+    return businessman_1, customers, bcs
 
 
 @pytest.fixture
