@@ -378,6 +378,7 @@ def _can_edit_phone_number_value(*args, businessman: Businessman, customer: Cust
     businessmans = get_businessmans_of_customer(customer=customer)
     if is_unique:
         return businessmans.exclude(id=businessman.id).count() == 0
+    return False
 
 
 def _can_edit_phone_number_by_change_customer(*args, businessman: Businessman, customer: Customer, phone: str):

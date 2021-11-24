@@ -5,7 +5,7 @@ from base_app.error_codes import ApplicationErrorException
 from customers.services import add_customer, get_customer_by_phone_or_create, _join_customer_to_businessman, \
     _create_customer_join_to_businessman, _reset_customer_group_send_welcome_message, customer_registered_in_date, \
     delete_customer_for_businessman, can_edit_phone, edit_customer_phone, edit_full_name, edit_customer_phone_full_name, \
-    can_edit_full_name
+    can_edit_full_name, _can_edit_phone_number_value
 from users.models import Customer, BusinessmanCustomer
 from customers.tests.test_conf import *
 from base_app.tests import *
@@ -446,3 +446,35 @@ def test__can_edit_full_name__returns_true(businessman_1_with_customer_tuple):
     result = can_edit_full_name(businessman=b, customer=c)
 
     assert result
+
+
+def test___can_edit_phone_number_value__phone_number_is_not_unique(mocker, businessman_1_with_customer_tuple):
+    b = businessman_1_with_customer_tuple[0]
+    c = businessman_1_with_customer_tuple[1][0]
+    phone = 'phone'
+    mocked_is_unique = mocker.patch('customers.services.is_phone_number_unique_for_update', return_value=False)
+    mocked_get_businessmans = mocker.patch('customers.services.get_businessmans_of_customer',
+                                           return_value=Businessman.objects.filter(id=b.id)
+                                           )
+
+    result = _can_edit_phone_number_value(businessman=b, customer=c, phone=phone)
+
+    assert not result
+    mocked_is_unique.assert_called_once_with(businessman=b, customer_id=c.id, phone=phone)
+    mocked_get_businessmans.assert_called_once_with(customer=c)
+
+
+def test___can_edit_phone_number_value__returns_true(mocker, businessman_1_with_customer_tuple):
+    b = businessman_1_with_customer_tuple[0]
+    c = businessman_1_with_customer_tuple[1][0]
+    phone = 'phone'
+    mocked_is_unique = mocker.patch('customers.services.is_phone_number_unique_for_update', return_value=True)
+    mocked_get_businessmans = mocker.patch('customers.services.get_businessmans_of_customer',
+                                           return_value=Businessman.objects.filter(id=b.id)
+                                           )
+
+    result = _can_edit_phone_number_value(businessman=b, customer=c, phone=phone)
+
+    assert result
+    mocked_is_unique.assert_called_once_with(businessman=b, customer_id=c.id, phone=phone)
+    mocked_get_businessmans.assert_called_once_with(customer=c)
