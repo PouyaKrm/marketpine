@@ -6,7 +6,8 @@ from customers.services import add_customer, get_customer_by_phone_or_create, _j
     _create_customer_join_to_businessman, _reset_customer_group_send_welcome_message, customer_registered_in_date, \
     delete_customer_for_businessman, can_edit_phone, edit_customer_phone, edit_full_name, edit_customer_phone_full_name, \
     can_edit_full_name, _can_edit_phone_number_value, _can_edit_phone_number_by_change_customer, \
-    is_phone_number_unique_for_update, _update_customer_phone_full_name
+    is_phone_number_unique_for_update, _update_customer_phone_full_name, reset_customer_groups
+from groups.models import BusinessmanGroups
 from users.models import Customer, BusinessmanCustomer
 from customers.tests.test_conf import *
 from base_app.tests import *
@@ -40,6 +41,10 @@ def mock__can_edit_full_name(mocker, return_value: bool):
 
 def mock__get_businessman_customer_by_id(mocker, customer: Customer):
     return mocker.patch('customers.services.get_businessman_customer_by_id', return_value=customer)
+
+
+def mock__reset_customer_groups(mocker):
+    return mocker.patch('groups.models.BusinessmanGroups.reset_customer_groups')
 
 
 @pytest.fixture
@@ -530,3 +535,25 @@ def test___update_customer_phone_full_name(customer_1):
     q = Customer.objects.filter(id=customer_1.id, phone=phone, full_name=full_name)
     assert q.exists()
     assert result == q.first()
+
+
+def test__reset_customer_groups__groups_is_none(mocker):
+    c = Customer()
+    mocked = mock__reset_customer_groups(mocker)
+
+    result = reset_customer_groups(businessman=Businessman(), customer=c, groups=None)
+
+    assert result == c
+    mocked.assert_not_called()
+
+
+def test__reset_customer_groups(mocker):
+    c = Customer()
+    b = Businessman()
+    groups = [BusinessmanGroups()]
+    mocked = mock__reset_customer_groups(mocker)
+
+    result = reset_customer_groups(businessman=b, customer=c, groups=groups)
+
+    assert result == c
+    mocked.assert_called_once_with(b, c, groups)
