@@ -1,3 +1,5 @@
+from typing import Optional
+
 import pytest
 from django.core.exceptions import ObjectDoesNotExist
 
@@ -6,7 +8,8 @@ from customers.services import add_customer, get_customer_by_phone_or_create, _j
     _create_customer_join_to_businessman, _reset_customer_group_send_welcome_message, customer_registered_in_date, \
     delete_customer_for_businessman, can_edit_phone, edit_customer_phone, edit_full_name, edit_customer_phone_full_name, \
     can_edit_full_name, _can_edit_phone_number_value, _can_edit_phone_number_by_change_customer, \
-    is_phone_number_unique_for_update, _update_customer_phone_full_name, reset_customer_groups
+    is_phone_number_unique_for_update, _update_customer_phone_full_name, reset_customer_groups, \
+    _check_is_phone_number_unique_for_register
 from groups.models import BusinessmanGroups
 from users.models import Customer, BusinessmanCustomer
 from customers.tests.test_conf import *
@@ -46,10 +49,9 @@ def mock__get_businessman_customer_by_id(mocker, customer: Customer):
 def mock__reset_customer_groups(mocker):
     return mocker.patch('groups.models.BusinessmanGroups.reset_customer_groups')
 
-
 @pytest.fixture
 def mocked_phone_number_unique_for_register(mocker):
-    mocker.patch('customers.services._check_is_phone_number_unique_for_register', return_value=None)
+    return mocker.patch('customers.services._check_is_phone_number_unique_for_register', return_value=None)
 
 
 @pytest.fixture
@@ -557,3 +559,24 @@ def test__reset_customer_groups(mocker):
 
     assert result == c
     mocked.assert_called_once_with(b, c, groups)
+
+
+def test___check_is_phone_number_unique_for_register__raises_error(mocker):
+    b = Businessman()
+    phone = 'fake'
+    mocked_is_unique = mocker.patch('customers.services.is_phone_number_unique_for_register', return_value=False)
+
+    with pytest.raises(ApplicationErrorException):
+        _check_is_phone_number_unique_for_register(businessman=b, phone=phone)
+
+    mocked_is_unique.assert_called_once_with(businessman=b, phone=phone)
+
+
+def test___check_is_phone_number_unique_for_register(mocker):
+    b = Businessman()
+    phone = 'fake'
+    mocked_is_unique = mocker.patch('customers.services.is_phone_number_unique_for_register', return_value=True)
+
+    _check_is_phone_number_unique_for_register(businessman=b, phone=phone)
+
+    mocked_is_unique.assert_called_once_with(businessman=b, phone=phone)
