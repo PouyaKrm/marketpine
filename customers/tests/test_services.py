@@ -5,7 +5,7 @@ from base_app.error_codes import ApplicationErrorException
 from customers.services import add_customer, get_customer_by_phone_or_create, _join_customer_to_businessman, \
     _create_customer_join_to_businessman, _reset_customer_group_send_welcome_message, customer_registered_in_date, \
     delete_customer_for_businessman, can_edit_phone, edit_customer_phone, edit_full_name, edit_customer_phone_full_name, \
-    can_edit_full_name, _can_edit_phone_number_value
+    can_edit_full_name, _can_edit_phone_number_value, _can_edit_phone_number_by_change_customer
 from users.models import Customer, BusinessmanCustomer
 from customers.tests.test_conf import *
 from base_app.tests import *
@@ -478,3 +478,23 @@ def test___can_edit_phone_number_value__returns_true(mocker, businessman_1_with_
     assert result
     mocked_is_unique.assert_called_once_with(businessman=b, customer_id=c.id, phone=phone)
     mocked_get_businessmans.assert_called_once_with(customer=c)
+
+
+def test___can_edit_phone_number_by_change_customer__returns_false(businessman_1_with_customer_tuple, customer_2,
+                                                                   create_businessmancustomer):
+    b = businessman_1_with_customer_tuple[0]
+    c = businessman_1_with_customer_tuple[1][0]
+    create_businessmancustomer(businessman=b, customer=customer_2)
+
+    result = _can_edit_phone_number_by_change_customer(businessman=b, customer=c, phone=customer_2.phone)
+
+    assert not result
+
+
+def test___can_edit_phone_number_by_change_customer__returns_true(businessman_1_with_customer_tuple, customer_2):
+    b = businessman_1_with_customer_tuple[0]
+    c = businessman_1_with_customer_tuple[1][0]
+
+    result = _can_edit_phone_number_by_change_customer(businessman=b, customer=c, phone=customer_2.phone)
+
+    assert result
