@@ -330,7 +330,7 @@ def can_edit_phone(*args, businessman: Businessman, customer: Customer, phone: s
 
 
 def edit_customer_phone(*args, businessman: Businessman, customer: Customer, phone: str) -> Customer:
-    if phone is None or not customer_service.can_edit_phone(businessman, customer, phone):
+    if phone is None or not can_edit_phone(businessman=businessman, customer=customer, phone=phone):
         return customer
 
     if customer.is_phone_confirmed:
@@ -352,7 +352,7 @@ def edit_customer_phone(*args, businessman: Businessman, customer: Customer, pho
     return customer
 
 
-def edit_full_name(*args, businessman: Businessman, customer: Customer, full_name) -> Customer:
+def edit_full_name(*args, businessman: Businessman, customer: Customer, full_name: str) -> Customer:
     can_edit = can_edit_full_name(businessman=businessman, customer=customer)
     if not can_edit:
         return customer
