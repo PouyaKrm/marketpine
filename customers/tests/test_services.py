@@ -4,7 +4,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from base_app.error_codes import ApplicationErrorException
 from customers.services import add_customer, get_customer_by_phone_or_create, _join_customer_to_businessman, \
     _create_customer_join_to_businessman, _reset_customer_group_send_welcome_message, customer_registered_in_date, \
-    delete_customer_for_businessman, can_edit_phone, edit_customer_phone
+    delete_customer_for_businessman, can_edit_phone, edit_customer_phone, edit_full_name
 from users.models import Customer, BusinessmanCustomer
 from customers.tests.test_conf import *
 from base_app.tests import *
@@ -30,6 +30,10 @@ def mock___can_edit_phone_number_value(mocker, return_value: bool):
 
 def mock___can_edit_phone_number_by_change_customer(mocker, return_value: bool):
     return mocker.patch('customers.services._can_edit_phone_number_by_change_customer', return_value=return_value)
+
+
+def mock__can_edit_full_name(mocker, return_value: bool):
+    return mocker.patch('customers.services.can_edit_full_name', return_value=return_value)
 
 
 @pytest.fixture
@@ -375,3 +379,28 @@ def test__test__edit_customer_phone__customer_change(mocker, businessman_1_with_
     mocked_can_change.assert_called_once_with(**call_params)
     mocked_get_customer.assert_called_once_with(phone=call_params['phone'])
     mocked_delete_customer.assert_called_once_with(businessman=b, customer_id=c.id)
+
+
+def test__edit_full_name__can_not_edit_full_name(mocker, businessman_1_with_customer_tuple):
+    mocked_can_edit = mock__can_edit_full_name(mocker, False)
+    b = businessman_1_with_customer_tuple[0]
+    c = businessman_1_with_customer_tuple[1][0]
+
+    result = edit_full_name(businessman=b, customer=c, full_name='name')
+
+    assert result == c
+    mocked_can_edit.assert_called_once_with(businessman=b, customer=c)
+
+
+def test__edit_full_name(mocker, businessman_1_with_customer_tuple):
+    b = businessman_1_with_customer_tuple[0]
+    c = businessman_1_with_customer_tuple[1][0]
+    full_name = 'fake'
+    mocked_can_edit = mock__can_edit_full_name(mocker, True)
+
+    result = edit_full_name(businessman=b, customer=c, full_name=full_name)
+
+    q = Customer.objects.filter(id=c.id, full_name=full_name)
+    assert q.exists()
+    assert result == q.first()
+    mocked_can_edit.assert_called_once_with(businessman=b, customer=c)
