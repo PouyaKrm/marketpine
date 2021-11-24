@@ -1,8 +1,10 @@
 import pytest
 from django.core.exceptions import ObjectDoesNotExist
 
+from base_app.error_codes import ApplicationErrorException
 from customers.services import add_customer, get_customer_by_phone_or_create, _join_customer_to_businessman, \
-    _create_customer_join_to_businessman, _reset_customer_group_send_welcome_message, customer_registered_in_date
+    _create_customer_join_to_businessman, _reset_customer_group_send_welcome_message, customer_registered_in_date, \
+    delete_customer_for_businessman
 from users.models import Customer, BusinessmanCustomer
 from customers.tests.test_conf import *
 from base_app.tests import *
@@ -243,3 +245,22 @@ def test__customer_registered_in_date(businessman_1_with_customer_tuple):
     result = list(result)
     t = TestCase()
     t.assertCountEqual(list(result), businessman_1_with_customer_tuple[1])
+
+
+def test__delete_customer_for_businessman__businessmmancustomer_not_found(businessman_1_with_customer_tuple):
+    with pytest.raises(ApplicationErrorException):
+        delete_customer_for_businessman(
+            businessman=businessman_1_with_customer_tuple[0],
+            customer_id=1000
+        )
+
+
+def test__delete_customer_for_businessman__success(businessman_1_with_customer_tuple):
+    b = businessman_1_with_customer_tuple[0]
+    c = businessman_1_with_customer_tuple[1][0]
+
+    result = delete_customer_for_businessman(businessman=b, customer_id=c.id)
+
+    assert result == c
+    bc = BusinessmanCustomer.objects.get(businessman=b, customer=c)
+    assert bc.is_deleted
