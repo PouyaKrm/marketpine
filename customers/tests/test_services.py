@@ -5,7 +5,8 @@ from base_app.error_codes import ApplicationErrorException
 from customers.services import add_customer, get_customer_by_phone_or_create, _join_customer_to_businessman, \
     _create_customer_join_to_businessman, _reset_customer_group_send_welcome_message, customer_registered_in_date, \
     delete_customer_for_businessman, can_edit_phone, edit_customer_phone, edit_full_name, edit_customer_phone_full_name, \
-    can_edit_full_name, _can_edit_phone_number_value, _can_edit_phone_number_by_change_customer
+    can_edit_full_name, _can_edit_phone_number_value, _can_edit_phone_number_by_change_customer, \
+    is_phone_number_unique_for_update
 from users.models import Customer, BusinessmanCustomer
 from customers.tests.test_conf import *
 from base_app.tests import *
@@ -496,5 +497,25 @@ def test___can_edit_phone_number_by_change_customer__returns_true(businessman_1_
     c = businessman_1_with_customer_tuple[1][0]
 
     result = _can_edit_phone_number_by_change_customer(businessman=b, customer=c, phone=customer_2.phone)
+
+    assert result
+
+
+def test__is_phone_number_unique_for_update__returns_false(businessman_1_with_customer_tuple):
+    b = businessman_1_with_customer_tuple[0]
+    c = businessman_1_with_customer_tuple[1][0]
+    c2 = businessman_1_with_customer_tuple[1][1]
+
+    result = is_phone_number_unique_for_update(businessman=b, customer_id=c.id, phone=c2.phone)
+
+    assert not result
+
+
+def test__is_phone_number_unique_for_update__returns_true(businessman_1_with_customer_tuple):
+    b = businessman_1_with_customer_tuple[0]
+    c = businessman_1_with_customer_tuple[1][0]
+    phone = 'fake'
+
+    result = is_phone_number_unique_for_update(businessman=b, customer_id=c.id, phone=phone)
 
     assert result
