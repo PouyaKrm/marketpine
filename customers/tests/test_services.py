@@ -4,7 +4,8 @@ from django.core.exceptions import ObjectDoesNotExist
 from base_app.error_codes import ApplicationErrorException
 from customers.services import add_customer, get_customer_by_phone_or_create, _join_customer_to_businessman, \
     _create_customer_join_to_businessman, _reset_customer_group_send_welcome_message, customer_registered_in_date, \
-    delete_customer_for_businessman, can_edit_phone, edit_customer_phone, edit_full_name, edit_customer_phone_full_name
+    delete_customer_for_businessman, can_edit_phone, edit_customer_phone, edit_full_name, edit_customer_phone_full_name, \
+    can_edit_full_name
 from users.models import Customer, BusinessmanCustomer
 from customers.tests.test_conf import *
 from base_app.tests import *
@@ -425,3 +426,23 @@ def test__edit_customer_phone_full_name(mocker, businessman_1_with_customer_tupl
     mocked_get_by_id.assert_called_once_with(businessman=b, customer_id=c.id)
     mocked_edit_phone.assert_called_once_with(businessman=b, customer=c, phone=phone)
     mocked_edit_full_name.assert_called_once_with(businessman=b, customer=c, full_name=full_name)
+
+
+def test__can_edit_full_name__returns_false(businessman_1_with_customer_tuple, businessman_2,
+                                            create_businessmancustomer):
+    b = businessman_1_with_customer_tuple[0]
+    c = businessman_1_with_customer_tuple[1][0]
+    create_businessmancustomer(businessman=businessman_2, customer=c)
+
+    result = can_edit_full_name(businessman=b, customer=c)
+
+    assert not result
+
+
+def test__can_edit_full_name__returns_true(businessman_1_with_customer_tuple):
+    b = businessman_1_with_customer_tuple[0]
+    c = businessman_1_with_customer_tuple[1][0]
+
+    result = can_edit_full_name(businessman=b, customer=c)
+
+    assert result

@@ -120,6 +120,14 @@ def create_customer(db):
 
 
 @pytest.fixture
+def create_businessmancustomer(db):
+    def create_bc(*args, businessman: Businessman, customer: Customer) -> BusinessmanCustomer:
+        return BusinessmanCustomer.objects.create(businessman=businessman, customer=customer, is_deleted=False)
+
+    return create_bc
+
+
+@pytest.fixture
 def customer_1(db, create_customer) -> Customer:
     return create_customer(phone=random_mobile_phone())
 
