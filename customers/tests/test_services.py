@@ -4,7 +4,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from base_app.error_codes import ApplicationErrorException
 from customers.services import add_customer, get_customer_by_phone_or_create, _join_customer_to_businessman, \
     _create_customer_join_to_businessman, _reset_customer_group_send_welcome_message, customer_registered_in_date, \
-    delete_customer_for_businessman
+    delete_customer_for_businessman, can_edit_phone
 from users.models import Customer, BusinessmanCustomer
 from customers.tests.test_conf import *
 from base_app.tests import *
@@ -22,6 +22,14 @@ def mock__join_customer_to_businessman(mocker, customer: Customer):
 
 def mock__create_customer_join_to_businessman(mocker):
     return mocker.patch('customers.services._create_customer_join_to_businessman', return_value=Customer(phone='phone'))
+
+
+def mock___can_edit_phone_number_value(mocker, return_value: bool):
+    return mocker.patch('customers.services._can_edit_phone_number_value', return_value=return_value)
+
+
+def mock___can_edit_phone_number_by_change_customer(mocker, return_value: bool):
+    return mocker.patch('customers.services._can_edit_phone_number_by_change_customer', return_value=return_value)
 
 
 @pytest.fixture
@@ -264,3 +272,20 @@ def test__delete_customer_for_businessman__success(businessman_1_with_customer_t
     assert result == c
     bc = BusinessmanCustomer.objects.get(businessman=b, customer=c)
     assert bc.is_deleted
+
+
+def test__can_edit_phone(mocker, businessman_1_with_customer_tuple):
+    mocked_can_edit_phone = mock___can_edit_phone_number_value(mocker, True)
+    mocked_change_customer = mock___can_edit_phone_number_by_change_customer(mocker, True)
+    c = businessman_1_with_customer_tuple[1][0]
+    call_params = {
+        'businessman': businessman_1_with_customer_tuple[0],
+        'customer': businessman_1_with_customer_tuple[1][0],
+        'phone': 'fake'
+    }
+
+    result = can_edit_phone(**call_params)
+
+    assert result == (not c.is_phone_confirmed)
+    mocked_can_edit_phone.assert_called_once_with(**call_params)
+    mocked_change_customer.assert_called_once_with(**call_params)
