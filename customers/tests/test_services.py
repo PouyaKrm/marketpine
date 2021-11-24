@@ -4,7 +4,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from base_app.error_codes import ApplicationErrorException
 from customers.services import add_customer, get_customer_by_phone_or_create, _join_customer_to_businessman, \
     _create_customer_join_to_businessman, _reset_customer_group_send_welcome_message, customer_registered_in_date, \
-    delete_customer_for_businessman, can_edit_phone
+    delete_customer_for_businessman, can_edit_phone, edit_customer_phone
 from users.models import Customer, BusinessmanCustomer
 from customers.tests.test_conf import *
 from base_app.tests import *
@@ -289,3 +289,89 @@ def test__can_edit_phone(mocker, businessman_1_with_customer_tuple):
     assert result == (not c.is_phone_confirmed)
     mocked_can_edit_phone.assert_called_once_with(**call_params)
     mocked_change_customer.assert_called_once_with(**call_params)
+
+
+def mock__can_edit_phone(mocker, return_value=True):
+    return mocker.patch('customers.services.can_edit_phone', return_value=return_value)
+
+
+def test__edit_customer_phone__phone_is_none(mocker, businessman_1_with_customer_tuple):
+    mocked_can_edit = mock__can_edit_phone(mocker, True)
+    c = businessman_1_with_customer_tuple[1][0]
+    call_params = {
+        'businessman': businessman_1_with_customer_tuple[0],
+        'customer': c,
+        'phone': None
+    }
+
+    result = edit_customer_phone(**call_params)
+
+    assert result == c
+    mocked_can_edit.assert_not_called()
+
+
+def test__edit_customer_phone__phone_is_confirmed(mocker, businessman_1_with_customer_tuple):
+    mocked_can_edit = mock__can_edit_phone(mocker, True)
+    c = businessman_1_with_customer_tuple[1][0]
+    c.is_phone_confirmed = True
+    c.save()
+    call_params = {
+        'businessman': businessman_1_with_customer_tuple[0],
+        'customer': c,
+        'phone': 'fake'
+    }
+
+    result = edit_customer_phone(**call_params)
+
+    assert result == c
+    mocked_can_edit.assert_called_once_with(**call_params)
+
+
+def test__edit_customer_phone__can_edit_phone_number_value(mocker, businessman_1_with_customer_tuple):
+    mocked_can_edit_phone = mock__can_edit_phone(mocker, True)
+    mocked_can_edit_value = mock___can_edit_phone_number_value(mocker, True)
+    mocked_can_change = mock___can_edit_phone_number_by_change_customer(mocker, True)
+    c = businessman_1_with_customer_tuple[1][0]
+    c.is_phone_confirmed = False
+    c.save()
+    call_params = {
+        'businessman': businessman_1_with_customer_tuple[0],
+        'customer': c,
+        'phone': 'fake'
+    }
+
+    result = edit_customer_phone(**call_params)
+
+    assert result.id == c.id
+    mocked_can_edit_phone.assert_called_once_with(**call_params)
+    mocked_can_edit_value.assert_called_once_with(**call_params)
+    mocked_can_change.assert_not_called()
+    assert result.phone == call_params['phone']
+
+
+def test__test__edit_customer_phone__customer_change(mocker, businessman_1_with_customer_tuple, customer_2):
+    mocked_can_edit = mock__can_edit_phone(mocker, True)
+    mocked_can_edit_value = mock___can_edit_phone_number_value(mocker, False)
+    mocked_can_change = mock___can_edit_phone_number_by_change_customer(mocker, True)
+    mocked_get_customer = mocker.patch('customers.services.get_customer_by_phone', return_value=customer_2)
+    mocked_delete_customer = mocker.patch('customers.services.delete_customer_for_businessman')
+    b = businessman_1_with_customer_tuple[0]
+    c = businessman_1_with_customer_tuple[1][0]
+    c.is_phone_confirmed = False
+    c.save()
+    call_params = {
+        'businessman': b,
+        'customer': c,
+        'phone': 'fake'
+    }
+
+    result = edit_customer_phone(**call_params)
+
+    assert result == customer_2
+    exist = BusinessmanCustomer.objects.filter(businessman=b, customer=customer_2, is_deleted=False).exists()
+    assert exist
+    mocked_can_edit.assert_called_once_with(**call_params)
+    mocked_can_edit_value.assert_called_once_with(**call_params)
+    mocked_can_change.assert_called_once_with(**call_params)
+    mocked_get_customer.assert_called_once_with(phone=call_params['phone'])
+    mocked_delete_customer.assert_called_once_with(businessman=b, customer_id=c.id)
