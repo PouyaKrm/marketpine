@@ -18,6 +18,7 @@ from panelprofile.services import sms_panel_info_service, business_man_auth_doc_
 from payment.services import wallet_billing_service
 from users.models import Businessman, VerificationCodes, BusinessmanRefreshTokens, BusinessCategory, \
     PhoneChangeVerification
+from users.selectors import _check_username_is_unique, _check_phone_is_unique, _check_email_is_unique
 
 customer_frontend_paths = settings.CUSTOMER_APP_FRONTEND_PATHS
 
@@ -378,3 +379,55 @@ class VerificationService:
 
 verification_service = VerificationService()
 businessman_service = BusinessmanService()
+
+
+def register_user(
+        *args,
+        username: str,
+        password: str,
+        phone: str,
+        email: str,
+        first_name: str,
+        last_name: str) -> Businessman:
+    _check_username_is_unique(username=username)
+    _check_phone_is_unique(phone)
+    _check_email_is_unique(email=email)
+    b = Businessman.objects.create(
+        username=username,
+        phone=phone,
+        email=email,
+        first_name=first_name,
+        last_name=last_name,
+        is_active=True)
+    b.set_password(password)
+    b.save()
+    wallet_billing_service.get_businessman_wallet_or_create(b)
+    return b
+
+
+def update_businessman_profile(
+        *args,
+        user: Businessman, first_name: str, last_name: str,
+        business_name: str,
+        category: BusinessCategory, phone: str = None, email: str = None,
+        viewed_intro: bool = None) -> Businessman:
+    if first_name is not None and user.authorized == Businessman.AUTHORIZATION_UNAUTHORIZED:
+        user.first_name = first_name
+    if last_name is not None and user.authorized == Businessman.AUTHORIZATION_UNAUTHORIZED:
+        user.last_name = last_name
+    if business_name is not None:
+        user.business_name = business_name
+    is_unique = is_phone_unique_for_update(user, phone)
+    if phone is not None and not user.is_phone_verified and not is_unique:
+        raise ApplicationErrorCodes.get_exception(ApplicationErrorCodes.PHONE_NUMBER_IS_NOT_UNIQUE)
+    elif phone is not None and not user.is_phone_verified and is_unique:
+        user.phone = phone
+
+    if category is not None:
+        user.business_category = category
+
+    if viewed_intro is not None:
+        user.viewed_intro = viewed_intro
+
+    user.save()
+    return user
