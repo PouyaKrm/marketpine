@@ -63,7 +63,7 @@ class BusinessmanCustomerListAPIView(APIView):
         except ValueError:
             pass
 
-        return query.all()
+        return query.order_by('-membership__create_date').all()
 
     def get_serializer_context(self):
         g_id = self.request.query_params.get('is_group_member')
