@@ -55,6 +55,7 @@ class CustomerListCreateSerializer(serializers.ModelSerializer):
         self.discount_service = DiscountService()
 
     phone = serializers.CharField(max_length=15, validators=[phone_validator])
+    purchase_price = serializers.IntegerField(min_value=1000, required=False, write_only=True)
     groups = BusinessmanGroupRelatedField(write_only=True, required=False, many=True)
     purchase_sum = serializers.SerializerMethodField(read_only=True)
     purchase_discount_sum = serializers.SerializerMethodField(read_only=True)
@@ -74,6 +75,7 @@ class CustomerListCreateSerializer(serializers.ModelSerializer):
             'phone',
             'groups',
             'full_name',
+            'purchase_price',
             'telegram_id',
             'instagram_id',
             'purchase_sum',

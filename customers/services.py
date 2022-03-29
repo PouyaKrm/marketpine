@@ -58,7 +58,8 @@ class CustomerService(BaseService):
 
     def add_customer(self, businessman: Businessman, phone: str, full_name='', groups: list = None,
                      joined_by=BusinessmanCustomer.JOINED_BY_PANEL,
-                     low_credit_error_code: dict = None) -> Customer:
+                     low_credit_error_code: dict = None, purchase_price=None) -> Customer:
+        from customerpurchase.services import purchase_service
         self._check_is_phone_number_unique_for_register(businessman, phone)
         c = None
         try:
@@ -72,6 +73,12 @@ class CustomerService(BaseService):
         except ObjectDoesNotExist:
             c = self._create_customer_join_to_businessman(businessman, joined_by, phone, full_name, groups,
                                                           low_credit_error_code)
+
+        if purchase_price is not None:
+            purchase_service.add_customer_purchase(
+                user=businessman, customer=c,
+                amount=purchase_price
+            )
         return c
 
     def _join_customer_to_businessman(self, businessman: Businessman, customer: Customer, joined_by,
@@ -168,7 +175,8 @@ class CustomerService(BaseService):
         c.save()
         return c
 
-    def edit_customer_phone_full_name(self, user: Businessman, customer_id: int, phone: str = None, full_name: str = None) -> Customer:
+    def edit_customer_phone_full_name(self, user: Businessman, customer_id: int, phone: str = None,
+                                      full_name: str = None) -> Customer:
         customer = self.get_businessman_customer_by_id(user, customer_id)
         self.edit_customer_phone(user, customer, phone)
         self.edit_full_name(user, customer, full_name)
@@ -212,7 +220,6 @@ class CustomerService(BaseService):
         except ObjectDoesNotExist:
             return Customer.objects.create(phone=phone)
 
-
     def _check_is_phone_number_unique_for_register(self, user: Businessman, phone: str):
         is_unique = self.is_phone_number_unique_for_register(user, phone)
         if not is_unique:
@@ -226,4 +233,3 @@ class CustomerService(BaseService):
 
 
 customer_service = CustomerService()
-

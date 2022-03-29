@@ -30,7 +30,9 @@ class BusinessmanCustomerListAPIView(APIView):
         c = customer_service.add_customer(
             request.user, sr.validated_data.get('phone'),
             sr.validated_data.get('full_name'),
-            sr.validated_data.get('groups'))
+            sr.validated_data.get('groups'),
+            purchase_price=sr.validated_data.get('purchase_price')
+        )
 
         sr = CustomerListCreateSerializer(c, context=self.get_serializer_context())
         return ok(sr.data)
