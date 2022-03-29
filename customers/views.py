@@ -95,7 +95,7 @@ class BusinessmanCustomerRetrieveAPIView(APIView):
     lookup_field = 'id'
 
     def get_serializer_context(self):
-        return {'user': self.request.user, 'customer_id': self.kwargs.get('id')}
+        return {'user': self.request.user, 'customer_id': self.kwargs.get('customer_id')}
 
     def get(self, request: Request, customer_id: int):
         c = customer_service.get_businessman_customer_by_id(request.user, customer_id)
@@ -116,7 +116,8 @@ class BusinessmanCustomerRetrieveAPIView(APIView):
             request.user,
             customer_id,
             sr.validated_data.get('phone'),
-            sr.validated_data.get('full_name')
+            sr.validated_data.get('full_name'),
+            purchase_price=sr.validated_data.get('purchase_price')
         )
         sr = CustomerSerializer(c, context=self.get_serializer_context())
         return ok(sr.data)

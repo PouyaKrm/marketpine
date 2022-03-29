@@ -176,14 +176,19 @@ class CustomerService(BaseService):
         return c
 
     def edit_customer_phone_full_name(self, user: Businessman, customer_id: int, phone: str = None,
-                                      full_name: str = None) -> Customer:
+                                      full_name: str = None, purchase_price=None) -> Customer:
         customer = self.get_businessman_customer_by_id(user, customer_id)
         self.edit_customer_phone(user, customer, phone)
         self.edit_full_name(user, customer, full_name)
-        return customer
+        if purchase_price is not None:
+            from customerpurchase import services
+            services.purchase_service.add_customer_purchase(
+                user=user,
+                customer=customer,
+                amount=purchase_price
+            )
 
-    def can_edit_full_name(self, user: Businessman, c: Customer) -> bool:
-        return not BusinessmanCustomer.objects.exclude(businessman=user).filter(customer=c).exists()
+        return customer
 
     def _can_edit_phone_number_value(self, user: Businessman, c: Customer, phone: str) -> bool:
         is_unique = self.is_phone_number_unique_for_update(user, c.id, phone)
@@ -191,45 +196,74 @@ class CustomerService(BaseService):
         if is_unique:
             return businessmans.exclude(id=user.id).count() == 0
 
-    def _can_edit_phone_number_by_change_customer(self, user: Businessman, c: Customer, phone: str):
-        return Customer.objects.filter(phone=phone).exclude(connected_businessmans__businessman=user).exclude(
-            id=c.id).exists()
-
     def is_phone_number_unique_for_update(self, user: Businessman, customer_id: int, phone: str) -> bool:
         return not user.customers.filter(phone=phone).exclude(id=customer_id,
                                                               connected_businessmans__is_deleted=False).exists()
 
-    def _update_customer_phone_full_name(self, c: Customer, phone: str, full_name: str) -> Customer:
-        c.phone = phone
-        c.full_name = full_name
-        c.save()
-        return c
+    def _can_edit_phone_number_by_change_customer(self, user: Businessman, c: Customer, phone: str):
+        return Customer.objects.filter(phone=phone).exclude(connected_businessmans__businessman=user).exclude(
+            id=c.id).exists()
 
-    def reset_customer_groups(self, user: Businessman, customer: Customer, groups: list):
-        from groups.models import BusinessmanGroups
-        if groups is None:
-            return customer
-        # for g in groups:
-        #     g.add_member(customer)
-        BusinessmanGroups.reset_customer_groups(user, customer, groups)
+    def can_edit_full_name(self, user: Businessman, c: Customer) -> bool:
+        return not BusinessmanCustomer.objects.exclude(businessman=user).filter(customer=c).exists()
+
+
+def can_edit_full_name(self, user: Businessman, c: Customer) -> bool:
+    return not BusinessmanCustomer.objects.exclude(businessman=user).filter(customer=c).exists()
+
+
+def _can_edit_phone_number_value(self, user: Businessman, c: Customer, phone: str) -> bool:
+    is_unique = self.is_phone_number_unique_for_update(user, c.id, phone)
+    businessmans = self.get_businessmans_of_customer(c)
+    if is_unique:
+        return businessmans.exclude(id=user.id).count() == 0
+
+
+def _can_edit_phone_number_by_change_customer(self, user: Businessman, c: Customer, phone: str):
+    return Customer.objects.filter(phone=phone).exclude(connected_businessmans__businessman=user).exclude(
+        id=c.id).exists()
+
+
+def is_phone_number_unique_for_update(self, user: Businessman, customer_id: int, phone: str) -> bool:
+    return not user.customers.filter(phone=phone).exclude(id=customer_id,
+                                                          connected_businessmans__is_deleted=False).exists()
+
+
+def _update_customer_phone_full_name(self, c: Customer, phone: str, full_name: str) -> Customer:
+    c.phone = phone
+    c.full_name = full_name
+    c.save()
+    return c
+
+
+def reset_customer_groups(self, user: Businessman, customer: Customer, groups: list):
+    from groups.models import BusinessmanGroups
+    if groups is None:
         return customer
+    # for g in groups:
+    #     g.add_member(customer)
+    BusinessmanGroups.reset_customer_groups(user, customer, groups)
+    return customer
 
-    def get_customer_by_phone_or_create(self, phone) -> Customer:
-        try:
-            return customer_service.get_customer_by_phone(phone)
-        except ObjectDoesNotExist:
-            return Customer.objects.create(phone=phone)
 
-    def _check_is_phone_number_unique_for_register(self, user: Businessman, phone: str):
-        is_unique = self.is_phone_number_unique_for_register(user, phone)
-        if not is_unique:
-            raise ApplicationErrorCodes.get_exception(ApplicationErrorCodes.PHONE_NUMBER_IS_NOT_UNIQUE)
+def get_customer_by_phone_or_create(self, phone) -> Customer:
+    try:
+        return customer_service.get_customer_by_phone(phone)
+    except ObjectDoesNotExist:
+        return Customer.objects.create(phone=phone)
 
-    def _get_businessman_customer_relation(self, user: Businessman, customer: Customer) -> BusinessmanCustomer:
-        try:
-            return BusinessmanCustomer.objects.get(businessman=user, customer=customer)
-        except ObjectDoesNotExist:
-            return None
+
+def _check_is_phone_number_unique_for_register(self, user: Businessman, phone: str):
+    is_unique = self.is_phone_number_unique_for_register(user, phone)
+    if not is_unique:
+        raise ApplicationErrorCodes.get_exception(ApplicationErrorCodes.PHONE_NUMBER_IS_NOT_UNIQUE)
+
+
+def _get_businessman_customer_relation(self, user: Businessman, customer: Customer) -> BusinessmanCustomer:
+    try:
+        return BusinessmanCustomer.objects.get(businessman=user, customer=customer)
+    except ObjectDoesNotExist:
+        return None
 
 
 customer_service = CustomerService()
