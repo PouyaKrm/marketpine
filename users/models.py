@@ -193,14 +193,18 @@ class VerificationCodes(BusinessmanManyToOneBaseModel):
 
 
 class PhoneChangeVerification(BusinessmanManyToOneBaseModel):
-    previous_phone_verification = models.ForeignKey(VerificationCodes,
-                                                    on_delete=models.CASCADE,
-                                                    related_query_name='phone_change_previous',
-                                                    related_name='phone_change_previous')
-    new_phone_verification = models.ForeignKey(VerificationCodes,
-                                               on_delete=models.CASCADE,
-                                               related_name='phone_change_new',
-                                               related_query_name='phone_change_new')
+    previous_phone_verification = models.ForeignKey(
+        VerificationCodes,
+        on_delete=models.CASCADE,
+        related_query_name='phone_change_previous',
+        related_name='phone_change_previous'
+    )
+    new_phone_verification = models.ForeignKey(
+        VerificationCodes,
+        on_delete=models.CASCADE,
+        related_name='phone_change_new',
+        related_query_name='phone_change_new'
+    )
     new_phone = models.CharField(max_length=20)
 
 

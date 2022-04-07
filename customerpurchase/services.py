@@ -1,6 +1,7 @@
 from django.core.exceptions import ObjectDoesNotExist
 from django.db.models.aggregates import Sum
 
+
 from customer_return_plan.models import Discount
 from customer_return_plan.services import DiscountService
 from customerpurchase.models import CustomerPurchase
@@ -67,10 +68,12 @@ class PurchaseService:
 
     def add_customer_purchase(self, user: Businessman, customer: Customer, amount: int) -> CustomerPurchase:
         from payment.services import wallet_billing_service
+        from customer_return_plan.loyalty.services import LoyaltyService
         purchase = CustomerPurchase.objects.create(businessman=user, customer=customer, amount=amount)
         bc = customer_service.get_businessmancustomer_delete_check(user, customer)
         wallet_billing_service.add_payment_if_customer_invited(bc)
         self.re_evaluate_purchase_top_group(user)
+        LoyaltyService.get_instance().increase_customer_points_by_purchase_amount(user, customer, purchase.amount)
         return purchase
 
     def delete_purchase_by_purchase_id(self, user: Businessman, purchase_id: int) -> (bool, CustomerPurchase):

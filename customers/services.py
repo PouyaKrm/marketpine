@@ -75,8 +75,8 @@ class CustomerService(BaseService):
                                                           low_credit_error_code)
 
         if purchase_price is not None:
-            purchase_service.add_customer_purchase(
-                user=businessman, customer=c,
+            purchase_service.submit_purchase_with_discounts(
+                businessman=businessman, customer=c,
                 amount=purchase_price
             )
         return c
