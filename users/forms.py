@@ -21,14 +21,13 @@ class BusinessmanChangeForm(UserChangeForm):
     class Meta:
         model = Businessman
         fields = ['username',
-                  'phone',
-                  'business_name',
-                  'logo',
-                  'is_phone_verified',
-                  'has_sms_panel',
-                  'panel_expiration_date',
-                  'panel_activation_date',
-                  'duration_type'
+                  'permissions',
+                  'groups',
+                  'is_staff',
+                  'is_super-user',
+                  'is_active',
+                  'is_customer',
+                  'is_businessman'
                   ]
 
 
@@ -38,13 +37,6 @@ class CustomerCreationForm(UserCreationForm):
 
         model = Customer
 
-        fields = ['phone', 'email', 'full_name']
-
-
-class CustomerChangeForm(UserChangeForm):
-
-    class Meta:
-        model = Customer
         fields = ['phone', 'email', 'full_name']
 
 
